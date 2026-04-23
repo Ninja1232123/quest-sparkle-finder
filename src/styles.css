@@ -4,6 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
 /*
  * Design system definition.
  *
@@ -59,42 +61,70 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-terracotta: var(--terracotta);
+  --color-ochre: var(--ochre);
+  --color-highlight: var(--highlight);
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.875rem;
+
+  /* Warm palette — cream paper, sage ink, terracotta accent */
+  --paper: oklch(0.972 0.018 85);
+  --paper-deep: oklch(0.945 0.025 82);
+  --ink: oklch(0.22 0.025 60);
+  --sage: oklch(0.68 0.055 145);
+  --sage-deep: oklch(0.42 0.06 150);
+  --terracotta: oklch(0.62 0.14 38);
+  --ochre: oklch(0.78 0.12 75);
+  --highlight: oklch(0.92 0.13 95);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.985 0.012 85);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.985 0.012 85);
+  --popover-foreground: var(--ink);
+  --primary: var(--sage-deep);
+  --primary-foreground: oklch(0.985 0.012 85);
+  --secondary: oklch(0.93 0.025 80);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.94 0.02 82);
+  --muted-foreground: oklch(0.45 0.025 65);
+  --accent: var(--terracotta);
+  --accent-foreground: oklch(0.985 0.012 85);
+  --destructive: oklch(0.55 0.18 28);
+  --destructive-foreground: oklch(0.985 0.012 85);
+  --border: oklch(0.88 0.025 78);
+  --input: oklch(0.91 0.022 80);
+  --ring: var(--sage-deep);
+  --chart-1: var(--sage-deep);
+  --chart-2: var(--terracotta);
+  --chart-3: var(--ochre);
+  --chart-4: oklch(0.55 0.09 220);
+  --chart-5: oklch(0.5 0.11 320);
+  --sidebar: oklch(0.96 0.018 82);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--sage-deep);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: oklch(0.92 0.022 80);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(0.88 0.025 78);
+  --sidebar-ring: var(--sage-deep);
+
+  --gradient-warm: linear-gradient(135deg, oklch(0.97 0.025 85), oklch(0.93 0.04 75));
+  --gradient-sage: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
+  --gradient-sunset: linear-gradient(135deg, var(--ochre), var(--terracotta));
+  --shadow-soft: 0 1px 2px oklch(0.3 0.05 60 / 0.06), 0 8px 24px -8px oklch(0.3 0.05 60 / 0.12);
+  --shadow-warm: 0 10px 40px -12px oklch(0.5 0.12 50 / 0.25);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 1px 3px oklch(0.3 0.05 60 / 0.08), 0 12px 30px -16px oklch(0.3 0.05 60 / 0.15);
 }
 
 .dark {
@@ -140,5 +170,51 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    background-image:
+      radial-gradient(at 15% 10%, oklch(0.95 0.04 80 / 0.6) 0px, transparent 50%),
+      radial-gradient(at 85% 90%, oklch(0.93 0.05 140 / 0.4) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
+  .paper-grain {
+    background-image:
+      repeating-linear-gradient(0deg, oklch(0.3 0.05 60 / 0.012) 0px, oklch(0.3 0.05 60 / 0.012) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(90deg, oklch(0.3 0.05 60 / 0.012) 0px, oklch(0.3 0.05 60 / 0.012) 1px, transparent 1px, transparent 3px);
+  }
+
+  .ink-underline {
+    background-image: linear-gradient(transparent 65%, var(--highlight) 65%, var(--highlight) 92%, transparent 92%);
+    background-size: 100% 100%;
+    padding: 0 0.1em;
+  }
+
+  .citation-tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+  .animate-float { animation: float-slow 6s ease-in-out infinite; }
+
+  @keyframes draw-line {
+    from { stroke-dashoffset: 1000; }
+    to { stroke-dashoffset: 0; }
+  }
+  .animate-draw {
+    stroke-dasharray: 1000;
+    animation: draw-line 2.5s ease-out forwards;
   }
 }
