@@ -1,26 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { TOPICS } from "@/data/topics";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { TOPICS, AGENCIES } from "@/data/topics";
 import { TopicCard } from "@/components/marginalia/TopicCard";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { AGENCIES } from "@/data/topics";
+import { SearchBar } from "@/components/marginalia/SearchBar";
 import heroCollage from "@/assets/hero-collage.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Marginalia — A friendlier law library" },
+      { title: "Marginalia — A citizen's law index" },
       {
         name: "description",
         content:
-          "Plain-English explainers for federal regulations, IRS manuals, and consumer rules — with a beautiful map of how the rules connect.",
+          "A working research desk for non-lawyers. Search across the eCFR, IRS, Treasury, UCC, and FTC — and see how the rules connect.",
       },
-      { property: "og:title", content: "Marginalia — A friendlier law library" },
+      { property: "og:title", content: "Marginalia — A citizen's law index" },
       {
         property: "og:description",
-        content: "Understand the law as a whole, not one statute at a time.",
+        content: "If you don't know your rights, you don't have any. Read the law as one connected record.",
       },
     ],
   }),
@@ -32,38 +31,40 @@ function Index() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 lg:grid-cols-[1.05fr_0.95fr] lg:pt-20">
+      <section className="relative overflow-hidden border-b border-border/60">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[1.15fr_0.85fr] lg:pt-24">
           <div className="relative z-10">
-            <div className="font-display text-xs italic tracking-wide text-accent">
-              ✦ vol. 1 · everyday rules, properly read
-            </div>
-            <h1 className="mt-3 font-display text-5xl font-semibold leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
-              The law, but{" "}
-              <span className="ink-underline italic">readable</span>.
+            <div className="citation-tag text-muted-foreground">Vol. I · the citizen's index</div>
+            <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-[5.25rem]">
+              If you don't know your rights,
+              <br />
+              <span className="ink-underline italic">you don't have any.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground/75">
-              Marginalia stitches together the federal rulebook, agency manuals, and consumer-protection codes —
-              so you can read the rules around your life as one connected story, not a stack of PDFs.
+            <p className="mt-7 max-w-xl text-lg leading-relaxed text-foreground/75">
+              Marginalia is a research desk built for the people the law actually applies to.
+              Search across federal regulations, agency manuals, and the commercial code as one connected record —
+              then trace how a single rule reaches into the rest.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                to="/topic/$slug"
-                params={{ slug: "side-hustle-taxes" }}
-                className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-base font-medium text-primary-foreground shadow-[var(--shadow-warm)] transition-all hover:scale-[1.02]"
-              >
-                Start with a story
-                <span className="transition-transform group-hover:translate-x-0.5">→</span>
-              </Link>
-              <Link
-                to="/library"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-foreground/15 px-6 py-3 font-display text-base text-foreground hover:border-foreground/40"
-              >
-                Browse the sources
-              </Link>
+
+            <div className="mt-8">
+              <SearchBar />
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-display italic">try:</span>
+                {["overtime", "eviction", "§ 1692", "warranty", "1099"].map((s) => (
+                  <Link
+                    key={s}
+                    to="/search"
+                    search={{ q: s }}
+                    className="citation-tag rounded-full border border-border bg-background/60 px-2.5 py-1 hover:border-foreground/40 hover:text-foreground"
+                  >
+                    {s}
+                  </Link>
+                ))}
+              </div>
             </div>
+
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="font-display italic">connected sources:</span>
+              <span className="citation-tag">indexed sources</span>
               {Object.values(AGENCIES).map((a) => (
                 <span key={a.id} className="citation-tag" style={{ color: a.color }}>
                   ● {a.shortName}
@@ -74,75 +75,75 @@ function Index() {
 
           <div className="relative">
             <div
-              className="absolute -inset-6 rounded-[2.5rem] opacity-70 blur-2xl"
-              style={{ background: "var(--gradient-sunset)" }}
+              className="absolute -inset-6 rounded-[2rem] opacity-50 blur-2xl"
+              style={{ background: "var(--gradient-sage)" }}
               aria-hidden
             />
-            <div className="relative overflow-hidden rounded-[2rem] border-2 border-foreground/10 shadow-[var(--shadow-warm)]">
+            <div className="relative overflow-hidden rounded-[1.5rem] border border-foreground/15 shadow-[var(--shadow-warm)]">
               <img
                 src={heroCollage}
-                alt="Illustration of a glowing open book with floating documents and constellation lines"
+                alt="A reading desk with open volumes of federal regulations, marginal annotations, and connecting lines between citations"
                 width={1536}
                 height={1152}
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-6 -left-6 hidden max-w-[220px] rotate-[-3deg] rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] md:block animate-float">
-              <div className="citation-tag text-accent">today's note</div>
-              <p className="mt-1 font-display text-sm italic leading-snug">
-                "Did you know renting your home for fewer than 15 days a year is completely tax-free?"
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Topics */}
+      {/* Method */}
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-10 flex items-end justify-between">
-          <div>
-            <div className="citation-tag text-muted-foreground">the table of contents</div>
-            <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-              Stories pulled from the rulebook
-            </h2>
-            <p className="mt-3 max-w-2xl text-foreground/70">
-              Each topic links the actual citations across agencies — written first in plain English,
-              then with the original source one tap away.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          {TOPICS.map((t) => (
-            <TopicCard key={t.slug} topic={t} />
+        <div className="grid gap-10 md:grid-cols-3">
+          {[
+            {
+              n: "I.",
+              h: "Read primary sources",
+              p: "No paraphrase replaces the original. Every claim links back to the actual statute, regulation, or agency manual it came from.",
+            },
+            {
+              n: "II.",
+              h: "See how rules connect",
+              p: "A statute rarely stands alone. The citation map shows how rules across agencies cross-reference, modify, and depend on one another.",
+            },
+            {
+              n: "III.",
+              h: "Build a working understanding",
+              p: "The law is intentionally interlocking. Repeated reading across topics is how lay researchers build real fluency.",
+            },
+          ].map((step) => (
+            <div key={step.n} className="border-l border-border pl-5">
+              <div className="font-display text-2xl text-accent">{step.n}</div>
+              <h3 className="mt-1 font-display text-xl font-semibold">{step.h}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/75">{step.p}</p>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* How it reads */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid gap-6 rounded-3xl border bg-card p-10 paper-grain shadow-[var(--shadow-card)] md:grid-cols-3">
-          {[
-            {
-              n: "i.",
-              h: "Read the story",
-              p: "Every topic opens with a short, plain-English explainer of how the rules actually work in real life.",
-            },
-            {
-              n: "ii.",
-              h: "See the constellation",
-              p: "An interactive map shows how citations across the IRS, eCFR, UCC, and FTC connect to one another.",
-            },
-            {
-              n: "iii.",
-              h: "Read the source",
-              p: "Tap any node to flip between the plain-English summary and the original government text.",
-            },
-          ].map((step) => (
-            <div key={step.n}>
-              <div className="font-display text-2xl italic text-accent">{step.n}</div>
-              <h3 className="mt-1 font-display text-xl font-semibold">{step.h}</h3>
-              <p className="mt-2 text-sm text-foreground/70">{step.p}</p>
-            </div>
+      {/* Topics */}
+      <section className="mx-auto max-w-6xl px-6 pb-20 pt-4">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+          <div>
+            <div className="citation-tag text-muted-foreground">the desk</div>
+            <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+              Topics under research
+            </h2>
+            <p className="mt-3 max-w-2xl text-foreground/70">
+              Each entry threads citations from multiple agencies into one readable record.
+              Open the map to see how the pieces hold together.
+            </p>
+          </div>
+          <Link
+            to="/library"
+            className="font-display text-sm italic text-accent hover:underline"
+          >
+            Browse by source →
+          </Link>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {TOPICS.map((t) => (
+            <TopicCard key={t.slug} topic={t} />
           ))}
         </div>
       </section>

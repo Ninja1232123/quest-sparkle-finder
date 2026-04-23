@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { AGENCIES, getTopic, TOPICS, type Citation } from "@/data/topics";
+import { AGENCIES, getTopic, TOPICS, type Citation, type Topic } from "@/data/topics";
 import { CitationMap } from "@/components/marginalia/CitationMap";
 import { AgencyBadge } from "@/components/marginalia/AgencyBadge";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
@@ -59,12 +59,12 @@ export const Route = createFileRoute("/topic/$slug")({
 });
 
 function TopicPage() {
-  const { topic } = Route.useLoaderData();
+  const { topic } = Route.useLoaderData() as { topic: Topic };
   const [activeId, setActiveId] = useState<string | null>(topic.citations[0]?.id ?? null);
   const [mode, setMode] = useState<"plain" | "original">("plain");
 
   const active: Citation | undefined =
-    topic.citations.find((c) => c.id === activeId) ?? topic.citations[0];
+    topic.citations.find((c: Citation) => c.id === activeId) ?? topic.citations[0];
 
   return (
     <div className="min-h-screen">
@@ -97,7 +97,7 @@ function TopicPage() {
               {topic.oneLiner}
             </p>
             <div className="mt-6 space-y-4 text-foreground/85">
-              {topic.story.split("\n\n").map((p, i) => (
+              {topic.story.split("\n\n").map((p: string, i: number) => (
                 <p key={i} className="leading-relaxed">
                   {p}
                 </p>
@@ -109,7 +109,7 @@ function TopicPage() {
             <div className="mt-6 rounded-3xl border bg-card/60 p-6">
               <div className="citation-tag text-muted-foreground">in the margin</div>
               <dl className="mt-3 space-y-3">
-                {topic.glossary.map((g) => (
+                {topic.glossary.map((g: { term: string; meaning: string }) => (
                   <div key={g.term}>
                     <dt className="font-display font-semibold">{g.term}</dt>
                     <dd className="text-sm text-foreground/75">{g.meaning}</dd>
@@ -171,9 +171,9 @@ function TopicPage() {
           <h2 className="mt-2 font-display text-3xl font-semibold">Threads connected to this one</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {topic.related
-              .map((slug) => TOPICS.find((t) => t.slug === slug))
-              .filter((t): t is NonNullable<typeof t> => Boolean(t))
-              .map((t) => (
+              .map((slug: string) => TOPICS.find((t) => t.slug === slug))
+              .filter((t): t is Topic => Boolean(t))
+              .map((t: Topic) => (
                 <Link
                   key={t.slug}
                   to="/topic/$slug"
