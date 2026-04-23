@@ -77,14 +77,14 @@
   --radius: 0.875rem;
 
   /* Warm palette — cream paper, sage ink, terracotta accent */
-  --paper: oklch(0.972 0.018 85);
-  --paper-deep: oklch(0.945 0.025 82);
-  --ink: oklch(0.22 0.025 60);
-  --sage: oklch(0.68 0.055 145);
-  --sage-deep: oklch(0.42 0.06 150);
-  --terracotta: oklch(0.62 0.14 38);
-  --ochre: oklch(0.78 0.12 75);
-  --highlight: oklch(0.92 0.13 95);
+  --paper: oklch(0.965 0.012 85);
+  --paper-deep: oklch(0.93 0.018 80);
+  --ink: oklch(0.18 0.02 60);
+  --sage: oklch(0.62 0.05 150);
+  --sage-deep: oklch(0.32 0.045 155);
+  --terracotta: oklch(0.52 0.13 35);
+  --ochre: oklch(0.7 0.1 78);
+  --highlight: oklch(0.9 0.11 92);
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -173,8 +173,8 @@
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
     background-image:
-      radial-gradient(at 15% 10%, oklch(0.95 0.04 80 / 0.6) 0px, transparent 50%),
-      radial-gradient(at 85% 90%, oklch(0.93 0.05 140 / 0.4) 0px, transparent 50%);
+      radial-gradient(at 15% 8%, oklch(0.95 0.025 80 / 0.5) 0px, transparent 55%),
+      radial-gradient(at 88% 95%, oklch(0.92 0.03 150 / 0.35) 0px, transparent 55%);
     background-attachment: fixed;
   }
 

@@ -25,24 +25,25 @@ function About() {
     <div className="min-h-screen">
       <SiteHeader />
       <section className="mx-auto max-w-2xl px-6 py-20">
-        <div className="citation-tag text-accent">a small manifesto</div>
+        <div className="citation-tag text-accent">a working note</div>
         <h1 className="mt-3 font-display text-5xl font-semibold leading-tight md:text-6xl">
-          The law is for everybody. So it should{" "}
-          <span className="ink-underline italic">read like it</span>.
+          The law is intentionally{" "}
+          <span className="ink-underline italic">interlocking</span>. Read it that way.
         </h1>
         <div className="mt-8 space-y-5 text-lg leading-relaxed text-foreground/85">
           <p>
-            Most legal research tools are built for lawyers staring at a single statute. Marginalia is for
-            the rest of us — the side hustler, the renter, the small Etsy shop — trying to understand the rules
-            around our actual lives.
+            Most legal-research tools are sold to professionals already fluent in the vocabulary. Marginalia is built
+            for the citizen-researcher: someone who suspects a rule applies to them and wants to read it for themselves,
+            in context, without a paywall or a billing clock.
           </p>
           <p>
-            We pull from the same primary sources lawyers do: the Code of Federal Regulations, IRS manuals,
-            Treasury procedures, the Uniform Commercial Code, FTC rules. Then we connect them, summarize them,
-            and put the original right next to the plain-English version, so you can always verify.
+            The connections between statutes, regulations, agency manuals, and the commercial code are not always made
+            explicit — that opacity is part of how the system works. We index the primary sources, surface the cross-references,
+            and put the plain-English summary side-by-side with the original text so you can always verify.
           </p>
-          <p className="font-display italic text-muted-foreground">
-            Marginalia is not legal advice — it's a friendlier first read, with a clear path back to the source.
+          <p>
+            Marginalia is not legal advice. It is a research aid. Use it the way a careful reader would use any reference work:
+            to orient yourself, then to read the source.
           </p>
         </div>
         <div className="mt-10">
@@ -50,7 +51,7 @@ function About() {
             to="/"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-base text-primary-foreground shadow-[var(--shadow-warm)]"
           >
-            Browse the topics →
+            Open the index →
           </Link>
         </div>
       </section>
