@@ -318,8 +318,331 @@ export const TOPICS: Topic[] = [
     ],
     related: ["side-hustle-taxes", "junk-fees"],
   },
+  {
+    slug: "traffic-stops",
+    title: "Rights at a Traffic Stop",
+    emoji: "🚦",
+    question: "What am I actually required to do if I'm pulled over?",
+    oneLiner: "The Fourth and Fifth Amendments set the floor; state codes fill in the rest.",
+    story:
+      "A traffic stop is a 'seizure' under the Fourth Amendment, which means the officer needs reasonable suspicion to initiate it and probable cause to extend it. You generally must identify yourself and produce license, registration, and insurance — but answering investigative questions beyond that is voluntary in most states.\n\nConsent to a search waives your Fourth Amendment protection. Federal regulations and DOJ guidance describe how officers should articulate cause; state vehicle codes spell out what counts as a lawful stop and which documents you must hand over.",
+    citations: [
+      {
+        id: "us-const-4",
+        agency: "ecfr",
+        ref: "U.S. Const. amend. IV",
+        title: "Right against unreasonable search and seizure",
+        plain: "Police need a real reason — not a hunch — to stop, search, or detain you.",
+        excerpt:
+          "The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated, and no Warrants shall issue, but upon probable cause.",
+      },
+      {
+        id: "us-const-5",
+        agency: "ecfr",
+        ref: "U.S. Const. amend. V",
+        title: "Right to remain silent",
+        plain: "You don't have to answer questions that could be used against you.",
+        excerpt:
+          "No person shall be compelled in any criminal case to be a witness against himself, nor be deprived of life, liberty, or property, without due process of law.",
+      },
+      {
+        id: "doj-stops",
+        agency: "ftc",
+        ref: "DOJ COPS Guide 2019-Stops",
+        title: "Investigative stops guidance",
+        plain: "Federal guidance on when officers may extend a routine stop into a search.",
+        excerpt:
+          "An officer may not prolong a traffic stop beyond the time reasonably required to complete the mission of the stop absent independent reasonable suspicion of additional criminal activity.",
+      },
+      {
+        id: "ucc-9-609",
+        agency: "ucc",
+        ref: "UCC § 9-609",
+        title: "Repossession after default",
+        plain: "If you're behind on a car loan, lenders can repossess — but not by 'breach of peace.'",
+        excerpt:
+          "After default, a secured party may take possession of the collateral without judicial process, if it proceeds without breach of the peace.",
+      },
+    ],
+    connections: [
+      { from: "us-const-4", to: "doj-stops", label: "interpreted by" },
+      { from: "us-const-4", to: "us-const-5", label: "operates alongside" },
+      { from: "us-const-4", to: "ucc-9-609", label: "limits private seizures under" },
+    ],
+    glossary: [
+      { term: "Reasonable suspicion", meaning: "Specific facts suggesting a crime — more than a hunch, less than probable cause." },
+      { term: "Probable cause", meaning: "Enough facts that a reasonable person would believe a crime occurred." },
+      { term: "Breach of peace", meaning: "Conduct that risks violence or public disturbance — bars self-help repossession." },
+    ],
+    related: ["tenant-rights", "debt-collection"],
+  },
+  {
+    slug: "tenant-rights",
+    title: "Tenant Rights & Eviction",
+    emoji: "🔑",
+    question: "What can my landlord actually do — and what do I have to take?",
+    oneLiner: "Habitability, notice, and due process are baked into both federal rules and state property codes.",
+    story:
+      "Federal fair-housing law sets the outer limits: landlords can't discriminate on protected characteristics, and federally-backed properties have additional notice rules. Beneath that, every state recognizes an 'implied warranty of habitability' — the place must be safe and livable regardless of what the lease says.\n\nEviction is a court process, not a self-help remedy. Locking you out, shutting off utilities, or removing your belongings without a court order is illegal in nearly every state. The UCC governs the security-deposit accounting and any goods left behind.",
+    citations: [
+      {
+        id: "fha-3604",
+        agency: "ecfr",
+        ref: "42 USC § 3604",
+        title: "Fair Housing Act",
+        plain: "Landlords can't refuse, charge more, or set different terms based on protected traits.",
+        excerpt:
+          "It shall be unlawful to refuse to sell or rent, or to discriminate against any person in the terms, conditions, or privileges of sale or rental of a dwelling, because of race, color, religion, sex, familial status, or national origin.",
+      },
+      {
+        id: "hud-247",
+        agency: "ecfr",
+        ref: "24 CFR § 247.4",
+        title: "Termination notice requirements",
+        plain: "Federally-subsidized landlords must give written notice with specific reasons.",
+        excerpt:
+          "The landlord's determination to terminate the tenancy shall be in writing and shall state that the tenancy is terminated on a date certain, the reasons for the action with enough specificity to enable the tenant to prepare a defense.",
+      },
+      {
+        id: "ucc-2a-lease",
+        agency: "ucc",
+        ref: "UCC Article 2A",
+        title: "Lease as binding contract",
+        plain: "Your lease is a contract — both sides have to follow it.",
+        excerpt:
+          "A lease is a transfer of the right to possession and use of goods for a term in return for consideration.",
+      },
+      {
+        id: "ftc-deposit",
+        agency: "ftc",
+        ref: "FTC Consumer Advisory 2022-DEP",
+        title: "Security deposit transparency",
+        plain: "Deposit deductions must be itemized and supported by receipts.",
+        excerpt:
+          "Failure to provide an itemized written statement of deductions from a security deposit may constitute an unfair or deceptive practice in or affecting commerce.",
+      },
+    ],
+    connections: [
+      { from: "fha-3604", to: "hud-247", label: "enforced through" },
+      { from: "hud-247", to: "ucc-2a-lease", label: "supplements" },
+      { from: "ucc-2a-lease", to: "ftc-deposit", label: "deposit rules under" },
+    ],
+    glossary: [
+      { term: "Implied warranty of habitability", meaning: "Unwritten promise that a rental is fit to live in." },
+      { term: "Self-help eviction", meaning: "When a landlord tries to force you out without court — generally illegal." },
+    ],
+    related: ["renting-your-place", "debt-collection"],
+  },
+  {
+    slug: "debt-collection",
+    title: "Debt Collectors & Your Rights",
+    emoji: "📞",
+    question: "A collector keeps calling. What can they actually do to me?",
+    oneLiner: "The FDCPA limits how debts are collected; the FCRA controls what ends up on your credit report.",
+    story:
+      "Federal law treats debt collection as a regulated industry. Collectors must identify themselves, can't call at unreasonable hours, can't threaten action they aren't legally able to take, and must stop contacting you at work if you tell them to in writing.\n\nIf the debt ends up on your credit report, the Fair Credit Reporting Act gives you the right to dispute inaccurate entries — and the bureau must investigate within 30 days. The UCC governs the underlying contract that created the debt in the first place.",
+    citations: [
+      {
+        id: "fdcpa-1692c",
+        agency: "ftc",
+        ref: "15 USC § 1692c",
+        title: "Communication restrictions",
+        plain: "Collectors can't call before 8am or after 9pm, or contact you at work if you say not to.",
+        excerpt:
+          "Without the prior consent of the consumer, a debt collector may not communicate with a consumer at any unusual time or place, particularly before 8 o'clock antemeridian and after 9 o'clock postmeridian.",
+      },
+      {
+        id: "fdcpa-1692e",
+        agency: "ftc",
+        ref: "15 USC § 1692e",
+        title: "False or misleading representations",
+        plain: "Collectors can't lie about the amount, threaten arrest, or pose as lawyers or government.",
+        excerpt:
+          "A debt collector may not use any false, deceptive, or misleading representation or means in connection with the collection of any debt.",
+      },
+      {
+        id: "fcra-1681i",
+        agency: "ftc",
+        ref: "15 USC § 1681i",
+        title: "Disputing credit report errors",
+        plain: "You can dispute anything on your credit report; the bureau has 30 days to investigate.",
+        excerpt:
+          "If the completeness or accuracy of any item of information contained in a consumer's file is disputed, the agency shall conduct a reasonable reinvestigation to determine whether the disputed information is inaccurate.",
+      },
+      {
+        id: "ucc-3-104",
+        agency: "ucc",
+        ref: "UCC § 3-104",
+        title: "Negotiable instruments",
+        plain: "The legal foundation for promissory notes, checks, and other paper debts.",
+        excerpt:
+          "A 'negotiable instrument' means an unconditional promise or order to pay a fixed amount of money, with or without interest.",
+      },
+      {
+        id: "ecfr-1006",
+        agency: "ecfr",
+        ref: "12 CFR Part 1006",
+        title: "CFPB Regulation F",
+        plain: "Caps collector calls at 7 per debt per week and regulates electronic contact.",
+        excerpt:
+          "A debt collector must not place a telephone call to a particular person in connection with the collection of a particular debt more than seven times within seven consecutive days.",
+      },
+    ],
+    connections: [
+      { from: "fdcpa-1692c", to: "fdcpa-1692e", label: "paired with" },
+      { from: "fdcpa-1692c", to: "ecfr-1006", label: "operationalized by" },
+      { from: "fdcpa-1692e", to: "fcra-1681i", label: "errors challenged via" },
+      { from: "ucc-3-104", to: "fdcpa-1692c", label: "creates the debt regulated by" },
+    ],
+    glossary: [
+      { term: "FDCPA", meaning: "Fair Debt Collection Practices Act — the rulebook for third-party collectors." },
+      { term: "Reinvestigation", meaning: "The credit bureau's required review when you dispute an entry." },
+    ],
+    related: ["junk-fees", "tenant-rights"],
+  },
+  {
+    slug: "workplace-rights",
+    title: "Wages, Hours & Workplace Rights",
+    emoji: "🛠️",
+    question: "Am I getting what I'm legally owed at work?",
+    oneLiner: "The FLSA sets the minimum floor on pay, hours, and overtime — states can go higher.",
+    story:
+      "The Fair Labor Standards Act is the spine of U.S. wage law: minimum wage, overtime above 40 hours per week, recordkeeping, and child-labor limits. Whether you're 'exempt' from overtime depends on your job duties and salary, not just your title.\n\nMisclassification — calling an employee a 'contractor' to avoid taxes and overtime — is one of the most common violations. The IRS uses its own multi-factor test, which often disagrees with the company's paperwork.",
+    citations: [
+      {
+        id: "flsa-206",
+        agency: "ecfr",
+        ref: "29 USC § 206",
+        title: "Federal minimum wage",
+        plain: "The federal floor is $7.25/hr; many states and cities set it higher.",
+        excerpt:
+          "Every employer shall pay to each of his employees who in any workweek is engaged in commerce wages at the following rates: not less than $7.25 an hour.",
+      },
+      {
+        id: "flsa-207",
+        agency: "ecfr",
+        ref: "29 USC § 207",
+        title: "Overtime pay",
+        plain: "Non-exempt workers get 1.5× pay for hours over 40 in a week.",
+        excerpt:
+          "No employer shall employ any of his employees for a workweek longer than forty hours unless such employee receives compensation at a rate not less than one and one-half times the regular rate.",
+      },
+      {
+        id: "irm-4-23-class",
+        agency: "irm",
+        ref: "IRM 4.23.5",
+        title: "Worker classification",
+        plain: "How the IRS decides if you're really an employee or a contractor.",
+        excerpt:
+          "The determination of whether a worker is an employee or independent contractor is based on common-law factors regarding behavioral control, financial control, and the relationship of the parties.",
+      },
+      {
+        id: "ecfr-541",
+        agency: "ecfr",
+        ref: "29 CFR Part 541",
+        title: "White-collar exemptions",
+        plain: "Defines who actually qualifies as an 'exempt' executive, professional, or administrator.",
+        excerpt:
+          "An employee shall be deemed employed in a bona fide executive capacity only if the employee is compensated on a salary basis at a rate of not less than the applicable threshold.",
+      },
+    ],
+    connections: [
+      { from: "flsa-206", to: "flsa-207", label: "minimum-wage base for" },
+      { from: "flsa-207", to: "ecfr-541", label: "exemption rules in" },
+      { from: "flsa-207", to: "irm-4-23-class", label: "depends on classification under" },
+    ],
+    glossary: [
+      { term: "Exempt employee", meaning: "Workers excluded from overtime pay, usually salaried managers/professionals." },
+      { term: "Misclassification", meaning: "Treating an employee as a contractor to avoid taxes and protections." },
+    ],
+    related: ["side-hustle-taxes", "selling-online"],
+  },
 ];
 
 export function getTopic(slug: string) {
   return TOPICS.find((t) => t.slug === slug);
+}
+
+export type SearchHit = {
+  topicSlug: string;
+  topicTitle: string;
+  topicEmoji: string;
+  kind: "topic" | "citation" | "term";
+  label: string;
+  detail: string;
+  agency?: keyof typeof AGENCIES;
+  citationId?: string;
+  score: number;
+};
+
+function scoreField(field: string, q: string): number {
+  const f = field.toLowerCase();
+  const i = f.indexOf(q);
+  if (i === -1) return 0;
+  if (f === q) return 100;
+  if (i === 0) return 60;
+  return 30;
+}
+
+export function searchAll(query: string): SearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const hits: SearchHit[] = [];
+
+  for (const t of TOPICS) {
+    const titleScore = scoreField(t.title, q) * 1.5;
+    const oneLinerScore = scoreField(t.oneLiner, q);
+    const questionScore = scoreField(t.question, q);
+    const storyScore = t.story.toLowerCase().includes(q) ? 15 : 0;
+    const topScore = titleScore + oneLinerScore + questionScore + storyScore;
+    if (topScore > 0) {
+      hits.push({
+        topicSlug: t.slug,
+        topicTitle: t.title,
+        topicEmoji: t.emoji,
+        kind: "topic",
+        label: t.title,
+        detail: t.oneLiner,
+        score: topScore + 5,
+      });
+    }
+
+    for (const c of t.citations) {
+      const s =
+        scoreField(c.title, q) * 1.2 +
+        scoreField(c.ref, q) * 1.4 +
+        scoreField(c.plain, q) +
+        (c.excerpt.toLowerCase().includes(q) ? 18 : 0);
+      if (s > 0) {
+        hits.push({
+          topicSlug: t.slug,
+          topicTitle: t.title,
+          topicEmoji: t.emoji,
+          kind: "citation",
+          label: `${c.ref} — ${c.title}`,
+          detail: c.plain,
+          agency: c.agency,
+          citationId: c.id,
+          score: s,
+        });
+      }
+    }
+
+    for (const g of t.glossary) {
+      const s = scoreField(g.term, q) * 1.3 + scoreField(g.meaning, q);
+      if (s > 0) {
+        hits.push({
+          topicSlug: t.slug,
+          topicTitle: t.title,
+          topicEmoji: t.emoji,
+          kind: "term",
+          label: g.term,
+          detail: g.meaning,
+          score: s,
+        });
+      }
+    }
+  }
+
+  return hits.sort((a, b) => b.score - a.score).slice(0, 40);
 }
