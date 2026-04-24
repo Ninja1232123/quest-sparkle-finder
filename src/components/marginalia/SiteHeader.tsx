@@ -20,6 +20,13 @@ export function SiteHeader() {
           </Link>
           <nav className="flex items-center gap-1 text-sm md:hidden">
             <Link
+              to="/code"
+              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              Code
+            </Link>
+            <Link
               to="/library"
               className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
@@ -51,6 +58,13 @@ export function SiteHeader() {
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
             >
               Sources
+            </Link>
+            <Link
+              to="/code"
+              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              U.S. Code
             </Link>
             <Link
               to="/about"

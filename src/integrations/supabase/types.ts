@@ -14,7 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      sources: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          version_date: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          version_date?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          version_date?: string | null
+        }
+        Relationships: []
+      }
+      usc_citations: {
+        Row: {
+          context_snippet: string | null
+          created_at: string
+          from_section_id: string
+          id: string
+          to_identifier: string
+          to_section_id: string | null
+        }
+        Insert: {
+          context_snippet?: string | null
+          created_at?: string
+          from_section_id: string
+          id?: string
+          to_identifier: string
+          to_section_id?: string | null
+        }
+        Update: {
+          context_snippet?: string | null
+          created_at?: string
+          from_section_id?: string
+          id?: string
+          to_identifier?: string
+          to_section_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usc_citations_from_section_id_fkey"
+            columns: ["from_section_id"]
+            isOneToOne: false
+            referencedRelation: "usc_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usc_citations_to_section_id_fkey"
+            columns: ["to_section_id"]
+            isOneToOne: false
+            referencedRelation: "usc_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usc_sections: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          chapter: string | null
+          created_at: string
+          heading: string | null
+          hierarchy: Json | null
+          id: string
+          identifier: string
+          search_tsv: unknown
+          section_num: string
+          title_num: number
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          chapter?: string | null
+          created_at?: string
+          heading?: string | null
+          hierarchy?: Json | null
+          id?: string
+          identifier: string
+          search_tsv?: unknown
+          section_num: string
+          title_num: number
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          chapter?: string | null
+          created_at?: string
+          heading?: string | null
+          hierarchy?: Json | null
+          id?: string
+          identifier?: string
+          search_tsv?: unknown
+          section_num?: string
+          title_num?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
