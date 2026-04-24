@@ -103,7 +103,7 @@ function CodePage() {
         <div className="mt-12">
           <div className="citation-tag text-accent">Title 1 — General Provisions</div>
           <ul className="mt-3 divide-y divide-border/60 rounded-2xl border bg-card">
-            {title1Sections.map((s) => (
+            {title1Sections.map((s: { id: string; identifier: string; section_num: string; heading: string | null }) => (
               <li key={s.id}>
                 <Link
                   to="/code/$"
