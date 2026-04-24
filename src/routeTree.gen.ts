@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as CodeRouteImport } from './routes/code'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
@@ -23,6 +24,11 @@ const SearchRoute = SearchRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CodeRoute = CodeRouteImport.update({
+  id: '/code',
+  path: '/code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -44,6 +50,7 @@ const TopicSlugRoute = TopicSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/code': typeof CodeRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/code': typeof CodeRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/code': typeof CodeRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/topic/$slug': typeof TopicSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/library' | '/search' | '/topic/$slug'
+  fullPaths: '/' | '/about' | '/code' | '/library' | '/search' | '/topic/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/library' | '/search' | '/topic/$slug'
-  id: '__root__' | '/' | '/about' | '/library' | '/search' | '/topic/$slug'
+  to: '/' | '/about' | '/code' | '/library' | '/search' | '/topic/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/code'
+    | '/library'
+    | '/search'
+    | '/topic/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CodeRoute: typeof CodeRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
   TopicSlugRoute: typeof TopicSlugRoute
@@ -93,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/code': {
+      id: '/code'
+      path: '/code'
+      fullPath: '/code'
+      preLoaderRoute: typeof CodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CodeRoute: CodeRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
   TopicSlugRoute: TopicSlugRoute,
@@ -129,3 +154,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
