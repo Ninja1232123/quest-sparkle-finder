@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { getUscSection } from "@/server/usc.functions";
+import { getUscSection, type UscCitationRow } from "@/server/usc.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 
@@ -47,8 +47,8 @@ function SectionPage() {
   const { section, citations } = Route.useLoaderData();
   if (!section) return null;
 
-  const internal = citations.filter((c) => c.to_section_id);
-  const external = citations.filter((c) => !c.to_section_id);
+  const internal = citations.filter((c: UscCitationRow) => c.to_section_id);
+  const external = citations.filter((c: UscCitationRow) => !c.to_section_id);
 
   return (
     <div className="min-h-screen">
@@ -72,7 +72,7 @@ function SectionPage() {
           <div className="mt-12">
             <div className="citation-tag text-accent">Traces to {internal.length} other section{internal.length === 1 ? "" : "s"}</div>
             <ul className="mt-3 space-y-2">
-              {internal.map((c, i) => (
+              {internal.map((c: UscCitationRow, i: number) => (
                 <li key={i}>
                   <Link
                     to="/code/$"
@@ -98,7 +98,7 @@ function SectionPage() {
               {external.length} reference{external.length === 1 ? "" : "s"} outside Title {section.title_num}
             </div>
             <ul className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-              {external.slice(0, 40).map((c, i) => (
+              {external.slice(0, 40).map((c: UscCitationRow, i: number) => (
                 <li key={i} className="truncate font-mono text-xs">
                   {c.to_identifier}
                 </li>
