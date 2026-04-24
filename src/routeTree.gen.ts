@@ -15,6 +15,7 @@ import { Route as CodeRouteImport } from './routes/code'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
+import { Route as CodeSplatRouteImport } from './routes/code.$'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -46,37 +47,59 @@ const TopicSlugRoute = TopicSlugRouteImport.update({
   path: '/topic/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CodeSplatRoute = CodeSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => CodeRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/code': typeof CodeRoute
+  '/code': typeof CodeRouteWithChildren
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/code': typeof CodeRoute
+  '/code': typeof CodeRouteWithChildren
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/code': typeof CodeRoute
+  '/code': typeof CodeRouteWithChildren
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/code' | '/library' | '/search' | '/topic/$slug'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/code'
+    | '/library'
+    | '/search'
+    | '/code/$'
+    | '/topic/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/code' | '/library' | '/search' | '/topic/$slug'
+  to:
+    | '/'
+    | '/about'
+    | '/code'
+    | '/library'
+    | '/search'
+    | '/code/$'
+    | '/topic/$slug'
   id:
     | '__root__'
     | '/'
@@ -84,13 +107,14 @@ export interface FileRouteTypes {
     | '/code'
     | '/library'
     | '/search'
+    | '/code/$'
     | '/topic/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  CodeRoute: typeof CodeRoute
+  CodeRoute: typeof CodeRouteWithChildren
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
   TopicSlugRoute: typeof TopicSlugRoute
@@ -140,13 +164,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopicSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/code/$': {
+      id: '/code/$'
+      path: '/$'
+      fullPath: '/code/$'
+      preLoaderRoute: typeof CodeSplatRouteImport
+      parentRoute: typeof CodeRoute
+    }
   }
 }
+
+interface CodeRouteChildren {
+  CodeSplatRoute: typeof CodeSplatRoute
+}
+
+const CodeRouteChildren: CodeRouteChildren = {
+  CodeSplatRoute: CodeSplatRoute,
+}
+
+const CodeRouteWithChildren = CodeRoute._addFileChildren(CodeRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  CodeRoute: CodeRoute,
+  CodeRoute: CodeRouteWithChildren,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
   TopicSlugRoute: TopicSlugRoute,
@@ -154,3 +195,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
