@@ -42,7 +42,7 @@ export const listUscSections = createServerFn({ method: "GET" })
   });
 
 export const getUscSection = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ identifier: z.string().min(3).max(200) }))
+  .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
     const { data: section, error } = await supabaseAdmin
       .from("usc_sections")
