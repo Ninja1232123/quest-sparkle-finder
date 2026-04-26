@@ -16,6 +16,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
+import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -52,6 +53,11 @@ const CodeSplatRoute = CodeSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => CodeRoute,
 } as any)
+const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
+  id: '/source/$source',
+  path: '/source/$source',
+  getParentRoute: () => CodeRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/code/source/$source': typeof CodeSourceSourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/code/source/$source': typeof CodeSourceSourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/code/source/$source': typeof CodeSourceSourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/code/$'
     | '/topic/$slug'
+    | '/code/source/$source'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/code/$'
     | '/topic/$slug'
+    | '/code/source/$source'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/code/$'
     | '/topic/$slug'
+    | '/code/source/$source'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,15 +183,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeSplatRouteImport
       parentRoute: typeof CodeRoute
     }
+    '/code/source/$source': {
+      id: '/code/source/$source'
+      path: '/source/$source'
+      fullPath: '/code/source/$source'
+      preLoaderRoute: typeof CodeSourceSourceRouteImport
+      parentRoute: typeof CodeRoute
+    }
   }
 }
 
 interface CodeRouteChildren {
   CodeSplatRoute: typeof CodeSplatRoute
+  CodeSourceSourceRoute: typeof CodeSourceSourceRoute
 }
 
 const CodeRouteChildren: CodeRouteChildren = {
   CodeSplatRoute: CodeSplatRoute,
+  CodeSourceSourceRoute: CodeSourceSourceRoute,
 }
 
 const CodeRouteWithChildren = CodeRoute._addFileChildren(CodeRouteChildren)

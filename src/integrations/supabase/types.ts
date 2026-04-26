@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      doc_citations: {
+        Row: {
+          context_snippet: string | null
+          created_at: string
+          from_document_id: string
+          id: string
+          to_document_id: string | null
+          to_identifier: string
+        }
+        Insert: {
+          context_snippet?: string | null
+          created_at?: string
+          from_document_id: string
+          id?: string
+          to_document_id?: string | null
+          to_identifier: string
+        }
+        Update: {
+          context_snippet?: string | null
+          created_at?: string
+          from_document_id?: string
+          id?: string
+          to_document_id?: string | null
+          to_identifier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doc_citations_from_document_id_fkey"
+            columns: ["from_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doc_citations_to_document_id_fkey"
+            columns: ["to_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          body_md: string | null
+          body_text: string | null
+          created_at: string
+          heading: string | null
+          hierarchy: Json | null
+          id: string
+          identifier: string
+          parent_label: string | null
+          search_tsv: unknown
+          section_label: string | null
+          sort_key: string | null
+          source_code: string
+          word_count: number | null
+        }
+        Insert: {
+          body_md?: string | null
+          body_text?: string | null
+          created_at?: string
+          heading?: string | null
+          hierarchy?: Json | null
+          id?: string
+          identifier: string
+          parent_label?: string | null
+          search_tsv?: unknown
+          section_label?: string | null
+          sort_key?: string | null
+          source_code: string
+          word_count?: number | null
+        }
+        Update: {
+          body_md?: string | null
+          body_text?: string | null
+          created_at?: string
+          heading?: string | null
+          hierarchy?: Json | null
+          id?: string
+          identifier?: string
+          parent_label?: string | null
+          search_tsv?: unknown
+          section_label?: string | null
+          sort_key?: string | null
+          source_code?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
       sources: {
         Row: {
           code: string
@@ -130,6 +220,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      resolve_doc_citations: { Args: never; Returns: number }
       resolve_usc_citations: { Args: never; Returns: number }
     }
     Enums: {

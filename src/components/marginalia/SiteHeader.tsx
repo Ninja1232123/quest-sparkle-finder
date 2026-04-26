@@ -24,7 +24,7 @@ export function SiteHeader() {
               className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
             >
-              Code
+              The Code
             </Link>
             <Link
               to="/library"
@@ -64,7 +64,7 @@ export function SiteHeader() {
               className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
             >
-              U.S. Code
+              The Code
             </Link>
             <Link
               to="/about"
