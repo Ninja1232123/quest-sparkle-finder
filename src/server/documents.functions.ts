@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
+
 export type DocumentRow = {
   id: string;
   source_code: string;
@@ -11,7 +13,7 @@ export type DocumentRow = {
   heading: string | null;
   body_text: string | null;
   body_md: string | null;
-  hierarchy: Record<string, unknown> | null;
+  hierarchy: Json | null;
   word_count: number | null;
 };
 
@@ -62,6 +64,13 @@ export const listDocumentsBySource = createServerFn({ method: "GET" })
     return { documents: rows ?? [], error: null };
   });
 
+export type IncomingCitation = {
+  identifier: string;
+  heading: string | null;
+  source: string;
+  section_label: string | null;
+};
+
 export const getDocument = createServerFn({ method: "GET" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
@@ -70,7 +79,14 @@ export const getDocument = createServerFn({ method: "GET" })
       .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count")
       .eq("identifier", data.identifier)
       .maybeSingle();
-    if (error || !doc) return { document: null, citations: [], incoming: [], error: error?.message ?? "Not found" };
+    if (error || !doc) {
+      return {
+        document: null as DocumentRow | null,
+        citations: [] as DocCitationRow[],
+        incoming: [] as IncomingCitation[],
+        error: error?.message ?? "Not found",
+      };
+    }
 
     const { data: outgoing } = await supabaseAdmin
       .from("doc_citations")
@@ -104,7 +120,7 @@ export const getDocument = createServerFn({ method: "GET" })
       .eq("to_document_id", doc.id)
       .limit(50);
     const fromIds = (incomingRaw ?? []).map((r) => r.from_document_id);
-    let incoming: { identifier: string; heading: string | null; source: string; section_label: string | null }[] = [];
+    let incoming: IncomingCitation[] = [];
     if (fromIds.length > 0) {
       const { data: fromDocs } = await supabaseAdmin
         .from("documents")
@@ -118,7 +134,12 @@ export const getDocument = createServerFn({ method: "GET" })
       }));
     }
 
-    return { document: doc as DocumentRow, citations, incoming, error: null };
+    return {
+      document: doc as DocumentRow,
+      citations,
+      incoming,
+      error: null as string | null,
+    };
   });
 
 export const searchDocuments = createServerFn({ method: "GET" })
