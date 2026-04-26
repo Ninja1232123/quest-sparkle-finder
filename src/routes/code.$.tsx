@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { getDocument, type DocCitationRow } from "@/server/documents.functions";
+import { getDocument, type DocCitationRow, type IncomingCitation } from "@/server/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 
@@ -118,13 +118,13 @@ function DocumentPage() {
           </div>
         )}
 
-        {incoming.length > 0 && (
+          {incoming.length > 0 && (
           <div className="mt-10">
             <div className="citation-tag text-accent">
               Cited by {incoming.length} document{incoming.length === 1 ? "" : "s"}
             </div>
             <ul className="mt-3 space-y-2">
-              {incoming.map((c, i) => (
+                {incoming.map((c: IncomingCitation, i: number) => (
                 <li key={i}>
                   <Link
                     to="/code/$"
