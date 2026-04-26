@@ -130,7 +130,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      resolve_usc_citations: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
