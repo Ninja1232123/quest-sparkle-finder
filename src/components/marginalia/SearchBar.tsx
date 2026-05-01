@@ -85,8 +85,8 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
           onFocus={() => setOpen(true)}
           placeholder={
             compact
-              ? "Search every code & manual…"
-              : "Search the Constitution, U.S.C., C.F.R., U.C.C., TFM — e.g. 'due process', 'overtime', '§ 1692'"
+              ? "Search keywords or a citation…"
+              : "Try 'due process', 'overtime', '15 USC 1692', or '29 CFR 1910.95'"
           }
           className={`w-full rounded-full border border-foreground/15 bg-background/90 pl-10 pr-4 font-display text-foreground placeholder:text-muted-foreground/80 shadow-[var(--shadow-soft)] transition-colors focus:border-foreground/40 focus:outline-none ${
             compact ? "h-10 text-sm" : "h-14 text-lg"
