@@ -7,8 +7,10 @@ import { useState } from "react";
 const SOURCE_DESC: Record<string, { tagline: string; example: string }> = {
   const: { tagline: "The founding charter — articles & amendments.", example: "/us/const/amendment/1" },
   usc:   { tagline: "Federal statutory law, organized by title.", example: "/us/usc/t11/s101" },
+  cfr:   { tagline: "Federal agency regulations — the rulebook that puts statutes into practice.", example: "/us/cfr/t29/s541.100" },
   ucc:   { tagline: "Model commercial law adopted by every state.", example: "/us/ucc/a2/s2-201" },
   tfm:   { tagline: "Treasury rules for federal financial operations.", example: "/us/tfm/v1/p1/c1000" },
+  irm:   { tagline: "How the IRS internally administers the tax code.", example: "/us/irm/p1/c1/s1" },
 };
 
 export const Route = createFileRoute("/code")({
