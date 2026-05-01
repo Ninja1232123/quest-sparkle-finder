@@ -19,6 +19,7 @@ type Hit = {
   section_label: string | null;
   heading: string | null;
   snippet: string;
+  exact?: boolean;
 };
 
 type Props = { compact?: boolean; autoFocus?: boolean };
@@ -84,8 +85,8 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
           onFocus={() => setOpen(true)}
           placeholder={
             compact
-              ? "Search every code & manual…"
-              : "Search the Constitution, U.S.C., C.F.R., U.C.C., TFM — e.g. 'due process', 'overtime', '§ 1692'"
+              ? "Search keywords or a citation…"
+              : "Try 'due process', 'overtime', '15 USC 1692', or '29 CFR 1910.95'"
           }
           className={`w-full rounded-full border border-foreground/15 bg-background/90 pl-10 pr-4 font-display text-foreground placeholder:text-muted-foreground/80 shadow-[var(--shadow-soft)] transition-colors focus:border-foreground/40 focus:outline-none ${
             compact ? "h-10 text-sm" : "h-14 text-lg"
@@ -117,6 +118,11 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-display text-sm font-semibold text-foreground">
                         {h.heading ?? h.section_label ?? h.identifier}
+                        {h.exact && (
+                          <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+                            exact
+                          </span>
+                        )}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {[h.parent_label, h.section_label].filter(Boolean).join(" · ") || h.identifier}
