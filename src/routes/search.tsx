@@ -148,7 +148,10 @@ function SearchPage() {
                         {h.heading ?? h.section_label ?? h.identifier}
                       </div>
                       {h.snippet && (
-                        <p className="mt-2 text-sm text-foreground/75">{h.snippet}…</p>
+                        <p
+                          className="mt-2 text-sm text-foreground/75 [&_mark]:bg-accent/30 [&_mark]:text-foreground [&_mark]:rounded-sm [&_mark]:px-0.5"
+                          dangerouslySetInnerHTML={{ __html: h.snippet + "…" }}
+                        />
                       )}
                       <div className="mt-2 font-mono text-[11px] text-muted-foreground">{h.identifier}</div>
                     </Link>
