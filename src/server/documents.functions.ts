@@ -34,8 +34,10 @@ export type SourceSummary = {
 const SOURCE_NAMES: Record<string, string> = {
   const: "U.S. Constitution",
   usc: "United States Code",
+  cfr: "Code of Federal Regulations",
   ucc: "Uniform Commercial Code",
   tfm: "Treasury Financial Manual",
+  irm: "Internal Revenue Manual",
 };
 
 export const listSources = createServerFn({ method: "GET" }).handler(async () => {
