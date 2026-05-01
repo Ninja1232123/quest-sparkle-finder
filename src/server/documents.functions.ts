@@ -236,7 +236,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
     let query = supabaseAdmin
       .from("documents")
       .select("identifier, source_code, parent_label, section_label, heading, body_text")
-      .textSearch("search_tsv", tsQuery, { type: "tsquery", config: "english" })
+      .textSearch("search_tsv", tsQuery, { config: "english" })
       .limit(40);
     if (data.source) query = query.eq("source_code", data.source);
     let { data: rows, error } = await query;
