@@ -1,12 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TOPICS, AGENCIES } from "@/data/topics";
+import { TOPICS } from "@/data/topics";
 import { TopicCard } from "@/components/marginalia/TopicCard";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
+import { listSources } from "@/server/documents.functions";
 import heroCollage from "@/assets/hero-collage.jpg";
 
+const SOURCE_LABELS: Record<string, string> = {
+  const: "U.S. Constitution",
+  usc: "United States Code",
+  cfr: "Code of Federal Regulations",
+  ucc: "Uniform Commercial Code",
+  tfm: "Treasury Financial Manual",
+  irm: "Internal Revenue Manual",
+};
+
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const { sources } = await listSources();
+    return { sources };
+  },
   component: Index,
   head: () => ({
     meta: [
@@ -26,6 +40,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { sources } = Route.useLoaderData();
+  const totalDocs = sources.reduce((n, s) => n + s.count, 0);
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -50,11 +66,11 @@ function Index() {
               <SearchBar />
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span className="font-display italic">try:</span>
-                {["overtime", "eviction", "§ 1692", "warranty", "1099"].map((s) => (
+                {["due process", "establishment", "overtime", "warranty", "statute of frauds"].map((s) => (
                   <Link
                     key={s}
                     to="/search"
-                    search={{ q: s }}
+                    search={{ q: s, source: "" }}
                     className="citation-tag rounded-full border border-border bg-background/60 px-2.5 py-1 hover:border-foreground/40 hover:text-foreground"
                   >
                     {s}
@@ -64,11 +80,19 @@ function Index() {
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="citation-tag">indexed sources</span>
-              {Object.values(AGENCIES).map((a) => (
-                <span key={a.id} className="citation-tag" style={{ color: a.color }}>
-                  ● {a.shortName}
-                </span>
+              <span className="citation-tag">indexed</span>
+              <span className="citation-tag text-foreground/80">
+                {totalDocs.toLocaleString()} documents
+              </span>
+              {sources.map((s) => (
+                <Link
+                  key={s.code}
+                  to="/code/source/$source"
+                  params={{ source: s.code }}
+                  className="citation-tag hover:text-foreground"
+                >
+                  ● {SOURCE_LABELS[s.code] ?? s.name} · {s.count.toLocaleString()}
+                </Link>
               ))}
             </div>
           </div>
@@ -125,20 +149,20 @@ function Index() {
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-4">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
-            <div className="citation-tag text-muted-foreground">the desk</div>
+            <div className="citation-tag text-muted-foreground">quick browse</div>
             <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-              Topics under research
+              A few starting points
             </h2>
             <p className="mt-3 max-w-2xl text-foreground/70">
-              Each entry threads citations from multiple agencies into one readable record.
-              Open the map to see how the pieces hold together.
+              Hand-curated walkthroughs that thread citations from multiple sources into one readable record.
+              Most research starts in the search bar above — these are just a sampler.
             </p>
           </div>
           <Link
-            to="/library"
+            to="/code"
             className="font-display text-sm italic text-accent hover:underline"
           >
-            Browse by source →
+            Search the full code →
           </Link>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
