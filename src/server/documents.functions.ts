@@ -34,19 +34,28 @@ export type SourceSummary = {
 const SOURCE_NAMES: Record<string, string> = {
   const: "U.S. Constitution",
   usc: "United States Code",
+  cfr: "Code of Federal Regulations",
   ucc: "Uniform Commercial Code",
   tfm: "Treasury Financial Manual",
+  irm: "Internal Revenue Manual",
 };
 
 export const listSources = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
-    .from("documents")
-    .select("source_code");
-  if (error) return { sources: [] as SourceSummary[], error: error.message };
-  const counts = new Map<string, number>();
-  for (const r of data ?? []) counts.set(r.source_code, (counts.get(r.source_code) ?? 0) + 1);
-  const sources: SourceSummary[] = Array.from(counts.entries())
-    .map(([code, count]) => ({ code, count, name: SOURCE_NAMES[code] ?? code.toUpperCase() }))
+  // Pull the distinct source codes, then count each in parallel using head+exact-count
+  // (avoids loading every row's source_code just to tally).
+  const codes = ["const", "usc", "cfr", "ucc", "tfm", "irm"];
+  const counts = await Promise.all(
+    codes.map(async (code) => {
+      const { count } = await supabaseAdmin
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .eq("source_code", code);
+      return { code, count: count ?? 0 };
+    }),
+  );
+  const sources: SourceSummary[] = counts
+    .filter((c) => c.count > 0)
+    .map(({ code, count }) => ({ code, count, name: SOURCE_NAMES[code] ?? code.toUpperCase() }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return { sources, error: null };
 });
