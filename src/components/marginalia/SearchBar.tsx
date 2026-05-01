@@ -19,6 +19,7 @@ type Hit = {
   section_label: string | null;
   heading: string | null;
   snippet: string;
+  exact?: boolean;
 };
 
 type Props = { compact?: boolean; autoFocus?: boolean };
@@ -117,6 +118,11 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-display text-sm font-semibold text-foreground">
                         {h.heading ?? h.section_label ?? h.identifier}
+                        {h.exact && (
+                          <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+                            exact
+                          </span>
+                        )}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {[h.parent_label, h.section_label].filter(Boolean).join(" · ") || h.identifier}
