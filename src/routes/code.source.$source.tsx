@@ -29,6 +29,8 @@ export const Route = createFileRoute("/code/source/$source")({
     return { toc: tocRes.toc, documents: docsRes.documents, source: params.source, group: deps.group };
   },
   component: SourceBrowser,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: ({ params }) => ({
     meta: [
       { title: `${SOURCE_NAMES[params.source] ?? params.source.toUpperCase()} · Marginalia` },
@@ -47,6 +49,25 @@ export const Route = createFileRoute("/code/source/$source")({
     </div>
   ),
 });
+
+function SourceBrowserPending() {
+  return (
+    <div className="min-h-screen">
+      <SiteHeader />
+      <section className="mx-auto max-w-4xl px-6 py-12">
+        <div className="citation-tag text-muted-foreground">Loading…</div>
+        <div className="mt-2 h-10 w-2/3 animate-pulse rounded-md bg-muted/60" />
+        <div className="mt-8 h-11 w-full animate-pulse rounded-full bg-muted/40" />
+        <div className="mt-8 space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-2xl border bg-card/60" />
+          ))}
+        </div>
+      </section>
+      <SiteFooter />
+    </div>
+  );
+}
 
 type DocLite = {
   id: string;
