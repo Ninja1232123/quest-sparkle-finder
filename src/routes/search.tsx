@@ -92,7 +92,7 @@ function SearchPage() {
               >
                 All sources
               </Link>
-              {sources.map((s) => (
+              {sources.map((s: { code: string; name: string; count: number }) => (
                 <Link
                   key={s.code}
                   to="/search"
@@ -126,7 +126,7 @@ function SearchPage() {
 
             {hits.length > 0 && (
               <ul className="mt-6 space-y-3">
-                {hits.map((h) => (
+                {hits.map((h: { identifier: string; source_code: string; parent_label: string | null; section_label: string | null; heading: string | null; snippet: string }) => (
                   <li key={h.identifier}>
                     <Link
                       to="/code/$"
@@ -166,7 +166,7 @@ function SearchPage() {
           <div className="mt-10">
             <div className="citation-tag text-muted-foreground">indexed sources</div>
             <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {sources.map((s) => (
+              {sources.map((s: { code: string; name: string; count: number }) => (
                 <li key={s.code}>
                   <Link
                     to="/code/source/$source"
