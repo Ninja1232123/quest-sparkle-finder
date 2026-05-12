@@ -61,16 +61,85 @@ export const listSources = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 export const listDocumentsBySource = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ source: z.string().min(2).max(20), limit: z.number().int().min(1).max(2000).optional() }))
+  .inputValidator(z.object({
+    source: z.string().min(2).max(20),
+    parent_label: z.string().min(1).max(200).optional(),
+    limit: z.number().int().min(1).max(5000).optional(),
+  }))
   .handler(async ({ data }) => {
-    const { data: rows, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("documents")
       .select("id, identifier, source_code, parent_label, section_label, heading, sort_key")
       .eq("source_code", data.source)
       .order("sort_key", { ascending: true })
       .limit(data.limit ?? 1500);
+    if (data.parent_label) q = q.eq("parent_label", data.parent_label);
+    const { data: rows, error } = await q;
     if (error) return { documents: [], error: error.message };
     return { documents: rows ?? [], error: null };
+  });
+
+export type SourceTocNode = {
+  title_group: string;
+  parts: { label: string; count: number; parent_label: string }[];
+  total: number;
+};
+
+export const getSourceTOC = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ source: z.string().min(2).max(20) }))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin.rpc("source_toc", { p_source: data.source });
+    if (error) return { toc: [] as SourceTocNode[], error: error.message };
+    const map = new Map<string, SourceTocNode>();
+    for (const r of (rows ?? []) as { title_group: string; part_group: string | null; doc_count: number }[]) {
+      const key = r.title_group ?? "Other";
+      let node = map.get(key);
+      if (!node) {
+        node = { title_group: key, parts: [], total: 0 };
+        map.set(key, node);
+      }
+      const partLabel = r.part_group ?? "—";
+      const parent_label = r.part_group ? `${key} · ${r.part_group}` : key;
+      node.parts.push({ label: partLabel, count: Number(r.doc_count), parent_label });
+      node.total += Number(r.doc_count);
+    }
+    // Sort numerically when possible
+    const numKey = (s: string) => {
+      const m = s.match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : 9999;
+    };
+    const toc = Array.from(map.values()).sort((a, b) => numKey(a.title_group) - numKey(b.title_group) || a.title_group.localeCompare(b.title_group));
+    for (const n of toc) {
+      n.parts.sort((a, b) => numKey(a.label) - numKey(b.label) || a.label.localeCompare(b.label));
+    }
+    return { toc, error: null };
+  });
+
+// Fire-and-forget: log a search event. Never blocks user-facing flow on failure.
+export const logSearchEvent = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    q: z.string().min(1).max(200),
+    source: z.string().min(2).max(20).optional(),
+    hit_count: z.number().int().min(0).max(10000),
+    exact_hit: z.boolean().optional(),
+  }))
+  .handler(async ({ data }) => {
+    const q_normalized = data.q.toLowerCase().replace(/\s+/g, " ").trim();
+    await supabaseAdmin.from("search_events").insert({
+      q: data.q,
+      q_normalized,
+      source_filter: data.source ?? null,
+      hit_count: data.hit_count,
+      exact_hit: !!data.exact_hit,
+    });
+    return { ok: true };
+  });
+
+export const bumpDocView = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
+  .handler(async ({ data }) => {
+    await supabaseAdmin.rpc("bump_doc_view", { p_identifier: data.identifier });
+    return { ok: true };
   });
 
 export type IncomingCitation = {
