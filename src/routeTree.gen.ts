@@ -15,8 +15,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
+import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
+import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 
 const SearchRoute = SearchRouteImport.update({
@@ -49,6 +51,11 @@ const CodeIndexRoute = CodeIndexRouteImport.update({
   path: '/code/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CasesIndexRoute = CasesIndexRouteImport.update({
+  id: '/cases/',
+  path: '/cases/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
@@ -57,6 +64,11 @@ const TopicSlugRoute = TopicSlugRouteImport.update({
 const CodeSplatRoute = CodeSplatRouteImport.update({
   id: '/code/$',
   path: '/code/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
+  id: '/cases/$caseId',
+  path: '/cases/$caseId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
@@ -71,8 +83,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
 }
@@ -82,8 +96,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
 }
@@ -94,8 +110,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
 }
@@ -107,8 +125,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/library'
     | '/search'
+    | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
+    | '/cases/'
     | '/code/'
     | '/code/source/$source'
   fileRoutesByTo: FileRoutesByTo
@@ -118,8 +138,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/library'
     | '/search'
+    | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
+    | '/cases'
     | '/code'
     | '/code/source/$source'
   id:
@@ -129,8 +151,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/library'
     | '/search'
+    | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
+    | '/cases/'
     | '/code/'
     | '/code/source/$source'
   fileRoutesById: FileRoutesById
@@ -141,8 +165,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
+  CasesCaseIdRoute: typeof CasesCaseIdRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
+  CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
 }
@@ -191,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cases/': {
+      id: '/cases/'
+      path: '/cases'
+      fullPath: '/cases/'
+      preLoaderRoute: typeof CasesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topic/$slug': {
       id: '/topic/$slug'
       path: '/topic/$slug'
@@ -203,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/code/$'
       fullPath: '/code/$'
       preLoaderRoute: typeof CodeSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cases/$caseId': {
+      id: '/cases/$caseId'
+      path: '/cases/$caseId'
+      fullPath: '/cases/$caseId'
+      preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/code/source/$source': {
@@ -221,8 +261,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
+  CasesCaseIdRoute: CasesCaseIdRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
+  CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
 }
