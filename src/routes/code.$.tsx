@@ -47,8 +47,10 @@ export const Route = createFileRoute("/code/$")({
 const SOURCE_NAMES: Record<string, string> = {
   const: "Constitution",
   usc: "U.S. Code",
+  cfr: "CFR",
   ucc: "UCC",
   tfm: "TFM",
+  irm: "IRM",
 };
 
 function DocumentPage() {
