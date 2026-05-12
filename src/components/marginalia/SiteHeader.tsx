@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { SearchBar } from "./SearchBar";
+import { useAuth } from "@/hooks/use-auth";
+import { BookMarked, LogOut } from "lucide-react";
 
 export function SiteHeader() {
+  const { user, signOut, loading } = useAuth();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between md:py-4">
@@ -21,18 +24,19 @@ export function SiteHeader() {
           <nav className="flex items-center gap-1 text-sm md:hidden">
             <Link
               to="/code"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+              className="rounded-full bg-foreground px-3 py-1.5 text-background"
             >
               The Code
             </Link>
-            <Link
-              to="/library"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
-            >
-              Sources
-            </Link>
+            {user && (
+              <Link
+                to="/cases"
+                className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+                activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+              >
+                Cases
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -45,30 +49,49 @@ export function SiteHeader() {
           </div>
           <nav className="hidden items-center gap-1 text-sm md:flex">
             <Link
-              to="/"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
-              activeOptions={{ exact: true }}
-              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+              to="/code"
+              className="rounded-full bg-foreground px-3.5 py-1.5 text-background hover:opacity-90"
+              activeProps={{ className: "rounded-full bg-foreground px-3.5 py-1.5 text-background" }}
             >
-              Topics
+              The Code
             </Link>
+            {user ? (
+              <>
+                <Link
+                  to="/cases"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+                  activeProps={{ className: "flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+                >
+                  <BookMarked className="h-3.5 w-3.5" />
+                  Cases
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </>
+            ) : !loading ? (
+              <Link
+                to="/auth"
+                search={{ mode: "login" }}
+                className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              >
+                Sign in
+              </Link>
+            ) : null}
             <Link
               to="/library"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              className="rounded-full px-3 py-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
             >
               Sources
             </Link>
             <Link
-              to="/code"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
-            >
-              The Code
-            </Link>
-            <Link
               to="/about"
-              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              className="rounded-full px-3 py-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
             >
               About

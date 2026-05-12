@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      case_items: {
+        Row: {
+          case_id: string
+          created_at: string
+          heading: string | null
+          highlight_color: string | null
+          id: string
+          identifier: string
+          note: string | null
+          pinned: boolean
+          section_label: string | null
+          source_code: string | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          heading?: string | null
+          highlight_color?: string | null
+          id?: string
+          identifier: string
+          note?: string | null
+          pinned?: boolean
+          section_label?: string | null
+          source_code?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          heading?: string | null
+          highlight_color?: string | null
+          id?: string
+          identifier?: string
+          note?: string | null
+          pinned?: boolean
+          section_label?: string | null
+          source_code?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          archived: boolean
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       doc_citations: {
         Row: {
           context_snippet: string | null
@@ -119,6 +208,39 @@ export type Database = {
           sort_key?: string | null
           source_code?: string
           word_count?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          supporter_opt_in: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          supporter_opt_in?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          supporter_opt_in?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
