@@ -151,6 +151,34 @@ export const getDocument = createServerFn({ method: "GET" })
       }));
     }
 
+    // Prev / next sibling within the same source + parent_label, by sort_key.
+    let prev: SiblingNav = null;
+    let next: SiblingNav = null;
+    if (doc.sort_key) {
+      const baseSel = "identifier, heading, section_label, sort_key";
+      const prevQ = supabaseAdmin
+        .from("documents")
+        .select(baseSel)
+        .eq("source_code", doc.source_code)
+        .lt("sort_key", doc.sort_key)
+        .order("sort_key", { ascending: false })
+        .limit(1);
+      const nextQ = supabaseAdmin
+        .from("documents")
+        .select(baseSel)
+        .eq("source_code", doc.source_code)
+        .gt("sort_key", doc.sort_key)
+        .order("sort_key", { ascending: true })
+        .limit(1);
+      const applyParent = <T extends { eq: (col: string, v: string) => T; is: (col: string, v: null) => T }>(q: T) =>
+        doc.parent_label ? q.eq("parent_label", doc.parent_label) : q.is("parent_label", null);
+      const [prevR, nextR] = await Promise.all([applyParent(prevQ), applyParent(nextQ)]);
+      const p = prevR.data?.[0];
+      const n = nextR.data?.[0];
+      if (p) prev = { identifier: p.identifier, heading: p.heading, section_label: p.section_label };
+      if (n) next = { identifier: n.identifier, heading: n.heading, section_label: n.section_label };
+    }
+
     return {
       document: doc as DocumentRow,
       citations,
