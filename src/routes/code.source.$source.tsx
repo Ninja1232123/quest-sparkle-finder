@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { listDocumentsBySource, getSourceTOC } from "@/server/documents.functions";
+import { listDocumentsBySource, getSourceTOC, type SourceTocNode } from "@/server/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useMemo, useState } from "react";
@@ -59,19 +59,20 @@ type DocLite = {
 
 function SourceBrowser() {
   const { toc, documents, source, group } = Route.useLoaderData();
+  const tocTyped = toc as SourceTocNode[];
   const sourceName = SOURCE_NAMES[source] ?? source.toUpperCase();
   const [filter, setFilter] = useState("");
   const [openTitles, setOpenTitles] = useState<Record<string, boolean>>(() => {
     if (!group) return {};
     // Auto-open the title containing the active group
-    const activeTitle = toc.find((t) => t.parts.some((p) => p.parent_label === group))?.title_group;
+    const activeTitle = tocTyped.find((t) => t.parts.some((p) => p.parent_label === group))?.title_group;
     return activeTitle ? { [activeTitle]: true } : {};
   });
 
-  const filteredToc = useMemo(() => {
+  const filteredToc = useMemo<SourceTocNode[]>(() => {
     const f = filter.trim().toLowerCase();
-    if (!f) return toc;
-    return toc
+    if (!f) return tocTyped;
+    return tocTyped
       .map((t) => ({
         ...t,
         parts: t.parts.filter(
@@ -79,9 +80,9 @@ function SourceBrowser() {
         ),
       }))
       .filter((t) => t.parts.length > 0);
-  }, [toc, filter]);
+  }, [tocTyped, filter]);
 
-  const totalDocs = useMemo(() => toc.reduce((n, t) => n + t.total, 0), [toc]);
+  const totalDocs = useMemo(() => tocTyped.reduce((n, t) => n + t.total, 0), [tocTyped]);
   const groupedSections = useMemo(() => {
     const f = filter.trim().toLowerCase();
     if (!group) return [] as DocLite[];
