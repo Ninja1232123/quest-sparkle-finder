@@ -29,6 +29,8 @@ export const Route = createFileRoute("/code/source/$source")({
     return { toc: tocRes.toc, documents: docsRes.documents, source: params.source, group: deps.group };
   },
   component: SourceBrowser,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: ({ params }) => ({
     meta: [
       { title: `${SOURCE_NAMES[params.source] ?? params.source.toUpperCase()} · Marginalia` },
@@ -48,6 +50,25 @@ export const Route = createFileRoute("/code/source/$source")({
   ),
 });
 
+function SourceBrowserPending() {
+  return (
+    <div className="min-h-screen">
+      <SiteHeader />
+      <section className="mx-auto max-w-4xl px-6 py-12">
+        <div className="citation-tag text-muted-foreground">Loading…</div>
+        <div className="mt-2 h-10 w-2/3 animate-pulse rounded-md bg-muted/60" />
+        <div className="mt-8 h-11 w-full animate-pulse rounded-full bg-muted/40" />
+        <div className="mt-8 space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-2xl border bg-card/60" />
+          ))}
+        </div>
+      </section>
+      <SiteFooter />
+    </div>
+  );
+}
+
 type DocLite = {
   id: string;
   identifier: string;
@@ -55,7 +76,19 @@ type DocLite = {
   parent_label: string | null;
   section_label: string | null;
   heading: string | null;
+  preview?: string | null;
 };
+
+// Some sources (notably UCC) have headings that are just the section
+// number — useless on a list. Detect that and fall back to a body snippet.
+function isWeakHeading(heading: string | null, section_label: string | null): boolean {
+  if (!heading) return true;
+  const h = heading.trim();
+  if (h.length < 4) return true;
+  if (/^[\d.\-§\s]+$/.test(h)) return true;
+  if (section_label && h.replace(/\s+/g, "") === section_label.replace(/[§\s]/g, "")) return true;
+  return false;
+}
 
 function SourceBrowser() {
   const { toc, documents, source, group } = Route.useLoaderData();
@@ -88,7 +121,7 @@ function SourceBrowser() {
     if (!group) return [] as DocLite[];
     if (!f) return documents as DocLite[];
     return (documents as DocLite[]).filter((d) =>
-      `${d.heading ?? ""} ${d.section_label ?? ""} ${d.identifier}`.toLowerCase().includes(f),
+      `${d.heading ?? ""} ${d.preview ?? ""} ${d.section_label ?? ""} ${d.identifier}`.toLowerCase().includes(f),
     );
   }, [documents, group, filter]);
 
@@ -216,7 +249,16 @@ function SourceBrowser() {
                         <span className="citation-tag w-28 shrink-0 text-muted-foreground">
                           {d.section_label ?? ""}
                         </span>
-                        <span className="font-display text-sm font-semibold">{d.heading}</span>
+                        <span className="min-w-0 flex-1">
+                          {isWeakHeading(d.heading, d.section_label) ? (
+                            <span className="line-clamp-2 text-sm text-foreground/80">
+                              {d.preview || d.heading || "—"}
+                              {d.preview && d.preview.length >= 140 ? "…" : ""}
+                            </span>
+                          ) : (
+                            <span className="font-display text-sm font-semibold">{d.heading}</span>
+                          )}
+                        </span>
                       </Link>
                     </li>
                   ))}

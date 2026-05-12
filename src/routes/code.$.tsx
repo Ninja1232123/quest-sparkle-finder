@@ -16,6 +16,22 @@ export const Route = createFileRoute("/code/$")({
     return res;
   },
   component: DocumentPage,
+  pendingMs: 200,
+  pendingComponent: () => (
+    <div className="min-h-screen">
+      <SiteHeader />
+      <article className="mx-auto max-w-3xl px-6 py-12">
+        <div className="h-4 w-40 animate-pulse rounded bg-muted/60" />
+        <div className="mt-4 h-10 w-3/4 animate-pulse rounded bg-muted/60" />
+        <div className="mt-8 space-y-3">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="h-4 w-full animate-pulse rounded bg-muted/40" />
+          ))}
+        </div>
+      </article>
+      <SiteFooter />
+    </div>
+  ),
   head: ({ loaderData }) => {
     const d = loaderData?.document;
     if (!d) return { meta: [{ title: "Not found · Marginalia" }] };
