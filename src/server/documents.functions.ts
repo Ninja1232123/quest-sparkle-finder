@@ -80,12 +80,18 @@ export type IncomingCitation = {
   section_label: string | null;
 };
 
+export type SiblingNav = {
+  identifier: string;
+  heading: string | null;
+  section_label: string | null;
+} | null;
+
 export const getDocument = createServerFn({ method: "GET" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
     const { data: doc, error } = await supabaseAdmin
       .from("documents")
-      .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count")
+      .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count, sort_key")
       .eq("identifier", data.identifier)
       .maybeSingle();
     if (error || !doc) {
@@ -93,6 +99,8 @@ export const getDocument = createServerFn({ method: "GET" })
         document: null as DocumentRow | null,
         citations: [] as DocCitationRow[],
         incoming: [] as IncomingCitation[],
+        prev: null as SiblingNav,
+        next: null as SiblingNav,
         error: error?.message ?? "Not found",
       };
     }
@@ -147,6 +155,8 @@ export const getDocument = createServerFn({ method: "GET" })
       document: doc as DocumentRow,
       citations,
       incoming,
+      prev,
+      next,
       error: null as string | null,
     };
   });
