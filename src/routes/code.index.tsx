@@ -13,7 +13,7 @@ const SOURCE_DESC: Record<string, { tagline: string; example: string }> = {
   irm:   { tagline: "How the IRS internally administers the tax code.", example: "/us/irm/p1/c1/s1" },
 };
 
-export const Route = createFileRoute("/code")({
+export const Route = createFileRoute("/code/")({
   loader: async () => {
     const { sources } = await listSources();
     return { sources };
