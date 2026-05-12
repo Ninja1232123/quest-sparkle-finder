@@ -55,7 +55,19 @@ type DocLite = {
   parent_label: string | null;
   section_label: string | null;
   heading: string | null;
+  preview?: string | null;
 };
+
+// Some sources (notably UCC) have headings that are just the section
+// number — useless on a list. Detect that and fall back to a body snippet.
+function isWeakHeading(heading: string | null, section_label: string | null): boolean {
+  if (!heading) return true;
+  const h = heading.trim();
+  if (h.length < 4) return true;
+  if (/^[\d.\-§\s]+$/.test(h)) return true;
+  if (section_label && h.replace(/\s+/g, "") === section_label.replace(/[§\s]/g, "")) return true;
+  return false;
+}
 
 function SourceBrowser() {
   const { toc, documents, source, group } = Route.useLoaderData();
@@ -88,7 +100,7 @@ function SourceBrowser() {
     if (!group) return [] as DocLite[];
     if (!f) return documents as DocLite[];
     return (documents as DocLite[]).filter((d) =>
-      `${d.heading ?? ""} ${d.section_label ?? ""} ${d.identifier}`.toLowerCase().includes(f),
+      `${d.heading ?? ""} ${d.preview ?? ""} ${d.section_label ?? ""} ${d.identifier}`.toLowerCase().includes(f),
     );
   }, [documents, group, filter]);
 
@@ -216,7 +228,16 @@ function SourceBrowser() {
                         <span className="citation-tag w-28 shrink-0 text-muted-foreground">
                           {d.section_label ?? ""}
                         </span>
-                        <span className="font-display text-sm font-semibold">{d.heading}</span>
+                        <span className="min-w-0 flex-1">
+                          {isWeakHeading(d.heading, d.section_label) ? (
+                            <span className="line-clamp-2 text-sm text-foreground/80">
+                              {d.preview || d.heading || "—"}
+                              {d.preview && d.preview.length >= 140 ? "…" : ""}
+                            </span>
+                          ) : (
+                            <span className="font-display text-sm font-semibold">{d.heading}</span>
+                          )}
+                        </span>
                       </Link>
                     </li>
                   ))}
