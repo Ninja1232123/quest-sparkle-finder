@@ -298,6 +298,74 @@ export type Database = {
         }
         Relationships: []
       }
+      forum_post_citations: {
+        Row: {
+          created_at: string
+          heading_snapshot: string | null
+          id: string
+          identifier: string
+          post_id: string
+          section_label_snapshot: string | null
+          source_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          heading_snapshot?: string | null
+          id?: string
+          identifier: string
+          post_id: string
+          section_label_snapshot?: string | null
+          source_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          heading_snapshot?: string | null
+          id?: string
+          identifier?: string
+          post_id?: string
+          section_label_snapshot?: string | null
+          source_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_post_citations_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          pinned: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

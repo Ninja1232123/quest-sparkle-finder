@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { SearchBar } from "./SearchBar";
 import { useAuth } from "@/hooks/use-auth";
-import { BookMarked, LogOut } from "lucide-react";
+import { BookMarked, LogOut, MessagesSquare, Library } from "lucide-react";
 
 export function SiteHeader() {
   const { user, signOut, loading } = useAuth();
@@ -27,6 +27,20 @@ export function SiteHeader() {
               className="rounded-full bg-foreground px-3 py-1.5 text-background"
             >
               The Code
+            </Link>
+            <Link
+              to="/forum"
+              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              Floor
+            </Link>
+            <Link
+              to="/stacks"
+              className="rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              Stacks
             </Link>
             {user && (
               <Link
@@ -55,6 +69,22 @@ export function SiteHeader() {
             >
               The Code
             </Link>
+            <Link
+              to="/forum"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              <MessagesSquare className="h-3.5 w-3.5" />
+              The Floor
+            </Link>
+            <Link
+              to="/stacks"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-foreground/70 hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-muted text-foreground" }}
+            >
+              <Library className="h-3.5 w-3.5" />
+              Stacks
+            </Link>
             {user ? (
               <>
                 <Link
@@ -82,13 +112,6 @@ export function SiteHeader() {
                 Sign in
               </Link>
             ) : null}
-            <Link
-              to="/library"
-              className="rounded-full px-3 py-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "rounded-full px-3 py-1.5 bg-muted text-foreground" }}
-            >
-              Sources
-            </Link>
             <Link
               to="/about"
               className="rounded-full px-3 py-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
