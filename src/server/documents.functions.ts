@@ -69,14 +69,23 @@ export const listDocumentsBySource = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     let q = supabaseAdmin
       .from("documents")
-      .select("id, identifier, source_code, parent_label, section_label, heading, sort_key")
+      .select("id, identifier, source_code, parent_label, section_label, heading, sort_key, body_text")
       .eq("source_code", data.source)
       .order("sort_key", { ascending: true })
       .limit(data.limit ?? 1500);
     if (data.parent_label) q = q.eq("parent_label", data.parent_label);
     const { data: rows, error } = await q;
     if (error) return { documents: [], error: error.message };
-    return { documents: rows ?? [], error: null };
+    // Derive a short preview from body_text so weak headings (numeric-only,
+    // "Reserved", etc.) still give the user something meaningful to scan.
+    const documents = (rows ?? []).map((r) => {
+      const body = (r.body_text ?? "").replace(/\s+/g, " ").trim();
+      const preview = body.slice(0, 140);
+      // strip body_text from payload to keep it light
+      const { body_text: _omit, ...rest } = r as Record<string, unknown> & { body_text?: string };
+      return { ...rest, preview };
+    });
+    return { documents, error: null };
   });
 
 export type SourceTocNode = {
