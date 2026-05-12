@@ -56,6 +56,24 @@ export type Database = {
           },
         ]
       }
+      doc_views: {
+        Row: {
+          identifier: string
+          last_viewed_at: string
+          view_count: number
+        }
+        Insert: {
+          identifier: string
+          last_viewed_at?: string
+          view_count?: number
+        }
+        Update: {
+          identifier?: string
+          last_viewed_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           body_md: string | null
@@ -101,6 +119,36 @@ export type Database = {
           sort_key?: string | null
           source_code?: string
           word_count?: number | null
+        }
+        Relationships: []
+      }
+      search_events: {
+        Row: {
+          created_at: string
+          exact_hit: boolean
+          hit_count: number
+          id: string
+          q: string
+          q_normalized: string
+          source_filter: string | null
+        }
+        Insert: {
+          created_at?: string
+          exact_hit?: boolean
+          hit_count?: number
+          id?: string
+          q: string
+          q_normalized: string
+          source_filter?: string | null
+        }
+        Update: {
+          created_at?: string
+          exact_hit?: boolean
+          hit_count?: number
+          id?: string
+          q?: string
+          q_normalized?: string
+          source_filter?: string | null
         }
         Relationships: []
       }
@@ -220,8 +268,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bump_doc_view: { Args: { p_identifier: string }; Returns: undefined }
       resolve_doc_citations: { Args: never; Returns: number }
       resolve_usc_citations: { Args: never; Returns: number }
+      source_toc: {
+        Args: { p_source: string }
+        Returns: {
+          doc_count: number
+          part_group: string
+          title_group: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
