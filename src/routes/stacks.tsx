@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { listStackItems, getStackSignedUrl } from "@/lib/stacks.functions";
+import { listStackItems, getStackSignedUrl, type StackItem } from "@/lib/stacks.functions";
 import { FileText, FileArchive, BookOpen, Download, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/stacks")({
@@ -69,8 +69,8 @@ function StacksPage() {
   }
 
   // Group by category
-  const groups = new Map<string, typeof items>();
-  for (const it of items) {
+  const groups = new Map<string, StackItem[]>();
+  for (const it of items as StackItem[]) {
     const cat = categoryFor(it.name, it.mime);
     const arr = groups.get(cat) ?? [];
     arr.push(it);
@@ -123,7 +123,7 @@ function StacksPage() {
                 </span>
               </div>
               <ul className="grid gap-3 sm:grid-cols-2">
-                {list.map((it) => {
+                {list.map((it: StackItem) => {
                   const Icon = iconFor(it.mime);
                   return (
                     <li key={it.name}>

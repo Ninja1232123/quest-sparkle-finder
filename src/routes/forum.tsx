@@ -13,6 +13,7 @@ import {
   createForumPost,
   deleteForumPost,
   type ForumCitation,
+  type ForumPost,
 } from "@/lib/forum.functions";
 import { Trash2, Link2, Plus, X, ScrollText } from "lucide-react";
 
@@ -118,7 +119,7 @@ function ForumPage() {
         )}
 
         <ul className="space-y-10">
-          {initial.posts.map((p) => (
+          {initial.posts.map((p: ForumPost) => (
             <li key={p.id}>
               <PostCard
                 post={p}
@@ -140,7 +141,7 @@ function PostCard({
   isOwner,
   onDelete,
 }: {
-  post: Awaited<ReturnType<typeof listForumPosts>>["posts"][number];
+  post: ForumPost;
   isOwner: boolean;
   onDelete: () => void;
 }) {
