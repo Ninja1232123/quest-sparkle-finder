@@ -145,25 +145,56 @@ function Index() {
         </div>
       </section>
 
-      {/* Topics */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-4">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+      {/* Browse the Code (primary CTA) */}
+      <section className="mx-auto max-w-6xl px-6 pb-12 pt-4">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
-            <div className="citation-tag text-muted-foreground">quick browse</div>
+            <div className="citation-tag text-muted-foreground">primary sources</div>
             <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-              A few starting points
+              Open the <span className="ink-underline italic">Code</span>.
             </h2>
             <p className="mt-3 max-w-2xl text-foreground/70">
-              Hand-curated walkthroughs that thread citations from multiple sources into one readable record.
-              Most research starts in the search bar above — these are just a sampler.
+              Every codebook, indexed and cross-linked. Browse the table of contents or
+              jump straight in by citation.
             </p>
           </div>
           <Link
             to="/code"
-            className="font-display text-sm italic text-accent hover:underline"
+            className="rounded-full bg-foreground px-5 py-2.5 font-display text-sm text-background hover:opacity-90"
           >
-            Search the full code →
+            Open The Code →
           </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sources.map((s: { code: string; name: string; count: number }) => (
+            <Link
+              key={s.code}
+              to="/code/source/$source"
+              params={{ source: s.code }}
+              className="group rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+            >
+              <div className="citation-tag text-accent">{s.count.toLocaleString()} documents</div>
+              <div className="mt-1 font-display text-lg font-semibold">{SOURCE_LABELS[s.code] ?? s.name}</div>
+              <div className="mt-3 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
+                Browse →
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Topics — demoted, kept as a sampler at the bottom */}
+      <section className="mx-auto max-w-6xl px-6 pb-20 pt-4">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+          <div>
+            <div className="citation-tag text-muted-foreground">curated walkthroughs · early</div>
+            <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight md:text-3xl">
+              Topic samplers
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-foreground/65">
+              A small set of hand-threaded readings. More to come — for now, most research lives in the Code itself.
+            </p>
+          </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           {TOPICS.map((t) => (
