@@ -40,7 +40,7 @@ function CodeHub() {
   const [hits, setHits] = useState<Awaited<ReturnType<typeof searchDocuments>>["hits"]>([]);
   const [searching, setSearching] = useState(false);
 
-  const totalDocs = sources.reduce((n, s) => n + s.count, 0);
+  const totalDocs = sources.reduce((n: number, s: { count: number }) => n + s.count, 0);
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -71,7 +71,7 @@ function CodeHub() {
             className="h-12 rounded-full border border-foreground/15 bg-background/90 px-4 font-display text-sm shadow-[var(--shadow-soft)] focus:border-foreground/40 focus:outline-none"
           >
             <option value="">All sources</option>
-            {sources.map((s) => (
+            {sources.map((s: { code: string; name: string }) => (
               <option key={s.code} value={s.code}>{s.name}</option>
             ))}
           </select>
@@ -114,7 +114,7 @@ function CodeHub() {
         )}
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {sources.map((s) => {
+          {sources.map((s: { code: string; name: string; count: number }) => {
             const desc = SOURCE_DESC[s.code] ?? { tagline: "Browse this source.", example: "" };
             return (
               <Link

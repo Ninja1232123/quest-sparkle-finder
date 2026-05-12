@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { sources } = Route.useLoaderData();
-  const totalDocs = sources.reduce((n, s) => n + s.count, 0);
+  const totalDocs = sources.reduce((n: number, s: { count: number }) => n + s.count, 0);
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -84,7 +84,7 @@ function Index() {
               <span className="citation-tag text-foreground/80">
                 {totalDocs.toLocaleString()} documents
               </span>
-              {sources.map((s) => (
+              {sources.map((s: { code: string; name: string; count: number }) => (
                 <Link
                   key={s.code}
                   to="/code/source/$source"

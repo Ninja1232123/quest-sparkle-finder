@@ -80,12 +80,18 @@ export type IncomingCitation = {
   section_label: string | null;
 };
 
+export type SiblingNav = {
+  identifier: string;
+  heading: string | null;
+  section_label: string | null;
+} | null;
+
 export const getDocument = createServerFn({ method: "GET" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
     const { data: doc, error } = await supabaseAdmin
       .from("documents")
-      .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count")
+      .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count, sort_key")
       .eq("identifier", data.identifier)
       .maybeSingle();
     if (error || !doc) {
@@ -93,6 +99,8 @@ export const getDocument = createServerFn({ method: "GET" })
         document: null as DocumentRow | null,
         citations: [] as DocCitationRow[],
         incoming: [] as IncomingCitation[],
+        prev: null as SiblingNav,
+        next: null as SiblingNav,
         error: error?.message ?? "Not found",
       };
     }
@@ -143,10 +151,40 @@ export const getDocument = createServerFn({ method: "GET" })
       }));
     }
 
+    // Prev / next sibling within the same source + parent_label, by sort_key.
+    let prev: SiblingNav = null;
+    let next: SiblingNav = null;
+    if (doc.sort_key) {
+      const baseSel = "identifier, heading, section_label, sort_key";
+      const prevQ = supabaseAdmin
+        .from("documents")
+        .select(baseSel)
+        .eq("source_code", doc.source_code)
+        .lt("sort_key", doc.sort_key)
+        .order("sort_key", { ascending: false })
+        .limit(1);
+      const nextQ = supabaseAdmin
+        .from("documents")
+        .select(baseSel)
+        .eq("source_code", doc.source_code)
+        .gt("sort_key", doc.sort_key)
+        .order("sort_key", { ascending: true })
+        .limit(1);
+      const applyParent = <T extends { eq: (col: string, v: string) => T; is: (col: string, v: null) => T }>(q: T) =>
+        doc.parent_label ? q.eq("parent_label", doc.parent_label) : q.is("parent_label", null);
+      const [prevR, nextR] = await Promise.all([applyParent(prevQ), applyParent(nextQ)]);
+      const p = prevR.data?.[0];
+      const n = nextR.data?.[0];
+      if (p) prev = { identifier: p.identifier, heading: p.heading, section_label: p.section_label };
+      if (n) next = { identifier: n.identifier, heading: n.heading, section_label: n.section_label };
+    }
+
     return {
       document: doc as DocumentRow,
       citations,
       incoming,
+      prev,
+      next,
       error: null as string | null,
     };
   });
