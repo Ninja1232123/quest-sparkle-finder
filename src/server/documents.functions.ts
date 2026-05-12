@@ -319,6 +319,11 @@ export const searchDocuments = createServerFn({ method: "GET" })
         .eq("identifier", cite.identifier)
         .maybeSingle();
       if (direct) {
+        // Fire-and-forget telemetry
+        supabaseAdmin.from("search_events").insert({
+          q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
+          source_filter: data.source ?? null, hit_count: 1, exact_hit: true,
+        }).then(() => {}, () => {});
         return {
           hits: [{
             identifier: direct.identifier,
@@ -393,5 +398,9 @@ export const searchDocuments = createServerFn({ method: "GET" })
       snippet: buildSnippet(r.body_text ?? "", terms),
       exact: false,
     }));
+    supabaseAdmin.from("search_events").insert({
+      q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
+      source_filter: data.source ?? null, hit_count: hits.length, exact_hit: false,
+    }).then(() => {}, () => {});
     return { hits, error: null };
   });
