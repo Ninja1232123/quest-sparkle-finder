@@ -25,6 +25,7 @@ import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
+import { Route as ApiChambersGenerateRouteImport } from './routes/api/chambers.generate'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -109,6 +110,11 @@ const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   path: '/code/source/$source',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChambersGenerateRoute = ApiChambersGenerateRouteImport.update({
+  id: '/api/chambers/generate',
+  path: '/api/chambers/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/api/chambers/generate': typeof ApiChambersGenerateRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
+  '/api/chambers/generate': typeof ApiChambersGenerateRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/api/chambers/generate': typeof ApiChambersGenerateRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
+    | '/api/chambers/generate'
     | '/code/source/$source'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases'
     | '/code'
+    | '/api/chambers/generate'
     | '/code/source/$source'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
+    | '/api/chambers/generate'
     | '/code/source/$source'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   TopicSlugRoute: typeof TopicSlugRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
+  ApiChambersGenerateRoute: typeof ApiChambersGenerateRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeSourceSourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chambers/generate': {
+      id: '/api/chambers/generate'
+      path: '/api/chambers/generate'
+      fullPath: '/api/chambers/generate'
+      preLoaderRoute: typeof ApiChambersGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -432,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicSlugRoute: TopicSlugRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
+  ApiChambersGenerateRoute: ApiChambersGenerateRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
