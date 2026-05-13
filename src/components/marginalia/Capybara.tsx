@@ -196,7 +196,7 @@ export function Capybara() {
         </div>
       )}
       <div className="group relative cursor-grab active:cursor-grabbing">
-        <pre className="font-mono text-[11px] leading-tight text-foreground/80 whitespace-pre">
+        <pre className="font-mono text-[11px] font-bold leading-tight text-foreground whitespace-pre">
 {FRAMES[frame]}
         </pre>
         <button
