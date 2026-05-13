@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/server/documents.functions";
 import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check } from "lucide-react";
-import { useState as useLocalState } from "react";
+const useLocalState = useState;
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
@@ -332,23 +332,6 @@ function SearchPage() {
                 );
               })}
             </div>
-
-            {/* Result count banner */}
-            {(hits as Hit[]).length > 0 && (
-              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-display font-semibold text-foreground">
-                  {(hits as Hit[]).length.toLocaleString()}
-                </span>
-                <span>
-                  {(hits as Hit[]).length === 1 ? "match" : "matches"} across{" "}
-                  <span className="font-medium text-foreground">{bySource.size}</span>{" "}
-                  {bySource.size === 1 ? "codebook" : "codebooks"}
-                </span>
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
-                  indexed May 2026 · direct from source
-                </span>
-              </div>
-            )}
 
             {/* Result count banner */}
             {(hits as Hit[]).length > 0 && (
