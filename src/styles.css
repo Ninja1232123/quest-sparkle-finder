@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 /*
  * Design system definition.
@@ -68,7 +68,8 @@
   --color-terracotta: var(--terracotta);
   --color-ochre: var(--ochre);
   --color-highlight: var(--highlight);
-  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -76,55 +77,56 @@
 :root {
   --radius: 0.875rem;
 
-  /* Warm palette — cream paper, sage ink, terracotta accent */
-  --paper: oklch(0.965 0.012 85);
-  --paper-deep: oklch(0.93 0.018 80);
-  --ink: oklch(0.18 0.02 60);
-  --sage: oklch(0.62 0.05 150);
-  --sage-deep: oklch(0.32 0.045 155);
-  --terracotta: oklch(0.52 0.13 35);
-  --ochre: oklch(0.7 0.1 78);
-  --highlight: oklch(0.9 0.11 92);
+  /* Bold palette — deep ink, cream type, electric ochre + hot terracotta accents */
+  --paper: oklch(0.18 0.025 255);          /* deep midnight ink */
+  --paper-deep: oklch(0.13 0.03 255);
+  --paper-soft: oklch(0.235 0.028 255);
+  --ink: oklch(0.965 0.015 85);            /* cream type */
+  --sage: oklch(0.78 0.14 165);            /* electric mint */
+  --sage-deep: oklch(0.66 0.16 165);
+  --terracotta: oklch(0.68 0.21 32);       /* hot coral */
+  --ochre: oklch(0.83 0.17 88);            /* sharp ochre */
+  --highlight: oklch(0.83 0.17 88);
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(0.985 0.012 85);
+  --card: oklch(0.235 0.028 255);
   --card-foreground: var(--ink);
-  --popover: oklch(0.985 0.012 85);
+  --popover: oklch(0.235 0.028 255);
   --popover-foreground: var(--ink);
-  --primary: var(--sage-deep);
-  --primary-foreground: oklch(0.985 0.012 85);
-  --secondary: oklch(0.93 0.025 80);
+  --primary: var(--terracotta);
+  --primary-foreground: oklch(0.13 0.03 255);
+  --secondary: oklch(0.27 0.03 255);
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.94 0.02 82);
-  --muted-foreground: oklch(0.45 0.025 65);
-  --accent: var(--terracotta);
-  --accent-foreground: oklch(0.985 0.012 85);
-  --destructive: oklch(0.55 0.18 28);
-  --destructive-foreground: oklch(0.985 0.012 85);
-  --border: oklch(0.88 0.025 78);
-  --input: oklch(0.91 0.022 80);
-  --ring: var(--sage-deep);
+  --muted: oklch(0.27 0.028 255);
+  --muted-foreground: oklch(0.72 0.025 80);
+  --accent: var(--ochre);
+  --accent-foreground: oklch(0.13 0.03 255);
+  --destructive: oklch(0.65 0.24 22);
+  --destructive-foreground: oklch(0.97 0.01 80);
+  --border: oklch(0.32 0.03 255);
+  --input: oklch(0.27 0.03 255);
+  --ring: var(--ochre);
   --chart-1: var(--sage-deep);
   --chart-2: var(--terracotta);
   --chart-3: var(--ochre);
   --chart-4: oklch(0.55 0.09 220);
   --chart-5: oklch(0.5 0.11 320);
-  --sidebar: oklch(0.96 0.018 82);
+  --sidebar: oklch(0.13 0.03 255);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--sage-deep);
+  --sidebar-primary: var(--terracotta);
   --sidebar-primary-foreground: var(--paper);
-  --sidebar-accent: oklch(0.92 0.022 80);
+  --sidebar-accent: oklch(0.27 0.03 255);
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(0.88 0.025 78);
-  --sidebar-ring: var(--sage-deep);
+  --sidebar-border: oklch(0.32 0.03 255);
+  --sidebar-ring: var(--ochre);
 
-  --gradient-warm: linear-gradient(135deg, oklch(0.97 0.025 85), oklch(0.93 0.04 75));
+  --gradient-warm: linear-gradient(135deg, var(--terracotta), var(--ochre));
   --gradient-sage: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
   --gradient-sunset: linear-gradient(135deg, var(--ochre), var(--terracotta));
-  --shadow-soft: 0 1px 2px oklch(0.3 0.05 60 / 0.06), 0 8px 24px -8px oklch(0.3 0.05 60 / 0.12);
-  --shadow-warm: 0 10px 40px -12px oklch(0.5 0.12 50 / 0.25);
-  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 1px 3px oklch(0.3 0.05 60 / 0.08), 0 12px 30px -16px oklch(0.3 0.05 60 / 0.15);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.35), 0 8px 24px -8px oklch(0 0 0 / 0.5);
+  --shadow-warm: 0 10px 40px -12px oklch(0.6 0.22 32 / 0.55);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 1px 3px oklch(0 0 0 / 0.4), 0 12px 30px -16px oklch(0 0 0 / 0.55);
 }
 
 .dark {
@@ -172,28 +174,35 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     background-image:
-      radial-gradient(at 15% 8%, oklch(0.95 0.025 80 / 0.5) 0px, transparent 55%),
-      radial-gradient(at 88% 95%, oklch(0.92 0.03 150 / 0.35) 0px, transparent 55%);
+      radial-gradient(at 12% 8%, oklch(0.68 0.21 32 / 0.18) 0px, transparent 50%),
+      radial-gradient(at 88% 92%, oklch(0.78 0.14 165 / 0.14) 0px, transparent 55%),
+      radial-gradient(at 50% 50%, oklch(0.83 0.17 88 / 0.06) 0px, transparent 70%);
     background-attachment: fixed;
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 
   .paper-grain {
     background-image:
-      repeating-linear-gradient(0deg, oklch(0.3 0.05 60 / 0.012) 0px, oklch(0.3 0.05 60 / 0.012) 1px, transparent 1px, transparent 3px),
-      repeating-linear-gradient(90deg, oklch(0.3 0.05 60 / 0.012) 0px, oklch(0.3 0.05 60 / 0.012) 1px, transparent 1px, transparent 3px);
+      repeating-linear-gradient(0deg, oklch(1 0 0 / 0.018) 0px, oklch(1 0 0 / 0.018) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(90deg, oklch(1 0 0 / 0.018) 0px, oklch(1 0 0 / 0.018) 1px, transparent 1px, transparent 3px);
   }
 
   .ink-underline {
-    background-image: linear-gradient(transparent 65%, var(--highlight) 65%, var(--highlight) 92%, transparent 92%);
+    background-image: linear-gradient(transparent 62%, var(--ochre) 62%, var(--ochre) 94%, transparent 94%);
     background-size: 100% 100%;
-    padding: 0 0.1em;
+    padding: 0 0.12em;
+    color: oklch(0.13 0.03 255);
+    font-family: var(--font-serif);
+    font-style: italic;
   }
 
   .citation-tag {
