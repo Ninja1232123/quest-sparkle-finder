@@ -13,6 +13,7 @@ import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForumRouteImport } from './routes/forum'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -44,6 +45,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ForumRoute = ForumRouteImport.update({
   id: '/forum',
   path: '/forum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  CompareRoute: typeof CompareRoute
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/forum'
       fullPath: '/forum'
       preLoaderRoute: typeof ForumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  CompareRoute: CompareRoute,
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,

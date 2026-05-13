@@ -99,10 +99,11 @@ function ComparePage() {
 
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           {(["const", "usc", "cfr", "ucc", "tfm", "irm"] as const).map((c) => {
-            const active = sources.split(",").map((s) => s.trim()).includes(c);
+            const parts = sources.split(",").map((s: string) => s.trim());
+            const active = parts.includes(c);
             const next = active
-              ? sources.split(",").map((s) => s.trim()).filter((s) => s !== c)
-              : [...sources.split(",").map((s) => s.trim()).filter(Boolean), c];
+              ? parts.filter((s: string) => s !== c)
+              : [...parts.filter(Boolean), c];
             const nextSources = next.slice(0, 4).join(",") || "usc";
             return (
               <Link
@@ -130,7 +131,7 @@ function ComparePage() {
 
         {q && (
           <div className={`mt-8 grid gap-4 ${columns.length >= 4 ? "lg:grid-cols-4" : columns.length === 3 ? "lg:grid-cols-3" : columns.length === 2 ? "md:grid-cols-2" : ""}`}>
-            {columns.map(({ code, hits }) => (
+            {columns.map(({ code, hits }: { code: string; hits: Hit[] }) => (
               <div key={code} className="rounded-2xl border border-border/60 bg-card p-4">
                 <div className="mb-3 flex items-center justify-between border-b border-border/60 pb-2">
                   <div className="font-display text-sm font-semibold">{SOURCE_LABELS[code] ?? code}</div>
@@ -140,7 +141,7 @@ function ComparePage() {
                   <div className="py-6 text-center text-xs text-muted-foreground">no matches</div>
                 ) : (
                   <ul className="space-y-3">
-                    {hits.map((h) => (
+                    {hits.map((h: Hit) => (
                       <li key={h.identifier}>
                         <Link
                           to="/code/$"
