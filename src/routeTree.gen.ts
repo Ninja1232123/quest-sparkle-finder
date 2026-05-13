@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
@@ -27,6 +28,11 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
+const SubscribeRoute = SubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StacksRoute = StacksRouteImport.update({
   id: '/stacks',
   path: '/stacks',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
   StacksRoute: typeof StacksRoute
+  SubscribeRoute: typeof SubscribeRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
@@ -254,6 +267,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/subscribe': {
+      id: '/subscribe'
+      path: '/subscribe'
+      fullPath: '/subscribe'
+      preLoaderRoute: typeof SubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stacks': {
       id: '/stacks'
       path: '/stacks'
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
   StacksRoute: StacksRoute,
+  SubscribeRoute: SubscribeRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
@@ -398,3 +419,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
