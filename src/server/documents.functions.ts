@@ -97,7 +97,9 @@ export type SourceTocNode = {
 export const getSourceTOC = createServerFn({ method: "GET" })
   .inputValidator(z.object({ source: z.string().min(2).max(20) }))
   .handler(async ({ data }) => {
-    const { data: rows, error } = await supabaseAdmin.rpc("source_toc", { p_source: data.source });
+    const { data: rows, error } = await supabaseAdmin
+      .rpc("source_toc", { p_source: data.source })
+      .range(0, 49999);
     if (error) return { toc: [] as SourceTocNode[], error: error.message };
     const map = new Map<string, SourceTocNode>();
     for (const r of (rows ?? []) as { title_group: string; part_group: string | null; doc_count: number }[]) {
