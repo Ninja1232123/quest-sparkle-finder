@@ -1,4 +1,5 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -66,6 +67,27 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const router = useRouter();
+  useEffect(() => {
+    const seq = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+    let i = 0;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (k === seq[i]) {
+        i++;
+        if (i === seq.length) { i = 0; router.navigate({ to: "/chambers" }); }
+      } else {
+        i = k === seq[0] ? 1 : 0;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    // Tiny console wink for the curious
+     
+    console.log("%c⚖  marginalia ", "font-family:serif;font-size:14px;background:#1a1a1a;color:#e8d8b0;padding:2px 6px;border-radius:3px", "— try the konami code");
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router]);
   return (
     <AuthProvider>
       <Outlet />
