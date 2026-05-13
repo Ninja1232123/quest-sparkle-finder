@@ -3,6 +3,23 @@ import { listSources, searchDocuments } from "@/server/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useState } from "react";
+import baldEagle from "@/assets/bald-eagle.png";
+
+// Per-codebook 'merica backgrounds. Each source gets its own flavor.
+const SOURCE_BG: Record<string, string> = {
+  const:
+    "bg-[linear-gradient(135deg,#0a1f44_0%,#0a1f44_40%,#b22234_40%,#b22234_55%,#f5f0e0_55%,#f5f0e0_70%,#b22234_70%,#b22234_85%,#0a1f44_85%)]",
+  usc:
+    "bg-[radial-gradient(circle_at_20%_30%,#fff_0,#fff_2px,transparent_3px),radial-gradient(circle_at_70%_60%,#fff_0,#fff_2px,transparent_3px),linear-gradient(180deg,#0a1f44,#1a3a6e)] [background-size:24px_24px,32px_32px,100%_100%]",
+  cfr:
+    "bg-[repeating-linear-gradient(0deg,#b22234_0_18px,#f5f0e0_18px_36px)]",
+  ucc:
+    "bg-[repeating-linear-gradient(45deg,#0a1f44_0_22px,#c9a84c_22px_28px,#b22234_28px_50px)]",
+  tfm:
+    "bg-[linear-gradient(135deg,#1a4a2e,#0a1f44_60%,#000)]",
+  irm:
+    "bg-[repeating-linear-gradient(90deg,#0a1f44_0_30px,#b22234_30px_36px,#f5f0e0_36px_42px)]",
+};
 
 const SOURCE_DESC: Record<string, { tagline: string; example: string }> = {
   const: { tagline: "The founding charter — articles & amendments.", example: "/us/const/amendment/1" },
@@ -54,7 +71,14 @@ function CodeHub() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <section className="mx-auto max-w-5xl px-6 py-12">
+      <section className="relative mx-auto max-w-5xl px-6 py-12">
+        {/* Sick bald eagle, screaming silently behind the law */}
+        <img
+          src={baldEagle}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -top-8 right-0 -z-10 w-[520px] max-w-[80%] opacity-[0.18] mix-blend-multiply select-none"
+        />
         <div className="citation-tag text-muted-foreground">primary sources</div>
         <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           The <span className="ink-underline italic">Code</span>, in one place.
@@ -116,18 +140,23 @@ function CodeHub() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           {sources.map((s: { code: string; name: string; count: number }) => {
             const desc = SOURCE_DESC[s.code] ?? { tagline: "Browse this source.", example: "" };
+            const bg = SOURCE_BG[s.code] ?? "bg-card";
             return (
               <Link
                 key={s.code}
                 to="/code/source/$source"
                 params={{ source: s.code }}
-                className="group rounded-2xl border bg-card p-6 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+                className={`group relative overflow-hidden rounded-2xl border p-6 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-warm)] ${bg}`}
               >
-                <div className="citation-tag text-accent">{s.count.toLocaleString()} documents</div>
-                <div className="mt-1 font-display text-xl font-semibold">{s.name}</div>
-                <p className="mt-2 text-sm text-foreground/70">{desc.tagline}</p>
-                <div className="mt-4 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
-                  Browse →
+                {/* parchment overlay so text stays readable over the patriotic chaos */}
+                <div className="absolute inset-0 bg-card/85 backdrop-blur-[2px] transition-opacity group-hover:bg-card/70" />
+                <div className="relative">
+                  <div className="citation-tag text-accent">{s.count.toLocaleString()} documents</div>
+                  <div className="mt-1 font-display text-xl font-semibold">{s.name}</div>
+                  <p className="mt-2 text-sm text-foreground/70">{desc.tagline}</p>
+                  <div className="mt-4 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
+                    Browse →
+                  </div>
                 </div>
               </Link>
             );
