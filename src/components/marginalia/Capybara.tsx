@@ -1,24 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 
-// 4-frame ASCII capybara — idle / squint / yawn / judge
+// 4-frame ASCII capybara — now with full glam: lashes, lipstick, the works
 const FRAMES = [
   String.raw`
-   (\__/)
-   (•ᴥ• )
-   /  づ ` ,
+   ⋆˚༘♡  (\__/)
+         (✿◕ᴥ◕)♡
+         /  づ  ` ,
   String.raw`
-   (\__/)
-   (-ᴥ- )
-   /  づ ` ,
+   ⋆˚༘♡  (\__/)
+         (✿-ᴥ-)♡
+         /  づ  ` ,
   String.raw`
-   (\__/)
-   (oᴥo )~
-   /  づ ` ,
+   ⋆˚༘♡  (\__/)
+         (✿◉ᴥ◉)~♡
+         /  づ  ` ,
   String.raw`
-   (\__/)
-   (¬ᴥ¬ )
-   /  づ ` ,
+   ⋆˚༘♡  (\__/)
+         (✿¬‿¬)♡
+         /  づ  ` ,
 ];
 
 type QuipRule = { test: (q: string, path: string) => boolean; quips: string[] };
@@ -191,12 +191,18 @@ export function Capybara() {
       onClick={onClick}
     >
       {quip && (
-        <div className="mb-1 max-w-[220px] rounded-lg border border-foreground/20 bg-card px-3 py-2 text-xs leading-snug text-foreground shadow-md">
+        <div className="mb-1 max-w-[220px] rounded-lg border border-accent/40 bg-card px-3 py-2 text-xs leading-snug text-foreground shadow-[0_8px_24px_-8px_oklch(0.68_0.21_32/0.6)]">
           {quip}
         </div>
       )}
       <div className="group relative cursor-grab active:cursor-grabbing">
-        <pre className="font-mono text-[11px] font-bold leading-tight text-foreground whitespace-pre">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 rounded-full blur-2xl opacity-70"
+          style={{ background: "radial-gradient(circle at 50% 60%, oklch(0.78 0.18 350 / 0.55), transparent 70%)" }}
+        />
+        <pre className="font-mono text-[11px] font-bold leading-tight whitespace-pre"
+             style={{ color: "oklch(0.92 0.08 350)", textShadow: "0 0 10px oklch(0.78 0.2 350 / 0.7)" }}>
 {FRAMES[frame]}
         </pre>
         <button
