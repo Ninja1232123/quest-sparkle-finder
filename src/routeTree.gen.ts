@@ -15,6 +15,7 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForumRouteImport } from './routes/forum'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as ChambersRouteImport } from './routes/chambers'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -56,6 +57,11 @@ const ForumRoute = ForumRouteImport.update({
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChambersRoute = ChambersRouteImport.update({
+  id: '/chambers',
+  path: '/chambers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/chambers'
     | '/compare'
     | '/forum'
     | '/library'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/chambers'
     | '/compare'
     | '/forum'
     | '/library'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/chambers'
     | '/compare'
     | '/forum'
     | '/library'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  ChambersRoute: typeof ChambersRoute
   CompareRoute: typeof CompareRoute
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/compare'
       fullPath: '/compare'
       preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chambers': {
+      id: '/chambers'
+      path: '/chambers'
+      fullPath: '/chambers'
+      preLoaderRoute: typeof ChambersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -400,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  ChambersRoute: ChambersRoute,
   CompareRoute: CompareRoute,
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
@@ -419,3 +440,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
