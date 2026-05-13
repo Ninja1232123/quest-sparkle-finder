@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForumRouteImport } from './routes/forum'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,6 +28,11 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
+const SubscribeRoute = SubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StacksRoute = StacksRouteImport.update({
   id: '/stacks',
   path: '/stacks',
@@ -44,6 +51,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ForumRoute = ForumRouteImport.update({
   id: '/forum',
   path: '/forum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -112,10 +124,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -130,10 +144,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -149,10 +165,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
+  '/subscribe': typeof SubscribeRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
@@ -169,10 +187,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -187,10 +207,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -205,10 +227,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/forum'
     | '/library'
     | '/search'
     | '/stacks'
+    | '/subscribe'
     | '/cases/$caseId'
     | '/code/$'
     | '/topic/$slug'
@@ -224,10 +248,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  CompareRoute: typeof CompareRoute
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
   StacksRoute: typeof StacksRoute
+  SubscribeRoute: typeof SubscribeRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
@@ -241,6 +267,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/subscribe': {
+      id: '/subscribe'
+      path: '/subscribe'
+      fullPath: '/subscribe'
+      preLoaderRoute: typeof SubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stacks': {
       id: '/stacks'
       path: '/stacks'
@@ -267,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/forum'
       fullPath: '/forum'
       preLoaderRoute: typeof ForumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -360,10 +400,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  CompareRoute: CompareRoute,
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
   StacksRoute: StacksRoute,
+  SubscribeRoute: SubscribeRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
@@ -377,12 +419,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
