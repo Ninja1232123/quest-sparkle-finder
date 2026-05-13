@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
+import { Capybara } from "@/components/marginalia/Capybara";
 
 function NotFoundComponent() {
   return (
@@ -91,6 +92,7 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
+      <Capybara />
     </AuthProvider>
   );
 }
