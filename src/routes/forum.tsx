@@ -26,6 +26,26 @@ const SOURCE_LABELS: Record<string, string> = {
   irm: "IRM",
 };
 
+type PostKind = "discussion" | "feedback" | "bug";
+
+const KIND_META: Record<PostKind, { label: string; tag: string; hint: string }> = {
+  discussion: {
+    label: "Discussion",
+    tag: "discussion",
+    hint: "Talk shop. Citations welcome — bring receipts when you can.",
+  },
+  feedback: {
+    label: "Feedback",
+    tag: "feedback",
+    hint: "What's working, what isn't, what you wish was here.",
+  },
+  bug: {
+    label: "Bug report",
+    tag: "bug",
+    hint: "What you did, what you expected, what actually happened. Include the URL.",
+  },
+};
+
 export const Route = createFileRoute("/forum")({
   loader: () => listForumPosts(),
   component: ForumPage,
@@ -48,6 +68,7 @@ function ForumPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [composing, setComposing] = useState(false);
+  const [filter, setFilter] = useState<"all" | PostKind>("all");
 
   return (
     <div className="min-h-screen">
@@ -60,12 +81,14 @@ function ForumPage() {
           The Floor
         </h1>
         <p className="mt-6 max-w-xl font-display text-lg italic text-foreground/70 md:text-xl">
-          One room. One rule. <span className="not-italic">No claim without a document.</span>
+          One room. One rule of thumb. <span className="not-italic">If you can cite it, cite it.</span>
         </p>
         <p className="mt-4 max-w-xl text-sm text-foreground/65">
-          Every post here must be anchored to at least one section already on file in
-          the Code. No theories, no third-hand guru lore — just the cite, the quote, and
-          what actually happened.
+          Discussion, feedback, and bug reports all live here. When a post is about the
+          law, link the section in the Code so anyone can read the source themselves —
+          that's what makes this place useful. Anything you read here, including AI
+          summaries, should be checked against the actual document and, before you act
+          on it, a licensed attorney in your jurisdiction.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -86,6 +109,23 @@ function ForumPage() {
           <span className="text-xs text-muted-foreground">
             Reading is open to everyone, always.
           </span>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center gap-1 text-xs">
+          {(["all", "discussion", "feedback", "bug"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={
+                "rounded-full px-3 py-1.5 transition " +
+                (filter === k
+                  ? "bg-foreground text-background"
+                  : "text-foreground/60 hover:bg-muted hover:text-foreground")
+              }
+            >
+              {k === "all" ? "All" : KIND_META[k].label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -113,13 +153,15 @@ function ForumPage() {
             <ScrollText className="mx-auto h-10 w-10 text-foreground/30" />
             <h2 className="mt-4 font-display text-2xl">The floor is empty.</h2>
             <p className="mt-2 text-sm text-foreground/60">
-              First post sets the tone. Bring receipts.
+              First post sets the tone. Be useful, be honest.
             </p>
           </div>
         )}
 
         <ul className="space-y-10">
-          {initial.posts.map((p: ForumPost) => (
+          {initial.posts
+            .filter((p: ForumPost) => filter === "all" || (p.kind ?? "discussion") === filter)
+            .map((p: ForumPost) => (
             <li key={p.id}>
               <PostCard
                 post={p}
@@ -155,6 +197,11 @@ function PostCard({
             {post.pinned && (
               <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
                 pinned
+              </span>
+            )}
+            {post.kind && post.kind !== "discussion" && (
+              <span className="ml-2 rounded-full border border-foreground/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/70">
+                {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
               </span>
             )}
           </div>
@@ -212,6 +259,7 @@ function PostCard({
 function Composer({ onDone }: { onDone: () => void }) {
   const validate = useServerFn(validateCitations);
   const create = useServerFn(createForumPost);
+  const [kind, setKind] = useState<PostKind>("discussion");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [citationInput, setCitationInput] = useState("");
@@ -241,16 +289,13 @@ function Composer({ onDone }: { onDone: () => void }) {
 
   async function submit() {
     setError(null);
-    if (resolved.length === 0) {
-      setError("At least one resolved citation is required.");
-      return;
-    }
     setBusy(true);
     const res = await create({
       data: {
         title: title.trim(),
         body: body.trim(),
         citations: resolved.map((r) => r.identifier),
+        kind,
       },
     });
     setBusy(false);
@@ -267,6 +312,27 @@ function Composer({ onDone }: { onDone: () => void }) {
       <h2 className="mt-1 font-display text-2xl">New post for the floor</h2>
 
       <div className="mt-6 space-y-4">
+        <div>
+          <label className="citation-tag text-muted-foreground">kind of post</label>
+          <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+            {(["discussion", "feedback", "bug"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={
+                  "rounded-full px-3 py-1.5 transition " +
+                  (kind === k
+                    ? "bg-foreground text-background"
+                    : "border border-foreground/20 text-foreground/70 hover:border-foreground/50")
+                }
+              >
+                {KIND_META[k].label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-foreground/55">{KIND_META[kind].hint}</p>
+        </div>
         <div>
           <label className="citation-tag text-muted-foreground">title</label>
           <Input
@@ -292,12 +358,12 @@ function Composer({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="rounded-2xl border bg-background/50 p-4">
-          <label className="citation-tag text-muted-foreground">attach citations (required)</label>
+          <label className="citation-tag text-muted-foreground">attach citations (optional, encouraged)</label>
           <p className="mt-1 text-xs text-foreground/60">
-            Paste a citation like <code className="font-mono">15 USC 1692g</code>,{" "}
+            If your post is about the law, link the section so others can read the source.
+            Paste something like <code className="font-mono">15 USC 1692g</code>,{" "}
             <code className="font-mono">29 CFR 1910.95</code>, or a path like{" "}
-            <code className="font-mono">/usc/42/1983</code>. Each one must already exist
-            in the Code.
+            <code className="font-mono">/usc/42/1983</code>. Skip this for feedback or bug reports.
           </p>
           <div className="mt-3 flex gap-2">
             <Input
@@ -362,14 +428,19 @@ function Composer({ onDone }: { onDone: () => void }) {
             disabled={
               busy ||
               title.trim().length < 4 ||
-              body.trim().length < 10 ||
-              resolved.length === 0
+              body.trim().length < 10
             }
           >
             {busy ? "Posting…" : "Post to the floor"}
           </Button>
         </div>
       </div>
+
+      <p className="mt-6 border-t border-border/60 pt-4 text-[11px] leading-relaxed text-foreground/55">
+        Heads up: anything posted, replied to, or summarized here is research and
+        opinion, not legal advice. Validate any interpretation with a licensed attorney
+        in your jurisdiction before you act on it.
+      </p>
     </div>
   );
 }

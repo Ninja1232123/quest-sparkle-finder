@@ -17,6 +17,7 @@ export type ForumPost = {
   body: string;
   pinned: boolean;
   created_at: string;
+  kind: string;
   display_name: string | null;
   citations: ForumCitation[];
 };
@@ -86,7 +87,7 @@ export const validateCitations = createServerFn({ method: "POST" })
 export const listForumPosts = createServerFn({ method: "GET" }).handler(async () => {
   const { data: posts, error } = await supabaseAdmin
     .from("forum_posts")
-    .select("id, user_id, title, body, pinned, created_at")
+    .select("id, user_id, title, body, pinned, created_at, kind")
     .order("pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(100);
@@ -121,6 +122,7 @@ export const listForumPosts = createServerFn({ method: "GET" }).handler(async ()
     body: p.body,
     pinned: p.pinned,
     created_at: p.created_at,
+    kind: (p as { kind?: string }).kind ?? "discussion",
     display_name: nameByUser.get(p.user_id) ?? null,
     citations: citesByPost.get(p.id) ?? [],
   }));
@@ -133,7 +135,8 @@ export const createForumPost = createServerFn({ method: "POST" })
     z.object({
       title: z.string().trim().min(4).max(200),
       body: z.string().trim().min(10).max(8000),
-      citations: z.array(z.string().min(1).max(300)).min(1).max(10),
+      citations: z.array(z.string().min(1).max(300)).max(10).default([]),
+      kind: z.enum(["discussion", "feedback", "bug"]).default("discussion"),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -142,40 +145,42 @@ export const createForumPost = createServerFn({ method: "POST" })
     const normalized = Array.from(
       new Set(data.citations.map(normalizeIdentifier).filter((v): v is string => !!v)),
     );
-    if (normalized.length === 0) {
-      return { ok: false as const, error: "At least one resolvable citation is required." };
-    }
-    const { data: docRows } = await supabaseAdmin
-      .from("documents")
-      .select("identifier, source_code, heading, section_label")
-      .in("identifier", normalized);
-    if (!docRows || docRows.length === 0) {
-      return { ok: false as const, error: "None of the citations resolved to a document on file." };
-    }
+    const docRows =
+      normalized.length > 0
+        ? (
+            await supabaseAdmin
+              .from("documents")
+              .select("identifier, source_code, heading, section_label")
+              .in("identifier", normalized)
+          ).data ?? []
+        : [];
 
     // Insert post (use admin to bypass writes through middleware client headache;
     // we already verified the user from the bearer token).
     const { data: post, error: postErr } = await supabaseAdmin
       .from("forum_posts")
-      .insert({ user_id: userId, title: data.title.trim(), body: data.body.trim() })
+      .insert({
+        user_id: userId,
+        title: data.title.trim(),
+        body: data.body.trim(),
+        kind: data.kind,
+      })
       .select("id")
       .single();
     if (postErr || !post) {
       return { ok: false as const, error: postErr?.message ?? "Could not create post." };
     }
 
-    const citeRows = docRows.map((d) => ({
-      post_id: post.id,
-      identifier: d.identifier,
-      source_code: d.source_code,
-      heading_snapshot: d.heading,
-      section_label_snapshot: d.section_label,
-    }));
-    const { error: cErr } = await supabaseAdmin.from("forum_post_citations").insert(citeRows);
-    if (cErr) {
-      // Roll back the orphan post so the citation rule holds.
-      await supabaseAdmin.from("forum_posts").delete().eq("id", post.id);
-      return { ok: false as const, error: cErr.message };
+    if (docRows.length > 0) {
+      const citeRows = docRows.map((d) => ({
+        post_id: post.id,
+        identifier: d.identifier,
+        source_code: d.source_code,
+        heading_snapshot: d.heading,
+        section_label_snapshot: d.section_label,
+      }));
+      // Best-effort: a citation insert failure shouldn't kill the post.
+      await supabaseAdmin.from("forum_post_citations").insert(citeRows);
     }
 
     return { ok: true as const, id: post.id };
