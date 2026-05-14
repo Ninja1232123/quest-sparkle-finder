@@ -24,6 +24,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
+import { Route as StacksViewRouteImport } from './routes/stacks.view'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
@@ -108,6 +109,11 @@ const TopicSlugRoute = TopicSlugRouteImport.update({
   path: '/topic/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StacksViewRoute = StacksViewRouteImport.update({
+  id: '/view',
+  path: '/view',
+  getParentRoute: () => StacksRoute,
+} as any)
 const CodeSplatRoute = CodeSplatRouteImport.update({
   id: '/code/$',
   path: '/code/$',
@@ -161,12 +167,13 @@ export interface FileRoutesByFullPath {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
-  '/stacks': typeof StacksRoute
+  '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
+  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
@@ -186,12 +193,13 @@ export interface FileRoutesByTo {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
-  '/stacks': typeof StacksRoute
+  '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
+  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
@@ -212,12 +220,13 @@ export interface FileRoutesById {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
-  '/stacks': typeof StacksRoute
+  '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
+  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
+    | '/stacks/view'
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
+    | '/stacks/view'
     | '/topic/$slug'
     | '/cases'
     | '/code'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
+    | '/stacks/view'
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
@@ -315,7 +327,7 @@ export interface RootRouteChildren {
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
-  StacksRoute: typeof StacksRoute
+  StacksRoute: typeof StacksRouteWithChildren
   SubscribeRoute: typeof SubscribeRoute
   WhitepaperRoute: typeof WhitepaperRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopicSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stacks/view': {
+      id: '/stacks/view'
+      path: '/view'
+      fullPath: '/stacks/view'
+      preLoaderRoute: typeof StacksViewRouteImport
+      parentRoute: typeof StacksRoute
+    }
     '/code/$': {
       id: '/code/$'
       path: '/code/$'
@@ -497,6 +516,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface StacksRouteChildren {
+  StacksViewRoute: typeof StacksViewRoute
+}
+
+const StacksRouteChildren: StacksRouteChildren = {
+  StacksViewRoute: StacksViewRoute,
+}
+
+const StacksRouteWithChildren =
+  StacksRoute._addFileChildren(StacksRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -507,7 +537,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
-  StacksRoute: StacksRoute,
+  StacksRoute: StacksRouteWithChildren,
   SubscribeRoute: SubscribeRoute,
   WhitepaperRoute: WhitepaperRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
@@ -525,3 +555,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
