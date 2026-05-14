@@ -14,6 +14,20 @@ export const Route = createFileRoute("/library")({
       },
       { property: "og:title", content: "Sources · Marginalia" },
       { property: "og:description", content: "Meet the rulebooks behind the explainers." },
+      { property: "og:url", content: "https://self-law.org/library" },
+    ],
+    links: [{ rel: "canonical", href: "https://self-law.org/library" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Sources · Marginalia",
+          description: "Federal agencies and codebooks indexed by Marginalia.",
+          url: "https://self-law.org/library",
+        }),
+      },
     ],
   }),
 });
