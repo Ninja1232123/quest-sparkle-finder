@@ -160,7 +160,7 @@ function ForumPage() {
 
         <ul className="space-y-10">
           {initial.posts
-            .filter((p) => filter === "all" || (p.kind ?? "discussion") === filter)
+            .filter((p: ForumPost) => filter === "all" || (p.kind ?? "discussion") === filter)
             .map((p: ForumPost) => (
             <li key={p.id}>
               <PostCard
