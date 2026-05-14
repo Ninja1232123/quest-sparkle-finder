@@ -3,6 +3,19 @@ import { getRequest } from "@tanstack/react-start/server";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+function pickEnvironment(): StripeEnv {
+  return process.env.NODE_ENV === "production" && process.env.STRIPE_LIVE_API_KEY
+    ? "live"
+    : "sandbox";
+}
+
+function originFromRequest(): string {
+  const req = getRequest();
+  const origin = req?.headers.get("origin") ?? req?.headers.get("referer");
+  if (!origin) throw new Error("Missing request origin");
+  return new URL(origin).origin;
+}
+
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
   options: { email?: string; userId?: string },
@@ -89,13 +102,86 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       mode: isRecurring ? "subscription" : "payment",
       ui_mode: "embedded_page",
       return_url: returnUrl,
-      // Stripe-managed full compliance (tax, fraud, disputes, support).
-      // Not yet in SDK types for 2026-03-25.dahlia — cast through.
-      ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
       customer: customerId,
       metadata: { userId },
       ...(isRecurring && { subscription_data: { metadata: { userId } } }),
+      // Stripe-managed full compliance: tax + fraud + disputes + support.
+      // Not yet in SDK types for 2026-03-25.dahlia — cast through.
+      ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
     } as Parameters<typeof stripe.checkout.sessions.create>[0]);
 
     return session.client_secret;
+  });
+
+// Pay-what-you-want donation. No userId required (anonymous OK).
+export const createDonationCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: { amountInCents: number; returnPath?: string }) => {
+    if (!Number.isFinite(data.amountInCents) || data.amountInCents < 100) {
+      throw new Error("Donation must be at least $1");
+    }
+    if (data.amountInCents > 100000) {
+      throw new Error("Donation too large; contact us directly");
+    }
+    if (data.returnPath && !/^\/[A-Za-z0-9/_\-?=&{}.]*$/.test(data.returnPath)) {
+      throw new Error("Invalid returnPath");
+    }
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const environment = pickEnvironment();
+    const origin = originFromRequest();
+    const returnUrl = `${origin}${data.returnPath ?? "/checkout/return"}?session_id={CHECKOUT_SESSION_ID}`;
+    const stripe = createStripeClient(environment);
+
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: "Marginalia Donation" },
+            unit_amount: data.amountInCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      ui_mode: "embedded_page",
+      return_url: returnUrl,
+      ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
+    } as Parameters<typeof stripe.checkout.sessions.create>[0]);
+
+    return session.client_secret;
+  });
+
+// Returns a Stripe Customer Portal URL so a logged-in user can manage their
+// subscription (cancel, update card, view invoices).
+export const createPortalSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { returnPath?: string }) => {
+    if (data.returnPath && !/^\/[A-Za-z0-9/_\-?=&{}.]*$/.test(data.returnPath)) {
+      throw new Error("Invalid returnPath");
+    }
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const environment = pickEnvironment();
+
+    const { data: sub, error } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .eq("environment", environment)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !sub?.stripe_customer_id) throw new Error("No subscription found");
+
+    const origin = originFromRequest();
+    const stripe = createStripeClient(environment);
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: sub.stripe_customer_id,
+      return_url: `${origin}${data.returnPath ?? "/account"}`,
+    });
+    return portal.url;
   });
