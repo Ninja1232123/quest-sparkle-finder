@@ -56,7 +56,7 @@ function Index() {
             <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-[5.25rem]">
               If you don't know your rights,
               <br />
-              <span className="ink-underline italic">you don't have any.</span>
+               <span className="ink-underline italic text-slate-400">you don't have any.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-foreground/75">
               Six federal codebooks — Constitution, U.S. Code, CFR, UCC, TFM, IRM — indexed together,
@@ -196,9 +196,9 @@ function Index() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="citation-tag text-muted-foreground">primary sources</div>
-            <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-              Open the <span className="ink-underline italic">Code</span>.
-            </h2>
+             <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+               Open the <span className="ink-underline italic text-slate-400">Code</span>.
+             </h2>
             <p className="mt-3 max-w-2xl text-foreground/70">
               Six codebooks, indexed and cross-linked. Browse the table of contents or jump in by citation.
             </p>
