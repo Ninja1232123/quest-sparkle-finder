@@ -21,7 +21,19 @@ type CaseItem = {
 
 export const Route = createFileRoute("/cases/$caseId")({
   component: CaseDetail,
-  head: () => ({ meta: [{ title: "Case · Marginalia" }] }),
+  head: () => ({
+    meta: [
+      { title: "Case · Marginalia" },
+      {
+        name: "description",
+        content:
+          "A private case folder with saved citations, pinned statutes, and your own research notes.",
+      },
+      { property: "og:title", content: "Case · Marginalia" },
+      { property: "og:description", content: "Saved citations and notes for this case." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
 });
 
 function CaseDetail() {

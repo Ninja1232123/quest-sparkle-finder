@@ -93,15 +93,19 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
   head: ({ match }) => {
     const q = (match.search as { q?: string })?.q ?? "";
+    const title = q ? `"${q}" · Marginalia search` : "Search · Marginalia";
+    const description = q
+      ? `Search results for "${q}" across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM.`
+      : "Full-text search across the Constitution, United States Code, Code of Federal Regulations, Uniform Commercial Code, and Treasury Financial Manual.";
     return {
       meta: [
-        { title: q ? `"${q}" · Marginalia search` : "Search · Marginalia" },
-        {
-          name: "description",
-          content:
-            "Full-text search across the Constitution, United States Code, Code of Federal Regulations, Uniform Commercial Code, and Treasury Financial Manual.",
-        },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: "https://self-law.org/search" },
       ],
+      links: [{ rel: "canonical", href: "https://self-law.org/search" }],
     };
   },
 });

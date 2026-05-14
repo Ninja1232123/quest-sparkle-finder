@@ -52,15 +52,19 @@ export const Route = createFileRoute("/compare")({
   component: ComparePage,
   head: ({ match }) => {
     const q = (match.search as { q?: string })?.q ?? "";
+    const title = q ? `Compare "${q}" · Marginalia` : "Compare codebooks · Marginalia";
+    const description = q
+      ? `Side-by-side comparison of "${q}" across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM.`
+      : "Side-by-side search across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM. Spot how the same term shows up in each codebook.";
     return {
       meta: [
-        { title: q ? `Compare "${q}" · Marginalia` : "Compare codebooks · Marginalia" },
-        {
-          name: "description",
-          content:
-            "Side-by-side search across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM. Spot how the same term shows up in each codebook.",
-        },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: "https://self-law.org/compare" },
       ],
+      links: [{ rel: "canonical", href: "https://self-law.org/compare" }],
     };
   },
 });
