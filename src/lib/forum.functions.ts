@@ -140,7 +140,7 @@ export const createForumPost = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const { userId, supabase } = context;
 
     const normalized = Array.from(
       new Set(data.citations.map(normalizeIdentifier).filter((v): v is string => !!v)),
@@ -155,9 +155,8 @@ export const createForumPost = createServerFn({ method: "POST" })
           ).data ?? []
         : [];
 
-    // Insert post (use admin to bypass writes through middleware client headache;
-    // we already verified the user from the bearer token).
-    const { data: post, error: postErr } = await supabaseAdmin
+    // RLS on forum_posts enforces auth.uid() = user_id; use the user-scoped client.
+    const { data: post, error: postErr } = await supabase
       .from("forum_posts")
       .insert({
         user_id: userId,
@@ -180,7 +179,7 @@ export const createForumPost = createServerFn({ method: "POST" })
         section_label_snapshot: d.section_label,
       }));
       // Best-effort: a citation insert failure shouldn't kill the post.
-      await supabaseAdmin.from("forum_post_citations").insert(citeRows);
+      await supabase.from("forum_post_citations").insert(citeRows);
     }
 
     return { ok: true as const, id: post.id };
@@ -190,12 +189,12 @@ export const deleteForumPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { error } = await supabaseAdmin
+    const { supabase } = context;
+    // RLS restricts DELETE to owner; redundant filter is defense-in-depth.
+    const { error } = await supabase
       .from("forum_posts")
       .delete()
-      .eq("id", data.id)
-      .eq("user_id", userId);
+      .eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
