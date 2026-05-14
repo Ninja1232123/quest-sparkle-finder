@@ -54,6 +54,39 @@ function About() {
             Open the index →
           </Link>
         </div>
+
+        <div className="mt-20 rounded-3xl border border-sage-deep/30 bg-sage-deep/5 p-8">
+          <div className="citation-tag text-sage-deep">vol. I · the plan</div>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            Where this is going.
+          </h2>
+          <p className="mt-3 text-foreground/75 leading-relaxed">
+            Marginalia today is six federal codebooks indexed together. Next is all 50 state codes,
+            domain packs for the situations people actually search, a visible citation graph, alerts,
+            and an honest research desk. The whitepaper lays it all out — and why $5/mo is the honest
+            number to fund it.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              to="/whitepaper"
+              className="rounded-full border border-border px-6 py-3 text-sm font-semibold hover:bg-accent"
+            >
+              Read the whitepaper →
+            </Link>
+            <Link
+              to="/subscribe"
+              className="group relative inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3 text-sm font-bold text-accent-foreground shadow-[var(--shadow-warm)] ring-2 ring-accent/40 ring-offset-2 ring-offset-background transition-transform hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              <span className="absolute -top-2 -right-2 rounded-full bg-foreground px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">
+                $5
+              </span>
+              ♥ Chip in / Go Pro
+            </Link>
+          </div>
+          <p className="mt-3 text-xs italic text-muted-foreground">
+            Reading the law stays free. Every $5 funds the next book on the shelf.
+          </p>
+        </div>
       </section>
       <SiteFooter />
     </div>
