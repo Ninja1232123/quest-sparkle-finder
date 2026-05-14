@@ -33,14 +33,12 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Marginalia · Read the law for yourself" },
+      { name: "description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
+      { property: "og:title", content: "Marginalia · Read the law for yourself" },
+      { property: "og:description", content: "Federal codebooks indexed together. Built for citizen-researchers and pro se litigants." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {
