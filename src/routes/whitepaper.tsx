@@ -13,6 +13,30 @@ export const Route = createFileRoute("/whitepaper")({
         content:
           "Where Marginalia is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
       },
+      { property: "og:title", content: "The Plan · Marginalia" },
+      {
+        property: "og:description",
+        content:
+          "Where Marginalia is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
+      },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: "https://self-law.org/whitepaper" },
+    ],
+    links: [{ rel: "canonical", href: "https://self-law.org/whitepaper" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: "The Plan · Marginalia",
+          description:
+            "The roadmap for Marginalia: state codebooks, domain packs, citation graphs, and a structured legal corpus.",
+          author: { "@type": "Organization", name: "Marginalia" },
+          publisher: { "@type": "Organization", name: "Marginalia" },
+          mainEntityOfPage: "https://self-law.org/whitepaper",
+        }),
+      },
     ],
   }),
 });
