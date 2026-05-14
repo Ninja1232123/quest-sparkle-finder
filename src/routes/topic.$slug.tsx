@@ -47,13 +47,33 @@ export const Route = createFileRoute("/topic/$slug")({
   },
   head: ({ loaderData }) => {
     const t = loaderData?.topic;
+    const url = t ? `https://self-law.org/topic/${t.slug}` : "https://self-law.org/";
     return {
       meta: [
         { title: t ? `${t.title} · Marginalia` : "Topic · Marginalia" },
         { name: "description", content: t?.oneLiner ?? "" },
         { property: "og:title", content: t?.title ?? "Marginalia" },
         { property: "og:description", content: t?.oneLiner ?? "" },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: url },
       ],
+      links: t ? [{ rel: "canonical", href: url }] : [],
+      scripts: t
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Article",
+                headline: t.title,
+                description: t.oneLiner,
+                author: { "@type": "Organization", name: "Marginalia" },
+                publisher: { "@type": "Organization", name: "Marginalia" },
+                mainEntityOfPage: url,
+              }),
+            },
+          ]
+        : [],
     };
   },
 });
