@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { listStackItems, getStackSignedUrl, type StackItem } from "@/lib/stacks.functions";
+import { listStackItems, type StackItem } from "@/lib/stacks.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "@tanstack/react-router";
-import { FileText, FileArchive, BookOpen, Download, ExternalLink } from "lucide-react";
+import { FileText, FileArchive, BookOpen, BookOpenText } from "lucide-react";
 
 export const Route = createFileRoute("/stacks")({
   component: StacksPage,
@@ -61,8 +60,6 @@ function categoryFor(name: string, mime: string): string {
 function StacksPage() {
   const { user, loading } = useAuth();
   const list = useServerFn(listStackItems);
-  const sign = useServerFn(getStackSignedUrl);
-  const [busy, setBusy] = useState<string | null>(null);
   const { data, isLoading } = useQuery({
     queryKey: ["stacks-list"],
     queryFn: () => list({ data: undefined as never }),
@@ -70,13 +67,6 @@ function StacksPage() {
   });
   const items = data?.items ?? [];
   const error = data?.error ?? null;
-
-  async function open(name: string) {
-    setBusy(name);
-    const res = await sign({ data: { name } });
-    setBusy(null);
-    if (res.url) window.open(res.url, "_blank", "noopener,noreferrer");
-  }
 
   if (!loading && !user) {
     return (
@@ -158,10 +148,10 @@ function StacksPage() {
                   const Icon = iconFor(it.mime);
                   return (
                     <li key={it.name}>
-                      <button
-                        onClick={() => open(it.name)}
-                        disabled={busy === it.name}
-                        className="group flex w-full items-start gap-4 rounded-2xl border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] disabled:opacity-50"
+                      <Link
+                        to="/stacks/view"
+                        search={{ name: it.name }}
+                        className="group flex w-full items-start gap-4 rounded-2xl border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
                       >
                         <div className="mt-0.5 rounded-md bg-foreground/5 p-2.5 text-foreground/70 group-hover:bg-foreground/10">
                           <Icon className="h-4 w-4" />
@@ -177,13 +167,9 @@ function StacksPage() {
                           </div>
                         </div>
                         <div className="self-center text-muted-foreground group-hover:text-foreground">
-                          {busy === it.name ? (
-                            <Download className="h-4 w-4 animate-pulse" />
-                          ) : (
-                            <ExternalLink className="h-4 w-4" />
-                          )}
+                          <BookOpenText className="h-4 w-4" />
                         </div>
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}
