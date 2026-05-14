@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhitepaperRouteImport } from './routes/whitepaper'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StacksRouteImport } from './routes/stacks'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForumRouteImport } from './routes/forum'
@@ -47,6 +48,11 @@ const SubscribeRoute = SubscribeRouteImport.update({
 const StacksRoute = StacksRouteImport.update({
   id: '/stacks',
   path: '/stacks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/library'
     | '/search'
+    | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/library'
     | '/search'
+    | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/library'
     | '/search'
+    | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StacksRoute: typeof StacksRouteWithChildren
   SubscribeRoute: typeof SubscribeRoute
   WhitepaperRoute: typeof WhitepaperRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/stacks'
       fullPath: '/stacks'
       preLoaderRoute: typeof StacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -537,6 +557,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StacksRoute: StacksRouteWithChildren,
   SubscribeRoute: SubscribeRoute,
   WhitepaperRoute: WhitepaperRoute,
