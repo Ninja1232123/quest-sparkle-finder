@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Capybara } from "@/components/marginalia/Capybara";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 function NotFoundComponent() {
   return (
@@ -91,6 +92,7 @@ function RootComponent() {
   }, [router]);
   return (
     <AuthProvider>
+      <PaymentTestModeBanner />
       <Outlet />
       <Capybara />
     </AuthProvider>
