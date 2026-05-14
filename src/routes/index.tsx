@@ -36,7 +36,9 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "If you don't know your rights, you don't have any. Read the law as one connected record.",
       },
+      { property: "og:url", content: "https://self-law.org/" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/" }],
   }),
 });
 
