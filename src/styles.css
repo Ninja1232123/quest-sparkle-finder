@@ -99,7 +99,7 @@
   --secondary: oklch(0.27 0.03 255);
   --secondary-foreground: var(--ink);
   --muted: oklch(0.27 0.028 255);
-  --muted-foreground: oklch(0.72 0.025 80);
+  --muted-foreground: oklch(0.82 0.025 80);
   --accent: var(--ochre);
   --accent-foreground: oklch(0.13 0.03 255);
   --destructive: oklch(0.65 0.24 22);
@@ -188,6 +188,8 @@
     font-optical-sizing: auto;
     letter-spacing: -0.025em;
     font-weight: 700;
+    color: oklch(0.985 0.012 85);
+    text-shadow: 0 1px 0 oklch(0 0 0 / 0.35), 0 2px 12px oklch(0 0 0 / 0.25);
   }
 
   .paper-grain {
