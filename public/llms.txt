@@ -1,0 +1,24 @@
+# Marginalia
+
+> A citizen's law index. Six federal codebooks — Constitution, U.S. Code, CFR, UCC, Treasury Financial Manual, Internal Revenue Manual — indexed together, cross-referenced, and searchable in one place. Built for pro se litigants and anyone who wants to read the law for themselves.
+
+Marginalia is a research desk, not legal advice. Every result links back to the primary source.
+
+## Pages
+
+- [Home](/): Search and browse the federal codebooks.
+- [The Code](/code): Hub for the six indexed codebooks.
+- [Search](/search): Full-text search across all sources.
+- [Compare](/compare): Side-by-side search across multiple codebooks.
+- [Sources](/library): The agencies and codebooks Marginalia indexes.
+- [Topics](/): Curated walkthroughs of common legal issues.
+- [The Plan](/whitepaper): Roadmap for state codebooks, citation graphs, and more.
+- [About](/about): What Marginalia is and isn't.
+- [Forum](/forum): Community discussion.
+- [Stacks](/stacks): Reference document library.
+- [Subscribe](/subscribe): Pro plan for power tools.
+
+## Optional
+
+- [Account](/account): User account (requires sign-in).
+- [Cases](/cases): Private case folders (requires sign-in).

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /cases
+Disallow: /auth
+Disallow: /checkout
+Disallow: /chambers
+Disallow: /api/
+
+Sitemap: https://self-law.org/sitemap.xml
