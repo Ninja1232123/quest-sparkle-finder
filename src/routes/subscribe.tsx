@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { useAuth } from "@/hooks/use-auth";
 import { GitCompare, Highlighter, FileDown, Bell, Zap } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/subscribe")({
   component: SubscribePage,
@@ -18,16 +21,20 @@ export const Route = createFileRoute("/subscribe")({
 });
 
 function SubscribePage() {
+  const { user, loading } = useAuth();
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <section className="mx-auto max-w-3xl px-6 py-20">
+      <section className="mx-auto max-w-3xl px-6 py-16">
         <div className="citation-tag text-sage-deep">Pro</div>
         <h1 className="mt-2 font-display text-5xl font-semibold tracking-tight md:text-6xl">
           $5/month. The full desk.
         </h1>
         <p className="mt-4 text-lg text-foreground/70">
-          Reading is free. The power tools are five bucks. Less than a coffee.
+          Reading is free. The power tools are five bucks. Less than a coffee. No trial games — if it's
+          not worth $5 to you, it's not worth your time either.
         </p>
 
         <div className="mt-10 grid gap-3 sm:grid-cols-2">
@@ -46,18 +53,52 @@ function SubscribePage() {
         </div>
 
         <div className="mt-10 rounded-3xl border border-sage-deep/30 bg-sage-deep/5 p-8 text-center">
-          <p className="font-display text-sm uppercase tracking-wider text-muted-foreground">coming soon</p>
-          <p className="mt-2 text-foreground/75">
-            Checkout isn't live yet. Make a free account now and you'll be the first invited when Pro opens.
-          </p>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90"
-          >
-            <Zap className="h-4 w-4" />
-            Create a free account
-          </Link>
+          {loading ? (
+            <p className="text-foreground/60">Loading…</p>
+          ) : !user ? (
+            <>
+              <p className="font-display text-sm uppercase tracking-wider text-muted-foreground">
+                make an account first
+              </p>
+              <p className="mt-2 text-foreground/75">
+                Free to sign up. Takes ten seconds. Subscription attaches to your account.
+              </p>
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90"
+              >
+                <Zap className="h-4 w-4" />
+                Create a free account
+              </Link>
+            </>
+          ) : !checkoutOpen ? (
+            <>
+              <p className="font-display text-sm uppercase tracking-wider text-muted-foreground">
+                ready when you are
+              </p>
+              <p className="mt-2 text-foreground/75">Signed in as {user.email}.</p>
+              <button
+                onClick={() => setCheckoutOpen(true)}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-sage-deep px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-warm)] hover:opacity-90"
+              >
+                <Zap className="h-4 w-4" />
+                Subscribe — $5/mo
+              </button>
+              <div className="mt-3 text-xs text-muted-foreground">
+                Cancel anytime from your account.{" "}
+                <Link to="/whitepaper" className="underline hover:text-foreground">
+                  See where this is going →
+                </Link>
+              </div>
+            </>
+          ) : (
+            <StripeEmbeddedCheckout
+              priceId="pro_monthly"
+              userId={user.id}
+              customerEmail={user.email ?? undefined}
+            />
+          )}
         </div>
       </section>
       <SiteFooter />
