@@ -93,11 +93,7 @@ function SubscribePage() {
               </div>
             </>
           ) : (
-            <StripeEmbeddedCheckout
-              priceId="pro_monthly"
-              userId={user.id}
-              customerEmail={user.email ?? undefined}
-            />
+            <StripeEmbeddedCheckout priceId="pro_monthly" />
           )}
         </div>
       </section>
