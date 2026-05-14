@@ -20,7 +20,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { mode, redirect } = useSearch({ from: "/auth" });
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, signUp, user, loading, resetPassword, resendConfirmation } = useAuth();
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(mode === "signup");
   const [email, setEmail] = useState("");
@@ -145,6 +145,32 @@ function AuthPage() {
         </div>
         <div className="mt-2 text-center text-xs text-muted-foreground">
           <Link to="/code" className="hover:text-foreground">Browse the Code without an account →</Link>
+        </div>
+        <div className="mt-6 flex flex-col items-center gap-2 text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!email) { setError("Enter your email above first."); return; }
+              const r = await resetPassword(email);
+              setError(r.error);
+              if (!r.error) setInfo("Password reset email sent. Check your inbox.");
+            }}
+            className="underline hover:text-foreground"
+          >
+            Forgot password?
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!email) { setError("Enter your email above first."); return; }
+              const r = await resendConfirmation(email);
+              setError(r.error);
+              if (!r.error) setInfo("Confirmation email re-sent.");
+            }}
+            className="underline hover:text-foreground"
+          >
+            Resend confirmation email
+          </button>
         </div>
       </section>
       <SiteFooter />
