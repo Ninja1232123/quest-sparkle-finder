@@ -26,6 +26,26 @@ const SOURCE_LABELS: Record<string, string> = {
   irm: "IRM",
 };
 
+type PostKind = "discussion" | "feedback" | "bug";
+
+const KIND_META: Record<PostKind, { label: string; tag: string; hint: string }> = {
+  discussion: {
+    label: "Discussion",
+    tag: "discussion",
+    hint: "Talk shop. Citations welcome — bring receipts when you can.",
+  },
+  feedback: {
+    label: "Feedback",
+    tag: "feedback",
+    hint: "What's working, what isn't, what you wish was here.",
+  },
+  bug: {
+    label: "Bug report",
+    tag: "bug",
+    hint: "What you did, what you expected, what actually happened. Include the URL.",
+  },
+};
+
 export const Route = createFileRoute("/forum")({
   loader: () => listForumPosts(),
   component: ForumPage,
@@ -48,6 +68,7 @@ function ForumPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [composing, setComposing] = useState(false);
+  const [filter, setFilter] = useState<"all" | PostKind>("all");
 
   return (
     <div className="min-h-screen">
@@ -60,12 +81,14 @@ function ForumPage() {
           The Floor
         </h1>
         <p className="mt-6 max-w-xl font-display text-lg italic text-foreground/70 md:text-xl">
-          One room. One rule. <span className="not-italic">No claim without a document.</span>
+          One room. One rule of thumb. <span className="not-italic">If you can cite it, cite it.</span>
         </p>
         <p className="mt-4 max-w-xl text-sm text-foreground/65">
-          Every post here must be anchored to at least one section already on file in
-          the Code. No theories, no third-hand guru lore — just the cite, the quote, and
-          what actually happened.
+          Discussion, feedback, and bug reports all live here. When a post is about the
+          law, link the section in the Code so anyone can read the source themselves —
+          that's what makes this place useful. Anything you read here, including AI
+          summaries, should be checked against the actual document and, before you act
+          on it, a licensed attorney in your jurisdiction.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -86,6 +109,23 @@ function ForumPage() {
           <span className="text-xs text-muted-foreground">
             Reading is open to everyone, always.
           </span>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center gap-1 text-xs">
+          {(["all", "discussion", "feedback", "bug"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={
+                "rounded-full px-3 py-1.5 transition " +
+                (filter === k
+                  ? "bg-foreground text-background"
+                  : "text-foreground/60 hover:bg-muted hover:text-foreground")
+              }
+            >
+              {k === "all" ? "All" : KIND_META[k].label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -113,13 +153,15 @@ function ForumPage() {
             <ScrollText className="mx-auto h-10 w-10 text-foreground/30" />
             <h2 className="mt-4 font-display text-2xl">The floor is empty.</h2>
             <p className="mt-2 text-sm text-foreground/60">
-              First post sets the tone. Bring receipts.
+              First post sets the tone. Be useful, be honest.
             </p>
           </div>
         )}
 
         <ul className="space-y-10">
-          {initial.posts.map((p: ForumPost) => (
+          {initial.posts
+            .filter((p) => filter === "all" || (p.kind ?? "discussion") === filter)
+            .map((p: ForumPost) => (
             <li key={p.id}>
               <PostCard
                 post={p}
@@ -155,6 +197,11 @@ function PostCard({
             {post.pinned && (
               <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
                 pinned
+              </span>
+            )}
+            {post.kind && post.kind !== "discussion" && (
+              <span className="ml-2 rounded-full border border-foreground/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/70">
+                {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
               </span>
             )}
           </div>
