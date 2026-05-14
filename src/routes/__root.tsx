@@ -1,10 +1,13 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Capybara } from "@/components/marginalia/Capybara";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
+const queryClient = new QueryClient();
 
 function NotFoundComponent() {
   return (
@@ -93,10 +96,12 @@ function RootComponent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [router]);
   return (
-    <AuthProvider>
-      <PaymentTestModeBanner />
-      <Outlet />
-      <Capybara />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <PaymentTestModeBanner />
+        <Outlet />
+        <Capybara />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
