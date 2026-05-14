@@ -97,12 +97,21 @@ export type SourceTocNode = {
 export const getSourceTOC = createServerFn({ method: "GET" })
   .inputValidator(z.object({ source: z.string().min(2).max(20) }))
   .handler(async ({ data }) => {
-    const { data: rows, error } = await supabaseAdmin
-      .rpc("source_toc", { p_source: data.source })
-      .range(0, 49999);
-    if (error) return { toc: [] as SourceTocNode[], error: error.message };
+    // PostgREST caps result rows (typically at 1000) regardless of the RPC's
+    // own ORDER BY. Page through with .range() until we drain the function.
+    const PAGE = 1000;
+    const all: { title_group: string; part_group: string | null; doc_count: number }[] = [];
+    for (let offset = 0; offset < 100000; offset += PAGE) {
+      const { data: rows, error } = await supabaseAdmin
+        .rpc("source_toc", { p_source: data.source })
+        .range(offset, offset + PAGE - 1);
+      if (error) return { toc: [] as SourceTocNode[], error: error.message };
+      const batch = (rows ?? []) as typeof all;
+      all.push(...batch);
+      if (batch.length < PAGE) break;
+    }
     const map = new Map<string, SourceTocNode>();
-    for (const r of (rows ?? []) as { title_group: string; part_group: string | null; doc_count: number }[]) {
+    for (const r of all) {
       const key = r.title_group ?? "Other";
       let node = map.get(key);
       if (!node) {
