@@ -40,6 +40,23 @@ export const Route = createFileRoute("/code/")({
     meta: [
       { title: "The Code · Marginalia" },
       { name: "description", content: "Search the Constitution, U.S. Code, UCC, and Treasury Financial Manual side by side, with cross-references traced between them." },
+      { property: "og:title", content: "The Code · Marginalia" },
+      { property: "og:description", content: "Browse and search six federal codebooks indexed in one place." },
+      { property: "og:url", content: "https://self-law.org/code" },
+    ],
+    links: [{ rel: "canonical", href: "https://self-law.org/code" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "The Code · Marginalia",
+          description:
+            "Indexed federal codebooks: Constitution, U.S. Code, CFR, UCC, TFM, and IRM.",
+          url: "https://self-law.org/code",
+        }),
+      },
     ],
   }),
   errorComponent: ({ error }) => (
