@@ -29,6 +29,11 @@ async function upsertSubscription(sub: any, env: StripeEnv) {
     return;
   }
   const item = sub.items?.data?.[0];
+  const priceId = pickPriceId(item);
+  if (!priceId) {
+    console.error("subscription has no price", sub.id);
+    return;
+  }
   const periodStart = item?.current_period_start ?? sub.current_period_start;
   const periodEnd = item?.current_period_end ?? sub.current_period_end;
 
@@ -38,7 +43,7 @@ async function upsertSubscription(sub: any, env: StripeEnv) {
       stripe_subscription_id: sub.id,
       stripe_customer_id: sub.customer,
       product_id: item?.price?.product,
-      price_id: pickPriceId(item),
+      price_id: priceId,
       status: sub.status,
       current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
