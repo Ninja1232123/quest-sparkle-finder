@@ -81,7 +81,6 @@ function StacksPage() {
     "Reference",
     "Chapters in plain text",
     "Long-form readings",
-    "Source archives",
     "Other",
   ];
   const sortedGroups = ORDER.filter((k) => groups.has(k)).map((k) => [k, groups.get(k)!] as const);
