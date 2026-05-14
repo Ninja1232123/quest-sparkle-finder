@@ -259,6 +259,7 @@ function PostCard({
 function Composer({ onDone }: { onDone: () => void }) {
   const validate = useServerFn(validateCitations);
   const create = useServerFn(createForumPost);
+  const [kind, setKind] = useState<PostKind>("discussion");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [citationInput, setCitationInput] = useState("");
@@ -288,16 +289,13 @@ function Composer({ onDone }: { onDone: () => void }) {
 
   async function submit() {
     setError(null);
-    if (resolved.length === 0) {
-      setError("At least one resolved citation is required.");
-      return;
-    }
     setBusy(true);
     const res = await create({
       data: {
         title: title.trim(),
         body: body.trim(),
         citations: resolved.map((r) => r.identifier),
+        kind,
       },
     });
     setBusy(false);
@@ -314,6 +312,27 @@ function Composer({ onDone }: { onDone: () => void }) {
       <h2 className="mt-1 font-display text-2xl">New post for the floor</h2>
 
       <div className="mt-6 space-y-4">
+        <div>
+          <label className="citation-tag text-muted-foreground">kind of post</label>
+          <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+            {(["discussion", "feedback", "bug"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={
+                  "rounded-full px-3 py-1.5 transition " +
+                  (kind === k
+                    ? "bg-foreground text-background"
+                    : "border border-foreground/20 text-foreground/70 hover:border-foreground/50")
+                }
+              >
+                {KIND_META[k].label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-foreground/55">{KIND_META[kind].hint}</p>
+        </div>
         <div>
           <label className="citation-tag text-muted-foreground">title</label>
           <Input
@@ -339,12 +358,12 @@ function Composer({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="rounded-2xl border bg-background/50 p-4">
-          <label className="citation-tag text-muted-foreground">attach citations (required)</label>
+          <label className="citation-tag text-muted-foreground">attach citations (optional, encouraged)</label>
           <p className="mt-1 text-xs text-foreground/60">
-            Paste a citation like <code className="font-mono">15 USC 1692g</code>,{" "}
+            If your post is about the law, link the section so others can read the source.
+            Paste something like <code className="font-mono">15 USC 1692g</code>,{" "}
             <code className="font-mono">29 CFR 1910.95</code>, or a path like{" "}
-            <code className="font-mono">/usc/42/1983</code>. Each one must already exist
-            in the Code.
+            <code className="font-mono">/usc/42/1983</code>. Skip this for feedback or bug reports.
           </p>
           <div className="mt-3 flex gap-2">
             <Input
@@ -409,14 +428,19 @@ function Composer({ onDone }: { onDone: () => void }) {
             disabled={
               busy ||
               title.trim().length < 4 ||
-              body.trim().length < 10 ||
-              resolved.length === 0
+              body.trim().length < 10
             }
           >
             {busy ? "Posting…" : "Post to the floor"}
           </Button>
         </div>
       </div>
+
+      <p className="mt-6 border-t border-border/60 pt-4 text-[11px] leading-relaxed text-foreground/55">
+        Heads up: anything posted, replied to, or summarized here is research and
+        opinion, not legal advice. Validate any interpretation with a licensed attorney
+        in your jurisdiction before you act on it.
+      </p>
     </div>
   );
 }
