@@ -64,13 +64,15 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       mode: isRecurring ? "subscription" : "payment",
       ui_mode: "embedded_page",
       return_url: data.returnUrl,
-      managed_payments: { enabled: true },
+      // Stripe-managed full compliance (tax, fraud, disputes, support).
+      // Not yet in SDK types for 2026-03-25.dahlia — cast through.
+      ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
       ...(customerId && { customer: customerId }),
       ...(data.userId && {
         metadata: { userId: data.userId },
         ...(isRecurring && { subscription_data: { metadata: { userId: data.userId } } }),
       }),
-    });
+    } as Parameters<typeof stripe.checkout.sessions.create>[0]);
 
     return session.client_secret;
   });
