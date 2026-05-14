@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhitepaperRouteImport } from './routes/whitepaper'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SearchRouteImport } from './routes/search'
@@ -23,12 +24,18 @@ import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
+const WhitepaperRoute = WhitepaperRouteImport.update({
+  id: '/whitepaper',
+  path: '/whitepaper',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscribeRoute = SubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
@@ -99,6 +106,11 @@ const CodeSplatRoute = CodeSplatRouteImport.update({
   path: '/code/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
   path: '/cases/$caseId',
@@ -137,7 +149,9 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
   '/subscribe': typeof SubscribeRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
@@ -158,7 +172,9 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
   '/subscribe': typeof SubscribeRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases': typeof CasesIndexRoute
@@ -180,7 +196,9 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/stacks': typeof StacksRoute
   '/subscribe': typeof SubscribeRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
@@ -203,7 +221,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/stacks'
     | '/subscribe'
+    | '/whitepaper'
     | '/cases/$caseId'
+    | '/checkout/return'
     | '/code/$'
     | '/topic/$slug'
     | '/cases/'
@@ -224,7 +244,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/stacks'
     | '/subscribe'
+    | '/whitepaper'
     | '/cases/$caseId'
+    | '/checkout/return'
     | '/code/$'
     | '/topic/$slug'
     | '/cases'
@@ -245,7 +267,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/stacks'
     | '/subscribe'
+    | '/whitepaper'
     | '/cases/$caseId'
+    | '/checkout/return'
     | '/code/$'
     | '/topic/$slug'
     | '/cases/'
@@ -267,7 +291,9 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   StacksRoute: typeof StacksRoute
   SubscribeRoute: typeof SubscribeRoute
+  WhitepaperRoute: typeof WhitepaperRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
   CasesIndexRoute: typeof CasesIndexRoute
@@ -280,6 +306,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whitepaper': {
+      id: '/whitepaper'
+      path: '/whitepaper'
+      fullPath: '/whitepaper'
+      preLoaderRoute: typeof WhitepaperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscribe': {
       id: '/subscribe'
       path: '/subscribe'
@@ -378,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cases/$caseId': {
       id: '/cases/$caseId'
       path: '/cases/$caseId'
@@ -427,7 +467,9 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   StacksRoute: StacksRoute,
   SubscribeRoute: SubscribeRoute,
+  WhitepaperRoute: WhitepaperRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
   CasesIndexRoute: CasesIndexRoute,
@@ -440,3 +482,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
