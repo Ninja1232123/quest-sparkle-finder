@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { listStackItems, getStackSignedUrl, type StackItem } from "@/lib/stacks.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "@tanstack/react-router";
 import { FileText, FileArchive, BookOpen, Download, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/stacks")({
-  loader: () => listStackItems(),
   component: StacksPage,
   head: () => ({
     meta: [
@@ -57,9 +59,17 @@ function categoryFor(name: string, mime: string): string {
 }
 
 function StacksPage() {
-  const { items, error } = Route.useLoaderData();
+  const { user, loading } = useAuth();
+  const list = useServerFn(listStackItems);
   const sign = useServerFn(getStackSignedUrl);
   const [busy, setBusy] = useState<string | null>(null);
+  const { data, isLoading } = useQuery({
+    queryKey: ["stacks-list"],
+    queryFn: () => list({ data: undefined as never }),
+    enabled: !!user,
+  });
+  const items = data?.items ?? [];
+  const error = data?.error ?? null;
 
   async function open(name: string) {
     setBusy(name);
@@ -68,9 +78,28 @@ function StacksPage() {
     if (res.url) window.open(res.url, "_blank", "noopener,noreferrer");
   }
 
+  if (!loading && !user) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <section className="mx-auto max-w-2xl px-6 py-32 text-center">
+          <h1 className="font-display text-4xl font-semibold tracking-tight">The Stacks</h1>
+          <p className="mt-4 text-foreground/70">Sign in to browse the back room.</p>
+          <Link
+            to="/auth"
+            className="mt-6 inline-flex items-center rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background"
+          >
+            Sign in
+          </Link>
+        </section>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   // Group by category
   const groups = new Map<string, StackItem[]>();
-  for (const it of items as StackItem[]) {
+  for (const it of items) {
     const cat = categoryFor(it.name, it.mime);
     const arr = groups.get(cat) ?? [];
     arr.push(it);
@@ -108,6 +137,9 @@ function StacksPage() {
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
             {error}
           </div>
+        )}
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Loading the shelf…</div>
         )}
 
         <div className="space-y-20">
