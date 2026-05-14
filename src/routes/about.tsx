@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
 export const Route = createFileRoute("/about")({
   component: About,
@@ -21,6 +23,8 @@ export const Route = createFileRoute("/about")({
 });
 
 function About() {
+  const [donationOpen, setDonationOpen] = useState(false);
+  const [amount, setAmount] = useState(10);
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -86,6 +90,59 @@ function About() {
           <p className="mt-3 text-xs italic text-muted-foreground">
             Reading the law stays free. Every $5 funds the next book on the shelf.
           </p>
+        </div>
+
+        <div className="mt-10 rounded-3xl border-2 border-accent/40 bg-accent/5 p-8">
+          <div className="citation-tag text-accent">no account required</div>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            Or just toss a coin in the jar.
+          </h2>
+          <p className="mt-3 text-foreground/75 leading-relaxed">
+            One-time donation. No subscription, no login, no follow-up emails.
+            Goes straight to keeping the lights on and adding the next codebook.
+          </p>
+          {!donationOpen ? (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {[5, 10, 25, 50].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setAmount(v)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    amount === v
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border hover:bg-accent/10"
+                  }`}
+                >
+                  ${v}
+                </button>
+              ))}
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={amount}
+                onChange={(e) => setAmount(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
+                className="h-10 w-24 rounded-full border border-border bg-background px-4 text-sm"
+                aria-label="Custom amount"
+              />
+              <button
+                onClick={() => setDonationOpen(true)}
+                className="ml-auto inline-flex items-center gap-2 rounded-full bg-accent px-6 py-2 text-sm font-bold text-accent-foreground shadow-[var(--shadow-warm)] hover:-translate-y-0.5 transition-transform"
+              >
+                ♥ Donate ${amount}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6">
+              <StripeEmbeddedCheckout donationCents={amount * 100} returnPath="/checkout/return" />
+              <button
+                onClick={() => setDonationOpen(false)}
+                className="mt-3 text-xs text-muted-foreground underline"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </section>
       <SiteFooter />

@@ -1,17 +1,21 @@
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe";
-import { createCheckoutSession } from "@/utils/payments.functions";
+import { createCheckoutSession, createDonationCheckout } from "@/utils/payments.functions";
 
-interface Props {
-  priceId: string;
+type Props = {
   returnPath?: string;
-}
+} & ({ priceId: string } | { donationCents: number });
 
-export function StripeEmbeddedCheckout({ priceId, returnPath }: Props) {
+export function StripeEmbeddedCheckout(props: Props) {
   const fetchClientSecret = async (): Promise<string> => {
-    const secret = await createCheckoutSession({
-      data: { priceId, returnPath },
-    });
+    const secret =
+      "donationCents" in props
+        ? await createDonationCheckout({
+            data: { amountInCents: props.donationCents, returnPath: props.returnPath },
+          })
+        : await createCheckoutSession({
+            data: { priceId: props.priceId, returnPath: props.returnPath },
+          });
     if (!secret) throw new Error("No client secret returned");
     return secret;
   };

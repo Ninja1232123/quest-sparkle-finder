@@ -9,6 +9,8 @@ type AuthCtx = {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  resendConfirmation: (email: string) => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -52,6 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     signOut: async () => {
       await supabase.auth.signOut();
+    },
+    resetPassword: async (email) => {
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth?mode=login` : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      return { error: error?.message ?? null };
+    },
+    resendConfirmation: async (email) => {
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
+      const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectTo } });
+      return { error: error?.message ?? null };
     },
   };
 
