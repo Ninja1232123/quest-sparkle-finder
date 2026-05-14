@@ -10,7 +10,7 @@ export const Route = createFileRoute("/subscribe")({
   component: SubscribePage,
   head: () => ({
     meta: [
-      { title: "Go Pro · Marginalia" },
+      { title: "Go Pro Se · Marginalia" },
       {
         name: "description",
         content:
@@ -28,13 +28,13 @@ function SubscribePage() {
     <div className="min-h-screen">
       <SiteHeader />
       <section className="mx-auto max-w-3xl px-6 py-16">
-        <div className="citation-tag text-sage-deep">Pro</div>
+        <div className="citation-tag text-sage-deep">Go Pro Se</div>
         <h1 className="mt-2 font-display text-5xl font-semibold tracking-tight md:text-6xl">
-          $5/month. The full desk.
+          Go Pro Se. $5/month.
         </h1>
         <p className="mt-4 text-lg text-foreground/70">
-          Reading is free. The power tools are five bucks. Less than a coffee. No trial games — if it's
-          not worth $5 to you, it's not worth your time either.
+          Reading is free. Representing yourself shouldn't cost a retainer. Five bucks gets you the
+          power tools — and shuts the capybara up before it traps you in a glitched multiverse.
         </p>
 
         <div className="mt-10 grid gap-3 sm:grid-cols-2">
