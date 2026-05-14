@@ -18,7 +18,21 @@ type CaseRow = {
 
 export const Route = createFileRoute("/cases/")({
   component: CasesIndex,
-  head: () => ({ meta: [{ title: "My Cases · Marginalia" }] }),
+  head: () => ({
+    meta: [
+      { title: "My Cases · Marginalia" },
+      {
+        name: "description",
+        content:
+          "Your private case folders: organize saved citations, notes, and pinned sections from the federal codebooks.",
+      },
+      { property: "og:title", content: "My Cases · Marginalia" },
+      { property: "og:description", content: "Organize saved citations and research notes by case." },
+      { property: "og:url", content: "https://self-law.org/cases" },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "https://self-law.org/cases" }],
+  }),
 });
 
 function CasesIndex() {
