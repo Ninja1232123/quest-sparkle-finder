@@ -41,6 +41,7 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Marginalia · Read the law for yourself" },
       { property: "og:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Marginalia" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Marginalia · Read the law for yourself" },
       { name: "twitter:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
@@ -51,6 +52,32 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "Marginalia",
+              url: "https://self-law.org",
+              description: "A citizen's law index — federal codebooks read together.",
+            },
+            {
+              "@type": "WebSite",
+              name: "Marginalia",
+              url: "https://self-law.org",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://self-law.org/search?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
       },
     ],
   }),
@@ -99,7 +126,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PaymentTestModeBanner />
-        <Outlet />
+        <main id="main">
+          <Outlet />
+        </main>
         <Capybara />
       </AuthProvider>
     </QueryClientProvider>
