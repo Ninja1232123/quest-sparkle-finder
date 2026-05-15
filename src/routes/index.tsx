@@ -6,7 +6,8 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { listSources } from "@/server/documents.functions";
 import heroCollage from "@/assets/hero-collage.jpg";
-import { GitCompare, Highlighter, FileDown, Bell, Zap } from "lucide-react";
+import { GitCompare, Highlighter, FileDown, Bell, Zap, Map, Brain, Network, Scale, Calendar, GraduationCap } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "U.S. Constitution",
