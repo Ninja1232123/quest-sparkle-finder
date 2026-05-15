@@ -201,6 +201,21 @@ export function Capybara() {
           className="pointer-events-none absolute inset-0 -z-10 rounded-full blur-2xl opacity-70"
           style={{ background: "radial-gradient(circle at 50% 60%, oklch(0.78 0.18 350 / 0.55), transparent 70%)" }}
         />
+        {/* Hello-my-name-is nametag */}
+        <div
+          aria-hidden
+          className="absolute -left-2 -top-3 z-10 -rotate-6 select-none"
+          style={{ transformOrigin: "left bottom" }}
+        >
+          <div className="overflow-hidden rounded-[3px] border border-foreground/40 bg-white shadow-[0_2px_6px_-2px_rgba(0,0,0,0.4)]">
+            <div className="bg-[oklch(0.55_0.22_25)] px-1.5 py-[1px] text-center font-display text-[7px] font-bold uppercase tracking-[0.12em] text-white">
+              Hello my name is
+            </div>
+            <div className="px-2 py-0.5 text-center font-mono text-[11px] font-bold leading-none text-[oklch(0.25_0.05_25)]">
+              Soup
+            </div>
+          </div>
+        </div>
         <pre className="font-mono text-[11px] font-bold leading-tight whitespace-pre"
              style={{ color: "oklch(0.92 0.08 350)", textShadow: "0 0 10px oklch(0.78 0.2 350 / 0.7)" }}>
 {FRAMES[frame]}
