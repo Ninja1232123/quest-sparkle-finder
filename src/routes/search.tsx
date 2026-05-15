@@ -6,7 +6,8 @@ import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/server/documents.functions";
-import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check } from "lucide-react";
+import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
 
 const searchSchema = z.object({
