@@ -77,7 +77,7 @@ function LegalBody({ text, q, citations }: { text: string; q?: string; citations
   return (
     <div className="space-y-2.5">
       {paragraphs.map((p, i) => (
-        <div key={i} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
+        <div key={i} id={`para-${i}`} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
           {p.label && (
             <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
               {p.label}
@@ -153,6 +153,62 @@ const SOURCE_NAMES: Record<string, string> = {
   tfm: "TFM",
   irm: "IRM",
 };
+
+function DocOutline({ text }: { text: string }) {
+  const paragraphs = useMemo(() => parseLegalBody(text), [text]);
+  const items = useMemo(
+    () => paragraphs.map((p, i) => ({ ...p, idx: i })).filter((p) => p.level === 1 && p.label),
+    [paragraphs],
+  );
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (items.length < 3) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          const id = visible[0].target.id;
+          const num = parseInt(id.replace("para-", ""), 10);
+          setActiveIdx(num);
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px" },
+    );
+    for (const item of items) {
+      const el = document.getElementById(`para-${item.idx}`);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [items]);
+
+  if (items.length < 3) return null;
+
+  return (
+    <div className="hidden 2xl:block fixed top-24 left-[calc(50%+26rem)] w-44 z-10">
+      <div className="citation-tag text-muted-foreground/60 mb-2 px-2">Sections</div>
+      <nav className="space-y-0.5 max-h-[70vh] overflow-y-auto">
+        {items.map((p) => {
+          const isActive = p.idx === activeIdx;
+          return (
+            <a
+              key={p.idx}
+              href={`#para-${p.idx}`}
+              className={`flex items-start gap-1.5 rounded-lg px-2 py-1 text-[11px] leading-snug transition-colors ${
+                isActive
+                  ? "bg-foreground/8 text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              <span className="font-mono text-[9px] shrink-0 mt-0.5 text-foreground/30">{p.label}</span>
+              <span className="line-clamp-2">{p.text.length > 55 ? p.text.slice(0, 55) + "…" : p.text}</span>
+            </a>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
 
 function DocumentPage() {
   const { document, citations, incoming, prev, next } = Route.useLoaderData();
@@ -436,6 +492,8 @@ function DocumentPage() {
           </div>
         )}
       </article>
+
+      <DocOutline text={document.body_text ?? ""} />
 
       {showTop && (
         <button
