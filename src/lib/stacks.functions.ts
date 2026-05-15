@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export type StackItem = {
   name: string;
@@ -26,6 +30,7 @@ const guessMime = (n: string, fallback: string): string => {
 export const listStackItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
+  const supabaseAdmin = await getAdminClient();
   const { data, error } = await supabaseAdmin.storage.from("docs").list("", {
     limit: 1000,
     sortBy: { column: "name", order: "asc" },
@@ -46,6 +51,7 @@ export const getStackSignedUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ name: z.string().min(1).max(500) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const { data: signed, error } = await supabaseAdmin.storage
       .from("docs")
       .createSignedUrl(data.name, 60 * 30); // 30 min
