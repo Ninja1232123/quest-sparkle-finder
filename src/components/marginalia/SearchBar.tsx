@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Search, Lock, Sparkles } from "lucide-react";
 import { searchDocuments } from "@/server/documents.functions";
+import { useSearchQuota } from "@/hooks/use-search-quota";
+import { useAuth } from "@/hooks/use-auth";
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "Const.",
@@ -31,6 +33,8 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { remaining, blocked, isPro, consume, limit } = useSearchQuota();
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -67,6 +71,16 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (q.trim().length < 2) return;
+    if (!user) {
+      setOpen(false);
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(q.trim())}` } });
+      return;
+    }
+    if (blocked || !consume()) {
+      setOpen(false);
+      navigate({ to: "/subscribe" });
+      return;
+    }
     setOpen(false);
     navigate({ to: "/search", search: { q: q.trim() } });
   }
@@ -93,6 +107,20 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
           }`}
         />
       </form>
+
+      {user && !isPro && (
+        <div className={`mt-1.5 flex items-center justify-between gap-2 px-2 text-[11px] ${blocked ? "text-destructive" : "text-muted-foreground"}`}>
+          <span className="inline-flex items-center gap-1">
+            {blocked ? <Lock className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+            {blocked
+              ? `Daily free searches used (${limit}/${limit}).`
+              : `${remaining} of ${limit} free searches left today.`}
+          </span>
+          <Link to="/subscribe" className="font-display italic text-accent hover:underline">
+            Go unlimited →
+          </Link>
+        </div>
+      )}
 
       {open && q.trim().length >= 2 && (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-foreground/10 bg-card shadow-[var(--shadow-warm)]">
