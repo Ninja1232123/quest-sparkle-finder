@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { generateQueryEmbedding } from "@/lib/embeddings.functions";
 
 // Queries that look like natural-language questions get the hybrid FTS + semantic path.
@@ -13,6 +12,11 @@ function isSemanticQuery(q: string): boolean {
 }
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
+
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export type DocumentRow = {
   id: string;
@@ -51,6 +55,7 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 export const listSources = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await getAdminClient();
   // Pull the distinct source codes, then count each in parallel using head+exact-count
   // (avoids loading every row's source_code just to tally).
   const codes = ["const", "usc", "cfr", "ucc", "tfm", "irm"];
@@ -77,6 +82,7 @@ export const listDocumentsBySource = createServerFn({ method: "GET" })
     limit: z.number().int().min(1).max(5000).optional(),
   }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     let q = supabaseAdmin
       .from("documents")
       .select("id, identifier, source_code, parent_label, section_label, heading, sort_key, body_text")
@@ -107,6 +113,7 @@ export type SourceTocNode = {
 export const getSourceTOC = createServerFn({ method: "GET" })
   .inputValidator(z.object({ source: z.string().min(2).max(20) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     // PostgREST caps result rows (typically at 1000) regardless of the RPC's
     // own ORDER BY. Page through with .range() until we drain the function.
     const PAGE = 1000;
@@ -154,6 +161,7 @@ export const logSearchEvent = createServerFn({ method: "POST" })
     exact_hit: z.boolean().optional(),
   }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const q_normalized = data.q.toLowerCase().replace(/\s+/g, " ").trim();
     await supabaseAdmin.from("search_events").insert({
       q: data.q,
@@ -168,6 +176,7 @@ export const logSearchEvent = createServerFn({ method: "POST" })
 export const bumpDocView = createServerFn({ method: "POST" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     await supabaseAdmin.rpc("bump_doc_view", { p_identifier: data.identifier });
     return { ok: true };
   });
