@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { getEmbeddingStatus, runEmbeddingBatch } from "@/server/embeddings.functions";
+import { getEmbeddingStatus, runEmbeddingBatch } from "@/lib/embeddings.functions";
 
 export const Route = createFileRoute("/admin/embeddings")({
   loader: async () => getEmbeddingStatus(),
