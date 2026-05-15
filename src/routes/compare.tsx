@@ -170,6 +170,41 @@ function ComparePage() {
             ))}
           </div>
         )}
+
+        {/* Vision: where compare goes next */}
+        <div className="mt-20">
+          <ComingSoonHeader
+            eyebrow="compare, leveled up"
+            title="Where this gets really useful."
+            subtitle="Right now you get the same term in every column. Here's what we're building on top."
+          />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <ComingSoonCard
+              icon={FileDiff}
+              status="building"
+              title="True diff mode"
+              pitch="Pin two sections — current vs. prior version, federal vs. state, statute vs. regulation — and see the changes word-for-word, with the substantive shifts highlighted."
+            />
+            <ComingSoonCard
+              icon={Brain}
+              status="soon"
+              title="Plain-English summary of differences"
+              pitch="One paragraph, generated from the actual text, that tells you what's actually different between the columns — and links every claim back to the source."
+            />
+            <ComingSoonCard
+              icon={Highlighter}
+              status="soon"
+              title="Match-aligned columns"
+              pitch="Subsections that say the same thing line up across columns. Gaps mean one codebook covers something the others don't — and we'll tell you which."
+            />
+            <ComingSoonCard
+              icon={Sparkles}
+              status="vision"
+              title="Authority-rank"
+              pitch="When two sources conflict, see which one wins under preemption, supremacy, or the agency's own deference rules — with the doctrine cited."
+            />
+          </div>
+        </div>
       </section>
       <SiteFooter />
     </div>
