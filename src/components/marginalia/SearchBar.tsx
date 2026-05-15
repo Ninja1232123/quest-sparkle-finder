@@ -32,6 +32,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
   const [hits, setHits] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { remaining, blocked, isPro, consume, limit } = useSearchQuota();
@@ -42,6 +43,24 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.key === "/" &&
+        !e.metaKey && !e.ctrlKey && !e.altKey &&
+        !(document.activeElement instanceof HTMLInputElement) &&
+        !(document.activeElement instanceof HTMLTextAreaElement) &&
+        !document.activeElement?.getAttribute("contenteditable")
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        setOpen(true);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -90,6 +109,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
       <form onSubmit={submit} className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          ref={inputRef}
           autoFocus={autoFocus}
           value={q}
           onChange={(e) => {

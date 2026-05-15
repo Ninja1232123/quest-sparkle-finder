@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useState } from "react";
@@ -45,6 +45,7 @@ type Hit = {
   snippet: string;
   exact?: boolean;
   semantic?: boolean;
+  trgm?: boolean;
 };
 
 export const Route = createFileRoute("/search")({
@@ -117,6 +118,7 @@ function parseSnippet(snippet: string): React.ReactNode {
 function SearchPage() {
   const { q, source, exact, words, exclude } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
+  const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(!!(exact || words || exclude));
 
   // Group by source
@@ -183,10 +185,7 @@ function SearchPage() {
                         className="peer sr-only"
                         checked={exact}
                         onChange={(e) => {
-                          const url = new URL(window.location.href);
-                          if (e.target.checked) url.searchParams.set("exact", "true");
-                          else url.searchParams.delete("exact");
-                          window.location.href = url.toString();
+                          navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude } });
                         }}
                       />
                       <div className="peer-checked:bg-sage-deep h-5 w-9 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4" />
@@ -203,12 +202,8 @@ function SearchPage() {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      const fd = new FormData(e.currentTarget);
-                      const val = fd.get("words") as string;
-                      const url = new URL(window.location.href);
-                      if (val.trim()) url.searchParams.set("words", val.trim());
-                      else url.searchParams.delete("words");
-                      window.location.href = url.toString();
+                      const val = (new FormData(e.currentTarget).get("words") as string).trim();
+                      navigate({ to: "/search", search: { q, source, exact, words: val, exclude } });
                     }}
                     className="mt-1.5 flex gap-2"
                   >
@@ -230,12 +225,8 @@ function SearchPage() {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      const fd = new FormData(e.currentTarget);
-                      const val = fd.get("exclude") as string;
-                      const url = new URL(window.location.href);
-                      if (val.trim()) url.searchParams.set("exclude", val.trim());
-                      else url.searchParams.delete("exclude");
-                      window.location.href = url.toString();
+                      const val = (new FormData(e.currentTarget).get("exclude") as string).trim();
+                      navigate({ to: "/search", search: { q, source, exact, words, exclude: val } });
                     }}
                     className="mt-1.5 flex gap-2"
                   >
@@ -269,11 +260,7 @@ function SearchPage() {
               {hasFilters && (
                 <button
                   onClick={() => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete("exact");
-                    url.searchParams.delete("words");
-                    url.searchParams.delete("exclude");
-                    window.location.href = url.toString();
+                    navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "" } });
                   }}
                   className="mt-3 flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive"
                 >
@@ -345,6 +332,12 @@ function SearchPage() {
                   <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 text-[10px] font-medium text-accent">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                     semantic
+                  </span>
+                )}
+                {(hits as Hit[]).some((h: Hit) => h.trgm) && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-ochre/30 bg-ochre/8 px-2 py-0.5 text-[10px] font-medium text-ochre" title="Fuzzy match — no exact keyword hits found, showing closest results">
+                    <span className="h-1.5 w-1.5 rounded-full bg-ochre" />
+                    fuzzy match
                   </span>
                 )}
                 <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">

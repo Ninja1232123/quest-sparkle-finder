@@ -379,6 +379,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
     //    Short keyword queries → FTS-only (faster, no embedding round-trip).
     let rows: SearchRow[] | null = null;
     let usedSemantic = false;
+    let usedTrgm = false;
 
     if (isSemanticQuery(raw)) {
       // Generate query embedding (returns null if no API key or on error — safe fallback).
@@ -425,6 +426,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
           p_limit: 20,
         });
       rows = trgmRows ?? [];
+      if (rows.length > 0) usedTrgm = true;
     }
 
     const hits = (rows ?? []).map((r) => ({
@@ -436,6 +438,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
       snippet: r.snippet ?? "",
       exact: false,
       semantic: usedSemantic,
+      trgm: usedTrgm,
     }));
 
     supabaseAdmin.from("search_events").insert({
