@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
-import { getDocument, type DocCitationRow, type IncomingCitation } from "@/server/documents.functions";
+import { getDocument, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useEffect, useMemo, useState } from "react";

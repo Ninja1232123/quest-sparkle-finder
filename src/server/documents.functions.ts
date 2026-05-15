@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { generateQueryEmbedding } from "@/server/embeddings.functions";
+import { generateQueryEmbedding } from "@/lib/embeddings.functions";
 
 // Queries that look like natural-language questions get the hybrid FTS + semantic path.
 // Short keyword searches stay on FTS-only (faster, no embedding round-trip).

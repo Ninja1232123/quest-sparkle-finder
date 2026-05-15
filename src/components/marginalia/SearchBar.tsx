@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Lock, Sparkles } from "lucide-react";
-import { searchDocuments } from "@/server/documents.functions";
+import { searchDocuments } from "@/lib/documents.functions";
 import { useSearchQuota } from "@/hooks/use-search-quota";
 import { useAuth } from "@/hooks/use-auth";
 

@@ -3,7 +3,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { searchDocuments } from "@/server/documents.functions";
+import { searchDocuments } from "@/lib/documents.functions";
 import { GitCompare, Sparkles, Highlighter, Brain, FileDiff } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
