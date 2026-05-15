@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getOptionalUserId } from "@/integrations/supabase/optional-auth";
 
 async function getPublicClient() {
   const { supabase } = await import("@/integrations/supabase/client");
@@ -16,13 +17,13 @@ export type ForumCitation = {
 
 export type ForumPost = {
   id: string;
-  user_id: string;
   title: string;
   body: string;
   pinned: boolean;
   created_at: string;
   kind: string;
   display_name: string | null;
+  is_owner: boolean;
   citations: ForumCitation[];
 };
 
@@ -102,6 +103,7 @@ export const listForumPosts = createServerFn({ method: "GET" }).handler(async ()
 
   const ids = posts.map((p) => p.id);
   const userIds = Array.from(new Set(posts.map((p) => p.user_id)));
+  const viewerId = await getOptionalUserId();
   const [{ data: cites }, { data: profiles }] = await Promise.all([
     supabaseAdmin
       .from("forum_post_citations")
@@ -123,13 +125,13 @@ export const listForumPosts = createServerFn({ method: "GET" }).handler(async ()
   const nameByUser = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
   const out: ForumPost[] = posts.map((p) => ({
     id: p.id,
-    user_id: p.user_id,
     title: p.title,
     body: p.body,
     pinned: p.pinned,
     created_at: p.created_at,
     kind: (p as { kind?: string }).kind ?? "discussion",
     display_name: nameByUser.get(p.user_id) ?? null,
+    is_owner: !!viewerId && viewerId === p.user_id,
     citations: citesByPost.get(p.id) ?? [],
   }));
   return { posts: out, error: null as string | null };

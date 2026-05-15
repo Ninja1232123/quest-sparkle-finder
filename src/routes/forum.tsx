@@ -165,7 +165,7 @@ function ForumPage() {
             <li key={p.id}>
               <PostCard
                 post={p}
-                isOwner={user?.id === p.user_id}
+                isOwner={p.is_owner}
                 onDelete={() => router.invalidate()}
               />
             </li>

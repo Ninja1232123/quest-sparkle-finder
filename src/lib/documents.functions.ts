@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateQueryEmbedding } from "@/lib/embeddings.functions";
+import { getOptionalUserId } from "@/integrations/supabase/optional-auth";
 
 // Queries that look like natural-language questions get the hybrid FTS + semantic path.
 // Short keyword searches stay on FTS-only (faster, no embedding round-trip).
@@ -393,8 +394,11 @@ export const searchDocuments = createServerFn({ method: "GET" })
     let usedTrgm = false;
 
     if (isSemanticQuery(raw)) {
-      // Generate query embedding (returns null if no API key or on error — safe fallback).
-      const embedding = await generateQueryEmbedding(raw);
+      // Gate the paid embedding call behind authentication. Anonymous callers
+      // (including direct URL hits to /search?q=…) fall through to FTS-only,
+      // so unauthenticated traffic can never trigger AI cost.
+      const userId = await getOptionalUserId();
+      const embedding = userId ? await generateQueryEmbedding(raw) : null;
       if (embedding) {
         usedSemantic = true;
         const { data: hybridRows, error: hybridError } = await (supabaseAdmin.rpc as unknown as (
