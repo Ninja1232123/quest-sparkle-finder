@@ -168,6 +168,7 @@ export type Database = {
           body_md: string | null
           body_text: string | null
           created_at: string
+          embedding: string | null
           heading: string | null
           hierarchy: Json | null
           id: string
@@ -183,6 +184,7 @@ export type Database = {
           body_md?: string | null
           body_text?: string | null
           created_at?: string
+          embedding?: string | null
           heading?: string | null
           hierarchy?: Json | null
           id?: string
@@ -198,6 +200,7 @@ export type Database = {
           body_md?: string | null
           body_text?: string | null
           created_at?: string
+          embedding?: string | null
           heading?: string | null
           hierarchy?: Json | null
           id?: string
@@ -652,6 +655,49 @@ export type Database = {
       }
       resolve_doc_citations: { Args: never; Returns: number }
       resolve_usc_citations: { Args: never; Returns: number }
+      search_documents_fts: {
+        Args: { p_limit?: number; p_query: string; p_source?: string }
+        Returns: {
+          heading: string
+          identifier: string
+          parent_label: string
+          rank: number
+          section_label: string
+          snippet: string
+          source_code: string
+        }[]
+      }
+      search_documents_trgm: {
+        Args: { p_limit?: number; p_query: string; p_source?: string }
+        Returns: {
+          heading: string
+          identifier: string
+          parent_label: string
+          rank: number
+          section_label: string
+          snippet: string
+          source_code: string
+        }[]
+      }
+      search_hybrid: {
+        Args: {
+          p_limit?: number
+          p_query_embedding?: string
+          p_query_text: string
+          p_source?: string
+        }
+        Returns: {
+          heading: string
+          identifier: string
+          parent_label: string
+          rank: number
+          section_label: string
+          snippet: string
+          source_code: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       source_toc: {
         Args: { p_source: string }
         Returns: {
