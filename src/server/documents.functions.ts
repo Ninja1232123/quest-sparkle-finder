@@ -310,15 +310,7 @@ function buildSnippet(body: string, terms: string[], len = 260): string {
   if (idx !== -1) start = Math.max(0, idx - 60);
   const slice = body.slice(start, start + len).replace(/\s+/g, " ").trim();
   const prefix = start > 0 ? "…" : "";
-  // Highlight terms with <mark>; keep raw text safe by escaping first.
-  const escaped = prefix + slice.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
-  let highlighted = escaped;
-  for (const t of terms) {
-    if (!t || t.length < 2) continue;
-    const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
-    highlighted = highlighted.replace(re, "<mark>$1</mark>");
-  }
-  return highlighted;
+  return prefix + slice;
 }
 
 export const searchDocuments = createServerFn({ method: "GET" })
@@ -328,7 +320,13 @@ export const searchDocuments = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }) => {
     const raw = data.q.trim();
-    const terms = raw.split(/\s+/).filter((t) => t.length >= 2 && !/^(the|and|or|of|a|an|to|in|for|by|on|is)$/i.test(t));
+    // Extract plain terms for snippet highlighting — strip websearch operators ("", -, OR)
+    const terms = raw
+      .replace(/-\S+/g, " ")
+      .replace(/\bOR\b/gi, " ")
+      .replace(/"/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 2 && !/^(the|and|or|of|a|an|to|in|for|by|on|is)$/i.test(t));
 
     // 1) If the query looks like a citation, jump straight to it.
     const cite = detectCitation(raw);
@@ -339,7 +337,6 @@ export const searchDocuments = createServerFn({ method: "GET" })
         .eq("identifier", cite.identifier)
         .maybeSingle();
       if (direct) {
-        // Fire-and-forget telemetry
         supabaseAdmin.from("search_events").insert({
           q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
           source_filter: data.source ?? null, hit_count: 1, exact_hit: true,
@@ -359,16 +356,11 @@ export const searchDocuments = createServerFn({ method: "GET" })
       }
     }
 
-    // 2) Full-text search with prefix matching so partial words work.
-    //    Convert "due process" -> "due:* & process:*"
-    const tsQuery = terms.length
-      ? terms.map((t) => `${t.replace(/[^\w]/g, "")}:*`).filter(Boolean).join(" & ")
-      : raw;
-
+    // 2) Full-text search via websearch_to_tsquery — handles "phrase", -exclude, OR natively.
     let query = supabaseAdmin
       .from("documents")
       .select("identifier, source_code, parent_label, section_label, heading, body_text")
-      .textSearch("search_tsv", tsQuery, { config: "english" })
+      .textSearch("search_tsv", raw, { type: "websearch", config: "english" })
       .limit(40);
     if (data.source) query = query.eq("source_code", data.source);
     let { data: rows, error } = await query;

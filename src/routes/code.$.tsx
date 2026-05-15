@@ -2,8 +2,8 @@ import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-rout
 import { getDocument, type DocCitationRow, type IncomingCitation } from "@/server/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus, ArrowLeftRight } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
 
 export const Route = createFileRoute("/code/$")({
@@ -70,6 +70,72 @@ const SOURCE_NAMES: Record<string, string> = {
   irm: "IRM",
 };
 
+// Roman numerals that appear as legal paragraph markers (i), (ii), ..., (xx)
+const ROMAN_MARKERS = new Set(["i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv","xvi","xvii","xviii","xix","xx"]);
+
+type BodyParagraph = { marker: string | null; level: number; text: string };
+
+const PARA_MARKER_RE = /^(\([a-z]\)|\([A-Z]\)|\([ivxlcdm]+\)|\(\d{1,3}\))\s*(.*)/;
+
+function markerLevel(marker: string): number {
+  const inner = marker.slice(1, -1);
+  if (/^\d+$/.test(inner)) return 2;
+  if (/^[A-Z]$/.test(inner)) return 4;
+  if (ROMAN_MARKERS.has(inner.toLowerCase())) return 3;
+  return 1;
+}
+
+function parseBodyText(text: string): BodyParagraph[] {
+  if (!text.trim()) return [];
+  const lines = text.split("\n");
+  const result: BodyParagraph[] = [];
+  let currentMarker: string | null = null;
+  let currentLevel = 0;
+  let buf: string[] = [];
+
+  const flush = () => {
+    const t = buf.join("\n").trim();
+    if (t || currentMarker !== null) result.push({ marker: currentMarker, level: currentLevel, text: t });
+    buf = [];
+    currentMarker = null;
+    currentLevel = 0;
+  };
+
+  for (const line of lines) {
+    const m = line.trimStart().match(PARA_MARKER_RE);
+    if (m) {
+      flush();
+      currentMarker = m[1];
+      currentLevel = markerLevel(m[1]);
+      if (m[2]) buf.push(m[2]);
+    } else {
+      buf.push(line);
+    }
+  }
+  flush();
+  return result;
+}
+
+function highlightText(text: string, terms: string[]): React.ReactNode {
+  if (!terms.length) return text;
+  const re = new RegExp(`(${terms.join("|")})`, "ig");
+  const parts = text.split(re);
+  return parts.map((p, i) => re.test(p) ? <mark key={i}>{p}</mark> : p);
+}
+
+const INDENT_CLASS = ["", "pl-5", "pl-10", "pl-16", "pl-20"] as const;
+
+function BodyPara({ para, searchTerms }: { para: BodyParagraph; searchTerms: string[] }) {
+  return (
+    <p className={`mt-2 whitespace-pre-wrap ${para.level > 0 ? INDENT_CLASS[Math.min(para.level, 4)] : ""}`}>
+      {para.marker && (
+        <span className="mr-1.5 font-semibold text-foreground/60 select-none">{para.marker}</span>
+      )}
+      {highlightText(para.text, searchTerms)}
+    </p>
+  );
+}
+
 function DocumentPage() {
   const { document, citations, incoming, prev, next } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
@@ -110,25 +176,13 @@ function DocumentPage() {
   const fontClass = ["text-[0.95rem]", "text-[1rem]", "text-[1.05rem]", "text-[1.15rem]", "text-[1.25rem]"][fontSize];
   const readingMin = document.word_count ? Math.max(1, Math.round(document.word_count / 220)) : null;
 
-  // Highlight ?q= terms in the body without injecting raw HTML.
-  const bodyChunks = useMemo(() => {
-    const text = document.body_text ?? "";
+  const searchTerms = useMemo(() => {
     const q = (search.q ?? "").trim();
-    if (!q || !text) return [{ text, mark: false }];
-    const terms = q.split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-    if (!terms.length) return [{ text, mark: false }];
-    const re = new RegExp(`(${terms.join("|")})`, "ig");
-    const out: { text: string; mark: boolean }[] = [];
-    let last = 0;
-    for (const m of text.matchAll(re)) {
-      const i = m.index ?? 0;
-      if (i > last) out.push({ text: text.slice(last, i), mark: false });
-      out.push({ text: m[0], mark: true });
-      last = i + m[0].length;
-    }
-    if (last < text.length) out.push({ text: text.slice(last), mark: false });
-    return out;
-  }, [document.body_text, search.q]);
+    if (!q) return [];
+    return q.split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  }, [search.q]);
+
+  const parsedBody = useMemo(() => parseBodyText(document.body_text ?? ""), [document.body_text]);
 
   async function copyLink() {
     if (typeof window === "undefined") return;
@@ -210,8 +264,10 @@ function DocumentPage() {
           <code className="font-mono text-[11px]">{document.identifier}</code>
         </div>
 
-        <div className={`mt-8 whitespace-pre-wrap font-serif leading-relaxed text-foreground/90 ${fontClass} [&_mark]:bg-highlight [&_mark]:text-foreground [&_mark]:rounded-sm [&_mark]:px-0.5`}>
-          {bodyChunks.map((c, i) => c.mark ? <mark key={i}>{c.text}</mark> : <span key={i}>{c.text}</span>)}
+        <div className={`mt-8 font-serif leading-relaxed text-foreground/90 ${fontClass} [&_mark]:bg-highlight [&_mark]:text-foreground [&_mark]:rounded-sm [&_mark]:px-0.5`}>
+          {parsedBody.map((para, i) => (
+            <BodyPara key={i} para={para} searchTerms={searchTerms} />
+          ))}
         </div>
 
         {(prev || next) && (
@@ -307,6 +363,51 @@ function DocumentPage() {
             </ul>
           </div>
         )}
+
+        {/* Cross-codebook connections: citations flowing between different sources */}
+        {(() => {
+          const crossOut = internal.filter((c) => c.target_source && c.target_source !== document.source_code);
+          const crossIn = incoming.filter((c: IncomingCitation) => c.source !== document.source_code);
+          if (crossOut.length === 0 && crossIn.length === 0) return null;
+          return (
+            <div className="mt-10">
+              <div className="citation-tag flex items-center gap-1.5 text-muted-foreground">
+                <ArrowLeftRight className="h-3 w-3" />
+                Also in {new Set([...crossOut.map(c => c.target_source), ...crossIn.map(c => c.source)]).size} other codebook{(crossOut.length + crossIn.length) > 1 ? "s" : ""}
+              </div>
+              <ul className="mt-3 space-y-2">
+                {crossOut.map((c, i) => (
+                  <li key={`out-${i}`}>
+                    <Link
+                      to="/code/$"
+                      params={{ _splat: c.to_identifier.replace(/^\//, "") }}
+                      className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
+                    >
+                      <div className="citation-tag text-muted-foreground">
+                        {SOURCE_NAMES[c.target_source ?? ""] ?? c.target_source} · implements this
+                      </div>
+                      <div className="font-display text-sm font-semibold">{c.target_heading || c.to_identifier}</div>
+                    </Link>
+                  </li>
+                ))}
+                {crossIn.map((c: IncomingCitation, i: number) => (
+                  <li key={`in-${i}`}>
+                    <Link
+                      to="/code/$"
+                      params={{ _splat: c.identifier.replace(/^\//, "") }}
+                      className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
+                    >
+                      <div className="citation-tag text-muted-foreground">
+                        {SOURCE_NAMES[c.source] ?? c.source} · cites this
+                      </div>
+                      <div className="font-display text-sm font-semibold">{c.heading}</div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
 
         {external.length > 0 && (
           <div className="mt-10">

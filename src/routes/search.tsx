@@ -62,34 +62,22 @@ export const Route = createFileRoute("/search")({
       return { hits: [] as Hit[], sources, error: null as string | null };
     }
 
-    // Build effective query
-    let effectiveQ = deps.q.trim();
-    if (deps.exact) {
-      effectiveQ = `"${effectiveQ}"`;
-    }
+    // Build websearch_to_tsquery compatible string from the filter params.
+    // "phrase" handles exact, -word handles exclude, plain words are ANDed.
+    let effectiveQ = deps.exact ? `"${deps.q.trim()}"` : deps.q.trim();
     if (deps.words) {
       effectiveQ += " " + deps.words.split(",").filter(Boolean).map((w) => w.trim()).join(" ");
     }
-    // Note: exclude handled client-side since Supabase FTS has limited support
+    if (deps.exclude) {
+      effectiveQ += " " + deps.exclude.split(",").filter(Boolean).map((w) => `-${w.trim()}`).join(" ");
+    }
 
-    const [{ hits: rawHits, error }, { sources }] = await Promise.all([
+    const [{ hits, error }, { sources }] = await Promise.all([
       searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined } }),
       sourcesPromise,
     ]);
 
-    // Apply exclude filter client-side
-    let hits = rawHits ?? [];
-    if (deps.exclude) {
-      const excTerms = deps.exclude.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
-      if (excTerms.length > 0) {
-        hits = hits.filter((h: Hit) => {
-          const text = `${h.heading ?? ""} ${h.snippet ?? ""}`.toLowerCase();
-          return !excTerms.some((t) => text.includes(t));
-        });
-      }
-    }
-
-    return { hits, sources, error };
+    return { hits: hits ?? [], sources, error };
   },
   component: SearchPage,
   head: ({ match }) => {
