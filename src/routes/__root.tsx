@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Capybara } from "@/components/marginalia/Capybara";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
@@ -126,6 +126,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PaymentTestModeBanner />
+        <AuthGate />
         <main id="main">
           <Outlet />
         </main>
@@ -133,4 +134,30 @@ function RootComponent() {
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+// Public, crawlable, or auth-flow routes. Everything else requires sign-in.
+const PUBLIC_PREFIXES = [
+  "/auth",
+  "/about",
+  "/whitepaper",
+  "/chambers",
+  "/subscribe",
+  "/checkout",
+  "/sitemap.xml",
+  "/api/",
+  "/lovable/",
+];
+
+function AuthGate() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const path = router.state.location.pathname;
+  useEffect(() => {
+    if (loading || user) return;
+    if (path === "/") return; // landing stays public
+    if (PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p))) return;
+    router.navigate({ to: "/auth", search: { mode: "signup", redirect: path } });
+  }, [user, loading, path, router]);
+  return null;
 }
