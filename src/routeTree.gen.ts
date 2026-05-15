@@ -29,6 +29,7 @@ import { Route as StacksViewRouteImport } from './routes/stacks.view'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
+import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -135,6 +136,11 @@ const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   path: '/cases/$caseId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminEmbeddingsRoute = AdminEmbeddingsRouteImport.update({
+  id: '/admin/embeddings',
+  path: '/admin/embeddings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   id: '/code/source/$source',
   path: '/code/source/$source',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
+    | '/admin/embeddings'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
+    | '/admin/embeddings'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/stacks'
     | '/subscribe'
     | '/whitepaper'
+    | '/admin/embeddings'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
@@ -343,6 +355,7 @@ export interface RootRouteChildren {
   StacksRoute: typeof StacksRouteWithChildren
   SubscribeRoute: typeof SubscribeRoute
   WhitepaperRoute: typeof WhitepaperRoute
+  AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
@@ -498,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/embeddings': {
+      id: '/admin/embeddings'
+      path: '/admin/embeddings'
+      fullPath: '/admin/embeddings'
+      preLoaderRoute: typeof AdminEmbeddingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/code/source/$source': {
       id: '/code/source/$source'
       path: '/code/source/$source'
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   StacksRoute: StacksRouteWithChildren,
   SubscribeRoute: SubscribeRoute,
   WhitepaperRoute: WhitepaperRoute,
+  AdminEmbeddingsRoute: AdminEmbeddingsRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
@@ -576,13 +597,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
