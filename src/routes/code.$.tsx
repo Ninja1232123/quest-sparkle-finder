@@ -6,6 +6,99 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
 
+// ── Legal body parser ────────────────────────────────────────────────────────
+// Splits body_text into paragraphs and detects (a)/(1)/(i) paragraph labels,
+// rendering three indent levels without touching the source data.
+
+type LegalParagraph = {
+  label: string | null; // "(a)", "(1)", "(ii)", or null for unlabeled text
+  level: 0 | 1 | 2 | 3;
+  text: string;
+};
+
+function labelLevel(inner: string): 0 | 1 | 2 | 3 {
+  if (/^\d+$/.test(inner)) return 2; // (1), (2), …
+  // Multi-char roman numerals are unambiguous level 3
+  if (/^(ii|iii|iv|vi{0,3}|ix|xi{0,3}|xiv|xv)$/i.test(inner)) return 3;
+  // Single letter (including "i", "v", "x" treated as letter-level)
+  if (/^[a-z]$/i.test(inner)) return 1;
+  return 0;
+}
+
+function parseLegalBody(text: string): LegalParagraph[] {
+  const out: LegalParagraph[] = [];
+  let current = "";
+
+  const flush = () => {
+    const para = current.trim();
+    if (!para) return;
+    // Check for a leading paragraph label: "(a)", "(1)", "(iv)", etc.
+    const m = para.match(/^\(([a-zA-Z0-9]{1,4})\)\s*/);
+    if (m) {
+      const level = labelLevel(m[1]);
+      out.push({ label: `(${m[1]})`, level: level || 1, text: para.slice(m[0].length) });
+    } else {
+      out.push({ label: null, level: 0, text: para });
+    }
+    current = "";
+  };
+
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      flush();
+    } else if (/^\([a-zA-Z0-9]{1,4}\)/.test(trimmed) && current.trim()) {
+      // A new labeled paragraph starts — flush the current one first
+      flush();
+      current = line;
+    } else {
+      current += (current ? "\n" : "") + line;
+    }
+  }
+  flush();
+  return out;
+}
+
+const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
+
+function LegalBody({ text, q }: { text: string; q?: string }) {
+  const paragraphs = useMemo(() => parseLegalBody(text), [text]);
+  const markRe = useMemo(() => {
+    if (!q?.trim()) return null;
+    const terms = q.trim().split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return terms.length ? new RegExp(`(${terms.join("|")})`, "ig") : null;
+  }, [q]);
+
+  function renderText(content: string) {
+    if (!markRe) return <>{content}</>;
+    const parts = content.split(markRe);
+    return (
+      <>
+        {parts.map((p, i) =>
+          markRe.test(p) ? (
+            <mark key={i} className="bg-highlight text-foreground rounded-sm px-0.5">{p}</mark>
+          ) : p
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-2.5">
+      {paragraphs.map((p, i) => (
+        <div key={i} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
+          {p.label && (
+            <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
+              {p.label}
+            </span>
+          )}
+          <span className={p.label ? "flex-1" : ""}>{renderText(p.text)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/code/$")({
   validateSearch: (s: Record<string, unknown>) => ({
     q: typeof s.q === "string" ? s.q : undefined,
@@ -110,25 +203,6 @@ function DocumentPage() {
   const fontClass = ["text-[0.95rem]", "text-[1rem]", "text-[1.05rem]", "text-[1.15rem]", "text-[1.25rem]"][fontSize];
   const readingMin = document.word_count ? Math.max(1, Math.round(document.word_count / 220)) : null;
 
-  // Highlight ?q= terms in the body without injecting raw HTML.
-  const bodyChunks = useMemo(() => {
-    const text = document.body_text ?? "";
-    const q = (search.q ?? "").trim();
-    if (!q || !text) return [{ text, mark: false }];
-    const terms = q.split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-    if (!terms.length) return [{ text, mark: false }];
-    const re = new RegExp(`(${terms.join("|")})`, "ig");
-    const out: { text: string; mark: boolean }[] = [];
-    let last = 0;
-    for (const m of text.matchAll(re)) {
-      const i = m.index ?? 0;
-      if (i > last) out.push({ text: text.slice(last, i), mark: false });
-      out.push({ text: m[0], mark: true });
-      last = i + m[0].length;
-    }
-    if (last < text.length) out.push({ text: text.slice(last), mark: false });
-    return out;
-  }, [document.body_text, search.q]);
 
   async function copyLink() {
     if (typeof window === "undefined") return;
@@ -210,8 +284,8 @@ function DocumentPage() {
           <code className="font-mono text-[11px]">{document.identifier}</code>
         </div>
 
-        <div className={`mt-8 whitespace-pre-wrap font-serif leading-relaxed text-foreground/90 ${fontClass} [&_mark]:bg-highlight [&_mark]:text-foreground [&_mark]:rounded-sm [&_mark]:px-0.5`}>
-          {bodyChunks.map((c, i) => c.mark ? <mark key={i}>{c.text}</mark> : <span key={i}>{c.text}</span>)}
+        <div className={`mt-8 font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
+          <LegalBody text={document.body_text ?? ""} q={search.q} />
         </div>
 
         {(prev || next) && (
@@ -284,13 +358,58 @@ function DocumentPage() {
           </div>
         )}
 
-          {incoming.length > 0 && (
+          {/* Cross-codebook panel: incoming citations from a different source */}
+          {(() => {
+            const crossSource = incoming.filter((c: IncomingCitation) => c.source !== document.source_code);
+            if (crossSource.length === 0) return null;
+            const bySource = new Map<string, IncomingCitation[]>();
+            for (const c of crossSource) {
+              const arr = bySource.get(c.source) ?? [];
+              arr.push(c);
+              bySource.set(c.source, arr);
+            }
+            return (
+              <div className="mt-10 rounded-2xl border border-accent/20 bg-accent/5 px-5 py-4">
+                <div className="citation-tag text-accent mb-3">
+                  Cited across {bySource.size} other codebook{bySource.size !== 1 ? "s" : ""}
+                </div>
+                <div className="space-y-4">
+                  {Array.from(bySource.entries()).map(([src, items]) => (
+                    <div key={src}>
+                      <div className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {SOURCE_NAMES[src] ?? src}
+                      </div>
+                      <ul className="space-y-1.5">
+                        {items.map((c: IncomingCitation, i: number) => (
+                          <li key={i}>
+                            <Link
+                              to="/code/$"
+                              params={{ _splat: c.identifier.replace(/^\//, "") }}
+                              className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
+                            >
+                              <div className="citation-tag text-muted-foreground">
+                                {c.section_label ?? c.identifier}
+                              </div>
+                              <div className="font-display text-sm font-semibold">{c.heading}</div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Same-source "Cited by" */}
+          {incoming.filter((c: IncomingCitation) => c.source === document.source_code).length > 0 && (
           <div className="mt-10">
             <div className="citation-tag text-accent">
-              Cited by {incoming.length} document{incoming.length === 1 ? "" : "s"}
+              Cited by {incoming.filter((c: IncomingCitation) => c.source === document.source_code).length} section{incoming.filter((c: IncomingCitation) => c.source === document.source_code).length !== 1 ? "s" : ""} in this codebook
             </div>
             <ul className="mt-3 space-y-2">
-                {incoming.map((c: IncomingCitation, i: number) => (
+              {incoming.filter((c: IncomingCitation) => c.source === document.source_code).map((c: IncomingCitation, i: number) => (
                 <li key={i}>
                   <Link
                     to="/code/$"
@@ -298,7 +417,7 @@ function DocumentPage() {
                     className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
                   >
                     <div className="citation-tag text-muted-foreground">
-                      {SOURCE_NAMES[c.source] ?? c.source}{c.section_label ? ` · ${c.section_label}` : ""}
+                      {c.section_label ?? c.identifier}
                     </div>
                     <div className="font-display text-sm font-semibold">{c.heading}</div>
                   </Link>

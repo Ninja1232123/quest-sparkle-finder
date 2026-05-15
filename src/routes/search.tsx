@@ -62,34 +62,23 @@ export const Route = createFileRoute("/search")({
       return { hits: [] as Hit[], sources, error: null as string | null };
     }
 
-    // Build effective query
+    // Build websearch-compatible query string.
+    // websearch_to_tsquery natively handles: "phrase", -exclude, OR.
     let effectiveQ = deps.q.trim();
-    if (deps.exact) {
-      effectiveQ = `"${effectiveQ}"`;
-    }
+    if (deps.exact) effectiveQ = `"${effectiveQ}"`;
     if (deps.words) {
-      effectiveQ += " " + deps.words.split(",").filter(Boolean).map((w) => w.trim()).join(" ");
+      effectiveQ += " " + deps.words.split(",").map((w) => w.trim()).filter(Boolean).join(" ");
     }
-    // Note: exclude handled client-side since Supabase FTS has limited support
+    if (deps.exclude) {
+      effectiveQ += " " + deps.exclude.split(",").map((t) => t.trim()).filter(Boolean).map((t) => `-${t}`).join(" ");
+    }
 
-    const [{ hits: rawHits, error }, { sources }] = await Promise.all([
+    const [{ hits, error }, { sources }] = await Promise.all([
       searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined } }),
       sourcesPromise,
     ]);
 
-    // Apply exclude filter client-side
-    let hits = rawHits ?? [];
-    if (deps.exclude) {
-      const excTerms = deps.exclude.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
-      if (excTerms.length > 0) {
-        hits = hits.filter((h: Hit) => {
-          const text = `${h.heading ?? ""} ${h.snippet ?? ""}`.toLowerCase();
-          return !excTerms.some((t) => text.includes(t));
-        });
-      }
-    }
-
-    return { hits, sources, error };
+    return { hits: hits ?? [], sources, error };
   },
   component: SearchPage,
   head: ({ match }) => {
@@ -111,19 +100,17 @@ export const Route = createFileRoute("/search")({
   },
 });
 
-function highlightSnippet(snippet: string, q: string): React.ReactNode {
-  if (!q.trim()) return snippet;
-  const terms = q.trim().split(/\s+/).filter((t) => t.length >= 2);
-  if (!terms.length) return snippet;
-  const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
-  const parts = snippet.split(re);
-  return parts.map((p, i) =>
-    re.test(p) ? (
-      <mark key={i} className="bg-highlight/70 text-ink rounded-sm px-0.5">
-        {p}
-      </mark>
-    ) : p
-  );
+// Snippets from ts_headline already contain <mark>…</mark> tags.
+// Parse them into React elements rather than injecting raw HTML.
+function parseSnippet(snippet: string): React.ReactNode {
+  if (!snippet) return null;
+  const parts = snippet.split(/(<mark>.*?<\/mark>)/i);
+  return parts.map((p, i) => {
+    const m = p.match(/^<mark>(.*?)<\/mark>$/i);
+    return m ? (
+      <mark key={i} className="bg-highlight/70 text-ink rounded-sm px-0.5">{m[1]}</mark>
+    ) : p;
+  });
 }
 
 function SearchPage() {
@@ -162,6 +149,10 @@ function SearchPage() {
 
         <div className="mt-8">
           <SearchBar autoFocus />
+          <p className="mt-2 text-[11px] text-muted-foreground/60">
+            Tip: use <code className="font-mono">"exact phrase"</code>, <code className="font-mono">-exclude</code>, or{" "}
+            <code className="font-mono">term OR term</code> directly in the search bar.
+          </p>
         </div>
 
         {/* Power search filters */}
@@ -549,7 +540,7 @@ function ResultCard({ hit, q }: { hit: Hit; q: string }) {
         </h3>
         {hit.snippet && (
           <p className="mt-1.5 text-sm leading-relaxed text-foreground/65 line-clamp-3">
-            {highlightSnippet(hit.snippet, q)}
+            {parseSnippet(hit.snippet)}
           </p>
         )}
         <div className="mt-3 flex items-center gap-2">
