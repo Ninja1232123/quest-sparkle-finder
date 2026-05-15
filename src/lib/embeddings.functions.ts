@@ -2,6 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { embed, embedMany } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+// Restrict admin server functions to a specific user id, set via the
+// ADMIN_USER_ID secret. Without that secret, no one can run them.
+function assertAdmin(userId: string) {
+  const adminId = process.env.ADMIN_USER_ID;
+  if (!adminId) {
+    throw new Response("Forbidden: ADMIN_USER_ID is not configured", { status: 403 });
+  }
+  if (userId !== adminId) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+}
 
 // Model used for embedding. Must be available on your AI gateway.
 // text-embedding-3-small: 1536 dims, fast, cheap — default.
@@ -44,8 +57,11 @@ export async function generateQueryEmbedding(query: string): Promise<number[] | 
 
 // ── Admin / backfill server functions ────────────────────────────────────────
 
-export const getEmbeddingStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const supabaseAdmin = await getAdminClient();
+export const getEmbeddingStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    assertAdmin(context.userId);
+    const supabaseAdmin = await getAdminClient();
   const [totalRes, embeddedRes] = await Promise.all([
     supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("embedding", "is", null),
@@ -56,8 +72,10 @@ export const getEmbeddingStatus = createServerFn({ method: "GET" }).handler(asyn
 });
 
 export const runEmbeddingBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ batch_size: z.number().int().min(1).max(200).default(100) }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    assertAdmin(context.userId);
     const supabaseAdmin = await getAdminClient();
     const model = getEmbeddingModel(); // throws if no API key
 
