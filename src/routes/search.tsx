@@ -44,6 +44,7 @@ type Hit = {
   heading: string | null;
   snippet: string;
   exact?: boolean;
+  semantic?: boolean;
 };
 
 export const Route = createFileRoute("/search")({
@@ -340,6 +341,12 @@ function SearchPage() {
                   <span className="font-medium text-foreground">{bySource.size}</span>{" "}
                   {bySource.size === 1 ? "codebook" : "codebooks"}
                 </span>
+                {(hits as Hit[]).some((h: Hit) => h.semantic) && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 text-[10px] font-medium text-accent">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    semantic
+                  </span>
+                )}
                 <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
                   indexed May 2026 · direct from source
                 </span>
@@ -424,9 +431,9 @@ function SearchPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <ComingSoonCard
               icon={Brain}
-              status="building"
+              status="live"
               title="Ask in plain English"
-              pitch="Type 'can my landlord keep my deposit if I broke the lease early?' and get the actual statutes that answer the question — ranked, cited, and linked back to the source."
+              pitch="Type a full question and semantic search finds the statutes that answer it — even when the exact words don't appear. Just ask."
             />
             <ComingSoonCard
               icon={Network}
