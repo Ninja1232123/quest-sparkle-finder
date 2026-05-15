@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { generateQueryEmbedding } from "@/server/embeddings.functions";
+
+// Queries that look like natural-language questions get the hybrid FTS + semantic path.
+// Short keyword searches stay on FTS-only (faster, no embedding round-trip).
+function isSemanticQuery(q: string): boolean {
+  const words = q.trim().split(/\s+/);
+  if (words.length >= 4) return true;
+  if (/^(what|when|how|can|does|do|is|are|who|where|why|which|define|explain)\b/i.test(q)) return true;
+  return false;
+}
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
 
@@ -359,24 +369,48 @@ export const searchDocuments = createServerFn({ method: "GET" })
       }
     }
 
-    // 2) Primary: RPC with websearch_to_tsquery + ts_headline + ts_rank_cd.
-    //    websearch_to_tsquery handles "phrase", -exclude, OR natively.
-    const { data: ftsRows, error: ftsError } = await supabaseAdmin
-      .rpc("search_documents_fts", {
-        p_query: raw,
-        p_source: data.source ?? null,
-        p_limit: 40,
-      });
+    type SearchRow = {
+      identifier: string; source_code: string; parent_label: string | null;
+      section_label: string | null; heading: string | null; snippet: string | null; rank: number;
+    };
 
-    if (ftsError) return { hits: [], error: ftsError.message };
+    // 2) Choose search path based on query shape.
+    //    Long / question-like queries → hybrid (FTS + semantic via pgvector).
+    //    Short keyword queries → FTS-only (faster, no embedding round-trip).
+    let rows: SearchRow[] | null = null;
+    let usedSemantic = false;
+
+    if (isSemanticQuery(raw)) {
+      // Generate query embedding (returns null if no API key or on error — safe fallback).
+      const embedding = await generateQueryEmbedding(raw);
+      if (embedding) {
+        usedSemantic = true;
+        const { data: hybridRows, error: hybridError } = await supabaseAdmin
+          .rpc("search_hybrid", {
+            p_query_text: raw,
+            p_query_embedding: embedding as unknown as string,
+            p_source: data.source ?? null,
+            p_limit: 20,
+          });
+        if (!hybridError) rows = hybridRows ?? [];
+      }
+    }
+
+    // Fall through to FTS if semantic was skipped or returned nothing.
+    if (!rows || rows.length === 0) {
+      usedSemantic = false;
+      const { data: ftsRows, error: ftsError } = await supabaseAdmin
+        .rpc("search_documents_fts", {
+          p_query: raw,
+          p_source: data.source ?? null,
+          p_limit: 40,
+        });
+      if (ftsError) return { hits: [], error: ftsError.message };
+      rows = ftsRows ?? [];
+    }
 
     // 3) Fallback: trigram similarity when FTS returns nothing (typos, acronyms,
     //    short numeric tokens that the English stemmer doesn't index).
-    let rows = ftsRows as Array<{
-      identifier: string; source_code: string; parent_label: string | null;
-      section_label: string | null; heading: string | null; snippet: string | null; rank: number;
-    }> | null;
-
     if (!rows || rows.length === 0) {
       const { data: trgmRows } = await supabaseAdmin
         .rpc("search_documents_trgm", {
@@ -395,6 +429,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
       heading: r.heading,
       snippet: r.snippet ?? "",
       exact: false,
+      semantic: usedSemantic,
     }));
 
     supabaseAdmin.from("search_events").insert({

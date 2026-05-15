@@ -1,9 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import { Lock, Sparkles } from "lucide-react";
 
-type Status = "building" | "soon" | "vision";
+type Status = "live" | "building" | "soon" | "vision";
 
 const STATUS_META: Record<Status, { label: string; tone: string }> = {
+  live: {
+    label: "now live",
+    tone: "border-accent/40 bg-accent/10 text-accent",
+  },
   building: {
     label: "in the workshop",
     tone: "border-sage-deep/40 bg-sage-deep/10 text-sage-deep",
@@ -46,19 +50,27 @@ export function ComingSoonCard({
   status?: Status;
   className?: string;
 }) {
+  const isLive = status === "live";
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border border-dashed border-foreground/15 bg-card/40 p-5 paper-grain transition-all hover:border-foreground/30 hover:bg-card/60 ${className}`}
+      className={`group relative overflow-hidden rounded-2xl p-5 paper-grain transition-all ${
+        isLive
+          ? "border border-accent/25 bg-accent/5 hover:border-accent/40 hover:bg-accent/8"
+          : "border border-dashed border-foreground/15 bg-card/40 hover:border-foreground/30 hover:bg-card/60"
+      } ${className}`}
       aria-label={`${title} — ${STATUS_META[status].label}`}
     >
-      {/* dim wash so it reads as not-yet-unlocked */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent_0%,transparent_45%,rgba(0,0,0,0.18)_100%)]" />
-      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-ochre/10 blur-2xl transition-opacity group-hover:opacity-70 opacity-40" />
+      {!isLive && (
+        <>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent_0%,transparent_45%,rgba(0,0,0,0.18)_100%)]" />
+          <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-ochre/10 blur-2xl transition-opacity group-hover:opacity-70 opacity-40" />
+        </>
+      )}
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             {Icon ? (
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-foreground/15 bg-background/60 text-foreground/60">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isLive ? "border-accent/30 bg-accent/10 text-accent" : "border-foreground/15 bg-background/60 text-foreground/60"}`}>
                 <Icon className="h-4 w-4" />
               </span>
             ) : (
@@ -68,12 +80,12 @@ export function ComingSoonCard({
             )}
             <LockedBadge status={status} />
           </div>
-          <Lock className="h-3.5 w-3.5 text-foreground/30" />
+          {!isLive && <Lock className="h-3.5 w-3.5 text-foreground/30" />}
         </div>
-        <h3 className="mt-3 font-display text-base font-semibold text-foreground/85">
+        <h3 className={`mt-3 font-display text-base font-semibold ${isLive ? "text-foreground" : "text-foreground/85"}`}>
           {title}
         </h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-foreground/55">
+        <p className={`mt-1.5 text-sm leading-relaxed ${isLive ? "text-foreground/70" : "text-foreground/55"}`}>
           {pitch}
         </p>
       </div>
