@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,7 +16,7 @@ export function useSubscription() {
   const [sub, setSub] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     if (!user) {
       setSub(null);
       setLoading(false);
@@ -34,25 +34,24 @@ export function useSubscription() {
       .maybeSingle();
     setSub((data as Sub | null) ?? null);
     setLoading(false);
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (authLoading) return;
     refetch();
-    if (!user) return;
-    const ch = supabase
-      .channel(`sub:${user.id}:${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${user.id}` },
-        () => refetch(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
+
+    const onFocus = () => refetch();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refetch();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading]);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [authLoading, refetch]);
 
   const now = Date.now();
   const periodEndMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
