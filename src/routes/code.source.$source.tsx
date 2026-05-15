@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { listDocumentsBySource, getSourceTOC, type SourceTocNode } from "@/server/documents.functions";
+import { listDocumentsBySource, getSourceTOC, type SourceTocNode } from "@/lib/documents.functions";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useMemo, useState } from "react";

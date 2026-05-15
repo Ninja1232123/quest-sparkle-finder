@@ -4,7 +4,7 @@ import { TopicCard } from "@/components/marginalia/TopicCard";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
-import { listSources } from "@/server/documents.functions";
+import { listSources } from "@/lib/documents.functions";
 import heroCollage from "@/assets/hero-collage.jpg";
 import { GitCompare, Highlighter, FileDown, Bell, Zap, Map, Brain, Network, Scale, Calendar, GraduationCap } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
