@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function getPublicClient() {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+}
 
 export type ForumCitation = {
   identifier: string;
@@ -55,6 +59,7 @@ function normalizeIdentifier(raw: string): string | null {
 export const validateCitations = createServerFn({ method: "POST" })
   .inputValidator(z.object({ raw: z.array(z.string().min(1).max(300)).min(1).max(10) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getPublicClient();
     const normalized = Array.from(
       new Set(data.raw.map(normalizeIdentifier).filter((v): v is string => !!v)),
     );
@@ -85,6 +90,7 @@ export const validateCitations = createServerFn({ method: "POST" })
   });
 
 export const listForumPosts = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await getPublicClient();
   const { data: posts, error } = await supabaseAdmin
     .from("forum_posts")
     .select("id, user_id, title, body, pinned, created_at, kind")
@@ -140,6 +146,7 @@ export const createForumPost = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getPublicClient();
     const { userId, supabase } = context;
 
     const normalized = Array.from(
