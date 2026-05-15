@@ -14,8 +14,8 @@ function isSemanticQuery(q: string): boolean {
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
 
 async function getAdminClient() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
 }
 
 export type DocumentRow = {
