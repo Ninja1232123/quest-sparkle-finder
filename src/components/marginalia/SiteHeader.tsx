@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { SearchBar } from "./SearchBar";
+import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
 import { BookMarked, LogOut, MessagesSquare, Library } from "lucide-react";
 
@@ -7,6 +8,7 @@ export function SiteHeader() {
   const { user, signOut, loading } = useAuth();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <DevNoticeBanner />
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between md:py-4">
         <div className="flex items-center justify-between gap-4">
           <Link to="/" className="group flex items-center gap-2.5">
