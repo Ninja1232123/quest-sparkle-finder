@@ -4,6 +4,8 @@ import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useState } from "react";
 import baldEagle from "@/assets/bald-eagle.png";
+import { Map, Network, History, Scale } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 // Per-codebook 'merica backgrounds. Each source gets its own flavor.
 const SOURCE_BG: Record<string, string> = {
