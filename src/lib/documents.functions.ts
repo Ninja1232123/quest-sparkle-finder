@@ -385,8 +385,10 @@ export const searchDocuments = createServerFn({ method: "GET" })
       const embedding = await generateQueryEmbedding(raw);
       if (embedding) {
         usedSemantic = true;
-        const { data: hybridRows, error: hybridError } = await supabaseAdmin
-          .rpc("search_hybrid", {
+        const { data: hybridRows, error: hybridError } = await (supabaseAdmin.rpc as unknown as (
+          fn: string, args: Record<string, unknown>,
+        ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
+          "search_hybrid", {
             p_query_text: raw,
             p_query_embedding: embedding as unknown as string,
             p_source: data.source ?? null,
@@ -399,8 +401,10 @@ export const searchDocuments = createServerFn({ method: "GET" })
     // Fall through to FTS if semantic was skipped or returned nothing.
     if (!rows || rows.length === 0) {
       usedSemantic = false;
-      const { data: ftsRows, error: ftsError } = await supabaseAdmin
-        .rpc("search_documents_fts", {
+      const { data: ftsRows, error: ftsError } = await (supabaseAdmin.rpc as unknown as (
+        fn: string, args: Record<string, unknown>,
+      ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
+        "search_documents_fts", {
           p_query: raw,
           p_source: data.source ?? null,
           p_limit: 40,
@@ -412,8 +416,10 @@ export const searchDocuments = createServerFn({ method: "GET" })
     // 3) Fallback: trigram similarity when FTS returns nothing (typos, acronyms,
     //    short numeric tokens that the English stemmer doesn't index).
     if (!rows || rows.length === 0) {
-      const { data: trgmRows } = await supabaseAdmin
-        .rpc("search_documents_trgm", {
+      const { data: trgmRows } = await (supabaseAdmin.rpc as unknown as (
+        fn: string, args: Record<string, unknown>,
+      ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
+        "search_documents_trgm", {
           p_query: raw,
           p_source: data.source ?? null,
           p_limit: 20,

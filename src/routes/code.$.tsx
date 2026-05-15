@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
+import { linkifyAndHighlight } from "@/lib/auto-link-citations";
 
 // ── Legal body parser ────────────────────────────────────────────────────────
 // Splits body_text into paragraphs and detects (a)/(1)/(i) paragraph labels,
@@ -61,7 +62,7 @@ function parseLegalBody(text: string): LegalParagraph[] {
 
 const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
 
-function LegalBody({ text, q }: { text: string; q?: string }) {
+function LegalBody({ text, q, citations }: { text: string; q?: string; citations: DocCitationRow[] }) {
   const paragraphs = useMemo(() => parseLegalBody(text), [text]);
   const markRe = useMemo(() => {
     if (!q?.trim()) return null;
@@ -70,17 +71,7 @@ function LegalBody({ text, q }: { text: string; q?: string }) {
   }, [q]);
 
   function renderText(content: string) {
-    if (!markRe) return <>{content}</>;
-    const parts = content.split(markRe);
-    return (
-      <>
-        {parts.map((p, i) =>
-          markRe.test(p) ? (
-            <mark key={i} className="bg-highlight text-foreground rounded-sm px-0.5">{p}</mark>
-          ) : p
-        )}
-      </>
-    );
+    return linkifyAndHighlight(content, citations, markRe);
   }
 
   return (
@@ -285,7 +276,7 @@ function DocumentPage() {
         </div>
 
         <div className={`mt-8 font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-          <LegalBody text={document.body_text ?? ""} q={search.q} />
+          <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} />
         </div>
 
         {(prev || next) && (

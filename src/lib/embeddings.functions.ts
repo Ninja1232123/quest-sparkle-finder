@@ -74,7 +74,7 @@ export const runEmbeddingBatch = createServerFn({ method: "POST" })
     const updates = docs.map((doc, i) =>
       supabaseAdmin
         .from("documents")
-        .update({ embedding: embeddings[i] as unknown as string })
+        .update({ embedding: embeddings[i] as unknown as string } as never)
         .eq("id", doc.id)
     );
     await Promise.all(updates);
