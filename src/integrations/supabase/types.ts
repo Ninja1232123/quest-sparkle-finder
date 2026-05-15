@@ -696,8 +696,6 @@ export type Database = {
           source_code: string
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       source_toc: {
         Args: { p_source: string }
         Returns: {
