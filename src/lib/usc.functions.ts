@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function getPublicClient() {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+}
 
 export type UscSectionRow = {
   id: string;
@@ -20,6 +24,7 @@ export type UscCitationRow = {
 };
 
 export const listUscTitles = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await getPublicClient();
   const { data, error } = await supabaseAdmin
     .from("usc_sections")
     .select("title_num")
@@ -32,6 +37,7 @@ export const listUscTitles = createServerFn({ method: "GET" }).handler(async () 
 export const listUscSections = createServerFn({ method: "GET" })
   .inputValidator(z.object({ titleNum: z.number().int().min(1).max(54) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getPublicClient();
     const { data: rows, error } = await supabaseAdmin
       .from("usc_sections")
       .select("id, identifier, title_num, chapter, section_num, heading")
@@ -44,6 +50,7 @@ export const listUscSections = createServerFn({ method: "GET" })
 export const getUscSection = createServerFn({ method: "GET" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getPublicClient();
     const { data: section, error } = await supabaseAdmin
       .from("usc_sections")
       .select("id, identifier, title_num, chapter, section_num, heading, body_text")
@@ -81,6 +88,7 @@ export const getUscSection = createServerFn({ method: "GET" })
 export const searchUsc = createServerFn({ method: "GET" })
   .inputValidator(z.object({ q: z.string().min(2).max(200) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getPublicClient();
     // Use websearch_to_tsquery via RPC-style raw SQL through rpc isn't set up;
     // use plain ilike fallback combined with tsv via textSearch.
     const { data: rows, error } = await supabaseAdmin
