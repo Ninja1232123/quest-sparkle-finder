@@ -2,18 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { embed, embedMany } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Model used for embedding. Must be available on your AI gateway.
 // text-embedding-3-small: 1536 dims, fast, cheap — default.
 // voyage-law-2:           1024 dims, purpose-built for legal text — requires
 //   recreating the vector(1536) column as vector(1024) and a full re-backfill.
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
+
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 function getEmbeddingModel() {
   const key = process.env.LOVABLE_API_KEY;
+  const model = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
   if (!key) throw new Error("LOVABLE_API_KEY is not set — add it to your environment to enable semantic search.");
-  return createLovableAiGatewayProvider(key).textEmbeddingModel(EMBEDDING_MODEL);
+  return createLovableAiGatewayProvider(key).textEmbeddingModel(model);
 }
 
 // Text we embed for each document: label + heading + first 1500 chars of body.
@@ -41,6 +45,7 @@ export async function generateQueryEmbedding(query: string): Promise<number[] | 
 // ── Admin / backfill server functions ────────────────────────────────────────
 
 export const getEmbeddingStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await getAdminClient();
   const [totalRes, embeddedRes] = await Promise.all([
     supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("embedding", "is", null),
@@ -53,6 +58,7 @@ export const getEmbeddingStatus = createServerFn({ method: "GET" }).handler(asyn
 export const runEmbeddingBatch = createServerFn({ method: "POST" })
   .inputValidator(z.object({ batch_size: z.number().int().min(1).max(200).default(100) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const model = getEmbeddingModel(); // throws if no API key
 
     // Fetch the next batch of un-embedded documents.
