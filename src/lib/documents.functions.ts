@@ -30,6 +30,7 @@ export type DocumentRow = {
 export type DocCitationRow = {
   to_identifier: string;
   to_document_id: string | null;
+  context_snippet: string | null;
   target_heading: string | null;
   target_source: string | null;
   target_section_label: string | null;
@@ -206,7 +207,7 @@ export const getDocument = createServerFn({ method: "GET" })
 
     const { data: outgoing } = await supabaseAdmin
       .from("doc_citations")
-      .select("to_identifier, to_document_id")
+      .select("to_identifier, to_document_id, context_snippet")
       .eq("from_document_id", doc.id);
 
     const targetIds = (outgoing ?? []).map((c) => c.to_document_id).filter(Boolean) as string[];
@@ -223,6 +224,7 @@ export const getDocument = createServerFn({ method: "GET" })
       return {
         to_identifier: c.to_identifier,
         to_document_id: c.to_document_id,
+        context_snippet: (c as { context_snippet?: string | null }).context_snippet ?? null,
         target_heading: t?.heading ?? null,
         target_source: t?.source ?? null,
         target_section_label: t?.label ?? null,
@@ -248,6 +250,21 @@ export const getDocument = createServerFn({ method: "GET" })
         source: d.source_code,
         section_label: d.section_label,
       }));
+    }
+
+    // Definitions sibling: nearest section with "definition" in heading, same scope.
+    let glossaryText: string | null = null;
+    if (doc.parent_label) {
+      const { data: defDoc } = await supabaseAdmin
+        .from("documents")
+        .select("body_text")
+        .eq("source_code", doc.source_code)
+        .eq("parent_label", doc.parent_label)
+        .ilike("heading", "%definition%")
+        .neq("id", doc.id)
+        .limit(1)
+        .maybeSingle();
+      glossaryText = defDoc?.body_text ?? null;
     }
 
     // Prev / next sibling within the same source + parent_label, by sort_key.
@@ -284,6 +301,7 @@ export const getDocument = createServerFn({ method: "GET" })
       incoming,
       prev,
       next,
+      glossaryText,
       error: null as string | null,
     };
   });

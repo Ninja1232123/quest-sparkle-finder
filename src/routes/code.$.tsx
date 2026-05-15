@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
-import { linkifyAndHighlight } from "@/lib/auto-link-citations";
+import { linkifyAndHighlight, parseGlossary } from "@/lib/auto-link-citations";
 
 // ── Legal body parser ────────────────────────────────────────────────────────
 // Splits body_text into paragraphs and detects (a)/(1)/(i) paragraph labels,
@@ -62,7 +62,12 @@ function parseLegalBody(text: string): LegalParagraph[] {
 
 const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
 
-function LegalBody({ text, q, citations }: { text: string; q?: string; citations: DocCitationRow[] }) {
+function LegalBody({ text, q, citations, glossary }: {
+  text: string;
+  q?: string;
+  citations: DocCitationRow[];
+  glossary?: Map<string, string>;
+}) {
   const paragraphs = useMemo(() => parseLegalBody(text), [text]);
   const markRe = useMemo(() => {
     if (!q?.trim()) return null;
@@ -71,7 +76,7 @@ function LegalBody({ text, q, citations }: { text: string; q?: string; citations
   }, [q]);
 
   function renderText(content: string) {
-    return linkifyAndHighlight(content, citations, markRe);
+    return linkifyAndHighlight(content, citations, markRe, glossary);
   }
 
   return (
@@ -155,7 +160,7 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 function DocumentPage() {
-  const { document, citations, incoming, prev, next } = Route.useLoaderData();
+  const { document, citations, incoming, prev, next, glossaryText } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
@@ -176,6 +181,8 @@ function DocumentPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const glossary = useMemo(() => parseGlossary(glossaryText ?? null), [glossaryText]);
 
   if (!document) return null;
 
@@ -275,8 +282,15 @@ function DocumentPage() {
           <code className="font-mono text-[11px]">{document.identifier}</code>
         </div>
 
+        {glossary.size > 0 && (
+          <p className="mt-6 text-[11px] text-muted-foreground/50">
+            <span className="underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">Dotted underlines</span>{" "}
+            are defined terms — hover to see the definition from §{" "}
+            {document.parent_label ?? document.source_code}.
+          </p>
+        )}
         <div className={`mt-8 font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-          <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} />
+          <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} glossary={glossary.size > 0 ? glossary : undefined} />
         </div>
 
         {(prev || next) && (
@@ -339,6 +353,11 @@ function DocumentPage() {
                           <div className="citation-tag mt-0.5 text-muted-foreground">
                             {c.target_section_label ?? c.to_identifier}
                           </div>
+                          {c.context_snippet && (
+                            <p className="mt-1.5 font-serif text-xs text-muted-foreground/70 line-clamp-2 italic">
+                              "{c.context_snippet}"
+                            </p>
+                          )}
                         </Link>
                       </li>
                     ))}

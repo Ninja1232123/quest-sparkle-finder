@@ -1,14 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import type { DocCitationRow } from "@/lib/documents.functions";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
-// Inline citation auto-linker.
-// Walks the body text and substitutes <Link> for any in-text mention that
-// matches a known outgoing citation. Uses the existing doc_citations map —
-// we only link what the indexer has already resolved to a real document, so
-// no false-positive deep links into things we don't have.
+// Inline citation auto-linker + defined-term glossary hover cards.
+// Walks body text and renders <Link> for known outgoing citations and
+// <HoverCard> for defined terms parsed from a sibling Definitions section.
 
-type Match = { start: number; end: number; identifier: string };
+type LinkMatch = { kind: "link"; start: number; end: number; identifier: string };
+type GlossMatch = { kind: "gloss"; start: number; end: number; term: string; definition: string };
+type Match = LinkMatch | GlossMatch;
 
 function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -48,10 +49,8 @@ function normalizeLabel(raw: string | null | undefined): string | null {
   return s.length >= 2 ? s : null;
 }
 
-function buildMatches(text: string, citations: DocCitationRow[]): Match[] {
-  const out: Match[] = [];
-  // De-dupe rule pairs so we don't scan the same regex twice when two citations
-  // share a label.
+function buildCitationMatches(text: string, citations: DocCitationRow[]): LinkMatch[] {
+  const out: LinkMatch[] = [];
   const seen = new Set<string>();
   for (const c of citations) {
     const label = normalizeLabel(c.target_section_label) ?? normalizeLabel(c.to_identifier.split("/").pop());
@@ -63,15 +62,62 @@ function buildMatches(text: string, citations: DocCitationRow[]): Match[] {
       let m: RegExpExecArray | null;
       while ((m = re.exec(text)) !== null) {
         if (m[0].length === 0) { re.lastIndex++; continue; }
-        out.push({ start: m.index, end: m.index + m[0].length, identifier: c.to_identifier });
+        out.push({ kind: "link", start: m.index, end: m.index + m[0].length, identifier: c.to_identifier });
       }
     }
   }
-  // Earliest-start, then longest-match wins; drop overlaps.
-  out.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+  return out;
+}
+
+// Parse a Definitions section body into a map of term (lowercase) → display definition.
+export function parseGlossary(bodyText: string | null): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!bodyText) return map;
+  // Match: "Term" means [definition until . or ;]
+  // Handles: means, shall mean, refers to, includes, is defined as, has the meaning
+  const re = /"([^"]{2,60})"\s+(?:shall\s+)?(?:mean[s]?|refer[s]?\s+to|include[s]?|is\s+defined\s+as|has\s+the\s+meaning)[^;.\n]{0,400}[;.]/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(bodyText)) !== null) {
+    const term = m[1].trim();
+    if (term.length < 2) continue;
+    if (map.has(term.toLowerCase())) continue;
+    map.set(term.toLowerCase(), m[0].replace(/\s+/g, " ").trim());
+  }
+  return map;
+}
+
+function buildGlossaryMatches(text: string, glossary: Map<string, string>): GlossMatch[] {
+  const out: GlossMatch[] = [];
+  for (const [key, definition] of glossary) {
+    const escaped = escapeRe(key);
+    // Case-sensitive to respect legal convention of capitalizing defined terms.
+    // Capitalize first letter to match Title-Cased usages in the body.
+    const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+    const capEscaped = escapeRe(capitalized);
+    for (const pat of [escaped, capEscaped]) {
+      const re = new RegExp(`(?<![\\w"])${pat}(?![\\w"])`, "g");
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        out.push({ kind: "gloss", start: m.index, end: m.index + m[0].length, term: key, definition });
+      }
+    }
+  }
+  return out;
+}
+
+function deduplicateMatches(all: Match[]): Match[] {
+  // Earliest-start, then longest-match; links beat gloss on tie; drop overlaps.
+  all.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    const lenDiff = (b.end - b.start) - (a.end - a.start);
+    if (lenDiff !== 0) return lenDiff;
+    // links take priority over gloss
+    if (a.kind !== b.kind) return a.kind === "link" ? -1 : 1;
+    return 0;
+  });
   const filtered: Match[] = [];
   let lastEnd = -1;
-  for (const m of out) {
+  for (const m of all) {
     if (m.start >= lastEnd) {
       filtered.push(m);
       lastEnd = m.end;
@@ -84,8 +130,12 @@ export function linkifyAndHighlight(
   text: string,
   citations: DocCitationRow[],
   markRe: RegExp | null,
+  glossary?: Map<string, string>,
 ): ReactNode {
-  const matches = buildMatches(text, citations);
+  const citMatches = buildCitationMatches(text, citations);
+  const glossMatches = glossary ? buildGlossaryMatches(text, glossary) : [];
+  const matches = deduplicateMatches([...citMatches, ...glossMatches]);
+
   const nodes: ReactNode[] = [];
   let key = 0;
 
@@ -95,8 +145,6 @@ export function linkifyAndHighlight(
       nodes.push(s);
       return;
     }
-    // Use a fresh non-global regex for split + per-part tests so global state
-    // doesn't corrupt subsequent calls.
     const flags = markRe.flags.replace("g", "");
     const splitRe = new RegExp(markRe.source, "g" + flags);
     const testRe = new RegExp(`^(?:${markRe.source})$`, flags);
@@ -117,17 +165,33 @@ export function linkifyAndHighlight(
   for (const m of matches) {
     pushText(text.slice(cursor, m.start));
     const label = text.slice(m.start, m.end);
-    nodes.push(
-      <Link
-        key={key++}
-        to="/code/$"
-        params={{ _splat: m.identifier.replace(/^\//, "") }}
-        className="font-medium text-accent underline decoration-accent/40 underline-offset-2 transition-colors hover:decoration-accent"
-        title={`Jump to ${m.identifier}`}
-      >
-        {label}
-      </Link>,
-    );
+    if (m.kind === "link") {
+      nodes.push(
+        <Link
+          key={key++}
+          to="/code/$"
+          params={{ _splat: m.identifier.replace(/^\//, "") }}
+          className="font-medium text-accent underline decoration-accent/40 underline-offset-2 transition-colors hover:decoration-accent"
+          title={`Jump to ${m.identifier}`}
+        >
+          {label}
+        </Link>,
+      );
+    } else {
+      nodes.push(
+        <HoverCard key={key++} openDelay={300} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <span className="cursor-help underline decoration-dotted decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground/50 transition-colors">
+              {label}
+            </span>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-72 text-sm leading-relaxed">
+            <p className="mb-1 font-semibold text-foreground/80">{label}</p>
+            <p className="text-muted-foreground">{m.definition}</p>
+          </HoverCardContent>
+        </HoverCard>,
+      );
+    }
     cursor = m.end;
   }
   pushText(text.slice(cursor));

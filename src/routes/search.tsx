@@ -1,14 +1,53 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
-import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
+import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Bookmark, BookmarkCheck } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
+
+const SAVED_KEY = "marginalia_saved_searches";
+
+type SavedSearch = { q: string; source: string; savedAt: string };
+
+function useSavedSearches() {
+  const [saved, setSaved] = useState<SavedSearch[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_KEY);
+      if (raw) setSaved(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  const persist = useCallback((next: SavedSearch[]) => {
+    setSaved(next);
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }, []);
+
+  const save = useCallback((q: string, source: string) => {
+    setSaved((prev) => {
+      if (prev.some((s) => s.q === q && s.source === source)) return prev;
+      const next = [{ q, source, savedAt: new Date().toISOString() }, ...prev].slice(0, 20);
+      try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const remove = useCallback((q: string, source: string) => {
+    persist(saved.filter((s) => !(s.q === q && s.source === source)));
+  }, [saved, persist]);
+
+  const isSaved = useCallback((q: string, source: string) => {
+    return saved.some((s) => s.q === q && s.source === source);
+  }, [saved]);
+
+  return { saved, save, remove, isSaved };
+}
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
@@ -118,6 +157,7 @@ function SearchPage() {
   const { q, source, exact, words, exclude } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
   const [showFilters, setShowFilters] = useState(!!(exact || words || exclude));
+  const { saved, save, remove, isSaved } = useSavedSearches();
 
   // Group by source
   const bySource = new Map<string, Hit[]>();
@@ -347,9 +387,25 @@ function SearchPage() {
                     semantic
                   </span>
                 )}
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                <span className="hidden sm:inline ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
                   indexed May 2026 · direct from source
                 </span>
+                {/* Save this search */}
+                {q && (
+                  <button
+                    type="button"
+                    title={isSaved(q, source) ? "Remove saved search" : "Save this search"}
+                    onClick={() => isSaved(q, source) ? remove(q, source) : save(q, source)}
+                    className={`ml-auto sm:ml-0 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all ${
+                      isSaved(q, source)
+                        ? "border-accent/40 bg-accent/10 text-accent"
+                        : "border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                    }`}
+                  >
+                    {isSaved(q, source) ? <BookmarkCheck className="h-3 w-3" /> : <Bookmark className="h-3 w-3" />}
+                    {isSaved(q, source) ? "Saved" : "Save"}
+                  </button>
+                )}
               </div>
             )}
 
@@ -419,6 +475,42 @@ function SearchPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Saved searches — shown when idle */}
+        {!q && saved.length > 0 && (
+          <div className="mt-10">
+            <div className="citation-tag text-muted-foreground mb-3 flex items-center gap-1.5">
+              <Bookmark className="h-3 w-3" />
+              Saved searches
+            </div>
+            <ul className="space-y-2">
+              {saved.map((s) => (
+                <li key={`${s.q}::${s.source}`} className="group flex items-center gap-2">
+                  <Link
+                    to="/search"
+                    search={{ q: s.q, source: s.source, exact: false, words: "", exclude: "" }}
+                    className="flex-1 rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm hover:border-foreground/20 hover:bg-muted/60 transition-all"
+                  >
+                    <span className="font-medium text-foreground">{s.q}</span>
+                    {s.source && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        in {SOURCE_ABBR[s.source] ?? s.source.toUpperCase()}
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    type="button"
+                    title="Remove"
+                    onClick={() => remove(s.q, s.source)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-1.5 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {/* Vision: what search will become */}
