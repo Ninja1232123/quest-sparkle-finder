@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,7 +16,7 @@ export function useSubscription() {
   const [sub, setSub] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     if (!user) {
       setSub(null);
       setLoading(false);
@@ -34,7 +34,7 @@ export function useSubscription() {
       .maybeSingle();
     setSub((data as Sub | null) ?? null);
     setLoading(false);
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (authLoading) return;
