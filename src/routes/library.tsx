@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AGENCIES, TOPICS } from "@/data/topics";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { Building2, Landmark, Gavel, FileSignature, Radio } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 export const Route = createFileRoute("/library")({
   component: Library,
