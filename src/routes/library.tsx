@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AGENCIES, TOPICS } from "@/data/topics";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { Building2, Landmark, Gavel, FileSignature, Radio } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 export const Route = createFileRoute("/library")({
   component: Library,
@@ -88,6 +90,47 @@ function Library() {
               </div>
             );
           })}
+        </div>
+
+        {/* Sources we haven't shelved yet */}
+        <div className="mt-20">
+          <ComingSoonHeader
+            eyebrow="incoming shipments"
+            title="Sources we want on the shelf next."
+            subtitle="Marginalia is built one rulebook at a time. Here's what's queued — these aren't live yet, but the room is reserved."
+          />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <ComingSoonCard
+              icon={Landmark}
+              status="building"
+              title="State constitutions & codes"
+              pitch="All 50 state constitutions plus the full statutory code of every state — searchable next to the federal sources you already have."
+            />
+            <ComingSoonCard
+              icon={Gavel}
+              status="soon"
+              title="Federal caselaw"
+              pitch="Supreme Court, circuit, and district opinions wired into the statutes and regulations they interpret."
+            />
+            <ComingSoonCard
+              icon={Radio}
+              status="soon"
+              title="Federal Register, demystified"
+              pitch="Daily proposed and final rules, threaded into the CFR sections they touch — so you can see what's about to change before it does."
+            />
+            <ComingSoonCard
+              icon={Building2}
+              status="vision"
+              title="Local rules & municipal codes"
+              pitch="The county and city ordinances that actually govern day-to-day life — landlord-tenant, parking, zoning, noise — pulled into the same index."
+            />
+            <ComingSoonCard
+              icon={FileSignature}
+              status="vision"
+              title="Agency guidance & opinion letters"
+              pitch="The unofficial-but-binding stuff: DOL opinion letters, IRS revenue rulings, FTC guidance — usually buried, finally indexed."
+            />
+          </div>
         </div>
       </section>
       <SiteFooter />

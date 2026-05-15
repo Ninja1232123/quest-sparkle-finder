@@ -4,6 +4,8 @@ import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useState } from "react";
 import baldEagle from "@/assets/bald-eagle.png";
+import { Map, Network, History, Scale } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 // Per-codebook 'merica backgrounds. Each source gets its own flavor.
 const SOURCE_BG: Record<string, string> = {
@@ -178,6 +180,41 @@ function CodeHub() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Vision strip — shelves we haven't filled yet */}
+        <div className="mt-16">
+          <ComingSoonHeader
+            eyebrow="shelves under construction"
+            title="The other half of the library."
+            subtitle="The federal floor is open. These wings are framed but not yet stocked."
+          />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <ComingSoonCard
+              icon={Map}
+              status="building"
+              title="All 50 state codes"
+              pitch="Statutes, constitutions, and agency regs from every state — searchable in the same bar as the federal codebooks."
+            />
+            <ComingSoonCard
+              icon={Scale}
+              status="soon"
+              title="Federal caselaw"
+              pitch="Supreme Court and circuit opinions wired into the sections they interpret, with the holdings pulled to the top."
+            />
+            <ComingSoonCard
+              icon={Network}
+              status="soon"
+              title="Citation graph"
+              pitch="Every section shows what cites it and what it depends on — a real map between statutes, regulations, and agency manuals."
+            />
+            <ComingSoonCard
+              icon={History}
+              status="vision"
+              title="Historical versions"
+              pitch="Slide back through every prior version of any section. See exactly what changed, and which Public Law did it."
+            />
+          </div>
         </div>
       </section>
       <SiteFooter />

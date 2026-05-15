@@ -6,7 +6,8 @@ import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/server/documents.functions";
-import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check } from "lucide-react";
+import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
 
 const searchSchema = z.object({
@@ -421,6 +422,71 @@ function SearchPage() {
             )}
           </>
         )}
+
+        {/* Vision: what search will become */}
+        <div className="mt-20">
+          <ComingSoonHeader
+            eyebrow="search, but smarter"
+            title="The kind of search the law actually deserves."
+            subtitle="Right now you get fast keyword + phrase matching across six federal codebooks. Here's where this is going — every tile below is on the build list."
+          />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <ComingSoonCard
+              icon={Brain}
+              status="building"
+              title="Ask in plain English"
+              pitch="Type 'can my landlord keep my deposit if I broke the lease early?' and get the actual statutes that answer the question — ranked, cited, and linked back to the source."
+            />
+            <ComingSoonCard
+              icon={Network}
+              status="soon"
+              title="Citation graph"
+              pitch="Every result shows what cites it and what it cites — across codebooks. Walk a regulation back to the statute that authorized it, then forward to every CFR rule built on top."
+            />
+            <ComingSoonCard
+              icon={Languages}
+              status="building"
+              title="Plain-English layer"
+              pitch="A toggle that rewrites any section in everyday language, side-by-side with the original text. The law stays the law — you just get a translator."
+            />
+            <ComingSoonCard
+              icon={History}
+              status="soon"
+              title="Time-travel any section"
+              pitch="Slide through every version of a statute or regulation back to its enactment. See exactly what changed, when, and which Public Law did it."
+            />
+            <ComingSoonCard
+              icon={Wand2}
+              status="vision"
+              title="Smart filter chips"
+              pitch="Search 'eviction' and we surface the right filter chips for you — by state, by type of housing, by stage of the process — so you're not guessing the magic words."
+            />
+            <ComingSoonCard
+              icon={Bell}
+              status="soon"
+              title="Save searches & get alerts"
+              pitch="Pin a query and we'll ping you when a new amendment, regulation, or agency manual update changes the answer. Set it once, stop re-googling."
+            />
+            <ComingSoonCard
+              icon={Mic}
+              status="vision"
+              title="Read-aloud + voice ask"
+              pitch="Tap to hear any section read in a clean voice. Or hold the mic and ask a question — the answer comes back as cited text you can scroll through."
+            />
+            <ComingSoonCard
+              icon={BookmarkPlus}
+              status="building"
+              title="Threads across codebooks"
+              pitch="Save a result and we'll auto-suggest the connected sections you'd want next — the regulation that implements it, the agency manual that enforces it, the case law that's interpreted it."
+            />
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            None of this is live yet — but every piece is on the bench.{" "}
+            <Link to="/whitepaper" className="text-accent hover:underline">
+              See the full roadmap →
+            </Link>
+          </p>
+        </div>
       </section>
       <SiteFooter />
     </div>
