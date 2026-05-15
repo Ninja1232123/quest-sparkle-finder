@@ -298,6 +298,8 @@ function detectCitation(raw: string): { source: string; identifier?: string; tit
   return null;
 }
 
+// Minimal snippet builder used only for the citation fast-path hit where ts_headline
+// is not available (no tsquery object at that point).
 function buildSnippet(body: string, terms: string[], len = 260): string {
   if (!body) return "";
   const lower = body.toLowerCase();
@@ -306,19 +308,17 @@ function buildSnippet(body: string, terms: string[], len = 260): string {
     const i = lower.indexOf(t.toLowerCase());
     if (i !== -1 && (idx === -1 || i < idx)) idx = i;
   }
-  let start = 0;
-  if (idx !== -1) start = Math.max(0, idx - 60);
+  const start = idx !== -1 ? Math.max(0, idx - 60) : 0;
   const slice = body.slice(start, start + len).replace(/\s+/g, " ").trim();
   const prefix = start > 0 ? "…" : "";
-  // Highlight terms with <mark>; keep raw text safe by escaping first.
   const escaped = prefix + slice.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
-  let highlighted = escaped;
+  let out = escaped;
   for (const t of terms) {
     if (!t || t.length < 2) continue;
     const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
-    highlighted = highlighted.replace(re, "<mark>$1</mark>");
+    out = out.replace(re, "<mark>$1</mark>");
   }
-  return highlighted;
+  return out;
 }
 
 export const searchDocuments = createServerFn({ method: "GET" })
@@ -328,7 +328,8 @@ export const searchDocuments = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }) => {
     const raw = data.q.trim();
-    const terms = raw.split(/\s+/).filter((t) => t.length >= 2 && !/^(the|and|or|of|a|an|to|in|for|by|on|is)$/i.test(t));
+    // Terms are only needed for the citation fast-path snippet builder.
+    const terms = raw.replace(/["()\-]/g, " ").split(/\s+/).filter((t) => t.length >= 2 && !/^(the|and|or|of|a|an|to|in|for|by|on|is)$/i.test(t));
 
     // 1) If the query looks like a citation, jump straight to it.
     const cite = detectCitation(raw);
@@ -339,7 +340,6 @@ export const searchDocuments = createServerFn({ method: "GET" })
         .eq("identifier", cite.identifier)
         .maybeSingle();
       if (direct) {
-        // Fire-and-forget telemetry
         supabaseAdmin.from("search_events").insert({
           q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
           source_filter: data.source ?? null, hit_count: 1, exact_hit: true,
@@ -359,65 +359,44 @@ export const searchDocuments = createServerFn({ method: "GET" })
       }
     }
 
-    // 2) Full-text search with prefix matching so partial words work.
-    //    Convert "due process" -> "due:* & process:*"
-    const tsQuery = terms.length
-      ? terms.map((t) => `${t.replace(/[^\w]/g, "")}:*`).filter(Boolean).join(" & ")
-      : raw;
+    // 2) Primary: RPC with websearch_to_tsquery + ts_headline + ts_rank_cd.
+    //    websearch_to_tsquery handles "phrase", -exclude, OR natively.
+    const { data: ftsRows, error: ftsError } = await supabaseAdmin
+      .rpc("search_documents_fts", {
+        p_query: raw,
+        p_source: data.source ?? null,
+        p_limit: 40,
+      });
 
-    let query = supabaseAdmin
-      .from("documents")
-      .select("identifier, source_code, parent_label, section_label, heading, body_text")
-      .textSearch("search_tsv", tsQuery, { config: "english" })
-      .limit(40);
-    if (data.source) query = query.eq("source_code", data.source);
-    let { data: rows, error } = await query;
+    if (ftsError) return { hits: [], error: ftsError.message };
 
-    // 3) Fallback: heading / section_label / identifier ILIKE for things the
-    //    English dictionary stems away (numbers, acronyms, short tokens).
-    if ((!rows || rows.length === 0) && !error) {
-      const like = `%${raw.replace(/[%_]/g, "")}%`;
-      let fb = supabaseAdmin
-        .from("documents")
-        .select("identifier, source_code, parent_label, section_label, heading, body_text")
-        .or(`heading.ilike.${like},section_label.ilike.${like},identifier.ilike.${like}`)
-        .limit(40);
-      if (data.source) fb = fb.eq("source_code", data.source);
-      const r2 = await fb;
-      rows = r2.data ?? [];
-      error = r2.error ?? null;
+    // 3) Fallback: trigram similarity when FTS returns nothing (typos, acronyms,
+    //    short numeric tokens that the English stemmer doesn't index).
+    let rows = ftsRows as Array<{
+      identifier: string; source_code: string; parent_label: string | null;
+      section_label: string | null; heading: string | null; snippet: string | null; rank: number;
+    }> | null;
+
+    if (!rows || rows.length === 0) {
+      const { data: trgmRows } = await supabaseAdmin
+        .rpc("search_documents_trgm", {
+          p_query: raw,
+          p_source: data.source ?? null,
+          p_limit: 20,
+        });
+      rows = trgmRows ?? [];
     }
 
-    if (error) return { hits: [], error: error.message };
-
-    // 4) Rank: heading match > section/identifier > body. Stable secondary by source order.
-    const sourceWeight: Record<string, number> = { const: 0, usc: 1, cfr: 2, ucc: 3, tfm: 4, irm: 5 };
-    const lowerTerms = terms.map((t) => t.toLowerCase());
-    const scored = (rows ?? []).map((r) => {
-      const heading = (r.heading ?? "").toLowerCase();
-      const ident = (r.identifier ?? "").toLowerCase();
-      const sect = (r.section_label ?? "").toLowerCase();
-      let score = 0;
-      for (const t of lowerTerms) {
-        if (heading.includes(t)) score += 10;
-        if (sect.includes(t) || ident.includes(t)) score += 6;
-      }
-      return { r, score };
-    });
-    scored.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return (sourceWeight[a.r.source_code] ?? 99) - (sourceWeight[b.r.source_code] ?? 99);
-    });
-
-    const hits = scored.map(({ r }) => ({
+    const hits = (rows ?? []).map((r) => ({
       identifier: r.identifier,
       source_code: r.source_code,
       parent_label: r.parent_label,
       section_label: r.section_label,
       heading: r.heading,
-      snippet: buildSnippet(r.body_text ?? "", terms),
+      snippet: r.snippet ?? "",
       exact: false,
     }));
+
     supabaseAdmin.from("search_events").insert({
       q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
       source_filter: data.source ?? null, hit_count: hits.length, exact_hit: false,
