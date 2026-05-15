@@ -197,6 +197,7 @@ export type SiblingNav = {
 export const getDocument = createServerFn({ method: "GET" })
   .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const { data: doc, error } = await supabaseAdmin
       .from("documents")
       .select("id, source_code, identifier, parent_label, section_label, heading, body_text, body_md, hierarchy, word_count, sort_key")
@@ -346,6 +347,7 @@ export const searchDocuments = createServerFn({ method: "GET" })
     source: z.string().min(2).max(20).optional(),
   }))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
     const raw = data.q.trim();
     // Terms are only needed for the citation fast-path snippet builder.
     const terms = raw.replace(/["()\-]/g, " ").split(/\s+/).filter((t) => t.length >= 2 && !/^(the|and|or|of|a|an|to|in|for|by|on|is)$/i.test(t));
