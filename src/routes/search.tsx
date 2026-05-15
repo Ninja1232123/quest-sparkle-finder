@@ -353,6 +353,19 @@ function SearchPage() {
               </div>
             )}
 
+            {/* Fuzzy-match callout */}
+            {(hits as Hit[]).some((h: Hit) => h.trgm) && (
+              <div className="mt-4 rounded-xl border border-ochre/25 bg-ochre/5 px-4 py-2.5 text-sm text-foreground/70">
+                No exact keyword matches — showing closest results by spelling similarity.{" "}
+                <button
+                  onClick={() => navigate({ to: "/search", search: { q: "", source, exact, words, exclude } })}
+                  className="text-accent hover:underline"
+                >
+                  Try a broader search.
+                </button>
+              </div>
+            )}
+
             {/* Results */}
             {!error && (hits as Hit[]).length === 0 ? (
               <div className="mt-12 text-center">
@@ -466,9 +479,9 @@ function SearchPage() {
             />
             <ComingSoonCard
               icon={BookmarkPlus}
-              status="building"
+              status="live"
               title="Threads across codebooks"
-              pitch="Save a result and we'll auto-suggest the connected sections you'd want next — the regulation that implements it, the agency manual that enforces it, the case law that's interpreted it."
+              pitch="Open any document and see what cites it — sorted by codebook. A USC section shows the CFR rules built on it; a CFR rule traces back to the statute that authorized it."
             />
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">

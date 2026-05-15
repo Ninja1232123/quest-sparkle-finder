@@ -3,7 +3,7 @@ import { getDocument, type DocCitationRow, type IncomingCitation } from "@/lib/d
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUp, Check, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
 import { linkifyAndHighlight } from "@/lib/auto-link-citations";
 
@@ -61,6 +61,63 @@ function parseLegalBody(text: string): LegalParagraph[] {
 }
 
 const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
+
+// ── Defined-terms extractor ──────────────────────────────────────────────────
+// Scans body_text for "term" means / is defined as / refers to patterns common
+// in CFR/USC definitions sections. Returns a map of lowercased term → excerpt.
+function extractDefinitions(text: string): Map<string, string> {
+  const defs = new Map<string, string>();
+  // Match both straight and curly quotes; allow optional "the term" prefix.
+  const re =
+    /(?:the\s+term\s+)?["“‘]([A-Za-z][^"“”‘’]{1,80})["”’]\s+(?:means?|is\s+defined\s+as|refers?\s+to|includes?)\s+([^.;]{10,400}[.;]?)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const term = m[1].trim();
+    const defn = m[2].trim();
+    if (term.length >= 2 && !defs.has(term.toLowerCase())) {
+      defs.set(term.toLowerCase(), defn.length > 220 ? defn.slice(0, 220) + "…" : defn);
+    }
+  }
+  return defs;
+}
+
+function DefinitionsPanel({ text }: { text: string }) {
+  const defs = useMemo(() => extractDefinitions(text), [text]);
+  const [open, setOpen] = useState(false);
+  if (defs.size === 0) return null;
+  const entries = Array.from(defs.entries()).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="mb-6 rounded-2xl border border-border/60 bg-card/60 paper-grain">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="citation-tag text-muted-foreground">Definitions in this section</span>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {defs.size}
+          </span>
+        </div>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-border/40 px-4 pb-4 pt-3">
+          <dl className="space-y-3">
+            {entries.map(([term, defn]) => (
+              <div key={term}>
+                <dt className="font-display text-sm font-semibold capitalize">{term}</dt>
+                <dd className="mt-0.5 text-sm leading-relaxed text-foreground/65">{defn}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function LegalBody({ text, q, citations }: { text: string; q?: string; citations: DocCitationRow[] }) {
   const paragraphs = useMemo(() => parseLegalBody(text), [text]);
@@ -270,13 +327,26 @@ function DocumentPage() {
       <div className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-2.5">
           <div className="citation-tag min-w-0 flex-1 truncate text-muted-foreground">
-            <Link to="/code" className="hover:text-foreground">Code</Link>
-            {" · "}
-            <Link to="/code/source/$source" params={{ source: document.source_code }} className="hover:text-foreground">
-              {SOURCE_NAMES[document.source_code] ?? document.source_code.toUpperCase()}
-            </Link>
-            {document.parent_label ? <> · <span className="text-foreground/70">{document.parent_label}</span></> : null}
-            {document.section_label ? <> · <span className="text-foreground/70">{document.section_label}</span></> : null}
+            {search.q ? (
+              <Link
+                to="/search"
+                search={{ q: search.q }}
+                className="inline-flex items-center gap-1 text-accent hover:text-accent/80"
+              >
+                <ArrowLeft className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[12rem]">Results for "{search.q}"</span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/code" className="hover:text-foreground">Code</Link>
+                {" · "}
+                <Link to="/code/source/$source" params={{ source: document.source_code }} className="hover:text-foreground">
+                  {SOURCE_NAMES[document.source_code] ?? document.source_code.toUpperCase()}
+                </Link>
+                {document.parent_label ? <> · <span className="text-foreground/70">{document.parent_label}</span></> : null}
+                {document.section_label ? <> · <span className="text-foreground/70">{document.section_label}</span></> : null}
+              </>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <div className="hidden items-center gap-0.5 rounded-full border border-border/70 bg-card px-1 py-0.5 sm:flex">
@@ -331,8 +401,11 @@ function DocumentPage() {
           <code className="font-mono text-[11px]">{document.identifier}</code>
         </div>
 
-        <div className={`mt-8 font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-          <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} />
+        <div className="mt-8">
+          <DefinitionsPanel text={document.body_text ?? ""} />
+          <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
+            <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} />
+          </div>
         </div>
 
         {(prev || next) && (
