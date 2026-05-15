@@ -39,20 +39,19 @@ export function useSubscription() {
   useEffect(() => {
     if (authLoading) return;
     refetch();
-    if (!user) return;
-    const ch = supabase
-      .channel(`sub:${user.id}:${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${user.id}` },
-        () => refetch(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
+
+    const onFocus = () => refetch();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refetch();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading]);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [authLoading, refetch]);
 
   const now = Date.now();
   const periodEndMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
