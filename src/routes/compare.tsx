@@ -4,7 +4,8 @@ import { z } from "zod";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { searchDocuments } from "@/server/documents.functions";
-import { GitCompare } from "lucide-react";
+import { GitCompare, Sparkles, Highlighter, Brain, FileDiff } from "lucide-react";
+import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "U.S. Constitution",
