@@ -298,6 +298,53 @@ function Index() {
         </div>
       </section>
 
+      {/* Vision strip — make the "what could be" tangible */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <ComingSoonHeader
+          eyebrow="vol. ii · the build list"
+          title="What this becomes once we get there."
+          subtitle="The federal floor is live. These are the rooms we haven't built out yet — locked for now, but on the blueprint."
+        />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ComingSoonCard
+            icon={Map}
+            status="building"
+            title="All 50 states, indexed"
+            pitch="Every state code, every state constitution, every state regulation — rolled into the same search bar. Start federal, finish in Wyoming, never leave the page."
+          />
+          <ComingSoonCard
+            icon={Brain}
+            status="building"
+            title="Plain-English mode"
+            pitch="A toggle that translates any statute or rule into everyday language, side-by-side with the original. The law stays the law — you just get a translator."
+          />
+          <ComingSoonCard
+            icon={Network}
+            status="soon"
+            title="Citation graph"
+            pitch="See every rule a statute spawned, and every statute a rule traces back to. Walk the law like a map, not a phone book."
+          />
+          <ComingSoonCard
+            icon={Scale}
+            status="soon"
+            title="Caselaw threading"
+            pitch="Open a section and see the Supreme Court and circuit decisions that interpret it — with the holdings pulled out so you don't have to read 80 pages of opinion to find the one line that matters."
+          />
+          <ComingSoonCard
+            icon={Calendar}
+            status="vision"
+            title="Deadline calculator"
+            pitch="Tell us your situation — eviction notice, debt suit, agency complaint — and get the actual statutory deadlines counted out on a real calendar with the citations behind every date."
+          />
+          <ComingSoonCard
+            icon={GraduationCap}
+            status="vision"
+            title="Pro se starter courses"
+            pitch="Short, free walkthroughs of the procedures most people face alone — small claims, eviction defense, debt collection answers — built straight from the rules they cite."
+          />
+        </div>
+      </section>
+
       <SiteFooter />
     </div>
   );
