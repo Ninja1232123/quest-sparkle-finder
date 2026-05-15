@@ -1,7 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { BookOpen, MapPin, Briefcase, Network, Database, Bell, Bot, GitCompare } from "lucide-react";
+import {
+  BookOpen,
+  MapPin,
+  Briefcase,
+  Network,
+  Database,
+  Bell,
+  Bot,
+  GitCompare,
+  Scale,
+  Gavel,
+  FileSignature,
+  Languages,
+  Users,
+  Mic,
+  Map,
+  ShieldCheck,
+  Library,
+  Sparkles,
+  Calendar,
+  Radio,
+  GraduationCap,
+} from "lucide-react";
 
 export const Route = createFileRoute("/whitepaper")({
   component: Whitepaper,
