@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // 4-frame ASCII capybara — now with full glam: lashes, lipstick, the works
 const FRAMES = [
@@ -91,6 +92,7 @@ const HIDE_KEY = "capy.hidden.v1";
 
 export function Capybara() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [frame, setFrame] = useState(0);
   const [quip, setQuip] = useState<string | null>(null);
@@ -181,7 +183,7 @@ export function Capybara() {
     try { localStorage.setItem(HIDE_KEY, "1"); } catch { /* ignore */ }
   }
 
-  if (hidden || !pos) return null;
+  if (hidden || isMobile || !pos) return null;
 
   return (
     <div
