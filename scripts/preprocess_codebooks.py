@@ -369,9 +369,31 @@ def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
         if p.is_file():
             ext_counts[p.suffix.lower()] = ext_counts.get(p.suffix.lower(), 0) + 1
     print(f"file extensions found: {ext_counts}")
+    # For IRM, the same section ships as .md + .xml + .pdf. Pick the best
+    # available per section so we don't parse (and dedup-skip) duplicates.
+    skip_files: set[Path] = set()
+    if source == "irm":
+        by_section: dict[str, dict[str, Path]] = {}
+        for p in files:
+            if not p.is_file():
+                continue
+            sec = _irm_section_from_filename(p)
+            if not sec:
+                continue
+            by_section.setdefault(sec, {})[p.suffix.lower()] = p
+        for sec, variants in by_section.items():
+            # prefer md, then xml, then pdf
+            keep = variants.get(".md") or variants.get(".xml") or variants.get(".pdf")
+            for ext, path in variants.items():
+                if path != keep:
+                    skip_files.add(path)
+        if skip_files:
+            print(f"irm: skipping {len(skip_files)} duplicate variants (kept md > xml > pdf)")
     per_file_rows: dict[str, int] = {}
     for p in tqdm(files, desc=f"scan {source}"):
         if not p.is_file():
+            continue
+        if p in skip_files:
             continue
         ext = p.suffix.lower()
         try:
@@ -381,6 +403,10 @@ def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
                 rows = parse_usc_html(p)
             elif source == "irm" and ext in (".html", ".htm", ".xhtml"):
                 rows = parse_irm_html(p)
+            elif source == "irm" and ext == ".md":
+                rows = parse_irm_md(p)
+            elif source == "irm" and ext == ".xml":
+                rows = parse_irm_xml(p)
             elif ext == ".pdf":
                 rows = parse_pdf(p, source)
             else:
