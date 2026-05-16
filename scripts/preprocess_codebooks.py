@@ -75,7 +75,10 @@ def pad(num: str, width: int = 5) -> str:
 USLM_NS = {"u": "http://schemas.gpo.gov/xml/uslm"}
 
 def _local(el) -> str:
-    return etree.QName(el).localname
+    tag = el.tag
+    if isinstance(tag, str) and "}" in tag:
+        return tag.split("}", 1)[1]
+    return tag if isinstance(tag, str) else ""
 
 def _first_child(el, name: str):
     for child in el:
