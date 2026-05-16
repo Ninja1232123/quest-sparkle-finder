@@ -2,11 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useState } from "react";
-import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
-import { Filter, SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
+import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
 
@@ -119,7 +118,6 @@ function SearchPage() {
   const { q, source, exact, words, exclude } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
   const navigate = useNavigate();
-  const [showFilters, setShowFilters] = useState(!!(exact || words || exclude));
 
   // Group by source
   const bySource = new Map<string, Hit[]>();
@@ -131,10 +129,128 @@ function SearchPage() {
 
   const hasFilters = exact || !!words || !!exclude || !!source;
 
+  const rightRail = (
+    <div className="space-y-5 text-sm">
+      <div>
+        <div className="citation-tag mb-1.5 flex items-center gap-1.5 text-muted-foreground">
+          <SlidersHorizontal className="h-3 w-3" />
+          refine
+          {hasFilters && (
+            <span className="ml-auto rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
+              active
+            </span>
+          )}
+        </div>
+        <div className="rounded-lg border border-border/60 bg-card/60 p-3 space-y-3">
+          {/* Exact phrase */}
+          <div>
+            <label className="citation-tag text-muted-foreground">exact phrase</label>
+            <div className="mt-1 flex items-center gap-2">
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={exact}
+                  onChange={(e) => {
+                    navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude } });
+                  }}
+                />
+                <div className="peer-checked:bg-accent h-5 w-9 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4" />
+              </label>
+              <span className="text-xs text-foreground/65">
+                {exact ? "matches exact phrase" : "any word order"}
+              </span>
+            </div>
+          </div>
+
+          {/* Must include */}
+          <div>
+            <label className="citation-tag text-muted-foreground">must include</label>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = (new FormData(e.currentTarget).get("words") as string).trim();
+                navigate({ to: "/search", search: { q, source, exact, words: val, exclude } });
+              }}
+              className="mt-1 flex gap-1.5"
+            >
+              <input
+                name="words"
+                defaultValue={words}
+                placeholder="warrant, seizure"
+                className="flex-1 rounded-md border border-foreground/15 bg-background px-2 py-1 text-xs focus:border-foreground/40 focus:outline-none"
+              />
+              <button type="submit" className="rounded-md bg-foreground/10 px-2 py-1 text-xs hover:bg-foreground/15">Apply</button>
+            </form>
+          </div>
+
+          {/* Exclude */}
+          <div>
+            <label className="citation-tag text-muted-foreground">exclude</label>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = (new FormData(e.currentTarget).get("exclude") as string).trim();
+                navigate({ to: "/search", search: { q, source, exact, words, exclude: val } });
+              }}
+              className="mt-1 flex gap-1.5"
+            >
+              <input
+                name="exclude"
+                defaultValue={exclude}
+                placeholder="tax, revenue"
+                className="flex-1 rounded-md border border-foreground/15 bg-background px-2 py-1 text-xs focus:border-foreground/40 focus:outline-none"
+              />
+              <button type="submit" className="rounded-md bg-foreground/10 px-2 py-1 text-xs hover:bg-foreground/15">Apply</button>
+            </form>
+          </div>
+
+          {hasFilters && (
+            <button
+              onClick={() => {
+                navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "" } });
+              }}
+              className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive"
+            >
+              <X className="h-3 w-3" />
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {q && q.trim().length >= 2 && (
+        <div>
+          <div className="citation-tag mb-1.5 text-muted-foreground">cross-reference</div>
+          <Link
+            to="/compare"
+            search={{ q, sources: source || "usc,cfr" }}
+            className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-accent hover:bg-accent/10 transition-colors"
+          >
+            <GitCompare className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Compare "{q}" side-by-side</span>
+          </Link>
+        </div>
+      )}
+
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">soon · here</div>
+        <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+          <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+            <Network className="h-3.5 w-3.5" />
+            Citation graph for results
+          </div>
+          <p className="mt-1 leading-relaxed">
+            How matched sections relate to each other — clusters across codebooks, which authority depends on which.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen">
-      <SiteHeader />
-      <section className="mx-auto max-w-4xl px-6 py-12">
+    <ResearchShell sources={sources} right={rightRail} rightLabel="Refine" centerMaxWidth="max-w-4xl">
+      <section>
         <div className="citation-tag text-muted-foreground">full-text search</div>
         <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           {q ? (
@@ -156,120 +272,6 @@ function SearchPage() {
             Tip: use <code className="font-mono">"exact phrase"</code>, <code className="font-mono">-exclude</code>, or{" "}
             <code className="font-mono">term OR term</code> directly in the search bar.
           </p>
-        </div>
-
-        {/* Power search filters */}
-        <div className="mt-4">
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-              hasFilters
-                ? "border-sage-deep bg-sage-deep/10 text-sage-deep"
-                : "border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-            }`}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Power filters {hasFilters ? "· active" : ""}
-          </button>
-
-          {showFilters && (
-            <div className="mt-3 rounded-2xl border border-border/60 bg-card p-5 shadow-[var(--shadow-soft)]">
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* Exact phrase */}
-                <div>
-                  <label className="citation-tag text-muted-foreground">exact phrase match</label>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <label className="relative inline-flex cursor-pointer items-center">
-                      <input
-                        type="checkbox"
-                        className="peer sr-only"
-                        checked={exact}
-                        onChange={(e) => {
-                          navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude } });
-                        }}
-                      />
-                      <div className="peer-checked:bg-sage-deep h-5 w-9 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4" />
-                    </label>
-                    <span className="text-xs text-foreground/70">
-                      {exact ? "On — matches exact phrase" : "Off — any word order"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Must include */}
-                <div>
-                  <label className="citation-tag text-muted-foreground">must include (comma-separated)</label>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const val = (new FormData(e.currentTarget).get("words") as string).trim();
-                      navigate({ to: "/search", search: { q, source, exact, words: val, exclude } });
-                    }}
-                    className="mt-1.5 flex gap-2"
-                  >
-                    <input
-                      name="words"
-                      defaultValue={words}
-                      placeholder="e.g. warrant, seizure"
-                      className="flex-1 rounded-lg border border-foreground/15 bg-background px-3 py-1.5 text-xs focus:border-foreground/40 focus:outline-none"
-                    />
-                    <button type="submit" className="rounded-lg bg-foreground/10 px-3 py-1.5 text-xs hover:bg-foreground/15">
-                      Apply
-                    </button>
-                  </form>
-                </div>
-
-                {/* Exclude */}
-                <div>
-                  <label className="citation-tag text-muted-foreground">exclude words (comma-separated)</label>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const val = (new FormData(e.currentTarget).get("exclude") as string).trim();
-                      navigate({ to: "/search", search: { q, source, exact, words, exclude: val } });
-                    }}
-                    className="mt-1.5 flex gap-2"
-                  >
-                    <input
-                      name="exclude"
-                      defaultValue={exclude}
-                      placeholder="e.g. tax, revenue"
-                      className="flex-1 rounded-lg border border-foreground/15 bg-background px-3 py-1.5 text-xs focus:border-foreground/40 focus:outline-none"
-                    />
-                    <button type="submit" className="rounded-lg bg-foreground/10 px-3 py-1.5 text-xs hover:bg-foreground/15">
-                      Apply
-                    </button>
-                  </form>
-                </div>
-
-                {/* Compare action */}
-                {q && q.trim().length >= 2 && (
-                  <div className="flex items-end">
-                    <Link
-                      to="/compare"
-                      search={{ q, sources: source || "usc,cfr" }}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-sage-deep/40 bg-sage-deep/5 px-3 py-2 text-xs text-sage-deep hover:bg-sage-deep/10 transition-colors"
-                    >
-                      <GitCompare className="h-3.5 w-3.5" />
-                      Compare "{q}" side-by-side
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {hasFilters && (
-                <button
-                  onClick={() => {
-                    navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "" } });
-                  }}
-                  className="mt-3 flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                  Clear all filters
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {q && (
@@ -492,8 +494,7 @@ function SearchPage() {
           </p>
         </div>
       </section>
-      <SiteFooter />
-    </div>
+    </ResearchShell>
   );
 }
 

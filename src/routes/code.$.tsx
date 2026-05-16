@@ -1,9 +1,8 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
-import { getDocument, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
-import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
+import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, Plus } from "lucide-react";
 import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
 import { linkifyAndHighlight } from "@/lib/auto-link-citations";
 
@@ -162,15 +161,17 @@ export const Route = createFileRoute("/code/$")({
   }),
   loader: async ({ params }) => {
     const identifier = "/" + params._splat;
-    const res = await getDocument({ data: { identifier } });
+    const [res, sourcesRes] = await Promise.all([
+      getDocument({ data: { identifier } }),
+      listSources(),
+    ]);
     if (!res.document) throw notFound();
-    return res;
+    return { ...res, sources: sourcesRes.sources };
   },
   component: DocumentPage,
   pendingMs: 200,
   pendingComponent: () => (
     <div className="min-h-screen">
-      <SiteHeader />
       <article className="mx-auto max-w-3xl px-6 py-12">
         <div className="h-4 w-40 animate-pulse rounded bg-muted/60" />
         <div className="mt-4 h-10 w-3/4 animate-pulse rounded bg-muted/60" />
@@ -180,7 +181,6 @@ export const Route = createFileRoute("/code/$")({
           ))}
         </div>
       </article>
-      <SiteFooter />
     </div>
   ),
   head: ({ loaderData }) => {
@@ -251,22 +251,22 @@ function DocOutline({ text }: { text: string }) {
   if (items.length < 3) return null;
 
   return (
-    <div className="hidden 2xl:block fixed top-24 left-[calc(50%+26rem)] w-44 z-10">
-      <div className="citation-tag text-muted-foreground/60 mb-2 px-2">Sections</div>
-      <nav className="space-y-0.5 max-h-[70vh] overflow-y-auto">
+    <div>
+      <div className="citation-tag mb-2 px-1 text-muted-foreground">in this section</div>
+      <nav className="max-h-[60vh] space-y-0.5 overflow-y-auto pr-1">
         {items.map((p) => {
           const isActive = p.idx === activeIdx;
           return (
             <a
               key={p.idx}
               href={`#para-${p.idx}`}
-              className={`flex items-start gap-1.5 rounded-lg px-2 py-1 text-[11px] leading-snug transition-colors ${
+              className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[11px] leading-snug transition-colors ${
                 isActive
-                  ? "bg-foreground/8 text-foreground"
+                  ? "bg-foreground/10 text-foreground"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
             >
-              <span className="font-mono text-[9px] shrink-0 mt-0.5 text-foreground/30">{p.label}</span>
+              <span className="mt-0.5 shrink-0 font-mono text-[9px] text-foreground/40">{p.label}</span>
               <span className="line-clamp-2">{p.text.length > 55 ? p.text.slice(0, 55) + "…" : p.text}</span>
             </a>
           );
@@ -277,7 +277,7 @@ function DocOutline({ text }: { text: string }) {
 }
 
 function DocumentPage() {
-  const { document, citations, incoming, prev, next } = Route.useLoaderData();
+  const { document, citations, incoming, prev, next, sources } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
@@ -328,13 +328,136 @@ function DocumentPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen">
-      <SiteHeader />
+  // Citation/connection panels — rendered in the right rail at xl+, and
+  // inline below the article on smaller screens so nothing is hidden.
+  const crossSource = incoming.filter((c: IncomingCitation) => c.source !== document.source_code);
+  const sameSource = incoming.filter((c: IncomingCitation) => c.source === document.source_code);
+  const crossBySource = new Map<string, IncomingCitation[]>();
+  for (const c of crossSource) {
+    const arr = crossBySource.get(c.source) ?? [];
+    arr.push(c);
+    crossBySource.set(c.source, arr);
+  }
 
-      {/* Sticky breadcrumb / utility bar */}
-      <div className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-2.5">
+  const tracesPanel = internal.length > 0 ? (
+    <div>
+      <div className="citation-tag text-accent">
+        Traces to {internal.length} document{internal.length === 1 ? "" : "s"}
+      </div>
+      <div className="mt-3 space-y-5">
+        {Array.from(traceBySource.entries()).map(([src, items]) => (
+          <div key={src}>
+            <div className="mb-2 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {SOURCE_NAMES[src] ?? src}
+            </div>
+            <ul className="space-y-2">
+              {items.map((c, i) => (
+                <li key={i}>
+                  <Link
+                    to="/code/$"
+                    params={{ _splat: c.to_identifier.replace(/^\//, "") }}
+                    className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
+                  >
+                    <div className="font-display font-semibold leading-snug">
+                      {c.target_heading || c.to_identifier}
+                    </div>
+                    <div className="citation-tag mt-0.5 text-muted-foreground">
+                      {c.target_section_label ?? c.to_identifier}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  const crossPanel = crossSource.length > 0 ? (
+    <div className="rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3">
+      <div className="citation-tag text-accent mb-2">
+        Cited across {crossBySource.size} other codebook{crossBySource.size !== 1 ? "s" : ""}
+      </div>
+      <div className="space-y-3">
+        {Array.from(crossBySource.entries()).map(([src, items]) => (
+          <div key={src}>
+            <div className="mb-1 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {SOURCE_NAMES[src] ?? src}
+            </div>
+            <ul className="space-y-1.5">
+              {items.map((c: IncomingCitation, i: number) => (
+                <li key={i}>
+                  <Link
+                    to="/code/$"
+                    params={{ _splat: c.identifier.replace(/^\//, "") }}
+                    className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
+                  >
+                    <div className="citation-tag text-muted-foreground">
+                      {c.section_label ?? c.identifier}
+                    </div>
+                    <div className="font-display font-semibold leading-snug">{c.heading}</div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  const citedByPanel = sameSource.length > 0 ? (
+    <div>
+      <div className="citation-tag text-accent">
+        Cited by {sameSource.length} section{sameSource.length !== 1 ? "s" : ""} in this codebook
+      </div>
+      <ul className="mt-3 space-y-2">
+        {sameSource.map((c: IncomingCitation, i: number) => (
+          <li key={i}>
+            <Link
+              to="/code/$"
+              params={{ _splat: c.identifier.replace(/^\//, "") }}
+              className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
+            >
+              <div className="citation-tag text-muted-foreground">
+                {c.section_label ?? c.identifier}
+              </div>
+              <div className="font-display font-semibold leading-snug">{c.heading}</div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
+  const graphPlaceholder = (
+    <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+      <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+        <Network className="h-3.5 w-3.5" />
+        Citation graph
+      </div>
+      <p className="mt-1 leading-relaxed">
+        A visual map of what this section depends on and what depends on it — rendering here once the graph component ships.
+      </p>
+    </div>
+  );
+
+  const rightRail = (
+    <div className="space-y-6 text-sm">
+      <DocOutline text={document.body_text ?? ""} />
+      {tracesPanel}
+      {crossPanel}
+      {citedByPanel}
+      {graphPlaceholder}
+    </div>
+  );
+
+  return (
+    <ResearchShell sources={sources} right={rightRail} rightLabel="Connections" centerMaxWidth="max-w-3xl">
+      {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
+      <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
           <div className="citation-tag min-w-0 flex-1 truncate text-muted-foreground">
             {search.q ? (
               <Link
@@ -398,7 +521,7 @@ function DocumentPage() {
         </div>
       </div>
 
-      <article className="mx-auto max-w-3xl px-6 py-12">
+      <article>
         <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
           {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
           <span className="ink-underline italic">{document.heading}</span>
@@ -452,109 +575,12 @@ function DocumentPage() {
           </nav>
         )}
 
-        {internal.length > 0 && (
-          <div className="mt-12">
-            <div className="citation-tag text-accent">
-              Traces to {internal.length} document{internal.length === 1 ? "" : "s"}
-            </div>
-            <div className="mt-3 space-y-6">
-              {Array.from(traceBySource.entries()).map(([src, items]) => (
-                <div key={src}>
-                  <div className="mb-2 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {SOURCE_NAMES[src] ?? src}
-                  </div>
-                  <ul className="space-y-2">
-                    {items.map((c, i) => (
-                      <li key={i}>
-                        <Link
-                          to="/code/$"
-                          params={{ _splat: c.to_identifier.replace(/^\//, "") }}
-                          className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
-                        >
-                          <div className="font-display text-sm font-semibold">
-                            {c.target_heading || c.to_identifier}
-                          </div>
-                          <div className="citation-tag mt-0.5 text-muted-foreground">
-                            {c.target_section_label ?? c.to_identifier}
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-          {/* Cross-codebook panel: incoming citations from a different source */}
-          {(() => {
-            const crossSource = incoming.filter((c: IncomingCitation) => c.source !== document.source_code);
-            if (crossSource.length === 0) return null;
-            const bySource = new Map<string, IncomingCitation[]>();
-            for (const c of crossSource) {
-              const arr = bySource.get(c.source) ?? [];
-              arr.push(c);
-              bySource.set(c.source, arr);
-            }
-            return (
-              <div className="mt-10 rounded-2xl border border-accent/20 bg-accent/5 px-5 py-4">
-                <div className="citation-tag text-accent mb-3">
-                  Cited across {bySource.size} other codebook{bySource.size !== 1 ? "s" : ""}
-                </div>
-                <div className="space-y-4">
-                  {Array.from(bySource.entries()).map(([src, items]) => (
-                    <div key={src}>
-                      <div className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {SOURCE_NAMES[src] ?? src}
-                      </div>
-                      <ul className="space-y-1.5">
-                        {items.map((c: IncomingCitation, i: number) => (
-                          <li key={i}>
-                            <Link
-                              to="/code/$"
-                              params={{ _splat: c.identifier.replace(/^\//, "") }}
-                              className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
-                            >
-                              <div className="citation-tag text-muted-foreground">
-                                {c.section_label ?? c.identifier}
-                              </div>
-                              <div className="font-display text-sm font-semibold">{c.heading}</div>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Same-source "Cited by" */}
-          {incoming.filter((c: IncomingCitation) => c.source === document.source_code).length > 0 && (
-          <div className="mt-10">
-            <div className="citation-tag text-accent">
-              Cited by {incoming.filter((c: IncomingCitation) => c.source === document.source_code).length} section{incoming.filter((c: IncomingCitation) => c.source === document.source_code).length !== 1 ? "s" : ""} in this codebook
-            </div>
-            <ul className="mt-3 space-y-2">
-              {incoming.filter((c: IncomingCitation) => c.source === document.source_code).map((c: IncomingCitation, i: number) => (
-                <li key={i}>
-                  <Link
-                    to="/code/$"
-                    params={{ _splat: c.identifier.replace(/^\//, "") }}
-                    className="block rounded-xl border bg-card px-4 py-3 hover:bg-muted/60"
-                  >
-                    <div className="citation-tag text-muted-foreground">
-                      {c.section_label ?? c.identifier}
-                    </div>
-                    <div className="font-display text-sm font-semibold">{c.heading}</div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* Citation panels — visible only on screens where the right rail is hidden (< xl). */}
+        <div className="mt-12 space-y-10 xl:hidden">
+          {tracesPanel}
+          {crossPanel}
+          {citedByPanel}
+        </div>
 
         {external.length > 0 && (
           <div className="mt-10">
@@ -575,8 +601,6 @@ function DocumentPage() {
         )}
       </article>
 
-      <DocOutline text={document.body_text ?? ""} />
-
       {showTop && (
         <button
           type="button"
@@ -587,8 +611,6 @@ function DocumentPage() {
           <ArrowUp className="h-4 w-4" />
         </button>
       )}
-
-      <SiteFooter />
-    </div>
+    </ResearchShell>
   );
 }

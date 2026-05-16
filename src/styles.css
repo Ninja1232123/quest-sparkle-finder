@@ -77,91 +77,109 @@
 :root {
   --radius: 0.875rem;
 
-  /* Bold palette — deep ink, cream type, electric ochre + hot terracotta accents */
-  --paper: oklch(0.18 0.025 255); /* deep midnight ink */
-  --paper-deep: oklch(0.13 0.03 255);
-  --paper-soft: oklch(0.235 0.028 255);
-  --ink: oklch(0.965 0.015 85); /* cream type */
-  --sage: oklch(0.78 0.14 165); /* electric mint */
-  --sage-deep: oklch(0.66 0.16 165);
-  --terracotta: oklch(0.68 0.21 32); /* hot coral */
-  --ochre: oklch(0.83 0.17 88); /* sharp ochre */
-  --highlight: oklch(0.83 0.17 88);
+  /* Warm paper — reading-room palette. Cream background, near-black serif type.
+     Saturated color is reserved for accents and highlights only. */
+  --paper: oklch(0.957 0.012 80);       /* #F7F2E8 warm parchment */
+  --paper-deep: oklch(0.93 0.014 78);   /* aged page edge */
+  --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
+  --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
+  --ink-muted: oklch(0.46 0.013 75);    /* #6B6358 muted body */
+  --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
+  --sage-deep: oklch(0.42 0.08 165);
+  --terracotta: oklch(0.42 0.13 30);    /* #8B2E1F deep oxblood */
+  --ochre: oklch(0.81 0.14 80);         /* #E8B84A — reserved for marks */
+  --highlight: oklch(0.86 0.12 85);     /* softer highlight wash */
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(0.235 0.028 255);
+  --card: var(--paper-soft);
   --card-foreground: var(--ink);
-  --popover: oklch(0.235 0.028 255);
+  --popover: var(--paper-soft);
   --popover-foreground: var(--ink);
   --primary: var(--terracotta);
-  --primary-foreground: oklch(0.13 0.03 255);
-  --secondary: oklch(0.27 0.03 255);
+  --primary-foreground: oklch(0.974 0.012 85);
+  --secondary: oklch(0.91 0.014 78);
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.27 0.028 255);
-  --muted-foreground: oklch(0.82 0.025 80);
-  --accent: var(--ochre);
-  --accent-foreground: oklch(0.13 0.03 255);
-  --destructive: oklch(0.65 0.24 22);
-  --destructive-foreground: oklch(0.97 0.01 80);
-  --border: oklch(0.32 0.03 255);
-  --input: oklch(0.27 0.03 255);
-  --ring: var(--ochre);
+  --muted: oklch(0.92 0.012 78);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--terracotta);
+  --accent-foreground: oklch(0.974 0.012 85);
+  --destructive: oklch(0.5 0.18 28);
+  --destructive-foreground: oklch(0.974 0.012 85);
+  --border: oklch(0.84 0.018 75);       /* #D9CFBF */
+  --input: oklch(0.89 0.014 78);
+  --ring: var(--terracotta);
   --chart-1: var(--sage-deep);
   --chart-2: var(--terracotta);
-  --chart-3: var(--ochre);
-  --chart-4: oklch(0.55 0.09 220);
-  --chart-5: oklch(0.5 0.11 320);
-  --sidebar: oklch(0.13 0.03 255);
+  --chart-3: oklch(0.65 0.13 80);
+  --chart-4: oklch(0.45 0.08 220);
+  --chart-5: oklch(0.5 0.1 320);
+  --sidebar: oklch(0.94 0.014 78);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--terracotta);
-  --sidebar-primary-foreground: var(--paper);
-  --sidebar-accent: oklch(0.27 0.03 255);
+  --sidebar-primary-foreground: oklch(0.974 0.012 85);
+  --sidebar-accent: oklch(0.91 0.014 78);
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(0.32 0.03 255);
-  --sidebar-ring: var(--ochre);
+  --sidebar-border: oklch(0.84 0.018 75);
+  --sidebar-ring: var(--terracotta);
 
   --gradient-warm: linear-gradient(135deg, var(--terracotta), var(--ochre));
   --gradient-sage: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
   --gradient-sunset: linear-gradient(135deg, var(--ochre), var(--terracotta));
-  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.35), 0 8px 24px -8px oklch(0 0 0 / 0.5);
-  --shadow-warm: 0 10px 40px -12px oklch(0.6 0.22 32 / 0.55);
-  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 1px 3px oklch(0 0 0 / 0.4), 0 12px 30px -16px oklch(0 0 0 / 0.55);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.06), 0 4px 14px -6px oklch(0 0 0 / 0.10);
+  --shadow-warm: 0 10px 30px -14px oklch(0.42 0.13 30 / 0.30);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 6px 18px -10px oklch(0 0 0 / 0.10);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Warm charcoal — same palette family as light, inverted lightness. No midnight blue. */
+  --paper: oklch(0.18 0.006 70);         /* #1C1A17 */
+  --paper-deep: oklch(0.14 0.006 70);
+  --paper-soft: oklch(0.22 0.006 70);    /* #252320 card */
+  --ink: oklch(0.90 0.014 80);           /* #E8E2D4 cream */
+  --ink-muted: oklch(0.63 0.012 75);     /* #9A9285 */
+  --sage: oklch(0.66 0.08 165);
+  --sage-deep: oklch(0.55 0.08 165);
+  --terracotta: oklch(0.62 0.10 40);     /* #C97B5A muted */
+  --ochre: oklch(0.74 0.12 80);          /* #D4A84A softer */
+  --highlight: oklch(0.74 0.12 80);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-soft);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-soft);
+  --popover-foreground: var(--ink);
+  --primary: var(--terracotta);
+  --primary-foreground: oklch(0.14 0.006 70);
+  --secondary: oklch(0.25 0.008 70);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.25 0.008 70);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--terracotta);
+  --accent-foreground: oklch(0.14 0.006 70);
+  --destructive: oklch(0.62 0.18 28);
+  --destructive-foreground: oklch(0.90 0.014 80);
+  --border: oklch(0.27 0.008 70);        /* #2F2B26 */
+  --input: oklch(0.25 0.008 70);
+  --ring: var(--terracotta);
+  --chart-1: var(--sage-deep);
+  --chart-2: var(--terracotta);
+  --chart-3: var(--ochre);
+  --chart-4: oklch(0.55 0.10 220);
+  --chart-5: oklch(0.55 0.12 320);
+  --sidebar: oklch(0.16 0.006 70);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--terracotta);
+  --sidebar-primary-foreground: oklch(0.14 0.006 70);
+  --sidebar-accent: oklch(0.25 0.008 70);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(0.27 0.008 70);
+  --sidebar-ring: var(--terracotta);
+
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.4), 0 6px 18px -8px oklch(0 0 0 / 0.5);
+  --shadow-warm: 0 10px 30px -14px oklch(0.62 0.10 40 / 0.45);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.03) inset, 0 1px 3px oklch(0 0 0 / 0.45), 0 10px 24px -14px oklch(0 0 0 / 0.55);
 }
 
 @layer base {
@@ -176,11 +194,6 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background-image:
-      radial-gradient(at 12% 8%, oklch(0.68 0.21 32 / 0.18) 0px, transparent 50%),
-      radial-gradient(at 88% 92%, oklch(0.78 0.14 165 / 0.14) 0px, transparent 55%),
-      radial-gradient(at 50% 50%, oklch(0.83 0.17 88 / 0.06) 0px, transparent 70%);
-    background-attachment: fixed;
   }
 
   h1,
@@ -190,39 +203,59 @@
   .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: -0.025em;
-    font-weight: 900;
-    color: oklch(0.985 0.012 85);
-    text-shadow:
-      0 1px 0 oklch(0 0 0 / 0.35),
-      0 2px 12px oklch(0 0 0 / 0.25);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--ink);
   }
 
+  /* Long-form reading regions (statute body, articles). Serif at comfortable size. */
+  .reading,
+  article .reading,
+  .prose-legal {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;       /* 17px */
+    line-height: 1.65;
+    color: var(--ink);
+    font-feature-settings: "onum", "kern";
+  }
+
+  /* Subtle paper texture — barely visible, no longer a grid pattern */
   .paper-grain {
     background-image:
-      repeating-linear-gradient(
-        0deg,
-        oklch(1 0 0 / 0.018) 0px,
-        oklch(1 0 0 / 0.018) 1px,
-        transparent 1px,
-        transparent 3px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        oklch(1 0 0 / 0.018) 0px,
-        oklch(1 0 0 / 0.018) 1px,
-        transparent 1px,
-        transparent 3px
-      );
+      radial-gradient(at 20% 30%, oklch(0 0 0 / 0.015) 0px, transparent 50%),
+      radial-gradient(at 80% 70%, oklch(0 0 0 / 0.012) 0px, transparent 55%);
+  }
+  .dark .paper-grain {
+    background-image:
+      radial-gradient(at 20% 30%, oklch(1 0 0 / 0.02) 0px, transparent 50%),
+      radial-gradient(at 80% 70%, oklch(1 0 0 / 0.015) 0px, transparent 55%);
   }
 
+  /* Hand-marked highlight — thinner band, warmer, sits behind italic serif */
   .ink-underline {
-    background-image: linear-gradient(transparent 62%, var(--ochre) 62%, var(--ochre) 94%, transparent 94%);
+    background-image: linear-gradient(transparent 72%, var(--ochre) 72%, var(--ochre) 92%, transparent 92%);
     background-size: 100% 100%;
-    padding: 0 0.12em;
-    color: oklch(0.13 0.03 255);
+    padding: 0 0.08em;
+    color: var(--ink);
     font-family: var(--font-serif);
     font-style: italic;
+    font-weight: 600;
+  }
+  .dark .ink-underline {
+    background-image: linear-gradient(transparent 72%, oklch(0.74 0.12 80 / 0.55) 72%, oklch(0.74 0.12 80 / 0.55) 92%, transparent 92%);
+    color: var(--ink);
+  }
+
+  /* Highlighting matches inside snippets (e.g., ts_headline <mark>) */
+  mark {
+    background-color: oklch(0.86 0.12 85 / 0.6);
+    color: var(--ink);
+    padding: 0 0.1em;
+    border-radius: 2px;
+  }
+  .dark mark {
+    background-color: oklch(0.74 0.12 80 / 0.35);
+    color: var(--ink);
   }
 
   .citation-tag {

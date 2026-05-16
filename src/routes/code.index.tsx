@@ -1,30 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { listSources, searchDocuments } from "@/lib/documents.functions";
-import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useState } from "react";
-import baldEagle from "@/assets/bald-eagle.png";
 import { Map, Network, History, Scale } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
-
-// Per-codebook accent color (hex). Used for a thick left rail + tinted card wash.
-const SOURCE_ACCENT: Record<string, string> = {
-  const: "#b22234", // Constitution — federal red
-  usc:   "#0a1f44", // U.S. Code — navy
-  cfr:   "#1a4a2e", // CFR — regulatory forest green
-  ucc:   "#c9a84c", // UCC — commerce gold
-  tfm:   "#5b3a8a", // TFM — treasury purple
-  irm:   "#c45a2c", // IRM — IRS burnt orange
-};
-
-const SOURCE_DESC: Record<string, { tagline: string; example: string }> = {
-  const: { tagline: "The founding charter — articles & amendments.", example: "/us/const/amendment/1" },
-  usc:   { tagline: "Federal statutory law, organized by title.", example: "/us/usc/t11/s101" },
-  cfr:   { tagline: "Federal agency regulations — the rulebook that puts statutes into practice.", example: "/us/cfr/t29/s541.100" },
-  ucc:   { tagline: "Model commercial law adopted by every state.", example: "/us/ucc/a2/s2-201" },
-  tfm:   { tagline: "Treasury rules for federal financial operations.", example: "/us/tfm/v1/p1/c1000" },
-  irm:   { tagline: "How the IRS internally administers the tax code.", example: "/us/irm/p1/c1/s1" },
-};
+import { sourceMeta } from "@/lib/source-groups";
 
 export const Route = createFileRoute("/code/")({
   loader: async () => {
@@ -81,17 +61,55 @@ function CodeHub() {
     setSearching(false);
   }
 
+  const rightRail = (
+    <div className="space-y-5 text-sm">
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">at a glance</div>
+        <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+          <div className="font-mono text-xs text-muted-foreground">documents indexed</div>
+          <div className="mt-0.5 font-display text-2xl font-semibold">{totalDocs.toLocaleString()}</div>
+          <div className="mt-1 text-xs text-muted-foreground">across {sources.length} sources · updated May 2026</div>
+        </div>
+      </div>
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">soon · here</div>
+        <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+          <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+            <Network className="h-3.5 w-3.5" />
+            Citation graph
+          </div>
+          <p className="mt-1 leading-relaxed">
+            When you open a section, this rail will show what cites it and what it cites — across all
+            codebooks. The map renders here.
+          </p>
+        </div>
+      </div>
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">jump to</div>
+        <ul className="space-y-1 text-xs">
+          <li>
+            <Link to="/search" search={{ q: "due process", source: "" }} className="text-foreground/75 hover:text-foreground hover:underline">
+              "due process" across all sources
+            </Link>
+          </li>
+          <li>
+            <Link to="/compare" search={{ q: "right to cure", sources: "usc,cfr,ucc" }} className="text-foreground/75 hover:text-foreground hover:underline">
+              Compare "right to cure"
+            </Link>
+          </li>
+          <li>
+            <Link to="/search" search={{ q: "15 USC 1692", source: "" }} className="text-foreground/75 hover:text-foreground hover:underline">
+              Find 15 U.S.C. § 1692
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen">
-      <SiteHeader />
-      <section className="relative mx-auto max-w-5xl px-6 py-12">
-        {/* Sick bald eagle, screaming silently behind the law */}
-        <img
-          src={baldEagle}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute -top-8 right-0 -z-10 w-[520px] max-w-[80%] opacity-[0.18] mix-blend-multiply select-none"
-        />
+    <ResearchShell sources={sources} right={rightRail} rightLabel="The desk" centerMaxWidth="max-w-4xl">
+      <section className="relative">
         <div className="citation-tag text-muted-foreground">primary sources</div>
         <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           The <span className="ink-underline italic">Code</span>, in one place.
@@ -152,8 +170,8 @@ function CodeHub() {
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           {sources.map((s: { code: string; name: string; count: number }) => {
-            const desc = SOURCE_DESC[s.code] ?? { tagline: "Browse this source.", example: "" };
-            const accent = SOURCE_ACCENT[s.code] ?? "var(--ochre)";
+            const meta = sourceMeta(s.code);
+            const accent = meta.accent;
             return (
               <Link
                 key={s.code}
@@ -170,7 +188,7 @@ function CodeHub() {
                     {s.count.toLocaleString()} documents
                   </div>
                   <div className="mt-1 font-display text-xl font-semibold">{s.name}</div>
-                  <p className="mt-2 text-sm text-foreground/70">{desc.tagline}</p>
+                  <p className="mt-2 text-sm text-foreground/70">{meta.tagline ?? "Browse this source."}</p>
                   <div className="mt-4 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
                     Browse →
                   </div>
@@ -215,7 +233,6 @@ function CodeHub() {
           </div>
         </div>
       </section>
-      <SiteFooter />
-    </div>
+    </ResearchShell>
   );
 }

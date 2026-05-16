@@ -1,15 +1,17 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { listDocumentsBySource, getSourceTOC, type SourceTocNode } from "@/lib/documents.functions";
-import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { listDocumentsBySource, listSources, getSourceTOC, type SourceTocNode } from "@/lib/documents.functions";
+import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search as SearchIcon, X, BookOpen } from "lucide-react";
+import { ChevronDown, ChevronRight, Search as SearchIcon, X, BookOpen, Network } from "lucide-react";
+import { sourceMeta } from "@/lib/source-groups";
 
 const SOURCE_NAMES: Record<string, string> = {
   const: "U.S. Constitution",
   usc: "United States Code",
+  cfr: "Code of Federal Regulations",
   ucc: "Uniform Commercial Code",
   tfm: "Treasury Financial Manual",
+  irm: "Internal Revenue Manual",
 };
 
 export const Route = createFileRoute("/code/source/$source")({
@@ -18,15 +20,23 @@ export const Route = createFileRoute("/code/source/$source")({
   }),
   loaderDeps: ({ search }) => ({ group: search.group }),
   loader: async ({ params, deps }) => {
-    // Always load the TOC; load a single group's sections only if requested.
+    // Always load the TOC and the corpus list (for the shell sidebar). Load
+    // a single group's sections only if a group is selected.
     const tocPromise = getSourceTOC({ data: { source: params.source } });
+    const sourcesPromise = listSources();
     const docsPromise = deps.group
       ? listDocumentsBySource({ data: { source: params.source, parent_label: deps.group, limit: 5000 } })
       : Promise.resolve({ documents: [], error: null as string | null });
-    const [tocRes, docsRes] = await Promise.all([tocPromise, docsPromise]);
+    const [tocRes, sourcesRes, docsRes] = await Promise.all([tocPromise, sourcesPromise, docsPromise]);
     if (tocRes.error) throw new Error(tocRes.error);
     if (tocRes.toc.length === 0) throw notFound();
-    return { toc: tocRes.toc, documents: docsRes.documents, source: params.source, group: deps.group };
+    return {
+      toc: tocRes.toc,
+      documents: docsRes.documents,
+      sources: sourcesRes.sources,
+      source: params.source,
+      group: deps.group,
+    };
   },
   component: SourceBrowser,
   pendingMs: 200,
@@ -51,10 +61,10 @@ export const Route = createFileRoute("/code/source/$source")({
 });
 
 function SourceBrowserPending() {
+  // No corpus list available pre-load; render a minimal stand-in shell-shape.
   return (
     <div className="min-h-screen">
-      <SiteHeader />
-      <section className="mx-auto max-w-4xl px-6 py-12">
+      <div className="mx-auto max-w-4xl px-6 py-12">
         <div className="citation-tag text-muted-foreground">Loading…</div>
         <div className="mt-2 h-10 w-2/3 animate-pulse rounded-md bg-muted/60" />
         <div className="mt-8 h-11 w-full animate-pulse rounded-full bg-muted/40" />
@@ -63,8 +73,7 @@ function SourceBrowserPending() {
             <div key={i} className="h-14 animate-pulse rounded-2xl border bg-card/60" />
           ))}
         </div>
-      </section>
-      <SiteFooter />
+      </div>
     </div>
   );
 }
@@ -91,9 +100,10 @@ function isWeakHeading(heading: string | null, section_label: string | null): bo
 }
 
 function SourceBrowser() {
-  const { toc, documents, source, group } = Route.useLoaderData();
+  const { toc, documents, sources, source, group } = Route.useLoaderData();
   const tocTyped = toc as SourceTocNode[];
   const sourceName = SOURCE_NAMES[source] ?? source.toUpperCase();
+  const meta = sourceMeta(source);
   const [filter, setFilter] = useState("");
   const [openTitles, setOpenTitles] = useState<Record<string, boolean>>(() => {
     if (!group) return {};
@@ -125,10 +135,81 @@ function SourceBrowser() {
     );
   }, [documents, group, filter]);
 
+  const rightRail = (
+    <div className="space-y-5 text-sm">
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">this source</div>
+        <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: meta.accent }}
+            />
+            <span className="font-display text-sm font-semibold">{meta.short}</span>
+            <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+              {meta.group}
+            </span>
+          </div>
+          <div className="mt-2 font-mono text-xs text-muted-foreground">documents</div>
+          <div className="font-display text-2xl font-semibold">{totalDocs.toLocaleString()}</div>
+          {meta.tagline && (
+            <p className="mt-2 text-xs leading-relaxed text-foreground/65">{meta.tagline}</p>
+          )}
+        </div>
+      </div>
+
+      {group ? (
+        <div>
+          <div className="citation-tag mb-1.5 text-muted-foreground">in {group}</div>
+          <div className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-foreground/70">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">entries</div>
+            <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
+              {(documents as DocLite[]).length.toLocaleString()}
+            </div>
+            <Link
+              to="/code/source/$source"
+              params={{ source }}
+              className="mt-2 inline-block text-[11px] text-accent hover:underline"
+            >
+              ← back to table of contents
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="citation-tag mb-1.5 text-muted-foreground">structure</div>
+          <ul className="space-y-1 text-xs text-foreground/65">
+            <li className="flex items-center justify-between">
+              <span>titles / parts</span>
+              <span className="font-mono">{tocTyped.length.toLocaleString()}</span>
+            </li>
+            <li className="flex items-center justify-between">
+              <span>sections</span>
+              <span className="font-mono">{totalDocs.toLocaleString()}</span>
+            </li>
+          </ul>
+        </div>
+      )}
+
+      <div>
+        <div className="citation-tag mb-1.5 text-muted-foreground">soon · here</div>
+        <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+          <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+            <Network className="h-3.5 w-3.5" />
+            Citation graph
+          </div>
+          <p className="mt-1 leading-relaxed">
+            Open a section and this rail will map every rule that cites it and every authority it depends on — across all codebooks.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen">
-      <SiteHeader />
-      <section className="mx-auto max-w-4xl px-6 py-12">
+    <ResearchShell sources={sources} right={rightRail} rightLabel="The desk" centerMaxWidth="max-w-4xl">
+      <section>
         <div className="citation-tag text-muted-foreground">
           <Link to="/code" className="hover:text-foreground">All sources</Link> · {totalDocs.toLocaleString()} documents
           {group && (
@@ -146,7 +227,7 @@ function SourceBrowser() {
           <span className="ink-underline italic">{sourceName}</span>
         </h1>
 
-        <div className="sticky top-0 z-20 -mx-6 mt-8 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="sticky top-[68px] z-20 -mx-6 mt-8 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -268,7 +349,6 @@ function SourceBrowser() {
           </div>
         )}
       </section>
-      <SiteFooter />
-    </div>
+    </ResearchShell>
   );
 }
