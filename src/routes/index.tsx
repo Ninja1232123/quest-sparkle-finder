@@ -53,7 +53,7 @@ function Index() {
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/60">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[1.15fr_0.85fr] lg:pt-24">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[1.15fr_0.85fr] lg:pt-24">
           <div className="relative z-10">
             <div className="citation-tag text-muted-foreground">Vol. I · the citizen's index</div>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-[5.25rem]">
@@ -130,7 +130,7 @@ function Index() {
 
       {/* Compare Mode CTA banner */}
       <section className="border-b border-border/60 bg-gradient-to-r from-sage-deep/5 to-terracotta/5">
-        <div className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mx-auto max-w-7xl px-6 py-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="citation-tag text-sage-deep flex items-center gap-1.5">
@@ -166,7 +166,7 @@ function Index() {
       </section>
 
       {/* Method */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-10 md:grid-cols-3">
           {[
             {
@@ -195,7 +195,7 @@ function Index() {
       </section>
 
       {/* Browse the Code (primary CTA) */}
-      <section className="mx-auto max-w-6xl px-6 pb-12 pt-4">
+      <section className="mx-auto max-w-7xl px-6 pb-12 pt-4">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="citation-tag text-muted-foreground">primary sources</div>
@@ -232,7 +232,7 @@ function Index() {
       </section>
 
       {/* Pro features pitch */}
-      <section className="mx-auto max-w-6xl px-6 pb-16">
+      <section className="mx-auto max-w-7xl px-6 pb-16">
         <div className="rounded-3xl border border-sage-deep/20 bg-gradient-to-br from-sage-deep/5 to-background p-8 paper-grain shadow-[var(--shadow-soft)] md:p-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
@@ -279,7 +279,7 @@ function Index() {
       </section>
 
       {/* Topics — samplers */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-4">
+      <section className="mx-auto max-w-7xl px-6 pb-20 pt-4">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="citation-tag text-muted-foreground">curated walkthroughs</div>
@@ -299,7 +299,7 @@ function Index() {
       </section>
 
       {/* Vision strip — make the "what could be" tangible */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
+      <section className="mx-auto max-w-7xl px-6 pb-24">
         <ComingSoonHeader
           eyebrow="vol. ii · the build list"
           title="What this becomes once we get there."
