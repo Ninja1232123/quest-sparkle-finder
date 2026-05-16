@@ -14,45 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _stage_irm: {
-        Row: {
-          body_md: string | null
-          body_text: string | null
-          heading: string | null
-          hierarchy: Json | null
-          identifier: string | null
-          parent_label: string | null
-          section_label: string | null
-          sort_key: string | null
-          source_code: string | null
-          word_count: number | null
-        }
-        Insert: {
-          body_md?: string | null
-          body_text?: string | null
-          heading?: string | null
-          hierarchy?: Json | null
-          identifier?: string | null
-          parent_label?: string | null
-          section_label?: string | null
-          sort_key?: string | null
-          source_code?: string | null
-          word_count?: number | null
-        }
-        Update: {
-          body_md?: string | null
-          body_text?: string | null
-          heading?: string | null
-          hierarchy?: Json | null
-          identifier?: string | null
-          parent_label?: string | null
-          section_label?: string | null
-          sort_key?: string | null
-          source_code?: string | null
-          word_count?: number | null
-        }
-        Relationships: []
-      }
       case_items: {
         Row: {
           case_id: string
