@@ -249,6 +249,89 @@ def _irm_row(section_num: str, chapter_title: str, heading: str, body: str) -> d
         "word_count": wc(body),
     }
 
+# ---------------------------- IRM: filename helpers ------------------------
+# IRS publishes IRM files as `irm01-014-009--2025-12-29.{md,xml,pdf}`.
+# Section number = "1.14.9".  Pull it out so md/xml/pdf for the same section
+# dedup against each other via identifier.
+
+IRM_FNAME = re.compile(r"^irm(\d{1,3})-(\d{1,3})-(\d{1,3})", re.I)
+
+def _irm_section_from_filename(p: Path) -> str | None:
+    m = IRM_FNAME.match(p.stem)
+    if not m:
+        return None
+    return ".".join(str(int(g)) for g in m.groups())
+
+# ---------------------------- IRM: Markdown --------------------------------
+
+def parse_irm_md(md_path: Path) -> Iterator[dict]:
+    text = md_path.read_text(encoding="utf-8", errors="ignore")
+    section_num = _irm_section_from_filename(md_path) or md_path.stem
+    # First H1 as chapter title, first non-empty line after as heading guess
+    chapter_title = ""
+    heading = ""
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("#"):
+            t = s.lstrip("#").strip()
+            if not chapter_title:
+                chapter_title = t
+            elif not heading:
+                heading = t
+                break
+    # Strip markdown image refs and excess whitespace for body_text
+    body_text = norm(re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text))
+    if not body_text:
+        return
+    parts = section_num.split(".")
+    part_num = parts[0] if parts else ""
+    yield {
+        "source_code": "irm",
+        "identifier": f"/irm/{section_num}",
+        "parent_label": f"Part {part_num} · {chapter_title}".strip(" ·"),
+        "section_label": f"IRM {section_num}",
+        "heading": heading or chapter_title,
+        "body_text": body_text,
+        "body_md": text,
+        "hierarchy": {"part": part_num, "section": section_num},
+        "sort_key": ".".join(pad(p, 4) for p in parts),
+        "word_count": wc(body_text),
+    }
+
+# ---------------------------- IRM: XML -------------------------------------
+
+def parse_irm_xml(xml_path: Path) -> Iterator[dict]:
+    from lxml import etree
+    try:
+        tree = etree.parse(str(xml_path))
+    except Exception as e:
+        print(f"  ! skip {xml_path.name}: {e}", file=sys.stderr)
+        return
+    root = tree.getroot()
+    section_num = _irm_section_from_filename(xml_path) or xml_path.stem
+    # Look for any element that smells like a title
+    title_el = (root.xpath(".//*[local-name()='title']") or
+                root.xpath(".//*[local-name()='Title']") or
+                root.xpath(".//*[local-name()='h1']"))
+    chapter_title = _text(title_el[0]) if title_el else ""
+    body_text = norm(" ".join(root.itertext()))
+    if not body_text:
+        return
+    parts = section_num.split(".")
+    part_num = parts[0] if parts else ""
+    yield {
+        "source_code": "irm",
+        "identifier": f"/irm/{section_num}",
+        "parent_label": f"Part {part_num} · {chapter_title}".strip(" ·"),
+        "section_label": f"IRM {section_num}",
+        "heading": chapter_title,
+        "body_text": body_text,
+        "body_md": None,
+        "hierarchy": {"part": part_num, "section": section_num},
+        "sort_key": ".".join(pad(p, 4) for p in parts),
+        "word_count": wc(body_text),
+    }
+
 # ---------------------------- PDFs (fallback) ------------------------------
 # Whole-PDF-per-row. Good enough until you replace with structured source.
 
@@ -286,9 +369,31 @@ def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
         if p.is_file():
             ext_counts[p.suffix.lower()] = ext_counts.get(p.suffix.lower(), 0) + 1
     print(f"file extensions found: {ext_counts}")
+    # For IRM, the same section ships as .md + .xml + .pdf. Pick the best
+    # available per section so we don't parse (and dedup-skip) duplicates.
+    skip_files: set[Path] = set()
+    if source == "irm":
+        by_section: dict[str, dict[str, Path]] = {}
+        for p in files:
+            if not p.is_file():
+                continue
+            sec = _irm_section_from_filename(p)
+            if not sec:
+                continue
+            by_section.setdefault(sec, {})[p.suffix.lower()] = p
+        for sec, variants in by_section.items():
+            # prefer md, then xml, then pdf
+            keep = variants.get(".md") or variants.get(".xml") or variants.get(".pdf")
+            for ext, path in variants.items():
+                if path != keep:
+                    skip_files.add(path)
+        if skip_files:
+            print(f"irm: skipping {len(skip_files)} duplicate variants (kept md > xml > pdf)")
     per_file_rows: dict[str, int] = {}
     for p in tqdm(files, desc=f"scan {source}"):
         if not p.is_file():
+            continue
+        if p in skip_files:
             continue
         ext = p.suffix.lower()
         try:
@@ -298,6 +403,10 @@ def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
                 rows = parse_usc_html(p)
             elif source == "irm" and ext in (".html", ".htm", ".xhtml"):
                 rows = parse_irm_html(p)
+            elif source == "irm" and ext == ".md":
+                rows = parse_irm_md(p)
+            elif source == "irm" and ext == ".xml":
+                rows = parse_irm_xml(p)
             elif ext == ".pdf":
                 rows = parse_pdf(p, source)
             else:
