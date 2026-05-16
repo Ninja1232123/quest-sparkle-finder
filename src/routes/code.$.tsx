@@ -44,7 +44,16 @@ function parseLegalBody(text: string): LegalParagraph[] {
     current = "";
   };
 
-  for (const line of text.split("\n")) {
+  // Most source bodies arrive as one giant blob with no newlines. Normalize
+  // by inserting a break before every inline enumerator like "(a)", "(1)",
+  // "(iv)" — but only when it sits between whitespace, so cross-references
+  // like "section 1983(a)(2)" or "Pub. L. 93-579" stay intact.
+  const normalized = text.replace(
+    /([^\s(])\s+(?=\([a-zA-Z0-9]{1,4}\)\s)/g,
+    "$1\n",
+  );
+
+  for (const line of normalized.split("\n")) {
     const trimmed = line.trim();
     if (trimmed === "") {
       flush();
