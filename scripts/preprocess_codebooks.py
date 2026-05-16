@@ -255,6 +255,13 @@ def parse_pdf(pdf_path: Path, source: str) -> Iterator[dict]:
 def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
     n = 0
     files = sorted(root.rglob("*"))
+    # Diagnostics: count files by extension so we can tell what we're working with
+    ext_counts: dict[str, int] = {}
+    for p in files:
+        if p.is_file():
+            ext_counts[p.suffix.lower()] = ext_counts.get(p.suffix.lower(), 0) + 1
+    print(f"file extensions found: {ext_counts}")
+    per_file_rows: dict[str, int] = {}
     for p in tqdm(files, desc=f"scan {source}"):
         if not p.is_file():
             continue
@@ -270,13 +277,21 @@ def walk(root: Path, source: str, limit: int | None) -> Iterator[dict]:
                 rows = parse_pdf(p, source)
             else:
                 continue
+            file_rows = 0
             for row in rows:
                 yield row
                 n += 1
+                file_rows += 1
                 if limit and n >= limit:
+                    print(f"  hit --limit {limit} on {p.name}")
                     return
+            per_file_rows[p.name] = file_rows
+            if file_rows == 0:
+                print(f"  ! 0 rows from {p.name} (parser ran but found nothing)")
         except Exception as e:
             print(f"  ! error on {p}: {e}", file=sys.stderr)
+    nonzero = sum(1 for v in per_file_rows.values() if v > 0)
+    print(f"processed {len(per_file_rows)} files, {nonzero} produced rows")
 
 def main() -> None:
     ap = argparse.ArgumentParser()
