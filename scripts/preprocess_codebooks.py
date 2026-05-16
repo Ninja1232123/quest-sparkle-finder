@@ -287,6 +287,19 @@ def main() -> None:
     ap.add_argument("--pretty", action="store_true", help="indent JSON (debug only — don't use for final run)")
     args = ap.parse_args()
 
+    # Expand ~ and resolve — Path() does NOT do this automatically (esp. on Windows).
+    args.input = Path(os.path.expanduser(str(args.input))).resolve()
+    args.out = Path(os.path.expanduser(str(args.out))).resolve()
+    if not args.input.exists():
+        sys.exit(f"ERROR: input folder does not exist: {args.input}\n"
+                 f"Pass a real path, e.g. --input C:\\Downloads\\irm")
+    if not args.input.is_dir():
+        sys.exit(f"ERROR: --input must be a folder, got a file: {args.input}")
+    sample = [p for p in args.input.rglob('*') if p.is_file()][:5]
+    if not sample:
+        sys.exit(f"ERROR: no files found under {args.input}. Did you unzip the archives into that folder?")
+    print(f"input: {args.input}  (found files, e.g. {[p.name for p in sample]})")
+
     args.out.parent.mkdir(parents=True, exist_ok=True)
     seen: set[str] = set()
     dupes = 0
