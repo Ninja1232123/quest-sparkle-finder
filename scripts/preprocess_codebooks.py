@@ -74,6 +74,22 @@ def pad(num: str, width: int = 5) -> str:
 
 USLM_NS = {"u": "http://schemas.gpo.gov/xml/uslm"}
 
+def _local(el) -> str:
+    return etree.QName(el).localname
+
+def _first_child(el, name: str):
+    for child in el:
+        if isinstance(child.tag, str) and _local(child) == name:
+            return child
+    return None
+
+def _first_desc(el, name: str):
+    found = el.xpath(f".//*[local-name()='{name}']")
+    return found[0] if found else None
+
+def _text(el) -> str:
+    return norm("".join(el.itertext()) if el is not None else "")
+
 def parse_uslm(xml_path: Path) -> Iterator[dict]:
     from lxml import etree
     try:
@@ -83,37 +99,43 @@ def parse_uslm(xml_path: Path) -> Iterator[dict]:
         return
     root = tree.getroot()
 
-    # title number from <main><title>...<num value="26"/>
-    title_num_el = root.find(".//u:main/u:title/u:num", USLM_NS)
+    # Be namespace-agnostic. USC releases have changed namespaces over time,
+    # and a fixed namespace silently turns whole titles into "0 rows".
+    title_el = (root.xpath(".//*[local-name()='main']/*[local-name()='title']") or
+                root.xpath(".//*[local-name()='title']"))
+    title_el = title_el[0] if title_el else None
+    title_num_el = _first_child(title_el, "num") if title_el is not None else None
     title_num = (title_num_el.get("value") if title_num_el is not None else None) \
+                or _text(title_num_el).replace("Title", "").strip() \
                 or xml_path.stem.replace("usc", "").lstrip("0") or "0"
-    title_heading_el = root.find(".//u:main/u:title/u:heading", USLM_NS)
-    title_heading = norm(title_heading_el.text if title_heading_el is not None else "")
+    title_heading_el = _first_child(title_el, "heading") if title_el is not None else None
+    title_heading = _text(title_heading_el)
 
-    for sec in root.iterfind(".//u:section", USLM_NS):
-        num_el = sec.find("u:num", USLM_NS)
-        head_el = sec.find("u:heading", USLM_NS)
-        sec_num = (num_el.get("value") if num_el is not None else None) or norm(num_el.text if num_el is not None else "")
+    for sec in root.xpath(".//*[local-name()='section']"):
+        num_el = _first_child(sec, "num")
+        head_el = _first_child(sec, "heading")
+        sec_num = (num_el.get("value") if num_el is not None else None) or _text(num_el)
         if not sec_num:
             continue
-        heading = norm(head_el.text if head_el is not None else "")
+        sec_num = re.sub(r"^§+\s*", "", sec_num).rstrip(".")
+        heading = _text(head_el)
 
         # nearest chapter / subchapter for parent_label
         chapter = None
         for anc in sec.iterancestors():
-            tag = etree.QName(anc).localname
+            tag = _local(anc)
             if tag in ("chapter", "subchapter", "part"):
-                c_num = anc.find("u:num", USLM_NS)
-                c_head = anc.find("u:heading", USLM_NS)
+                c_num = _first_child(anc, "num")
+                c_head = _first_child(anc, "heading")
                 if c_num is not None or c_head is not None:
-                    label = " ".join(filter(None, [norm((c_num.text if c_num is not None else "")), norm(c_head.text if c_head is not None else "")]))
+                    label = " ".join(filter(None, [_text(c_num), _text(c_head)]))
                     chapter = label if chapter is None else chapter
                     break
 
         # body = all text under the section minus num/heading
         body_parts: list[str] = []
         for el in sec.iter():
-            if etree.QName(el).localname in ("num", "heading"):
+            if _local(el) in ("num", "heading"):
                 continue
             if el.text:
                 body_parts.append(el.text)
