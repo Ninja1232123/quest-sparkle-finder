@@ -7,20 +7,14 @@ import baldEagle from "@/assets/bald-eagle.png";
 import { Map, Network, History, Scale } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 
-// Per-codebook 'merica backgrounds. Each source gets its own flavor.
-const SOURCE_BG: Record<string, string> = {
-  const:
-    "bg-[linear-gradient(135deg,#0a1f44_0%,#0a1f44_40%,#b22234_40%,#b22234_55%,#f5f0e0_55%,#f5f0e0_70%,#b22234_70%,#b22234_85%,#0a1f44_85%)]",
-  usc:
-    "bg-[radial-gradient(circle_at_20%_30%,#fff_0,#fff_2px,transparent_3px),radial-gradient(circle_at_70%_60%,#fff_0,#fff_2px,transparent_3px),linear-gradient(180deg,#0a1f44,#1a3a6e)] [background-size:24px_24px,32px_32px,100%_100%]",
-  cfr:
-    "bg-[repeating-linear-gradient(0deg,#b22234_0_18px,#f5f0e0_18px_36px)]",
-  ucc:
-    "bg-[repeating-linear-gradient(45deg,#0a1f44_0_22px,#c9a84c_22px_28px,#b22234_28px_50px)]",
-  tfm:
-    "bg-[linear-gradient(135deg,#1a4a2e,#0a1f44_60%,#000)]",
-  irm:
-    "bg-[repeating-linear-gradient(90deg,#0a1f44_0_30px,#b22234_30px_36px,#f5f0e0_36px_42px)]",
+// Per-codebook accent color (hex). Used for a thick left rail + tinted card wash.
+const SOURCE_ACCENT: Record<string, string> = {
+  const: "#b22234", // Constitution — federal red
+  usc:   "#0a1f44", // U.S. Code — navy
+  cfr:   "#1a4a2e", // CFR — regulatory forest green
+  ucc:   "#c9a84c", // UCC — commerce gold
+  tfm:   "#5b3a8a", // TFM — treasury purple
+  irm:   "#c45a2c", // IRM — IRS burnt orange
 };
 
 const SOURCE_DESC: Record<string, { tagline: string; example: string }> = {
@@ -159,18 +153,22 @@ function CodeHub() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           {sources.map((s: { code: string; name: string; count: number }) => {
             const desc = SOURCE_DESC[s.code] ?? { tagline: "Browse this source.", example: "" };
-            const bg = SOURCE_BG[s.code] ?? "bg-card";
+            const accent = SOURCE_ACCENT[s.code] ?? "var(--ochre)";
             return (
               <Link
                 key={s.code}
                 to="/code/source/$source"
                 params={{ source: s.code }}
-                className={`group relative overflow-hidden rounded-2xl border p-6 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-warm)] ${bg}`}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-6 pl-7 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-warm)]"
+                style={{
+                  borderLeft: `6px solid ${accent}`,
+                  backgroundImage: `linear-gradient(135deg, ${accent}14 0%, transparent 55%)`,
+                }}
               >
-                {/* parchment overlay so text stays readable over the patriotic chaos */}
-                <div className="absolute inset-0 bg-card/85 backdrop-blur-[2px] transition-opacity group-hover:bg-card/70" />
                 <div className="relative">
-                  <div className="citation-tag text-accent">{s.count.toLocaleString()} documents</div>
+                  <div className="citation-tag" style={{ color: accent }}>
+                    {s.count.toLocaleString()} documents
+                  </div>
                   <div className="mt-1 font-display text-xl font-semibold">{s.name}</div>
                   <p className="mt-2 text-sm text-foreground/70">{desc.tagline}</p>
                   <div className="mt-4 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
