@@ -2,10 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { SearchBar } from "./SearchBar";
 import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
-import { BookMarked, LogOut, MessagesSquare, Library } from "lucide-react";
+import { BookMarked, LogOut, MessagesSquare, Library, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
 
 export function SiteHeader() {
   const { user, signOut, loading } = useAuth();
+  const { theme, toggle } = useTheme();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <DevNoticeBanner />
@@ -121,6 +123,13 @@ export function SiteHeader() {
             >
               About
             </Link>
+            <button
+              onClick={toggle}
+              className="flex items-center justify-center rounded-full p-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            </button>
           </nav>
         </div>
       </div>
