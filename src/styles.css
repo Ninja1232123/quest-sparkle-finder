@@ -191,7 +191,7 @@
     font-family: var(--font-display);
     font-optical-sizing: auto;
     letter-spacing: -0.025em;
-    font-weight: 800;
+    font-weight: 900;
     color: oklch(0.985 0.012 85);
     text-shadow:
       0 1px 0 oklch(0 0 0 / 0.35),
@@ -227,8 +227,8 @@
 
   .citation-tag {
     font-family: var(--font-mono);
-    font-size: 0.99rem;
-    letter-spacing: 0.03em;
+    font-size: 1.19rem;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
