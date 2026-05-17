@@ -36,6 +36,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "MrUA-5AhYOA7ltMplk_EcKzRwYSJaa0-J_mhiXnsqI4" },
       { title: "Marginalia · Read the law for yourself" },
       { name: "description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
       { property: "og:title", content: "Marginalia · Read the law for yourself" },
