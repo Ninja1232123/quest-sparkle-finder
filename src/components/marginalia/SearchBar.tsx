@@ -111,6 +111,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
         <input
           ref={inputRef}
           autoFocus={autoFocus}
+          aria-label="Search the federal codebooks"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);

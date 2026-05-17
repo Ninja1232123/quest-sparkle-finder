@@ -121,7 +121,9 @@ function CasesIndex() {
         </p>
 
         <form onSubmit={createCase} className="mt-8 flex gap-2">
+          <label htmlFor="new-case-name" className="sr-only">New case name</label>
           <input
+            id="new-case-name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Name a new case — e.g. 'Landlord deposit dispute'"
