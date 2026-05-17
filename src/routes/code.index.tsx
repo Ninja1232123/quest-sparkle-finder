@@ -120,7 +120,9 @@ function CodeHub() {
         </p>
 
         <form onSubmit={onSearch} className="mt-8 flex flex-col gap-2 sm:flex-row">
+          <label htmlFor="code-source-filter" className="sr-only">Filter by source</label>
           <select
+            id="code-source-filter"
             value={source ?? ""}
             onChange={(e) => setSource(e.target.value || undefined)}
             className="h-12 rounded-full border border-foreground/15 bg-background/90 px-4 font-display text-sm shadow-[var(--shadow-soft)] focus:border-foreground/40 focus:outline-none"
@@ -130,7 +132,9 @@ function CodeHub() {
               <option key={s.code} value={s.code}>{s.name}</option>
             ))}
           </select>
+          <label htmlFor="code-search-input" className="sr-only">Search the codebooks</label>
           <input
+            id="code-search-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search — e.g. 'establishment of religion', 'statute of frauds', 'oath'"

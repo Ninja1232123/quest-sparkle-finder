@@ -313,7 +313,7 @@ function Composer({ onDone }: { onDone: () => void }) {
 
       <div className="mt-6 space-y-4">
         <div>
-          <label className="citation-tag text-muted-foreground">kind of post</label>
+          <div className="citation-tag text-muted-foreground" role="group" aria-label="Kind of post">kind of post</div>
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
             {(["discussion", "feedback", "bug"] as const).map((k) => (
               <button
@@ -334,8 +334,9 @@ function Composer({ onDone }: { onDone: () => void }) {
           <p className="mt-2 text-[11px] text-foreground/55">{KIND_META[kind].hint}</p>
         </div>
         <div>
-          <label className="citation-tag text-muted-foreground">title</label>
+          <label htmlFor="forum-title" className="citation-tag text-muted-foreground">title</label>
           <Input
+            id="forum-title"
             className="mt-1 h-11 text-base"
             placeholder="Short, factual. e.g. 'How 15 USC 1692g shifted my dispute outcome'"
             value={title}
@@ -344,8 +345,9 @@ function Composer({ onDone }: { onDone: () => void }) {
           />
         </div>
         <div>
-          <label className="citation-tag text-muted-foreground">what happened</label>
+          <label htmlFor="forum-body" className="citation-tag text-muted-foreground">what happened</label>
           <Textarea
+            id="forum-body"
             className="mt-1 min-h-[180px] text-[15px] leading-relaxed"
             placeholder="State the facts. Quote the section. Skip the editorial — let the document do the work."
             value={body}
@@ -358,7 +360,7 @@ function Composer({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="rounded-2xl border bg-background/50 p-4">
-          <label className="citation-tag text-muted-foreground">attach citations (optional, encouraged)</label>
+          <label htmlFor="forum-citation" className="citation-tag text-muted-foreground">attach citations (optional, encouraged)</label>
           <p className="mt-1 text-xs text-foreground/60">
             If your post is about the law, link the section so others can read the source.
             Paste something like <code className="font-mono">15 USC 1692g</code>,{" "}
@@ -367,6 +369,7 @@ function Composer({ onDone }: { onDone: () => void }) {
           </p>
           <div className="mt-3 flex gap-2">
             <Input
+              id="forum-citation"
               value={citationInput}
               onChange={(e) => setCitationInput(e.target.value)}
               onKeyDown={(e) => {

@@ -166,7 +166,7 @@ function TopicPage() {
                   ))}
                 </div>
               </div>
-              <h3 className="mt-4 font-display text-2xl font-semibold">{active.title}</h3>
+              <h2 className="mt-4 font-display text-2xl font-semibold">{active.title}</h2>
               <p
                 className={`mt-3 leading-relaxed ${
                   mode === "original"

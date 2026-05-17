@@ -165,7 +165,7 @@ function SearchPage() {
 
           {/* Must include */}
           <div>
-            <label className="citation-tag text-muted-foreground">must include</label>
+            <label htmlFor="search-words" className="citation-tag text-muted-foreground">must include</label>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -175,6 +175,7 @@ function SearchPage() {
               className="mt-1 flex gap-1.5"
             >
               <input
+                id="search-words"
                 name="words"
                 defaultValue={words}
                 placeholder="warrant, seizure"
@@ -186,7 +187,7 @@ function SearchPage() {
 
           {/* Exclude */}
           <div>
-            <label className="citation-tag text-muted-foreground">exclude</label>
+            <label htmlFor="search-exclude" className="citation-tag text-muted-foreground">exclude</label>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -196,6 +197,7 @@ function SearchPage() {
               className="mt-1 flex gap-1.5"
             >
               <input
+                id="search-exclude"
                 name="exclude"
                 defaultValue={exclude}
                 placeholder="tax, revenue"

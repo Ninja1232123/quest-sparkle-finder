@@ -57,10 +57,11 @@ function Index() {
           <div className="relative z-10">
             <div className="citation-tag text-muted-foreground">Vol. I · the citizen's index</div>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-[5.25rem]">
-              If you don't know your rights,
-              <br />
-               <span className="ink-underline italic">you don't have any.</span>
+              Marginalia — <span className="ink-underline italic">A citizen's law index</span>
             </h1>
+            <p className="mt-5 max-w-xl font-display text-2xl italic text-foreground/70 md:text-3xl">
+              If you don't know your rights, you don't have any.
+            </p>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-foreground/75">
               Six federal codebooks — Constitution, U.S. Code, CFR, UCC, TFM, IRM — indexed together,
               cross-referenced, and searchable in one place. No summaries. No gurus. Just the source.
@@ -167,6 +168,12 @@ function Index() {
 
       {/* Method */}
       <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-10">
+          <div className="citation-tag text-muted-foreground">the method</div>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            How Marginalia works
+          </h2>
+        </div>
         <div className="grid gap-10 md:grid-cols-3">
           {[
             {
