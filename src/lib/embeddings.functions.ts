@@ -9,10 +9,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 function assertAdmin(userId: string) {
   const adminId = process.env.ADMIN_USER_ID;
   if (!adminId) {
-    throw new Response("Forbidden: ADMIN_USER_ID is not configured", { status: 403 });
+    throw new Error("Forbidden: ADMIN_USER_ID is not configured");
   }
   if (userId !== adminId) {
-    throw new Response("Forbidden", { status: 403 });
+    throw new Error("Forbidden: not an admin user");
   }
 }
 
