@@ -26,14 +26,20 @@ function bucketize(sources: SourceSummary[]): GroupBucket[] {
 }
 
 function useOpenGroups(activeGroup: GroupKey | null): [Record<GroupKey, boolean>, (k: GroupKey) => void] {
-  const [open, setOpen] = useState<Record<GroupKey, boolean>>(() => {
-    if (typeof window === "undefined") return { federal: true } as Record<GroupKey, boolean>;
+  // Start with the same value on server and first client render to avoid
+  // hydration mismatches. Load persisted state in an effect after mount.
+  const [open, setOpen] = useState<Record<GroupKey, boolean>>(
+    () => ({ federal: true }) as Record<GroupKey, boolean>,
+  );
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
     try {
       const raw = window.localStorage.getItem("corpus-groups-open");
-      if (raw) return JSON.parse(raw);
+      if (raw) setOpen(JSON.parse(raw));
     } catch { /* ignore */ }
-    return { federal: true } as Record<GroupKey, boolean>;
-  });
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (activeGroup && !open[activeGroup]) {
@@ -42,8 +48,9 @@ function useOpenGroups(activeGroup: GroupKey | null): [Record<GroupKey, boolean>
   }, [activeGroup, open]);
 
   useEffect(() => {
+    if (!hydrated) return;
     try { window.localStorage.setItem("corpus-groups-open", JSON.stringify(open)); } catch { /* ignore */ }
-  }, [open]);
+  }, [open, hydrated]);
 
   return [open, (k) => setOpen((o) => ({ ...o, [k]: !o[k] }))];
 }
