@@ -40,6 +40,16 @@ function buildEmbedInput(doc: { section_label: string | null; heading: string | 
   return parts.join(" — ");
 }
 
+function requireCount(label: string, result: { count: number | null; error: { message: string } | null }): number {
+  if (result.error) {
+    throw new Error(`Failed to load ${label}: ${result.error.message}`);
+  }
+  if (typeof result.count !== "number") {
+    throw new Error(`Failed to load ${label}: database returned no count`);
+  }
+  return result.count;
+}
+
 // Generate a single embedding vector for a query string.
 // Used at search time (low latency path, <200 ms on most gateways).
 export async function generateQueryEmbedding(query: string): Promise<number[] | null> {
@@ -62,14 +72,14 @@ export const getEmbeddingStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertAdmin(context.userId);
     const supabaseAdmin = await getAdminClient();
-  const [totalRes, embeddedRes] = await Promise.all([
-    supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("embedding", "is", null),
-  ]);
-  const total = totalRes.count ?? 0;
-  const embedded = embeddedRes.count ?? 0;
-  return { total, embedded, pending: total - embedded };
-});
+    const [totalRes, pendingRes] = await Promise.all([
+      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).is("embedding", null),
+    ]);
+    const total = requireCount("document total", totalRes);
+    const pending = requireCount("pending embedding count", pendingRes);
+    return { total, embedded: Math.max(0, total - pending), pending };
+  });
 
 export const runEmbeddingBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -13,14 +13,29 @@ function EmbeddingsAdmin() {
   const fetchStatus = useServerFn(getEmbeddingStatus);
   const runBatchFn = useServerFn(runEmbeddingBatch);
   const [status, setStatus] = useState({ total: 0, embedded: 0, pending: 0 });
+  const statusRef = useRef(status);
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [batchSize, setBatchSize] = useState(100);
   const [autoRun, setAutoRun] = useState(false);
   const autoRunRef = useRef(false);
 
+  function applyStatus(next: typeof status) {
+    statusRef.current = next;
+    setStatus(next);
+  }
+
+  function normalizeStatusAfterBatch(next: typeof status, previous: typeof status, processed: number) {
+    if (next.total === 0 && previous.total > 0) return previous;
+    if (next.total === previous.total && processed > 0 && next.embedded < previous.embedded) {
+      const embedded = Math.min(previous.total, previous.embedded + processed);
+      return { total: previous.total, embedded, pending: Math.max(0, previous.total - embedded) };
+    }
+    return next;
+  }
+
   useEffect(() => {
-    fetchStatus().then(setStatus).catch((err) => {
+    fetchStatus().then(applyStatus).catch((err) => {
       setLog((prev) => [`Error loading status: ${err instanceof Error ? err.message : String(err)}`, ...prev]);
     });
   }, [fetchStatus]);
@@ -32,14 +47,16 @@ function EmbeddingsAdmin() {
     try {
       const result = await runBatchFn({ data: { batch_size: batchSize } });
       const next = await fetchStatus();
-      setStatus(next);
+      const previous = statusRef.current;
+      const safeNext = normalizeStatusAfterBatch(next, previous, result.processed);
+      applyStatus(safeNext);
       const msg = result.error
         ? `Error: ${result.error}`
-        : `Processed ${result.processed} — ${next.embedded}/${next.total} embedded`;
+        : `Processed ${result.processed} — ${safeNext.embedded}/${safeNext.total} embedded`;
       setLog((prev) => [new Date().toLocaleTimeString() + " " + msg, ...prev.slice(0, 49)]);
 
       // If auto-run is enabled and there's still work to do, queue another batch.
-      if (!result.error && result.processed > 0 && next.pending > 0 && continueAuto && autoRunRef.current) {
+      if (!result.error && result.processed > 0 && safeNext.pending > 0 && continueAuto && autoRunRef.current) {
         setTimeout(() => runBatch(true), 200);
       } else {
         autoRunRef.current = false;
