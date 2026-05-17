@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
@@ -17,6 +17,7 @@ function EmbeddingsAdmin() {
   const [log, setLog] = useState<string[]>([]);
   const [batchSize, setBatchSize] = useState(100);
   const [autoRun, setAutoRun] = useState(false);
+  const autoRunRef = useRef(false);
 
   useEffect(() => {
     fetchStatus().then(setStatus).catch((err) => {
@@ -38,15 +39,17 @@ function EmbeddingsAdmin() {
       setLog((prev) => [new Date().toLocaleTimeString() + " " + msg, ...prev.slice(0, 49)]);
 
       // If auto-run is enabled and there's still work to do, queue another batch.
-      if (!result.error && result.processed > 0 && next.pending > 0 && continueAuto) {
+      if (!result.error && result.processed > 0 && next.pending > 0 && continueAuto && autoRunRef.current) {
         setTimeout(() => runBatch(true), 200);
       } else {
+        autoRunRef.current = false;
         setAutoRun(false);
         setRunning(false);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setLog((prev) => [new Date().toLocaleTimeString() + " Error: " + msg, ...prev.slice(0, 49)]);
+      autoRunRef.current = false;
       setAutoRun(false);
       setRunning(false);
     }
@@ -103,14 +106,14 @@ function EmbeddingsAdmin() {
             </div>
             <div className="mt-4 flex gap-3">
               <button
-                onClick={() => { setAutoRun(false); runBatch(false); }}
+                onClick={() => { autoRunRef.current = false; setAutoRun(false); runBatch(false); }}
                 disabled={running}
                 className="rounded-lg bg-foreground px-4 py-2 text-sm text-background transition-opacity disabled:opacity-50"
               >
                 {running && !autoRun ? "Running…" : "Run one batch"}
               </button>
               <button
-                onClick={() => { setAutoRun(true); runBatch(true); }}
+                onClick={() => { autoRunRef.current = true; setAutoRun(true); runBatch(true); }}
                 disabled={running}
                 className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent transition-opacity disabled:opacity-50 hover:bg-accent/20"
               >
@@ -118,7 +121,7 @@ function EmbeddingsAdmin() {
               </button>
               {running && autoRun && (
                 <button
-                  onClick={() => setAutoRun(false)}
+                  onClick={() => { autoRunRef.current = false; setAutoRun(false); }}
                   className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
                 >
                   Stop after this batch
