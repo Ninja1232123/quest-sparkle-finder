@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { TOPICS } from "@/data/topics";
+import { CODEBOOKS } from "@/lib/codebooks";
 
 const BASE_URL = "https://self-law.org";
 
@@ -34,13 +35,19 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.7",
         }));
 
+        const codebookPaths: SitemapEntry[] = CODEBOOKS.map((cb) => ({
+          path: `/${cb.slug}`,
+          changefreq: "weekly",
+          priority: cb.status === "live" ? "0.8" : "0.5",
+        }));
+
         const topicPaths: SitemapEntry[] = TOPICS.map((t) => ({
           path: `/topic/${t.slug}`,
           changefreq: "monthly",
           priority: "0.7",
         }));
 
-        const entries = [...staticPaths, ...sourcePaths, ...topicPaths];
+        const entries = [...staticPaths, ...codebookPaths, ...sourcePaths, ...topicPaths];
 
         const urls = entries
           .map((e) =>

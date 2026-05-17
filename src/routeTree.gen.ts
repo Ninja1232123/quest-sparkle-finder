@@ -10,15 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhitepaperRouteImport } from './routes/whitepaper'
+import { Route as UscRouteImport } from './routes/usc'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
+import { Route as StatutesRouteImport } from './routes/statutes'
+import { Route as StatesRouteImport } from './routes/states'
 import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ScotusRouteImport } from './routes/scotus'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PresidentialRouteImport } from './routes/presidential'
+import { Route as ModelRouteImport } from './routes/model'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LawsRouteImport } from './routes/laws'
 import { Route as ForumRouteImport } from './routes/forum'
+import { Route as ConstRouteImport } from './routes/const'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ChambersRouteImport } from './routes/chambers'
+import { Route as CfrRouteImport } from './routes/cfr'
+import { Route as BillsRouteImport } from './routes/bills'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AgencyRouteImport } from './routes/agency'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -44,9 +56,24 @@ const WhitepaperRoute = WhitepaperRouteImport.update({
   path: '/whitepaper',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UscRoute = UscRouteImport.update({
+  id: '/usc',
+  path: '/usc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscribeRoute = SubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatutesRoute = StatutesRouteImport.update({
+  id: '/statutes',
+  path: '/statutes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatesRoute = StatesRouteImport.update({
+  id: '/states',
+  path: '/states',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StacksRoute = StacksRouteImport.update({
@@ -64,14 +91,44 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScotusRoute = ScotusRouteImport.update({
+  id: '/scotus',
+  path: '/scotus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresidentialRoute = PresidentialRouteImport.update({
+  id: '/presidential',
+  path: '/presidential',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelRoute = ModelRouteImport.update({
+  id: '/model',
+  path: '/model',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LawsRoute = LawsRouteImport.update({
+  id: '/laws',
+  path: '/laws',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForumRoute = ForumRouteImport.update({
   id: '/forum',
   path: '/forum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConstRoute = ConstRouteImport.update({
+  id: '/const',
+  path: '/const',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -84,9 +141,24 @@ const ChambersRoute = ChambersRouteImport.update({
   path: '/chambers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CfrRoute = CfrRouteImport.update({
+  id: '/cfr',
+  path: '/cfr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillsRoute = BillsRouteImport.update({
+  id: '/bills',
+  path: '/bills',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyRoute = AgencyRouteImport.update({
+  id: '/agency',
+  path: '/agency',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -191,15 +263,27 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
+  '/bills': typeof BillsRoute
+  '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
+  '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
+  '/model': typeof ModelRoute
+  '/presidential': typeof PresidentialRoute
+  '/register': typeof RegisterRoute
+  '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
+  '/states': typeof StatesRoute
+  '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -222,15 +306,27 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
+  '/bills': typeof BillsRoute
+  '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
+  '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
+  '/model': typeof ModelRoute
+  '/presidential': typeof PresidentialRoute
+  '/register': typeof RegisterRoute
+  '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
+  '/states': typeof StatesRoute
+  '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -254,15 +350,27 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
+  '/bills': typeof BillsRoute
+  '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
+  '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
+  '/model': typeof ModelRoute
+  '/presidential': typeof PresidentialRoute
+  '/register': typeof RegisterRoute
+  '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
+  '/states': typeof StatesRoute
+  '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -287,15 +395,27 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/agency'
     | '/auth'
+    | '/bills'
+    | '/cfr'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
+    | '/laws'
     | '/library'
+    | '/model'
+    | '/presidential'
+    | '/register'
+    | '/scotus'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
+    | '/states'
+    | '/statutes'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -318,15 +438,27 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/agency'
     | '/auth'
+    | '/bills'
+    | '/cfr'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
+    | '/laws'
     | '/library'
+    | '/model'
+    | '/presidential'
+    | '/register'
+    | '/scotus'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
+    | '/states'
+    | '/statutes'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -349,15 +481,27 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/agency'
     | '/auth'
+    | '/bills'
+    | '/cfr'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
+    | '/laws'
     | '/library'
+    | '/model'
+    | '/presidential'
+    | '/register'
+    | '/scotus'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
+    | '/states'
+    | '/statutes'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -381,15 +525,27 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
+  AgencyRoute: typeof AgencyRoute
   AuthRoute: typeof AuthRoute
+  BillsRoute: typeof BillsRoute
+  CfrRoute: typeof CfrRoute
   ChambersRoute: typeof ChambersRoute
   CompareRoute: typeof CompareRoute
+  ConstRoute: typeof ConstRoute
   ForumRoute: typeof ForumRoute
+  LawsRoute: typeof LawsRoute
   LibraryRoute: typeof LibraryRoute
+  ModelRoute: typeof ModelRoute
+  PresidentialRoute: typeof PresidentialRoute
+  RegisterRoute: typeof RegisterRoute
+  ScotusRoute: typeof ScotusRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StacksRoute: typeof StacksRouteWithChildren
+  StatesRoute: typeof StatesRoute
+  StatutesRoute: typeof StatutesRoute
   SubscribeRoute: typeof SubscribeRoute
+  UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
   AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
@@ -417,11 +573,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WhitepaperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/usc': {
+      id: '/usc'
+      path: '/usc'
+      fullPath: '/usc'
+      preLoaderRoute: typeof UscRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscribe': {
       id: '/subscribe'
       path: '/subscribe'
       fullPath: '/subscribe'
       preLoaderRoute: typeof SubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/statutes': {
+      id: '/statutes'
+      path: '/statutes'
+      fullPath: '/statutes'
+      preLoaderRoute: typeof StatutesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/states': {
+      id: '/states'
+      path: '/states'
+      fullPath: '/states'
+      preLoaderRoute: typeof StatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stacks': {
@@ -445,6 +622,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scotus': {
+      id: '/scotus'
+      path: '/scotus'
+      fullPath: '/scotus'
+      preLoaderRoute: typeof ScotusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presidential': {
+      id: '/presidential'
+      path: '/presidential'
+      fullPath: '/presidential'
+      preLoaderRoute: typeof PresidentialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/model': {
+      id: '/model'
+      path: '/model'
+      fullPath: '/model'
+      preLoaderRoute: typeof ModelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/library': {
       id: '/library'
       path: '/library'
@@ -452,11 +657,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/laws': {
+      id: '/laws'
+      path: '/laws'
+      fullPath: '/laws'
+      preLoaderRoute: typeof LawsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forum': {
       id: '/forum'
       path: '/forum'
       fullPath: '/forum'
       preLoaderRoute: typeof ForumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/const': {
+      id: '/const'
+      path: '/const'
+      fullPath: '/const'
+      preLoaderRoute: typeof ConstRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -473,11 +692,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChambersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cfr': {
+      id: '/cfr'
+      path: '/cfr'
+      fullPath: '/cfr'
+      preLoaderRoute: typeof CfrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bills': {
+      id: '/bills'
+      path: '/bills'
+      fullPath: '/bills'
+      preLoaderRoute: typeof BillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency': {
+      id: '/agency'
+      path: '/agency'
+      fullPath: '/agency'
+      preLoaderRoute: typeof AgencyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -631,15 +871,27 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
+  AgencyRoute: AgencyRoute,
   AuthRoute: AuthRoute,
+  BillsRoute: BillsRoute,
+  CfrRoute: CfrRoute,
   ChambersRoute: ChambersRoute,
   CompareRoute: CompareRoute,
+  ConstRoute: ConstRoute,
   ForumRoute: ForumRoute,
+  LawsRoute: LawsRoute,
   LibraryRoute: LibraryRoute,
+  ModelRoute: ModelRoute,
+  PresidentialRoute: PresidentialRoute,
+  RegisterRoute: RegisterRoute,
+  ScotusRoute: ScotusRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StacksRoute: StacksRouteWithChildren,
+  StatesRoute: StatesRoute,
+  StatutesRoute: StatutesRoute,
   SubscribeRoute: SubscribeRoute,
+  UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
   AdminEmbeddingsRoute: AdminEmbeddingsRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
