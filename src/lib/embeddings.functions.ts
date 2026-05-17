@@ -72,13 +72,14 @@ export const getEmbeddingStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertAdmin(context.userId);
     const supabaseAdmin = await getAdminClient();
-    const [totalRes, pendingRes] = await Promise.all([
+    const [totalRes, embeddedRes] = await Promise.all([
       supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).is("embedding", null),
+      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("embedding", "is", null),
     ]);
     const total = requireCount("document total", totalRes);
-    const pending = requireCount("pending embedding count", pendingRes);
-    return { total, embedded: Math.max(0, total - pending), pending };
+    const embedded = requireCount("embedded count", embeddedRes);
+    const pending = Math.max(0, total - embedded);
+    return { total, embedded: Math.min(total, embedded), pending };
   });
 
 export const runEmbeddingBatch = createServerFn({ method: "POST" })
