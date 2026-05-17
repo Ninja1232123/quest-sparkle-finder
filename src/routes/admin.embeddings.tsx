@@ -25,6 +25,15 @@ function EmbeddingsAdmin() {
     setStatus(next);
   }
 
+  function normalizeStatusAfterBatch(next: typeof status, previous: typeof status, processed: number) {
+    if (next.total === 0 && previous.total > 0) return previous;
+    if (next.total === previous.total && processed > 0 && next.embedded < previous.embedded) {
+      const embedded = Math.min(previous.total, previous.embedded + processed);
+      return { total: previous.total, embedded, pending: Math.max(0, previous.total - embedded) };
+    }
+    return next;
+  }
+
   useEffect(() => {
     fetchStatus().then(applyStatus).catch((err) => {
       setLog((prev) => [`Error loading status: ${err instanceof Error ? err.message : String(err)}`, ...prev]);
@@ -39,7 +48,7 @@ function EmbeddingsAdmin() {
       const result = await runBatchFn({ data: { batch_size: batchSize } });
       const next = await fetchStatus();
       const previous = statusRef.current;
-      const safeNext = next.total === 0 && previous.total > 0 ? previous : next;
+      const safeNext = normalizeStatusAfterBatch(next, previous, result.processed);
       applyStatus(safeNext);
       const msg = result.error
         ? `Error: ${result.error}`
