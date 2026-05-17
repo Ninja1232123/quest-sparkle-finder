@@ -1,29 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { getEmbeddingStatus, runEmbeddingBatch } from "@/lib/embeddings.functions";
 
 export const Route = createFileRoute("/admin/embeddings")({
-  loader: async () => getEmbeddingStatus(),
   component: EmbeddingsAdmin,
 });
 
 function EmbeddingsAdmin() {
-  const initial = Route.useLoaderData();
-  const [status, setStatus] = useState(initial);
+  const fetchStatus = useServerFn(getEmbeddingStatus);
+  const runBatchFn = useServerFn(runEmbeddingBatch);
+  const [status, setStatus] = useState({ total: 0, embedded: 0, pending: 0 });
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [batchSize, setBatchSize] = useState(100);
   const [autoRun, setAutoRun] = useState(false);
+
+  useEffect(() => {
+    fetchStatus().then(setStatus).catch((err) => {
+      setLog((prev) => [`Error loading status: ${err instanceof Error ? err.message : String(err)}`, ...prev]);
+    });
+  }, [fetchStatus]);
 
   const pct = status.total > 0 ? Math.round((status.embedded / status.total) * 100) : 0;
 
   async function runBatch() {
     setRunning(true);
     try {
-      const result = await runEmbeddingBatch({ data: { batch_size: batchSize } });
-      const next = await getEmbeddingStatus();
+      const result = await runBatchFn({ data: { batch_size: batchSize } });
+      const next = await fetchStatus();
       setStatus(next);
       const msg = result.error
         ? `Error: ${result.error}`
