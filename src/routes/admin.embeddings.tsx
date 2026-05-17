@@ -26,7 +26,7 @@ function EmbeddingsAdmin() {
 
   const pct = status.total > 0 ? Math.round((status.embedded / status.total) * 100) : 0;
 
-  async function runBatch() {
+  async function runBatch(continueAuto = false) {
     setRunning(true);
     try {
       const result = await runBatchFn({ data: { batch_size: batchSize } });
@@ -38,8 +38,8 @@ function EmbeddingsAdmin() {
       setLog((prev) => [new Date().toLocaleTimeString() + " " + msg, ...prev.slice(0, 49)]);
 
       // If auto-run is enabled and there's still work to do, queue another batch.
-      if (!result.error && result.processed > 0 && next.pending > 0 && autoRun) {
-        setTimeout(runBatch, 200);
+      if (!result.error && result.processed > 0 && next.pending > 0 && continueAuto) {
+        setTimeout(() => runBatch(true), 200);
       } else {
         setAutoRun(false);
         setRunning(false);
@@ -103,14 +103,14 @@ function EmbeddingsAdmin() {
             </div>
             <div className="mt-4 flex gap-3">
               <button
-                onClick={() => { setAutoRun(false); runBatch(); }}
+                onClick={() => { setAutoRun(false); runBatch(false); }}
                 disabled={running}
                 className="rounded-lg bg-foreground px-4 py-2 text-sm text-background transition-opacity disabled:opacity-50"
               >
                 {running && !autoRun ? "Running…" : "Run one batch"}
               </button>
               <button
-                onClick={() => { setAutoRun(true); runBatch(); }}
+                onClick={() => { setAutoRun(true); runBatch(true); }}
                 disabled={running}
                 className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent transition-opacity disabled:opacity-50 hover:bg-accent/20"
               >
