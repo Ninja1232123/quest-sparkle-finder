@@ -87,12 +87,12 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
               className={`rounded-lg p-2 transition-colors ${
                 activeGroup === b.key
                   ? "bg-foreground/10 text-foreground"
-                  : "text-foreground/60 hover:bg-muted hover:text-foreground"
+                  : "text-foreground/75 hover:bg-muted hover:text-foreground"
               }`}
               title={`${G.label} · ${b.items.length}`}
               aria-label={G.label}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
             </button>
           );
         })}
@@ -102,15 +102,15 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
 
   return (
     <nav aria-label="Corpus" className="px-3 py-4">
-      <div className="citation-tag mb-3 px-2 text-muted-foreground">corpus</div>
+      <div className="citation-tag mb-3 px-2 text-[0.78rem] text-foreground/70">corpus</div>
       <Link
         to="/code"
-        className="mb-3 flex items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium text-foreground/80 hover:bg-muted hover:text-foreground"
+        className="mb-3 flex items-center justify-between rounded-md px-2 py-2 text-[0.95rem] font-medium text-foreground/90 hover:bg-muted hover:text-foreground"
         activeOptions={{ exact: true }}
-        activeProps={{ className: "mb-3 flex items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium bg-muted text-foreground" }}
+        activeProps={{ className: "mb-3 flex items-center justify-between rounded-md px-2 py-2 text-[0.95rem] font-medium bg-muted text-foreground" }}
       >
         <span>All sources</span>
-        <span className="font-mono text-[10px] text-muted-foreground">
+        <span className="font-mono text-[11px] text-foreground/65">
           {sources.reduce((n, s) => n + s.count, 0).toLocaleString()}
         </span>
       </Link>
@@ -124,18 +124,18 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
             <li key={b.key}>
               <button
                 onClick={() => toggle(b.key)}
-                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-foreground/85 hover:bg-muted hover:text-foreground"
+                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-[0.95rem] text-foreground/90 hover:bg-muted hover:text-foreground"
                 aria-expanded={isOpen}
               >
                 <span className="flex items-center gap-2">
-                  {isOpen ? <ChevronDown className="h-3.5 w-3.5 text-foreground/50" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground/50" />}
-                  <Icon className="h-3.5 w-3.5 text-foreground/60" />
+                  {isOpen ? <ChevronDown className="h-4 w-4 text-foreground/70" /> : <ChevronRight className="h-4 w-4 text-foreground/70" />}
+                  <Icon className="h-4 w-4 text-foreground/75" />
                   <span className="font-medium">{G.label}</span>
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground/70">{b.items.length}</span>
+                <span className="font-mono text-[11px] text-foreground/60">{b.items.length}</span>
               </button>
               {isOpen && (
-                <ul className="mt-0.5 space-y-px pl-7">
+                <ul className="mt-1 space-y-px pl-8">
                   {b.items.map((s) => {
                     const meta = sourceMeta(s.code);
                     const isActive = activeCode === s.code;
@@ -144,21 +144,21 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
                         <Link
                           to="/code/source/$source"
                           params={{ source: s.code }}
-                          className={`group flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
+                          className={`group flex items-center justify-between rounded-md px-2 py-1.5 text-[0.9rem] transition-colors ${
                             isActive
                               ? "bg-foreground/8 text-foreground"
-                              : "text-foreground/75 hover:bg-muted hover:text-foreground"
+                              : "text-foreground/85 hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           <span className="flex items-center gap-2 min-w-0">
                             <span
                               aria-hidden
-                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              className="h-2 w-2 shrink-0 rounded-full"
                               style={{ backgroundColor: meta.accent }}
                             />
                             <span className="truncate">{s.name}</span>
                           </span>
-                          <span className="font-mono text-[10px] text-muted-foreground/70 group-hover:text-foreground/60">
+                          <span className="font-mono text-[11px] text-foreground/55 group-hover:text-foreground/75">
                             {s.count.toLocaleString()}
                           </span>
                         </Link>
@@ -173,8 +173,8 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
       </ul>
 
       <div className="mt-6 border-t border-border/60 pt-4">
-        <div className="citation-tag mb-2 px-2 text-muted-foreground">on deck</div>
-        <ul className="space-y-1 px-2 text-xs text-foreground/55">
+        <div className="citation-tag mb-2 px-2 text-[0.78rem] text-foreground/70">on deck</div>
+        <ul className="space-y-1.5 px-2 text-[0.85rem] text-foreground/75">
           <li className="flex items-center justify-between"><span>50 state codes</span><span className="font-mono">soon</span></li>
           <li className="flex items-center justify-between"><span>Federal caselaw</span><span className="font-mono">soon</span></li>
           <li className="flex items-center justify-between"><span>Bills · Fed. Register</span><span className="font-mono">building</span></li>

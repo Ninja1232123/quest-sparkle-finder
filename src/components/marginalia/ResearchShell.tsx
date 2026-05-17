@@ -36,7 +36,7 @@ export function ResearchShell({
   children,
   right,
   rightLabel = "Connections",
-  centerMaxWidth = "max-w-3xl",
+  centerMaxWidth = "max-w-5xl",
 }: Props) {
   const [leftCollapsed, toggleLeft] = usePersistedBool("shell-left-collapsed", false);
   const [rightOpen, toggleRight] = usePersistedBool("shell-right-open", true);
@@ -47,11 +47,11 @@ export function ResearchShell({
     <div className="min-h-screen">
       <SiteHeader />
 
-      <div className="mx-auto flex w-full max-w-[1600px] gap-0 px-0 lg:px-4">
+      <div className="mx-auto flex w-full max-w-[1900px] gap-0 px-0 lg:px-4">
         {/* Left rail — corpus navigator */}
         <aside
           className={`hidden shrink-0 border-r border-border/60 transition-[width] duration-200 ease-out lg:block ${
-            leftCollapsed ? "w-[56px]" : "w-[260px]"
+            leftCollapsed ? "w-[60px]" : "w-[300px]"
           }`}
           aria-label="Corpus navigation"
         >
@@ -72,7 +72,7 @@ export function ResearchShell({
 
         {/* Center pane */}
         <main className="min-w-0 flex-1">
-          <div className={`mx-auto w-full ${centerMaxWidth} px-6 py-10`}>
+          <div className={`mx-auto w-full ${centerMaxWidth} px-8 py-10`}>
             {children}
           </div>
         </main>
@@ -81,7 +81,7 @@ export function ResearchShell({
         {hasRight && (
           <aside
             className={`hidden shrink-0 border-l border-border/60 transition-[width] duration-200 ease-out xl:block ${
-              rightOpen ? "w-[320px]" : "w-[44px]"
+              rightOpen ? "w-[360px]" : "w-[48px]"
             }`}
             aria-label={rightLabel}
           >

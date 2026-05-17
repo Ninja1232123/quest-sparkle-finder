@@ -83,7 +83,7 @@
   --paper-deep: oklch(0.93 0.014 78);   /* aged page edge */
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
   --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
-  --ink-muted: oklch(0.46 0.013 75);    /* #6B6358 muted body */
+  --ink-muted: oklch(0.38 0.014 75);    /* darker muted body for contrast on cream */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
   --terracotta: oklch(0.42 0.13 30);    /* #8B2E1F deep oxblood */
@@ -137,7 +137,7 @@
   --paper-deep: oklch(0.14 0.006 70);
   --paper-soft: oklch(0.22 0.006 70);    /* #252320 card */
   --ink: oklch(0.90 0.014 80);           /* #E8E2D4 cream */
-  --ink-muted: oklch(0.63 0.012 75);     /* #9A9285 */
+  --ink-muted: oklch(0.72 0.013 75);     /* brighter muted text on warm charcoal */
   --sage: oklch(0.66 0.08 165);
   --sage-deep: oklch(0.55 0.08 165);
   --terracotta: oklch(0.62 0.10 40);     /* #C97B5A muted */
@@ -213,8 +213,8 @@
   article .reading,
   .prose-legal {
     font-family: var(--font-serif);
-    font-size: 1.0625rem;       /* 17px */
-    line-height: 1.65;
+    font-size: 1.125rem;        /* 18px */
+    line-height: 1.7;
     color: var(--ink);
     font-feature-settings: "onum", "kern";
   }
