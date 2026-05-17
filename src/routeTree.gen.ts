@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhitepaperRouteImport } from './routes/whitepaper'
+import { Route as UscRouteImport } from './routes/usc'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForumRouteImport } from './routes/forum'
+import { Route as ConstRouteImport } from './routes/const'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ChambersRouteImport } from './routes/chambers'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -42,6 +44,11 @@ import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/
 const WhitepaperRoute = WhitepaperRouteImport.update({
   id: '/whitepaper',
   path: '/whitepaper',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UscRoute = UscRouteImport.update({
+  id: '/usc',
+  path: '/usc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubscribeRoute = SubscribeRouteImport.update({
@@ -72,6 +79,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ForumRoute = ForumRouteImport.update({
   id: '/forum',
   path: '/forum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConstRoute = ConstRouteImport.update({
+  id: '/const',
+  path: '/const',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -194,12 +206,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -225,12 +239,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -257,12 +273,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
+  '/const': typeof ConstRoute
   '/forum': typeof ForumRoute
   '/library': typeof LibraryRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stacks': typeof StacksRouteWithChildren
   '/subscribe': typeof SubscribeRoute
+  '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
@@ -290,12 +308,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
     | '/library'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -321,12 +341,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
     | '/library'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -352,12 +374,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chambers'
     | '/compare'
+    | '/const'
     | '/forum'
     | '/library'
     | '/search'
     | '/sitemap.xml'
     | '/stacks'
     | '/subscribe'
+    | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
     | '/cases/$caseId'
@@ -384,12 +408,14 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChambersRoute: typeof ChambersRoute
   CompareRoute: typeof CompareRoute
+  ConstRoute: typeof ConstRoute
   ForumRoute: typeof ForumRoute
   LibraryRoute: typeof LibraryRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StacksRoute: typeof StacksRouteWithChildren
   SubscribeRoute: typeof SubscribeRoute
+  UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
   AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
@@ -415,6 +441,13 @@ declare module '@tanstack/react-router' {
       path: '/whitepaper'
       fullPath: '/whitepaper'
       preLoaderRoute: typeof WhitepaperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/usc': {
+      id: '/usc'
+      path: '/usc'
+      fullPath: '/usc'
+      preLoaderRoute: typeof UscRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe': {
@@ -457,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/forum'
       fullPath: '/forum'
       preLoaderRoute: typeof ForumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/const': {
+      id: '/const'
+      path: '/const'
+      fullPath: '/const'
+      preLoaderRoute: typeof ConstRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -634,12 +674,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChambersRoute: ChambersRoute,
   CompareRoute: CompareRoute,
+  ConstRoute: ConstRoute,
   ForumRoute: ForumRoute,
   LibraryRoute: LibraryRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StacksRoute: StacksRouteWithChildren,
   SubscribeRoute: SubscribeRoute,
+  UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
   AdminEmbeddingsRoute: AdminEmbeddingsRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
@@ -660,3 +702,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
