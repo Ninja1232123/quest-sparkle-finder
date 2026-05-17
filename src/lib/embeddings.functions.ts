@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { embed, embedMany } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { createOpenAI } from "@ai-sdk/openai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Restrict admin server functions to a specific user id, set via the
@@ -27,10 +27,10 @@ async function getAdminClient() {
 }
 
 function getEmbeddingModel() {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.OPENAI_API_KEY;
   const model = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
-  if (!key) throw new Error("LOVABLE_API_KEY is not set — add it to your environment to enable semantic search.");
-  return createLovableAiGatewayProvider(key).textEmbeddingModel(model);
+  if (!key) throw new Error("OPENAI_API_KEY is not set — add it to your environment to enable semantic search.");
+  return createOpenAI({ apiKey: key }).textEmbeddingModel(model);
 }
 
 // Text we embed for each document: label + heading + first 1500 chars of body.
