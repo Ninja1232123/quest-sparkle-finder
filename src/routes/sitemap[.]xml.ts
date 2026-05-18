@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { TOPICS } from "@/data/topics";
 import { CODEBOOKS } from "@/lib/codebooks";
+import { listPublishedSlugsForSitemap } from "@/lib/blog.functions";
 
 const BASE_URL = "https://self-law.org";
 
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/forum", changefreq: "daily", priority: "0.6" },
           { path: "/stacks", changefreq: "weekly", priority: "0.6" },
           { path: "/subscribe", changefreq: "monthly", priority: "0.5" },
+          { path: "/blog", changefreq: "weekly", priority: "0.8" },
         ];
 
         const sources = ["const", "usc", "cfr", "ucc", "tfm", "irm"];
@@ -47,7 +49,14 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.7",
         }));
 
-        const entries = [...staticPaths, ...codebookPaths, ...sourcePaths, ...topicPaths];
+        const blogPosts = await listPublishedSlugsForSitemap().catch(() => []);
+        const blogPaths: SitemapEntry[] = blogPosts.map((p) => ({
+          path: `/blog/${p.slug}`,
+          changefreq: "monthly",
+          priority: "0.7",
+        }));
+
+        const entries = [...staticPaths, ...codebookPaths, ...sourcePaths, ...topicPaths, ...blogPaths];
 
         const urls = entries
           .map((e) =>
