@@ -120,7 +120,7 @@ export const Route = createFileRoute("/api/public/v1/ingest-ndjson")({
           if (batch.length === 0) return;
           const { error } = await supabaseAdmin
             .from("documents")
-            .upsert(batch, { onConflict: "identifier", ignoreDuplicates: true });
+            .upsert(batch as unknown as never, { onConflict: "identifier", ignoreDuplicates: true });
           if (error) throw new Error(`insert failed near "${lastIdentifier}": ${error.message}`);
           inserted += batch.length;
           bytesConsumed += pendingBytes;
