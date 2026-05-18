@@ -183,15 +183,30 @@ export const Route = createFileRoute("/code/$")({
       </article>
     </div>
   ),
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const d = loaderData?.document;
     if (!d) return { meta: [{ title: "Not found · Marginalia" }] };
-    const title = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim();
+    const label = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim();
+    const parent = d.parent_label ?? "";
+    const fullTitle = `${label}${parent ? ` — ${parent}` : ""} · Marginalia`;
+    const ogTitle = `${label}${parent ? ` — ${parent}` : ""}`;
+    const body = (d.body_text ?? "").replace(/\s+/g, " ").trim();
+    const description = body
+      ? body.slice(0, 155) + (body.length > 155 ? "…" : "")
+      : `${label} on Marginalia — read the source text with cross-references to related statutes and regulations.`;
+    const url = `https://self-law.org/code/${params._splat}`;
     return {
       meta: [
-        { title: `${title} — ${d.parent_label ?? ""} · Marginalia` },
-        { name: "description", content: (d.body_text ?? "").slice(0, 155) },
+        { title: fullTitle },
+        { name: "description", content: description },
+        { property: "og:title", content: ogTitle },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "article" },
+        { name: "twitter:title", content: ogTitle },
+        { name: "twitter:description", content: description },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (
