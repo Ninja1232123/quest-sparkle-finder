@@ -92,7 +92,7 @@ function BlogPostPage() {
         <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <time dateTime={post.published_at ?? undefined}>{fmtDate(post.published_at)}</time>
           {post.tags.length > 0 && <span>·</span>}
-          {post.tags.map((t) => (
+          {post.tags.map((t: string) => (
             <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t}</span>
           ))}
         </div>
