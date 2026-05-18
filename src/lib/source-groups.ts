@@ -121,6 +121,46 @@ export const SOURCE_META: Record<string, SourceMeta> = {
     icon: Building2,
     tagline: "How the IRS internally administers the tax code.",
   },
+  register: {
+    code: "register",
+    short: "Fed. Reg.",
+    group: "other",
+    accent: "#2f4f7f",
+    icon: FileText,
+    tagline: "Daily journal of federal agency rules, proposed rules, and notices.",
+  },
+  "statutes-at-large": {
+    code: "statutes-at-large",
+    short: "Stat.",
+    group: "federal",
+    accent: "#6b4226",
+    icon: BookOpen,
+    tagline: "Every law Congress has passed, in chronological order since 1789.",
+  },
+  "statute-compilations": {
+    code: "statute-compilations",
+    short: "Stat. Comp.",
+    group: "federal",
+    accent: "#3a5a40",
+    icon: FileText,
+    tagline: "Office of Law Revision Counsel compilations of selected statutes.",
+  },
+  "public-private-law": {
+    code: "public-private-law",
+    short: "Pub. L.",
+    group: "other",
+    accent: "#4a5d8a",
+    icon: FileText,
+    tagline: "Public and private laws as enacted, before codification.",
+  },
+  "public-papers-president": {
+    code: "public-papers-president",
+    short: "Pres. Papers",
+    group: "other",
+    accent: "#7a3b3b",
+    icon: BookOpen,
+    tagline: "Official public statements, addresses, and remarks of the President.",
+  },
 };
 
 export function sourceMeta(code: string): SourceMeta {
