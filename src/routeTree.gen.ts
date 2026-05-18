@@ -52,6 +52,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicV1SearchRouteImport } from './routes/api/public/v1/search'
 import { Route as ApiPublicV1QuoteRouteImport } from './routes/api/public/v1/quote'
+import { Route as ApiPublicV1OpenapiDotjsonRouteImport } from './routes/api/public/v1/openapi[.]json'
 import { Route as ApiPublicV1IngestNdjsonRouteImport } from './routes/api/public/v1/ingest-ndjson'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
@@ -272,6 +273,12 @@ const ApiPublicV1QuoteRoute = ApiPublicV1QuoteRouteImport.update({
   path: '/api/public/v1/quote',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1OpenapiDotjsonRoute =
+  ApiPublicV1OpenapiDotjsonRouteImport.update({
+    id: '/api/public/v1/openapi.json',
+    path: '/api/public/v1/openapi.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1IngestNdjsonRoute = ApiPublicV1IngestNdjsonRouteImport.update({
   id: '/api/public/v1/ingest-ndjson',
   path: '/api/public/v1/ingest-ndjson',
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -378,6 +386,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -427,6 +436,7 @@ export interface FileRoutesById {
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -525,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -573,6 +585,7 @@ export interface FileRouteTypes {
     | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -621,6 +634,7 @@ export interface RootRouteChildren {
   AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1IngestNdjsonRoute: typeof ApiPublicV1IngestNdjsonRoute
+  ApiPublicV1OpenapiDotjsonRoute: typeof ApiPublicV1OpenapiDotjsonRoute
   ApiPublicV1QuoteRoute: typeof ApiPublicV1QuoteRoute
   ApiPublicV1SearchRoute: typeof ApiPublicV1SearchRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -932,6 +946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1QuoteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/openapi.json': {
+      id: '/api/public/v1/openapi.json'
+      path: '/api/public/v1/openapi.json'
+      fullPath: '/api/public/v1/openapi.json'
+      preLoaderRoute: typeof ApiPublicV1OpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/ingest-ndjson': {
       id: '/api/public/v1/ingest-ndjson'
       path: '/api/public/v1/ingest-ndjson'
@@ -1007,6 +1028,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1IngestNdjsonRoute: ApiPublicV1IngestNdjsonRoute,
+  ApiPublicV1OpenapiDotjsonRoute: ApiPublicV1OpenapiDotjsonRoute,
   ApiPublicV1QuoteRoute: ApiPublicV1QuoteRoute,
   ApiPublicV1SearchRoute: ApiPublicV1SearchRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
