@@ -68,9 +68,10 @@ export const getPostBySlug = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) return { post: null as BlogPost | null, error: error.message };
     if (!row) return { post: null, error: "Not found" };
+    const post = row as unknown as BlogPost;
     // Fire-and-forget view bump
-    admin.from("blog_posts").update({ view_count: (row as BlogPost).view_count + 1 }).eq("id", (row as BlogPost).id).then(() => {}, () => {});
-    return { post: row as BlogPost, error: null };
+    admin.from("blog_posts").update({ view_count: post.view_count + 1 }).eq("id", post.id).then(() => {}, () => {});
+    return { post, error: null };
   });
 
 // Admin: list all posts (including drafts)
@@ -97,7 +98,7 @@ export const adminGetPost = createServerFn({ method: "GET" })
     const admin = await getAdmin();
     const { data: row, error } = await admin.from("blog_posts").select(FULL_COLS).eq("id", data.id).maybeSingle();
     if (error) return { post: null as BlogPost | null, error: error.message };
-    return { post: (row as BlogPost) ?? null, error: row ? null : "Not found" };
+    return { post: (row as unknown as BlogPost) ?? null, error: row ? null : "Not found" };
   });
 
 const upsertSchema = z.object({
