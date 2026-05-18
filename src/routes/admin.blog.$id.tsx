@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { marked } from "marked";
+import DOMPurify from "isomorphic-dompurify";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
@@ -125,7 +126,7 @@ function AdminBlogEditor() {
   }
 
   const previewHtml = useMemo(
-    () => marked.parse(form.body_md || "", { async: false }) as string,
+    () => DOMPurify.sanitize(marked.parse(form.body_md || "", { async: false }) as string),
     [form.body_md],
   );
 
