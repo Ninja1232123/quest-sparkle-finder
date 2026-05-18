@@ -45,7 +45,9 @@ const COLS = [
 
 function normalize(row: DocRow, fallbackSource: string | undefined) {
   const source_code = (row.source_code ?? fallbackSource ?? "").toString().trim();
-  const identifier = (row.identifier ?? "").toString().trim();
+  // Strip leading slashes — some upstream extractors emit "/register/..." but
+  // the canonical form is slashless ("register/...") so /code/$ routes resolve.
+  const identifier = (row.identifier ?? "").toString().trim().replace(/^\/+/, "");
   if (!source_code || !identifier) return null;
   const out: Record<string, unknown> = { source_code, identifier };
   for (const k of COLS) {
