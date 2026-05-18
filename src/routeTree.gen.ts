@@ -36,18 +36,23 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as StacksViewRouteImport } from './routes/stacks.view'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
+import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
+import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicV1SearchRouteImport } from './routes/api/public/v1/search'
 import { Route as ApiPublicV1QuoteRouteImport } from './routes/api/public/v1/quote'
+import { Route as ApiPublicV1OpenapiDotjsonRouteImport } from './routes/api/public/v1/openapi[.]json'
 import { Route as ApiPublicV1IngestNdjsonRouteImport } from './routes/api/public/v1/ingest-ndjson'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
@@ -187,6 +192,11 @@ const CasesIndexRoute = CasesIndexRouteImport.update({
   path: '/cases/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
@@ -212,14 +222,29 @@ const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   path: '/cases/$caseId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEmbeddingsRoute = AdminEmbeddingsRouteImport.update({
   id: '/admin/embeddings',
   path: '/admin/embeddings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
+  id: '/admin/blog/',
+  path: '/admin/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   id: '/code/source/$source',
   path: '/code/source/$source',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
+  id: '/admin/blog/$id',
+  path: '/admin/blog/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailQueueProcessRoute =
@@ -248,6 +273,12 @@ const ApiPublicV1QuoteRoute = ApiPublicV1QuoteRouteImport.update({
   path: '/api/public/v1/quote',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1OpenapiDotjsonRoute =
+  ApiPublicV1OpenapiDotjsonRouteImport.update({
+    id: '/api/public/v1/openapi.json',
+    path: '/api/public/v1/openapi.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1IngestNdjsonRoute = ApiPublicV1IngestNdjsonRouteImport.update({
   id: '/api/public/v1/ingest-ndjson',
   path: '/api/public/v1/ingest-ndjson',
@@ -292,16 +323,21 @@ export interface FileRoutesByFullPath {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -336,16 +372,21 @@ export interface FileRoutesByTo {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog': typeof BlogIndexRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -381,16 +422,21 @@ export interface FileRoutesById {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -427,16 +473,21 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog/'
     | '/cases/'
     | '/code/'
+    | '/admin/blog/$id'
     | '/code/source/$source'
+    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -471,16 +522,21 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog'
     | '/cases'
     | '/code'
+    | '/admin/blog/$id'
     | '/code/source/$source'
+    | '/admin/blog'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -515,16 +571,21 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog/'
     | '/cases/'
     | '/code/'
+    | '/admin/blog/$id'
     | '/code/source/$source'
+    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
+    | '/api/public/v1/openapi.json'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -560,15 +621,20 @@ export interface RootRouteChildren {
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
   AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
+  AdminBlogIdRoute: typeof AdminBlogIdRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
+  AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1IngestNdjsonRoute: typeof ApiPublicV1IngestNdjsonRoute
+  ApiPublicV1OpenapiDotjsonRoute: typeof ApiPublicV1OpenapiDotjsonRoute
   ApiPublicV1QuoteRoute: typeof ApiPublicV1QuoteRoute
   ApiPublicV1SearchRoute: typeof ApiPublicV1SearchRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -768,6 +834,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topic/$slug': {
       id: '/topic/$slug'
       path: '/topic/$slug'
@@ -803,6 +876,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/embeddings': {
       id: '/admin/embeddings'
       path: '/admin/embeddings'
@@ -810,11 +890,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEmbeddingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/blog/': {
+      id: '/admin/blog/'
+      path: '/admin/blog'
+      fullPath: '/admin/blog/'
+      preLoaderRoute: typeof AdminBlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/code/source/$source': {
       id: '/code/source/$source'
       path: '/code/source/$source'
       fullPath: '/code/source/$source'
       preLoaderRoute: typeof CodeSourceSourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/blog/$id': {
+      id: '/admin/blog/$id'
+      path: '/admin/blog/$id'
+      fullPath: '/admin/blog/$id'
+      preLoaderRoute: typeof AdminBlogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
@@ -850,6 +944,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/v1/quote'
       fullPath: '/api/public/v1/quote'
       preLoaderRoute: typeof ApiPublicV1QuoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/openapi.json': {
+      id: '/api/public/v1/openapi.json'
+      path: '/api/public/v1/openapi.json'
+      fullPath: '/api/public/v1/openapi.json'
+      preLoaderRoute: typeof ApiPublicV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/ingest-ndjson': {
@@ -914,15 +1015,20 @@ const rootRouteChildren: RootRouteChildren = {
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
   AdminEmbeddingsRoute: AdminEmbeddingsRoute,
+  BlogSlugRoute: BlogSlugRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
+  AdminBlogIdRoute: AdminBlogIdRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
+  AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1IngestNdjsonRoute: ApiPublicV1IngestNdjsonRoute,
+  ApiPublicV1OpenapiDotjsonRoute: ApiPublicV1OpenapiDotjsonRoute,
   ApiPublicV1QuoteRoute: ApiPublicV1QuoteRoute,
   ApiPublicV1SearchRoute: ApiPublicV1SearchRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
@@ -933,13 +1039,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
