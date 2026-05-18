@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { marked } from "marked";
+import DOMPurify from "isomorphic-dompurify";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { getPostBySlug } from "@/lib/blog.functions";
@@ -82,7 +83,9 @@ function fmtDate(s: string | null): string {
 function BlogPostPage() {
   const { post } = Route.useLoaderData();
   if (!post) return null;
-  const html = marked.parse(post.body_md || "", { async: false }) as string;
+  const html = DOMPurify.sanitize(
+    marked.parse(post.body_md || "", { async: false }) as string,
+  );
 
   return (
     <div className="min-h-screen">
