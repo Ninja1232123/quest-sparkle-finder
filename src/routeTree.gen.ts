@@ -48,6 +48,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicV1SearchRouteImport } from './routes/api/public/v1/search'
 import { Route as ApiPublicV1QuoteRouteImport } from './routes/api/public/v1/quote'
+import { Route as ApiPublicV1IngestNdjsonRouteImport } from './routes/api/public/v1/ingest-ndjson'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
 
@@ -247,6 +248,11 @@ const ApiPublicV1QuoteRoute = ApiPublicV1QuoteRouteImport.update({
   path: '/api/public/v1/quote',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1IngestNdjsonRoute = ApiPublicV1IngestNdjsonRouteImport.update({
+  id: '/api/public/v1/ingest-ndjson',
+  path: '/api/public/v1/ingest-ndjson',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/code': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -382,6 +390,7 @@ export interface FileRoutesById {
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
   '/api/public/v1/search': typeof ApiPublicV1SearchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/code/'
     | '/code/source/$source'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -470,6 +480,7 @@ export interface FileRouteTypes {
     | '/code'
     | '/code/source/$source'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/code/'
     | '/code/source/$source'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
     | '/api/public/v1/search'
     | '/lovable/email/auth/preview'
@@ -556,6 +568,7 @@ export interface RootRouteChildren {
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicV1IngestNdjsonRoute: typeof ApiPublicV1IngestNdjsonRoute
   ApiPublicV1QuoteRoute: typeof ApiPublicV1QuoteRoute
   ApiPublicV1SearchRoute: typeof ApiPublicV1SearchRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -839,6 +852,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1QuoteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/ingest-ndjson': {
+      id: '/api/public/v1/ingest-ndjson'
+      path: '/api/public/v1/ingest-ndjson'
+      fullPath: '/api/public/v1/ingest-ndjson'
+      preLoaderRoute: typeof ApiPublicV1IngestNdjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -902,6 +922,7 @@ const rootRouteChildren: RootRouteChildren = {
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicV1IngestNdjsonRoute: ApiPublicV1IngestNdjsonRoute,
   ApiPublicV1QuoteRoute: ApiPublicV1QuoteRoute,
   ApiPublicV1SearchRoute: ApiPublicV1SearchRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
