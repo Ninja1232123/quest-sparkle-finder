@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/v1/search")({
         if (q.length < 2 || q.length > 200) {
           return jsonResponse({ error: "q must be 2–200 characters" }, { status: 400 });
         }
-        if (source && !/^[a-z]{2,10}$/.test(source)) {
+        if (source && !/^[a-z][a-z0-9-]{1,40}$/.test(source)) {
           return jsonResponse({ error: "invalid source" }, { status: 400 });
         }
 
