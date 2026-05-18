@@ -44,6 +44,7 @@ import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
+import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -229,6 +230,11 @@ const AdminEmbeddingsRoute = AdminEmbeddingsRouteImport.update({
   path: '/admin/embeddings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
+  id: '/admin/blog/',
+  path: '/admin/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   id: '/code/source/$source',
   path: '/code/source/$source',
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/quote': typeof ApiPublicV1QuoteRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/cases/'
     | '/code/'
     | '/code/source/$source'
+    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/code'
     | '/code/source/$source'
+    | '/admin/blog'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/cases/'
     | '/code/'
     | '/code/source/$source'
+    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/quote'
@@ -593,6 +605,7 @@ export interface RootRouteChildren {
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
+  AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1IngestNdjsonRoute: typeof ApiPublicV1IngestNdjsonRoute
   ApiPublicV1QuoteRoute: typeof ApiPublicV1QuoteRoute
@@ -850,6 +863,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEmbeddingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/blog/': {
+      id: '/admin/blog/'
+      path: '/admin/blog'
+      fullPath: '/admin/blog/'
+      preLoaderRoute: typeof AdminBlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/code/source/$source': {
       id: '/code/source/$source'
       path: '/code/source/$source'
@@ -963,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
+  AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1IngestNdjsonRoute: ApiPublicV1IngestNdjsonRoute,
   ApiPublicV1QuoteRoute: ApiPublicV1QuoteRoute,
@@ -975,3 +996,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
