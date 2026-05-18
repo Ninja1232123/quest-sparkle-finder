@@ -36,11 +36,13 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as StacksViewRouteImport } from './routes/stacks.view'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -187,6 +189,11 @@ const CasesIndexRoute = CasesIndexRouteImport.update({
   path: '/cases/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
@@ -210,6 +217,11 @@ const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
 const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
   path: '/cases/$caseId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminEmbeddingsRoute = AdminEmbeddingsRouteImport.update({
@@ -292,11 +304,13 @@ export interface FileRoutesByFullPath {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
@@ -336,11 +350,13 @@ export interface FileRoutesByTo {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog': typeof BlogIndexRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
@@ -381,11 +397,13 @@ export interface FileRoutesById {
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/admin/embeddings': typeof AdminEmbeddingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
@@ -427,11 +445,13 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog/'
     | '/cases/'
     | '/code/'
     | '/code/source/$source'
@@ -471,11 +491,13 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog'
     | '/cases'
     | '/code'
     | '/code/source/$source'
@@ -515,11 +537,13 @@ export interface FileRouteTypes {
     | '/usc'
     | '/whitepaper'
     | '/admin/embeddings'
+    | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
     | '/stacks/view'
     | '/topic/$slug'
+    | '/blog/'
     | '/cases/'
     | '/code/'
     | '/code/source/$source'
@@ -560,10 +584,12 @@ export interface RootRouteChildren {
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
   AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
@@ -768,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topic/$slug': {
       id: '/topic/$slug'
       path: '/topic/$slug'
@@ -801,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/cases/$caseId'
       fullPath: '/cases/$caseId'
       preLoaderRoute: typeof CasesCaseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/embeddings': {
@@ -914,10 +954,12 @@ const rootRouteChildren: RootRouteChildren = {
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
   AdminEmbeddingsRoute: AdminEmbeddingsRoute,
+  BlogSlugRoute: BlogSlugRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
@@ -933,3 +975,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
