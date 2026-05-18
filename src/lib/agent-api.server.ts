@@ -22,10 +22,25 @@ const SOURCE_CITE: Record<string, (id: string) => string> = {
     return m ? `U.C.C. § ${m[1]}` : id;
   },
   const: (id) => id.replace(/^const\//, "U.S. Const. "),
+  register: (id) => {
+    // register/2000/01/28/00-2020 -> 65 FR (Jan 28, 2000) Doc. 00-2020
+    const m = id.match(/^register\/(\d{4})\/(\d{2})\/(\d{2})\/(.+)$/);
+    if (!m) return id;
+    const [, y, mo, d, doc] = m;
+    const date = new Date(`${y}-${mo}-${d}T00:00:00Z`).toLocaleDateString("en-US", {
+      year: "numeric", month: "short", day: "numeric", timeZone: "UTC",
+    });
+    return `Fed. Reg. ${date}, Doc. ${doc}`;
+  },
+  "statutes-at-large": (id) => {
+    // statutes-at-large/vol-1/chapter-ii -> 1 Stat. ch. II
+    const m = id.match(/^statutes-at-large\/vol-(\d+)\/(.+)$/);
+    return m ? `${m[1]} Stat. ${m[2].replace(/-/g, " ")}` : id;
+  },
 };
 
 export function canonicalUrl(identifier: string): string {
-  return `${CANONICAL_ORIGIN}/code/${identifier}`;
+  return `${CANONICAL_ORIGIN}/code/${identifier.replace(/^\/+/, "")}`;
 }
 
 export function formatCitation(source_code: string, identifier: string, section_label: string | null): string {
