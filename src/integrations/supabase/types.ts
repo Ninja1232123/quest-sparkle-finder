@@ -693,7 +693,6 @@ export type Database = {
         Args: { check_env?: string }
         Returns: boolean
       }
-      is_blog_admin: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
