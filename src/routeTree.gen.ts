@@ -46,6 +46,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
 import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
+import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -240,6 +241,11 @@ const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   path: '/code/source/$source',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
+  id: '/admin/blog/$id',
+  path: '/admin/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -319,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -366,6 +373,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -463,6 +472,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/cases/'
     | '/code/'
+    | '/admin/blog/$id'
     | '/code/source/$source'
     | '/admin/blog/'
     | '/api/public/payments/webhook'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/cases'
     | '/code'
+    | '/admin/blog/$id'
     | '/code/source/$source'
     | '/admin/blog'
     | '/api/public/payments/webhook'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/cases/'
     | '/code/'
+    | '/admin/blog/$id'
     | '/code/source/$source'
     | '/admin/blog/'
     | '/api/public/payments/webhook'
@@ -604,6 +616,7 @@ export interface RootRouteChildren {
   BlogIndexRoute: typeof BlogIndexRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
+  AdminBlogIdRoute: typeof AdminBlogIdRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -877,6 +890,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeSourceSourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/blog/$id': {
+      id: '/admin/blog/$id'
+      path: '/admin/blog/$id'
+      fullPath: '/admin/blog/$id'
+      preLoaderRoute: typeof AdminBlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -982,6 +1002,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogIndexRoute: BlogIndexRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
+  AdminBlogIdRoute: AdminBlogIdRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
