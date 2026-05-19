@@ -21,10 +21,12 @@ if (!file || !fallbackSource) {
 }
 
 let startLine = 0;
+let endLine = Infinity;
 let batchSize = 500;
 let base = "https://self-law.org";
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === "--start-line") startLine = parseInt(rest[++i], 10) || 0;
+  else if (rest[i] === "--end-line") endLine = parseInt(rest[++i], 10) || Infinity;
   else if (rest[i] === "--batch") batchSize = parseInt(rest[++i], 10) || 500;
   else if (rest[i] === "--base") base = rest[++i];
 }
@@ -37,8 +39,9 @@ if (!key) {
 
 const endpoint = `${base.replace(/\/$/, "")}/api/public/v1/ingest-batch`;
 
+const MAX_ATTEMPTS = 12;
 async function postBatch(rows, firstLine, lastLine) {
-  for (let attempt = 1; attempt <= 5; attempt++) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
@@ -52,12 +55,14 @@ async function postBatch(rows, firstLine, lastLine) {
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${json.error ?? "unknown"}`);
       return json;
     } catch (e) {
-      if (attempt === 5) {
-        console.error(`\n[lines ${firstLine}-${lastLine}] failed after 5 tries: ${e.message}`);
+      if (attempt === MAX_ATTEMPTS) {
+        console.error(`\n[lines ${firstLine}-${lastLine}] failed after ${MAX_ATTEMPTS} tries: ${e.message}`);
         console.error(`Resume with: --start-line ${firstLine - 1}`);
         process.exit(1);
       }
-      const wait = 1000 * attempt;
+      // Exponential backoff capped at 30s — under parallel-worker DB load,
+      // statement-timeout failures can take >10s to clear.
+      const wait = Math.min(30000, 1000 * 2 ** (attempt - 1));
       process.stdout.write(`\n  retry ${attempt} in ${wait}ms (${e.message})`);
       await new Promise((r) => setTimeout(r, wait));
     }
@@ -79,6 +84,7 @@ const t0 = Date.now();
 for await (const line of rl) {
   lineNo++;
   if (lineNo <= startLine) continue;
+  if (lineNo > endLine) break;
   const trimmed = line.trim();
   if (!trimmed) continue;
   let row;
