@@ -3,7 +3,7 @@ import { jsonResponse, requireAgentAuth, supabaseAdmin } from "@/lib/agent-api.s
 
 // POST /api/public/v1/ingest-batch
 // Body: { source_code?: string, rows: DocRow[] }   (max 1000 rows / ~6 MB)
-// Upserts into public.documents (onConflict: identifier, ignoreDuplicates).
+// Upserts into public.documents (onConflict: identifier, replaces on conflict).
 
 type DocRow = {
   source_code?: string | null;
@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/v1/ingest-batch")({
 
         const { error } = await supabaseAdmin
           .from("documents")
-          .upsert(batch as unknown as never, { onConflict: "identifier", ignoreDuplicates: true });
+          .upsert(batch as unknown as never, { onConflict: "identifier", ignoreDuplicates: false });
 
         if (error) {
           return jsonResponse({ error: error.message, inserted: 0, skipped }, { status: 500 });
