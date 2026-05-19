@@ -1,65 +1,66 @@
 #!/usr/bin/env node
-// Stream a local NDJSON file into public.documents using the service-role key.
+// Stream a local NDJSON file into public.documents via the marketing-agent API.
+// No service-role key needed — uses MARKETING_AGENT_API_KEY (bearer token).
 //
 // Usage:
-//   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
-//     node scripts/ingest-local-ndjson.mjs <file.ndjson> <source_code> [--start-line N] [--batch 500]
+//   AGENT_KEY=xxxxx node scripts/ingest-local-ndjson.mjs <file.ndjson> <source_code> \
+//     [--start-line N] [--batch 500] [--base https://self-law.org]
 //
 // Example:
-//   node scripts/ingest-local-ndjson.mjs ./register-part-03.ndjson register
+//   AGENT_KEY=$KEY node scripts/ingest-local-ndjson.mjs ./register-part-03.ndjson register
 //
-// Resumable: prints the last line number processed every batch. Re-run with
-//   --start-line <N> to skip ahead after a crash.
+// Resumable: on any error the script prints `--start-line N` to resume from.
 
 import fs from "node:fs";
 import readline from "node:readline";
-import { createClient } from "@supabase/supabase-js";
 
 const [,, file, fallbackSource, ...rest] = process.argv;
 if (!file || !fallbackSource) {
-  console.error("usage: node ingest-local-ndjson.mjs <file.ndjson> <source_code> [--start-line N] [--batch 500]");
+  console.error("usage: AGENT_KEY=... node ingest-local-ndjson.mjs <file.ndjson> <source_code> [--start-line N] [--batch 500] [--base URL]");
   process.exit(1);
 }
 
 let startLine = 0;
 let batchSize = 500;
+let base = "https://self-law.org";
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === "--start-line") startLine = parseInt(rest[++i], 10) || 0;
   else if (rest[i] === "--batch") batchSize = parseInt(rest[++i], 10) || 500;
+  else if (rest[i] === "--base") base = rest[++i];
 }
 
-const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars");
+const key = process.env.AGENT_KEY;
+if (!key) {
+  console.error("Missing AGENT_KEY env var (the MARKETING_AGENT_API_KEY value).");
   process.exit(1);
 }
 
-const supabase = createClient(url, key, { auth: { persistSession: false } });
+const endpoint = `${base.replace(/\/$/, "")}/api/public/v1/ingest-batch`;
 
-const COLS = ["source_code","identifier","parent_label","section_label","heading","body_text","body_md","hierarchy","sort_key","word_count"];
-
-function normalize(row) {
-  const source_code = (row.source_code ?? fallbackSource ?? "").toString().trim();
-  const identifier = (row.identifier ?? "").toString().trim().replace(/^\/+/, "");
-  if (!source_code || !identifier) return null;
-  const out = { source_code, identifier };
-  for (const k of COLS) {
-    if (k === "source_code" || k === "identifier") continue;
-    if (row[k] !== undefined) out[k] = row[k];
-  }
-  return out;
-}
-
-async function flush(batch, lineNo) {
-  if (!batch.length) return;
-  const { error } = await supabase
-    .from("documents")
-    .upsert(batch, { onConflict: "identifier", ignoreDuplicates: true });
-  if (error) {
-    console.error(`\n[line ${lineNo}] insert error:`, error.message);
-    console.error(`Resume with: --start-line ${lineNo - batch.length}`);
-    process.exit(1);
+async function postBatch(rows, firstLine, lastLine) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({ source_code: fallbackSource, rows }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${json.error ?? "unknown"}`);
+      return json;
+    } catch (e) {
+      if (attempt === 5) {
+        console.error(`\n[lines ${firstLine}-${lastLine}] failed after 5 tries: ${e.message}`);
+        console.error(`Resume with: --start-line ${firstLine - 1}`);
+        process.exit(1);
+      }
+      const wait = 1000 * attempt;
+      process.stdout.write(`\n  retry ${attempt} in ${wait}ms (${e.message})`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
   }
 }
 
@@ -69,6 +70,7 @@ const rl = readline.createInterface({
 });
 
 let batch = [];
+let batchFirstLine = 0;
 let lineNo = 0;
 let inserted = 0;
 let skipped = 0;
@@ -82,17 +84,20 @@ for await (const line of rl) {
   let row;
   try { row = JSON.parse(trimmed); }
   catch { skipped++; continue; }
-  const n = normalize(row);
-  if (!n) { skipped++; continue; }
-  batch.push(n);
+  if (batch.length === 0) batchFirstLine = lineNo;
+  batch.push(row);
   if (batch.length >= batchSize) {
-    await flush(batch, lineNo);
-    inserted += batch.length;
+    const res = await postBatch(batch, batchFirstLine, lineNo);
+    inserted += res?.inserted ?? 0;
+    skipped  += res?.skipped  ?? 0;
     batch = [];
     const secs = ((Date.now() - t0) / 1000).toFixed(0);
     process.stdout.write(`\r line ${lineNo}  inserted ${inserted}  skipped ${skipped}  ${secs}s`);
   }
 }
-await flush(batch, lineNo);
-inserted += batch.length;
+if (batch.length) {
+  const res = await postBatch(batch, batchFirstLine, lineNo);
+  inserted += res?.inserted ?? 0;
+  skipped  += res?.skipped  ?? 0;
+}
 console.log(`\nDone. line=${lineNo} inserted=${inserted} skipped=${skipped}`);
