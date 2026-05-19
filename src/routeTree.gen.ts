@@ -55,6 +55,7 @@ import { Route as ApiPublicV1QuoteRouteImport } from './routes/api/public/v1/quo
 import { Route as ApiPublicV1OpenapiDotjsonRouteImport } from './routes/api/public/v1/openapi[.]json'
 import { Route as ApiPublicV1IngestNdjsonRouteImport } from './routes/api/public/v1/ingest-ndjson'
 import { Route as ApiPublicV1IngestBatchRouteImport } from './routes/api/public/v1/ingest-batch'
+import { Route as ApiPublicV1ExportDocumentsRouteImport } from './routes/api/public/v1/export-documents'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
 
@@ -290,6 +291,12 @@ const ApiPublicV1IngestBatchRoute = ApiPublicV1IngestBatchRouteImport.update({
   path: '/api/public/v1/ingest-batch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1ExportDocumentsRoute =
+  ApiPublicV1ExportDocumentsRouteImport.update({
+    id: '/api/public/v1/export-documents',
+    path: '/api/public/v1/export-documents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -342,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
@@ -392,6 +400,7 @@ export interface FileRoutesByTo {
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
@@ -443,6 +452,7 @@ export interface FileRoutesById {
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
   '/api/public/v1/ingest-ndjson': typeof ApiPublicV1IngestNdjsonRoute
   '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/code/source/$source'
     | '/admin/blog/'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/openapi.json'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/code/source/$source'
     | '/admin/blog'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/openapi.json'
@@ -595,6 +607,7 @@ export interface FileRouteTypes {
     | '/code/source/$source'
     | '/admin/blog/'
     | '/api/public/payments/webhook'
+    | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
     | '/api/public/v1/ingest-ndjson'
     | '/api/public/v1/openapi.json'
@@ -645,6 +658,7 @@ export interface RootRouteChildren {
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicV1ExportDocumentsRoute: typeof ApiPublicV1ExportDocumentsRoute
   ApiPublicV1IngestBatchRoute: typeof ApiPublicV1IngestBatchRoute
   ApiPublicV1IngestNdjsonRoute: typeof ApiPublicV1IngestNdjsonRoute
   ApiPublicV1OpenapiDotjsonRoute: typeof ApiPublicV1OpenapiDotjsonRoute
@@ -980,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1IngestBatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/export-documents': {
+      id: '/api/public/v1/export-documents'
+      path: '/api/public/v1/export-documents'
+      fullPath: '/api/public/v1/export-documents'
+      preLoaderRoute: typeof ApiPublicV1ExportDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -1047,6 +1068,7 @@ const rootRouteChildren: RootRouteChildren = {
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicV1ExportDocumentsRoute: ApiPublicV1ExportDocumentsRoute,
   ApiPublicV1IngestBatchRoute: ApiPublicV1IngestBatchRoute,
   ApiPublicV1IngestNdjsonRoute: ApiPublicV1IngestNdjsonRoute,
   ApiPublicV1OpenapiDotjsonRoute: ApiPublicV1OpenapiDotjsonRoute,
@@ -1060,13 +1082,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

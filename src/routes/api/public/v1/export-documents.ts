@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/public/v1/export-documents")({
         const { data, error } = await q;
         if (error) return jsonResponse({ error: error.message }, { status: 500 });
 
-        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
         const next_after = rows.length === limit ? String(rows[rows.length - 1].id ?? "") : null;
         return jsonResponse({ rows, count: rows.length, next_after });
       },
