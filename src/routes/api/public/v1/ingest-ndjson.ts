@@ -43,6 +43,16 @@ const COLS = [
   "heading", "body_text", "body_md", "hierarchy", "sort_key", "word_count",
 ] as const;
 
+// Allowlist of buckets the ingest pipeline is permitted to read from.
+// Prevents the MARKETING_AGENT_API_KEY from being used to siphon arbitrary
+// private buckets via caller-supplied bucket names.
+const ALLOWED_INGEST_BUCKETS = new Set([
+  "fedregister", "fedregister2", "fedregister3", "fedregister4",
+  "fedregister5", "fedregister6", "fedregister7",
+  "congressionalbills", "statutes", "statutesatlarge",
+  "usc", "aas", "irm", "docs", "papersfrompresident", "privateandpubli",
+]);
+
 function normalize(row: DocRow, fallbackSource: string | undefined) {
   const source_code = (row.source_code ?? fallbackSource ?? "").toString().trim();
   // Strip leading slashes — some upstream extractors emit "/register/..." but
@@ -72,6 +82,9 @@ export const Route = createFileRoute("/api/public/v1/ingest-ndjson")({
         const bucket = (body.bucket ?? "").trim();
         const path = (body.path ?? "").trim();
         if (!bucket || !path) return jsonResponse({ error: "bucket and path required" }, { status: 400 });
+        if (!ALLOWED_INGEST_BUCKETS.has(bucket)) {
+          return jsonResponse({ error: "bucket not permitted" }, { status: 403 });
+        }
 
         const startByte = Math.max(0, Number(body.start_byte ?? 0) | 0);
         const maxSeconds = Math.min(Math.max(Number(body.max_seconds ?? 22), 5), 25);
