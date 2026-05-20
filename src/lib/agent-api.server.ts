@@ -2,6 +2,7 @@
 // Bearer-token auth using MARKETING_AGENT_API_KEY. Service-role Supabase
 // client; every handler must scope queries explicitly.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { timingSafeEqual } from "node:crypto";
 
 export { supabaseAdmin };
 
@@ -68,7 +69,10 @@ export function requireAgentAuth(request: Request): Response | null {
   }
   const header = request.headers.get("authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (!token || token !== expected) {
+  if (!token) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
   return null;
