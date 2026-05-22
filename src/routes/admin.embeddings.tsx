@@ -1,15 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { getEmbeddingStatus, runEmbeddingBatch } from "@/lib/embeddings.functions";
+import { getIsAdmin } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/admin/embeddings")({
   component: EmbeddingsAdmin,
 });
 
 function EmbeddingsAdmin() {
+  const { user, loading } = useAuth();
+  const isAdminFn = useServerFn(getIsAdmin);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const fetchStatus = useServerFn(getEmbeddingStatus);
   const runBatchFn = useServerFn(runEmbeddingBatch);
   const [status, setStatus] = useState({ total: 0, embedded: 0, pending: 0 });
@@ -35,10 +41,47 @@ function EmbeddingsAdmin() {
   }
 
   useEffect(() => {
+    if (!user || isAdmin !== true) return;
     fetchStatus().then(applyStatus).catch((err) => {
       setLog((prev) => [`Error loading status: ${err instanceof Error ? err.message : String(err)}`, ...prev]);
     });
-  }, [fetchStatus]);
+  }, [fetchStatus, user, isAdmin]);
+
+  useEffect(() => {
+    if (!user) return;
+    isAdminFn().then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
+  }, [user, isAdminFn]);
+
+  if (!loading && !user) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="font-display text-2xl font-semibold">Sign in required</h1>
+          <Link to="/auth" search={{ mode: "login" }} className="mt-6 inline-block rounded-full bg-foreground px-4 py-2 text-sm text-background">Sign in</Link>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+  if (user && isAdmin === false) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="font-display text-2xl font-semibold">Not authorized</h1>
+          <p className="mt-2 text-sm text-muted-foreground">You don't have access to this page.</p>
+          <Link to="/" className="mt-6 inline-block text-accent">← Home</Link>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+  if (user && isAdmin === null) {
+    return (
+      <div className="min-h-screen"><SiteHeader /><div className="mx-auto max-w-2xl px-6 py-24 text-sm text-muted-foreground">Loading…</div><SiteFooter /></div>
+    );
+  }
 
   const pct = status.total > 0 ? Math.round((status.embedded / status.total) * 100) : 0;
 

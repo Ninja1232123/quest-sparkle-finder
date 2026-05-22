@@ -66,7 +66,9 @@ export const Route = createFileRoute("/blog/$slug")({
       <SiteHeader />
       <div className="mx-auto max-w-2xl px-6 py-24 text-center">
         <h1 className="font-display text-3xl font-semibold">Couldn't load this post</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {import.meta.env.DEV ? error.message : "An unexpected error occurred."}
+        </p>
         <Link to="/blog" className="mt-6 inline-block text-accent">← Back to blog</Link>
       </div>
       <SiteFooter />

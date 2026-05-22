@@ -221,7 +221,9 @@ export const Route = createFileRoute("/code/$")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="font-display text-2xl">Couldn't load that document</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {import.meta.env.DEV ? error.message : "An unexpected error occurred."}
+      </p>
     </div>
   ),
 });

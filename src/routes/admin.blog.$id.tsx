@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { adminGetPost, adminUpsertPost } from "@/lib/blog.functions";
+import { adminGetPost, adminUpsertPost, getIsAdmin } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/admin/blog/$id")({
   component: AdminBlogEditor,
@@ -48,6 +48,8 @@ function AdminBlogEditor() {
   const navigate = useNavigate();
   const getFn = useServerFn(adminGetPost);
   const saveFn = useServerFn(adminUpsertPost);
+  const isAdminFn = useServerFn(getIsAdmin);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loaded, setLoaded] = useState(isNew);
@@ -57,7 +59,12 @@ function AdminBlogEditor() {
   const [slugTouched, setSlugTouched] = useState(false);
 
   useEffect(() => {
-    if (isNew || !user) return;
+    if (!user) return;
+    isAdminFn().then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
+  }, [user, isAdminFn]);
+
+  useEffect(() => {
+    if (isNew || !user || isAdmin !== true) return;
     getFn({ data: { id } }).then((res) => {
       if (res.post) {
         const p = res.post;
@@ -80,7 +87,7 @@ function AdminBlogEditor() {
       }
       setLoaded(true);
     }).catch((e) => { setErr(e instanceof Error ? e.message : String(e)); setLoaded(true); });
-  }, [id, isNew, user, getFn]);
+  }, [id, isNew, user, isAdmin, getFn]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => {
@@ -140,6 +147,24 @@ function AdminBlogEditor() {
         </div>
         <SiteFooter />
       </div>
+    );
+  }
+  if (user && isAdmin === false) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="font-display text-2xl font-semibold">Not authorized</h1>
+          <p className="mt-2 text-sm text-muted-foreground">You don't have access to this page.</p>
+          <Link to="/" className="mt-6 inline-block text-accent">← Home</Link>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+  if (user && isAdmin === null) {
+    return (
+      <div className="min-h-screen"><SiteHeader /><div className="mx-auto max-w-3xl px-6 py-24 text-sm text-muted-foreground">Loading…</div><SiteFooter /></div>
     );
   }
   if (!loaded) {
