@@ -166,6 +166,14 @@ export const adminDeletePost = createServerFn({ method: "POST" })
     return { ok: !error, error: error?.message ?? null };
   });
 
+// Lightweight check used by admin UI routes to gate rendering.
+export const getIsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const adminId = process.env.ADMIN_USER_ID;
+    return { isAdmin: !!adminId && context.userId === adminId };
+  });
+
 // Used by the sitemap route — service role read.
 export async function listPublishedSlugsForSitemap(): Promise<{ slug: string; updated_at: string }[]> {
   const admin = await getAdmin();
