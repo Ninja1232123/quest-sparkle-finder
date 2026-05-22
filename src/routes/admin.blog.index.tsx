@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { adminListPosts, adminDeletePost } from "@/lib/blog.functions";
+import { adminListPosts, adminDeletePost, getIsAdmin } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/admin/blog/")({
   component: AdminBlogList,
@@ -15,10 +15,16 @@ function AdminBlogList() {
   const navigate = useNavigate();
   const listFn = useServerFn(adminListPosts);
   const deleteFn = useServerFn(adminDeletePost);
+  const isAdminFn = useServerFn(getIsAdmin);
+  const { data: adminCheck, isLoading: adminLoading } = useQuery({
+    queryKey: ["admin", "is-admin"],
+    queryFn: () => isAdminFn(),
+    enabled: !!user,
+  });
   const { data, isLoading, refetch, error } = useQuery({
     queryKey: ["admin", "blog", "list"],
     queryFn: () => listFn(),
-    enabled: !!user,
+    enabled: !!user && adminCheck?.isAdmin === true,
   });
 
   if (!loading && !user) {
@@ -30,6 +36,20 @@ function AdminBlogList() {
           <Link to="/auth" search={{ mode: "login" }} className="mt-6 inline-block rounded-full bg-foreground px-4 py-2 text-sm text-background">
             Sign in
           </Link>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (user && !adminLoading && adminCheck && !adminCheck.isAdmin) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="font-display text-2xl font-semibold">Not authorized</h1>
+          <p className="mt-2 text-sm text-muted-foreground">You don't have access to this page.</p>
+          <Link to="/" className="mt-6 inline-block text-accent">← Home</Link>
         </div>
         <SiteFooter />
       </div>
