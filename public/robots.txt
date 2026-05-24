@@ -6,5 +6,6 @@ Disallow: /auth
 Disallow: /checkout
 Disallow: /chambers
 Disallow: /api/
+Disallow: /admin
 
 Sitemap: https://self-law.org/sitemap.xml

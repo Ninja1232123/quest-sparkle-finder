@@ -3,7 +3,7 @@ import { listSources } from "@/lib/documents.functions";
 import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
 import { getCodebook } from "@/lib/codebooks";
 
-export const Route = createFileRoute("/UCC")({
+export const Route = createFileRoute("/model")({
   loader: async () => {
     const cb = getCodebook("UCC");
     if (!cb) throw notFound();
