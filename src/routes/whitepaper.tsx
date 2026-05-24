@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { MarginalNotes } from "@/components/marginalia/MarginalNote";
 import {
   BookOpen,
   MapPin,
@@ -134,6 +135,18 @@ function Whitepaper() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
+      <main>
+        {/* Marginalia annotations in the gutters — real, lesser-cited rights
+            and statutes drifted alongside the prose. */}
+        <MarginalNotes
+          items={[
+            { idx: 3,  side: "right", top: 320 },
+            { idx: 6,  side: "left",  top: 920 },
+            { idx: 10, side: "right", top: 1640 },
+            { idx: 12, side: "left",  top: 2340 },
+            { idx: 15, side: "right", top: 3060 },
+          ]}
+        />
       <article className="mx-auto max-w-3xl px-6 py-16">
         <div className="citation-tag text-muted-foreground">vol. I · the plan</div>
         <h1 className="mt-3 font-display text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
@@ -429,6 +442,7 @@ function Whitepaper() {
           </div>
         </div>
       </article>
+      </main>
       <SiteFooter />
     </div>
   );

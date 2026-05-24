@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
+import { MarginalNotes } from "@/components/marginalia/MarginalNote";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
 export const Route = createFileRoute("/about")({
@@ -28,7 +29,17 @@ function About() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <section className="mx-auto max-w-2xl px-6 py-20">
+      <main>
+        {/* Marginalia annotations in the page gutters — the brand name made literal */}
+        <MarginalNotes
+          items={[
+            { idx: 0,  side: "left",  top: 360 },
+            { idx: 9,  side: "right", top: 880 },
+            { idx: 14, side: "left",  top: 1320 },
+          ]}
+        />
+
+        <section className="mx-auto max-w-2xl px-6 py-20">
         <div className="citation-tag text-accent">a working note</div>
         <h1 className="mt-3 font-display text-5xl font-semibold leading-tight md:text-6xl">
           The law is intentionally <span className="ink-underline italic">interlocking</span>. Read it that way.
@@ -50,12 +61,12 @@ function About() {
             reference work: to orient yourself, then to read the source.
           </p>
         </div>
-        <div className="mt-10">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-base text-primary-foreground shadow-[var(--shadow-warm)]"
-          >
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link to="/" className="btn-ink">
             Open the index →
+          </Link>
+          <Link to="/whitepaper" className="btn-paper">
+            Read the whitepaper →
           </Link>
         </div>
 
@@ -143,8 +154,19 @@ function About() {
               </button>
             </div>
           )}
+
+          <div className="mt-6 flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-sm text-foreground/70">
+            <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              questions ·
+            </span>
+            <a href="mailto:support@self-law.org" className="font-semibold text-terracotta hover:underline">
+              support@self-law.org
+            </a>
+            <span className="text-xs italic text-muted-foreground">— one person, replies within a day.</span>
+          </div>
         </div>
-      </section>
+        </section>
+      </main>
       <SiteFooter />
     </div>
   );

@@ -4,7 +4,9 @@ import { TopicCard } from "@/components/marginalia/TopicCard";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
+import { MarginalNotes } from "@/components/marginalia/MarginalNote";
 import { listSources } from "@/lib/documents.functions";
+import { codebookForSource } from "@/lib/codebooks";
 import heroCollage from "@/assets/hero-collage.jpg";
 import { GitCompare, Highlighter, FileDown, Bell, Zap, Map, Brain, Network, Scale, Calendar, GraduationCap } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
@@ -17,6 +19,12 @@ const SOURCE_LABELS: Record<string, string> = {
   tfm: "Treasury Financial Manual",
   irm: "Internal Revenue Manual",
 };
+
+// Per-source accent — falls back to ink. Pulls from the codebooks registry
+// so colors stay consistent with the header tab strip and codebook landings.
+function accentForSource(code: string): string {
+  return codebookForSource(code)?.accent ?? "var(--ink)";
+}
 
 export const Route = createFileRoute("/")({
   loader: async () => {
@@ -50,6 +58,20 @@ function Index() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
+
+      <main>
+        {/* Scattered marginalia — real, lesser-cited rights and statutes
+            in the outer gutters of the page. Different notes per route so
+            re-visits feel like the reader added new annotations. */}
+        <MarginalNotes
+          items={[
+            { idx: 0,  side: "right", top: 360 },
+            { idx: 4,  side: "left",  top: 1020 },
+            { idx: 8,  side: "right", top: 1680 },
+            { idx: 11, side: "left",  top: 2340 },
+            { idx: 14, side: "right", top: 2980 },
+          ]}
+        />
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/60">
@@ -93,19 +115,28 @@ function Index() {
                   ✓ Updated May 2026 · direct from source
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {sources.map((s: { code: string; name: string; count: number }) => (
-                  <Link
-                    key={s.code}
-                    to="/code/source/$source"
-                    params={{ source: s.code }}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs text-foreground/70 hover:border-foreground/40 hover:text-foreground transition-colors"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    {SOURCE_LABELS[s.code] ?? s.name}
-                    <span className="font-mono text-muted-foreground/60">{s.count.toLocaleString()}</span>
-                  </Link>
-                ))}
+              {/* Indexed sources — accent-tinted chips with solid count pills.
+                  Each chip picks up its codebook accent (red Const, navy USC,
+                  forest CFR …) so the row reads as a stack of distinct books. */}
+              <div className="flex flex-wrap gap-2.5">
+                {sources.map((s: { code: string; name: string; count: number }) => {
+                  const accent = accentForSource(s.code);
+                  return (
+                    <Link
+                      key={s.code}
+                      to="/code/source/$source"
+                      params={{ source: s.code }}
+                      className="accent-surface-row inline-flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground"
+                      style={{ ["--c" as never]: accent }}
+                    >
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />
+                      {SOURCE_LABELS[s.code] ?? s.name}
+                      <span className="count-pill" style={{ ["--c" as never]: accent }}>
+                        <span className="num">{s.count.toLocaleString()}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -201,7 +232,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Browse the Code (primary CTA) */}
+      {/* Browse the Code (primary CTA) — accent-tinted cards with solid pills */}
       <section className="mx-auto max-w-7xl px-6 pb-12 pt-4">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
@@ -213,28 +244,53 @@ function Index() {
               Six codebooks, indexed and cross-linked. Browse the table of contents or jump in by citation.
             </p>
           </div>
-          <Link
-            to="/code"
-            className="rounded-full bg-foreground px-5 py-2.5 font-display text-sm text-background hover:opacity-90"
-          >
+          <Link to="/code" className="btn-ink">
             Open The Code →
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sources.map((s: { code: string; name: string; count: number }) => (
-            <Link
-              key={s.code}
-              to="/code/source/$source"
-              params={{ source: s.code }}
-              className="group rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
-            >
-              <div className="citation-tag text-accent">{s.count.toLocaleString()} documents</div>
-              <div className="mt-1 font-display text-lg font-semibold">{SOURCE_LABELS[s.code] ?? s.name}</div>
-              <div className="mt-3 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
-                Browse →
-              </div>
-            </Link>
-          ))}
+          {sources.map((s: { code: string; name: string; count: number }) => {
+            const accent = accentForSource(s.code);
+            const cb = codebookForSource(s.code);
+            const Icon = cb?.icon;
+            return (
+              <Link
+                key={s.code}
+                to="/code/source/$source"
+                params={{ source: s.code }}
+                className="accent-surface group relative flex flex-col gap-3 overflow-hidden rounded-2xl p-5"
+                style={{ ["--c" as never]: accent }}
+              >
+                {/* Spine — left accent bar */}
+                <span
+                  className="absolute left-0 top-0 bottom-0 w-1.5"
+                  style={{ background: accent }}
+                  aria-hidden
+                />
+                <div className="flex items-center justify-between gap-2 pl-1.5">
+                  {Icon ? (
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white"
+                      style={{ background: accent }}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                  ) : <span />}
+                  <span className="count-pill" style={{ ["--c" as never]: accent }}>
+                    <span className="num">{s.count.toLocaleString()}</span>
+                    <span className="lbl">docs</span>
+                  </span>
+                </div>
+                <div className="pl-1.5">
+                  <div className="font-display text-xl font-semibold leading-tight">{SOURCE_LABELS[s.code] ?? s.name}</div>
+                </div>
+                <div className="mt-auto flex items-center justify-between pl-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  <span>{cb?.tagline?.split(",")[0] ?? "primary source"}</span>
+                  <span className="font-display text-sm font-semibold normal-case tracking-normal text-foreground group-hover:text-terracotta">Browse →</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -351,6 +407,7 @@ function Index() {
           />
         </div>
       </section>
+      </main>
 
       <SiteFooter />
     </div>

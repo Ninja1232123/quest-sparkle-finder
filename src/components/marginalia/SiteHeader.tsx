@@ -3,9 +3,42 @@ import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "./SearchBar";
 import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
-import { ChevronDown, LogOut, Sun, Moon, Sparkles } from "lucide-react";
+import { ChevronDown, LogOut, Sun, Moon, Sparkles, Mail } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { CODEBOOKS, TOOLS, type Codebook } from "@/lib/codebooks";
+
+/* -----------------------------------------------------------
+   § Brand mark — ink square with ochre section sign in Fraunces
+   italic. Replaces the old sage→ink gradient block. Reads at any
+   size and says "the law" without saying it.
+   ----------------------------------------------------------- */
+function BrandMark() {
+  return (
+    <div
+      className="inline-flex items-center justify-center rounded-md shadow-inner"
+      style={{
+        width: 36,
+        height: 36,
+        background: "var(--ink)",
+        boxShadow: "inset 0 1px 0 oklch(1 0 0 / 0.08), 0 1px 0 oklch(0 0 0 / 0.10)",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--font-serif)",
+          fontStyle: "italic",
+          fontWeight: 700,
+          fontSize: 26,
+          color: "var(--ochre)",
+          lineHeight: 1,
+          marginTop: -1,
+        }}
+      >
+        §
+      </span>
+    </div>
+  );
+}
 
 function CodebookTab({ cb }: { cb: Codebook }) {
   const [open, setOpen] = useState(false);
@@ -31,16 +64,13 @@ function CodebookTab({ cb }: { cb: Codebook }) {
     >
       <Link
         to={`/${cb.slug}` as never}
-        className={`group flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 font-display text-[13px] transition-colors ${
-          isSoon
-            ? "text-foreground/45 hover:text-foreground/70"
-            : "text-foreground/75 hover:bg-muted hover:text-foreground"
-        }`}
-        activeProps={{ className: "rounded-md px-2.5 py-1.5 bg-muted text-foreground font-display text-[13px] font-semibold" }}
+        className={`cb-tab ${isSoon ? "soon" : ""}`}
+        style={{ ["--c" as never]: cb.accent }}
+        activeProps={{ className: "cb-tab active", style: { ["--c" as never]: cb.accent } }}
       >
         <span
           className="mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: cb.accent, opacity: isSoon ? 0.35 : 0.85 }}
+          style={{ backgroundColor: cb.accent, opacity: isSoon ? 0.45 : 0.95 }}
           aria-hidden
         />
         {cb.tab}
@@ -138,6 +168,47 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
   );
 }
 
+/* -----------------------------------------------------------
+   Top-nav row — sits between the brand row and the codebook
+   tab strip. Whitepaper gets its own slot (was buried in About);
+   support email is always visible on the right.
+   ----------------------------------------------------------- */
+const TOP_NAV_ITEMS = [
+  { to: "/",            label: "Home" },
+  { to: "/code",        label: "Browse the Code" },
+  { to: "/whitepaper",  label: "Whitepaper" },
+  { to: "/forum",       label: "The Floor" },
+  { to: "/about",       label: "About" },
+] as const;
+
+function TopNav() {
+  return (
+    <nav
+      className="mx-auto flex max-w-[1900px] items-center overflow-x-auto top-nav lg:px-6"
+      aria-label="Sections"
+    >
+      <div className="flex flex-1 items-center gap-0">
+        {TOP_NAV_ITEMS.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to as never}
+            className="top-nav-link"
+            activeProps={{ "data-active": "true" } as never}
+            activeOptions={{ exact: item.to === "/" }}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+      <a href="mailto:support@self-law.org" className="top-nav-support shrink-0">
+        <Mail className="h-3 w-3" />
+        <span className="hidden sm:inline">support@self-law.org</span>
+        <span className="sm:hidden">Support</span>
+      </a>
+    </nav>
+  );
+}
+
 export function SiteHeader() {
   const { user, signOut, loading } = useAuth();
   const { theme, toggle } = useTheme();
@@ -158,13 +229,10 @@ export function SiteHeader() {
       {/* Row 1 — brand, search, utility */}
       <div className="mx-auto flex max-w-[1900px] items-center gap-4 px-4 py-3 lg:px-6">
         <Link to="/" className="group flex shrink-0 items-center gap-2.5">
-          <div className="relative">
-            <div className="h-8 w-8 rounded-sm bg-gradient-to-br from-[var(--sage-deep)] to-[var(--ink)] shadow-inner" />
-            <div className="absolute inset-1 rounded-sm border border-background/30" />
-          </div>
+          <BrandMark />
           <div className="leading-none">
             <div className="font-display text-lg font-semibold tracking-tight">Marginalia</div>
-            <div className="font-display text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <div className="hidden font-display text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
               a citizen's law index
             </div>
           </div>
@@ -196,12 +264,15 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Row 2 — codebook tab strip + Tools dropdown */}
+      {/* Row 2 — top-level sections + support */}
+      <TopNav />
+
+      {/* Row 3 — codebook tab strip + Tools dropdown */}
       <nav
-        className="mx-auto flex max-w-[1900px] items-center gap-0.5 overflow-x-auto px-4 pb-2 lg:px-6"
+        className="mx-auto flex max-w-[1900px] items-center gap-1 overflow-x-auto px-4 pb-2 pt-2 lg:px-6"
         aria-label="Codebooks"
       >
-        <div className="flex flex-1 items-center gap-0.5">
+        <div className="flex flex-1 items-center gap-1">
           {CODEBOOKS.map((cb) => (
             <CodebookTab key={cb.slug} cb={cb} />
           ))}

@@ -82,8 +82,10 @@
   --paper: oklch(0.957 0.012 80);       /* #F7F2E8 warm parchment */
   --paper-deep: oklch(0.93 0.014 78);   /* aged page edge */
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
+  --paper-tint: oklch(0.945 0.014 80);  /* between paper and paper-deep — sidebars / chip backgrounds */
   --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
   --ink-muted: oklch(0.38 0.014 75);    /* darker muted body for contrast on cream */
+  --rule-card: oklch(0.74 0.020 75);    /* darker tan border for "ink-on-paper" cards */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
   --terracotta: oklch(0.42 0.13 30);    /* #8B2E1F deep oxblood */
@@ -129,6 +131,7 @@
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.06), 0 4px 14px -6px oklch(0 0 0 / 0.10);
   --shadow-warm: 0 10px 30px -14px oklch(0.42 0.13 30 / 0.30);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 6px 18px -10px oklch(0 0 0 / 0.10);
+  --shadow-card-lift: 0 2px 0 oklch(0 0 0 / 0.04), 0 6px 18px -4px oklch(0 0 0 / 0.10);
 }
 
 .dark {
@@ -136,8 +139,10 @@
   --paper: oklch(0.18 0.006 70);         /* #1C1A17 */
   --paper-deep: oklch(0.14 0.006 70);
   --paper-soft: oklch(0.22 0.006 70);    /* #252320 card */
+  --paper-tint: oklch(0.20 0.006 70);
   --ink: oklch(0.90 0.014 80);           /* #E8E2D4 cream */
   --ink-muted: oklch(0.72 0.013 75);     /* brighter muted text on warm charcoal */
+  --rule-card: oklch(0.32 0.008 70);     /* lighter line for dark cards */
   --sage: oklch(0.66 0.08 165);
   --sage-deep: oklch(0.55 0.08 165);
   --terracotta: oklch(0.62 0.10 40);     /* #C97B5A muted */
@@ -180,6 +185,7 @@
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.4), 0 6px 18px -8px oklch(0 0 0 / 0.5);
   --shadow-warm: 0 10px 30px -14px oklch(0.62 0.10 40 / 0.45);
   --shadow-card: 0 1px 0 oklch(1 0 0 / 0.03) inset, 0 1px 3px oklch(0 0 0 / 0.45), 0 10px 24px -14px oklch(0 0 0 / 0.55);
+  --shadow-card-lift: 0 2px 0 oklch(0 0 0 / 0.30), 0 6px 18px -4px oklch(0 0 0 / 0.50);
 }
 
 @layer base {
@@ -290,4 +296,305 @@
     stroke-dasharray: 1000;
     animation: draw-line 2.5s ease-out forwards;
   }
+}
+
+/* ============================================================
+   v2 ADDITIONS — solid count pills, tinted accent surfaces,
+   marginal notes. All additive; existing classes untouched.
+   ============================================================ */
+
+@layer components {
+  /* ----- Solid count pill (the big visual shift) -----
+     Use as: <span class="count-pill" style="--c: #b22234">
+                <span class="num">218,447</span>
+                <span class="lbl">docs</span>
+              </span>
+     Falls back to ink-on-paper if --c is unset. */
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    background: var(--c, var(--ink));
+    border-radius: 999px;
+    padding: 4px 11px;
+    white-space: nowrap;
+  }
+  .count-pill.lg {
+    font-size: 12.5px;
+    padding: 6px 14px;
+    gap: 8px;
+  }
+  .count-pill .num {
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+  .count-pill .lbl {
+    opacity: 0.85;
+    font-weight: 600;
+  }
+  /* Coming-soon variant — neutral, hollow */
+  .count-pill.soon {
+    background: transparent;
+    color: var(--ink-muted);
+    border: 1.5px dashed var(--border);
+  }
+
+  /* ----- Tinted accent surface -----
+     A card / chip that picks up its codebook accent as a soft wash on
+     the background and a slightly stronger color on the border.
+     Use as: <div class="accent-surface" style="--c: #1a4a2e"> */
+  .accent-surface {
+    background:
+      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 8%, transparent) 0%, transparent 55%),
+      var(--card);
+    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
+    transition: transform 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
+  }
+  .accent-surface:hover {
+    transform: translateY(-1px);
+    border-color: var(--c, var(--ink));
+    box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
+  }
+  .accent-surface-row {
+    background:
+      linear-gradient(to right, color-mix(in oklch, var(--c, var(--ink)) 7%, transparent) 0%, transparent 85%),
+      var(--card);
+    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
+    transition: transform 160ms ease-out, border-color 160ms ease-out;
+  }
+  .accent-surface-row:hover {
+    transform: translateY(-1px);
+    border-color: var(--c, var(--ink));
+  }
+
+  /* ----- Tinted codebook tab -----
+     Replaces the plain hover used by the SiteHeader CodebookTab. The dot
+     + label stay; the background and border now carry the accent color
+     so the strip reads as a row of distinct books. */
+  .cb-tab {
+    --c: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink);
+    background: color-mix(in oklch, var(--c) 6%, transparent);
+    border: 1px solid color-mix(in oklch, var(--c) 18%, transparent);
+    transition: background 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out;
+  }
+  .cb-tab:hover {
+    background: color-mix(in oklch, var(--c) 14%, transparent);
+    border-color: color-mix(in oklch, var(--c) 45%, transparent);
+  }
+  .cb-tab.active,
+  .cb-tab[data-active="true"] {
+    background: color-mix(in oklch, var(--c) 18%, transparent);
+    border: 1.5px solid var(--c);
+    font-weight: 700;
+  }
+  .cb-tab.soon {
+    background: color-mix(in oklch, var(--c) 3%, transparent);
+    border-color: color-mix(in oklch, var(--c) 12%, transparent);
+    color: var(--ink-muted);
+  }
+  .cb-tab.soon:hover {
+    color: var(--ink);
+    background: color-mix(in oklch, var(--c) 9%, transparent);
+  }
+
+  /* ----- Top nav row (sits under brand row, above codebook strip) ----- */
+  .top-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .top-nav-link {
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 150ms, border-color 150ms;
+  }
+  .top-nav-link:hover {
+    color: var(--ink);
+  }
+  .top-nav-link[data-active="true"] {
+    color: var(--ink);
+    border-bottom-color: var(--terracotta);
+    font-weight: 700;
+  }
+  .top-nav-support {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    padding: 8px 12px;
+  }
+  .top-nav-support:hover {
+    color: var(--terracotta);
+  }
+
+  /* ----- Button primitives (consistent ink-pill / paper-pill) ----- */
+  .btn-ink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    border: 1.5px solid var(--ink);
+    transition: opacity 150ms, transform 150ms;
+  }
+  .btn-ink:hover { opacity: 0.92; }
+  .btn-ink:active { transform: translateY(1px); }
+  .btn-paper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    border: 1.5px solid var(--ink);
+    transition: background 150ms, color 150ms;
+  }
+  .btn-paper:hover { background: var(--ink); color: var(--paper); }
+  .btn-terracotta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--terracotta);
+    color: var(--paper-soft);
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14.5px;
+    border: 1.5px solid var(--terracotta);
+    transition: background 150ms;
+  }
+  .btn-terracotta:hover { background: oklch(0.46 0.135 30); }
+}
+
+/* ============================================================
+   MARGINAL NOTES — handwritten side annotations
+   ============================================================
+   Sit in the outer gutter of <main>. Each parent screen must be
+   position:relative (most are by default since they contain children
+   with absolute positioning). Hidden below 1100px so they don't
+   overlap content on tablet/phone. */
+
+main {
+  position: relative;
+}
+
+.margin-note {
+  position: absolute;
+  width: 220px;
+  z-index: 2;
+  pointer-events: auto;
+  opacity: 0.78;
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+.margin-note:hover {
+  opacity: 1;
+  transform: rotate(0deg) translateY(-1px) !important;
+}
+
+/* Anchor outside a ~840px reading column. Tucks to viewport edge when
+   there's no gutter room. */
+.margin-note.left {
+  left: max(8px, calc(50vw - 420px - 240px));
+}
+.margin-note.right {
+  right: max(8px, calc(50vw - 420px - 240px));
+}
+
+.margin-note .mn-bar {
+  position: absolute;
+  left: -10px;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  background: var(--terracotta);
+  border-radius: 1px;
+}
+.margin-note.right .mn-bar {
+  left: auto;
+  right: -10px;
+  background: var(--ochre);
+}
+
+.margin-note .mn-cite {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  display: inline-block;
+  margin-bottom: 6px;
+  padding-bottom: 1px;
+  border-bottom: 1.5px solid color-mix(in oklch, var(--ochre) 70%, transparent);
+}
+.margin-note.right .mn-cite {
+  color: var(--sage-deep);
+  border-bottom-color: var(--ochre);
+}
+
+.margin-note .mn-body {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  margin: 0;
+}
+.margin-note .mn-aside {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: oklch(0.55 0.014 75);
+  margin: 8px 0 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--rule-card);
+}
+
+/* Hide on narrow viewports — no gutter to live in */
+@media (max-width: 1100px) {
+  .margin-note {
+    display: none;
+  }
+}
+
+/* Tweak switch (write data-margins="off" on <html> to hide globally) */
+html[data-margins="off"] .margin-note {
+  display: none;
 }
