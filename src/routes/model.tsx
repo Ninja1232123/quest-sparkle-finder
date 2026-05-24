@@ -1,24 +1,31 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { listSources } from "@/lib/documents.functions";
+import { listSources, getSourceTOC } from "@/lib/documents.functions";
 import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
 import { getCodebook } from "@/lib/codebooks";
 
+// Model & Uniform Codes — currently houses the UCC (source code "ucc").
+// We load the UCC TOC as the primary so the sub-volume grid populates with
+// UCC articles. When more model codes land (UPC, etc.) revisit this.
 export const Route = createFileRoute("/model")({
   loader: async () => {
-    const cb = getCodebook("UCC");
+    const cb = getCodebook("model");
     if (!cb) throw notFound();
-    const { sources } = await listSources();
-    return { codebook: cb, sources };
+    const primary = cb.sources[0] ?? "ucc";
+    const [{ sources }, tocRes] = await Promise.all([
+      listSources(),
+      getSourceTOC({ data: { source: primary } }),
+    ]);
+    return { codebook: cb, sources, toc: tocRes.toc, tocSource: primary };
   },
   component: () => {
-    const { codebook, sources } = Route.useLoaderData();
-    return <CodebookLanding codebook={codebook} sources={sources} />;
+    const { codebook, sources, toc, tocSource } = Route.useLoaderData();
+    return <CodebookLanding codebook={codebook} sources={sources} toc={toc} tocSource={tocSource} />;
   },
   head: () => ({
     meta: [
-      { title: "Uniform Commercial Code · Marginalia" },
+      { title: "Model & Uniform Codes · Marginalia" },
       { name: "description", content: "Model commercial law and uniform acts adopted by the states." },
-      { property: "og:title", content: "Uniform Commercial Code · Marginalia" },
+      { property: "og:title", content: "Model & Uniform Codes · Marginalia" },
       { property: "og:description", content: "Model commercial law and uniform acts adopted by the states." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/model" }],

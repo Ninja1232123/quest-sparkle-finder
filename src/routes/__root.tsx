@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Capybara } from "@/components/marginalia/Capybara";
+import { CmdPalette } from "@/components/marginalia/CmdPalette";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Capybara />
+        <CmdPalette />
       </AuthProvider>
     </QueryClientProvider>
   );
