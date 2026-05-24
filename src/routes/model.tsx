@@ -5,7 +5,7 @@ import { getCodebook } from "@/lib/codebooks";
 
 export const Route = createFileRoute("/UCC")({
   loader: async () => {
-    const cb = getCodebook("model");
+    const cb = getCodebook("UCC");
     if (!cb) throw notFound();
     const { sources } = await listSources();
     return { codebook: cb, sources };
@@ -16,9 +16,9 @@ export const Route = createFileRoute("/UCC")({
   },
   head: () => ({
     meta: [
-      { title: "Model & Uniform Codes · Marginalia" },
+      { title: "Uniform Commercial Code · Marginalia" },
       { name: "description", content: "Model commercial law and uniform acts adopted by the states." },
-      { property: "og:title", content: "Model & Uniform Codes · Marginalia" },
+      { property: "og:title", content: "Uniform Commercial Code · Marginalia" },
       { property: "og:description", content: "Model commercial law and uniform acts adopted by the states." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/model" }],
