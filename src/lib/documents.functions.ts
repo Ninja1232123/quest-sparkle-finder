@@ -159,11 +159,18 @@ export const getSourceTOC = createServerFn({ method: "GET" })
 
 type Bucket = { bucket: string; n: number };
 
-function rpcRows<T>(supabase: Awaited<ReturnType<typeof getAdminClient>>) {
-  return supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>,
-  ) => Promise<{ data: T[] | null; error: { message: string } | null }>;
+// Call a Postgres RPC as a *method* on the client. Calling `supabase.rpc(...)`
+// inline keeps `this` bound; extracting `const f = supabase.rpc` (or returning
+// it from a helper) detaches it and supabase-js throws on `this.rest`.
+async function callRpc<T>(
+  supabase: Awaited<ReturnType<typeof getAdminClient>>,
+  fn: string,
+  args?: Record<string, unknown>,
+): Promise<{ data: T[] | null; error: { message: string } | null }> {
+  return await (supabase.rpc as unknown as (
+    f: string,
+    a?: Record<string, unknown>,
+  ) => Promise<{ data: T[] | null; error: { message: string } | null }>)(fn, args);
 }
 
 export type RegisterYear = { year: string; count: number };
@@ -171,7 +178,7 @@ export type RegisterDay = { date: string; count: number };
 
 export const getRegisterYears = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = await getAdminClient();
-  const { data, error } = await rpcRows<Bucket>(supabase)("register_years");
+  const { data, error } = await callRpc<Bucket>(supabase, "register_years");
   if (error) return { years: [] as RegisterYear[], error: error.message };
   const years = (data ?? []).map((r) => ({ year: r.bucket, count: Number(r.n) }));
   return { years, error: null as string | null };
@@ -181,7 +188,7 @@ export const getRegisterDays = createServerFn({ method: "GET" })
   .inputValidator(z.object({ year: z.string().regex(/^\d{4}$/) }))
   .handler(async ({ data: input }) => {
     const supabase = await getAdminClient();
-    const { data, error } = await rpcRows<Bucket>(supabase)("register_days", { p_year: input.year });
+    const { data, error } = await callRpc<Bucket>(supabase, "register_days", { p_year: input.year });
     if (error) return { days: [] as RegisterDay[], error: error.message };
     const days = (data ?? []).map((r) => ({ date: r.bucket, count: Number(r.n) }));
     return { days, error: null as string | null };
@@ -200,7 +207,7 @@ export type BillRow = {
 
 export const getBillCongresses = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = await getAdminClient();
-  const { data, error } = await rpcRows<Bucket>(supabase)("bill_congresses");
+  const { data, error } = await callRpc<Bucket>(supabase, "bill_congresses");
   if (error) return { congresses: [] as BillCongress[], error: error.message };
   const congresses = (data ?? []).map((r) => ({ congress: r.bucket, count: Number(r.n) }));
   return { congresses, error: null as string | null };
@@ -217,7 +224,7 @@ export const getBillList = createServerFn({ method: "GET" })
     const supabase = await getAdminClient();
     const padded = input.congress.padStart(4, "0");
     const limit = input.limit ?? 60;
-    const { data, error } = await rpcRows<BillRow>(supabase)("bill_list", {
+    const { data, error } = await callRpc<BillRow>(supabase, "bill_list", {
       p_congress: padded,
       p_q: input.q && input.q.trim().length > 0 ? input.q.trim() : null,
       p_limit: limit,

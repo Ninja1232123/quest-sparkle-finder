@@ -49,6 +49,36 @@ AS $$
 $$;
 
 -- ----------------------------------------------------------------------------
+-- 1b. source_toc() — FIX (supersedes the version in corpus_db_setup.sql).
+--     The old version took only segments 1-2 of parent_label (split on ' · '),
+--     so the TOC's drill key reconstructed as "title · seg2" never matched the
+--     full parent_label for 3-segment sources (CFR, IRM) and their titles opened
+--     to empty lists. part_group is now EVERYTHING after the first ' · ', so
+--     title_group || ' · ' || part_group == the full parent_label exactly.
+--     (Re-run this after corpus_db_setup.sql, or the broken version wins.)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.source_toc(p_source text)
+RETURNS TABLE (title_group text, part_group text, doc_count bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_catalog, pg_temp
+AS $$
+  SELECT
+    split_part(parent_label, ' · ', 1) AS title_group,
+    CASE
+      WHEN strpos(parent_label, ' · ') > 0
+        THEN substr(parent_label, strpos(parent_label, ' · ') + length(' · '))
+      ELSE NULL
+    END AS part_group,
+    COUNT(*)::bigint AS doc_count
+  FROM public.document_sections
+  WHERE source_code = p_source
+  GROUP BY 1, 2
+  ORDER BY 1, 2;
+$$;
+
+-- ----------------------------------------------------------------------------
 -- 2. Federal Register — date hierarchy.
 -- ----------------------------------------------------------------------------
 
@@ -164,6 +194,7 @@ $$;
 -- 4. GRANTS — the site connects through PostgREST as the read-only `anon` role.
 -- ----------------------------------------------------------------------------
 GRANT EXECUTE ON FUNCTION public.list_sources()                                TO anon;
+GRANT EXECUTE ON FUNCTION public.source_toc(text)                              TO anon;
 GRANT EXECUTE ON FUNCTION public.register_years()                              TO anon;
 GRANT EXECUTE ON FUNCTION public.register_days(text)                           TO anon;
 GRANT EXECUTE ON FUNCTION public.bill_congresses()                             TO anon;

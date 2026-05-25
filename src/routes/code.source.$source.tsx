@@ -30,14 +30,28 @@ const SOURCE_DESCRIPTIONS: Record<string, string> = {
   irm: "Browse the Internal Revenue Manual on Marginalia — the IRS's internal procedures for examinations, collections, appeals, and taxpayer rights.",
 };
 
-const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : undefined);
+// Coerce a search param to a non-empty string (accepts numbers — the parser may
+// hand back a number for digit-y values like a congress without leading zeros).
+const str = (v: unknown) => {
+  if (typeof v === "string") return v.length > 0 ? v : undefined;
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return undefined;
+};
+// Numeric search param. Kept as a NUMBER so the URL round-trips clean
+// (`?ry=2000`, not the quoted `?ry="2000"` TanStack emits for numeric strings).
+const num = (v: unknown) => {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && /^\d+$/.test(v)) return Number(v);
+  return undefined;
+};
 
 // All keys optional so Links may pass any subset (or none) without TS demanding
 // the full shape. `group` = TOC drill; ry/rd = register; bc/bk/bq/bp = bill.
+// ry/rd/bp are numbers (clean URLs); the loader stringifies ry/rd as needed.
 type SourceSearch = {
   group?: string;
-  ry?: string;
-  rd?: string;
+  ry?: number;
+  rd?: number;
   bc?: string;
   bk?: string;
   bq?: string;
@@ -70,30 +84,32 @@ function leafRange(source: string, key: string): { lo: string; hi: string } {
   return { lo: key + ".00000", hi: nextBillKey(key) };
 }
 
-async function loadFirehose(
-  source: string,
-  deps: { ry?: string; rd?: string; bc?: string; bk?: string; bq?: string; bp?: number },
-) {
+async function loadFirehose(source: string, deps: SourceSearch) {
   if (source === "register") {
-    if (deps.rd) {
-      const { lo, hi } = leafRange(source, deps.rd);
+    // ry/rd arrive as numbers; stringify for the date keys. Validate the shape
+    // here so a malformed param falls back to a valid view instead of throwing
+    // (the server fns' zod validators would 500 on bad input otherwise).
+    const rd = deps.rd != null ? String(deps.rd) : undefined;
+    const ry = deps.ry != null ? String(deps.ry) : undefined;
+    if (rd && /^\d{8}$/.test(rd)) {
+      const { lo, hi } = leafRange(source, rd);
       const { documents } = await listDocsBySortRange({ data: { source, lo, hi, limit: 2000 } });
-      return { view: "register-docs" as const, rd: deps.rd, documents };
+      return { view: "register-docs" as const, rd, documents };
     }
-    if (deps.ry) {
-      const { days } = await getRegisterDays({ data: { year: deps.ry } });
-      return { view: "register-days" as const, ry: deps.ry, days };
+    if (ry && /^\d{4}$/.test(ry)) {
+      const { days } = await getRegisterDays({ data: { year: ry } });
+      return { view: "register-days" as const, ry, days };
     }
     const { years } = await getRegisterYears();
     return { view: "register-years" as const, years };
   }
   // bill
-  if (deps.bk) {
+  if (deps.bk && /^\d+\.\d+\.\d+$/.test(deps.bk)) {
     const { lo, hi } = leafRange(source, deps.bk);
     const { documents } = await listDocsBySortRange({ data: { source, lo, hi, limit: 2000 } });
     return { view: "bill-docs" as const, bk: deps.bk, documents };
   }
-  if (deps.bc) {
+  if (deps.bc && /^\d{1,4}$/.test(deps.bc)) {
     const limit = 60;
     const page = deps.bp ?? 0;
     const { bills, hasMore } = await getBillList({
@@ -108,12 +124,12 @@ async function loadFirehose(
 export const Route = createFileRoute("/code/source/$source")({
   validateSearch: (search: Record<string, unknown>): SourceSearch => ({
     group: str(search.group),
-    ry: str(search.ry),
-    rd: str(search.rd),
+    ry: num(search.ry),
+    rd: num(search.rd),
     bc: str(search.bc),
     bk: str(search.bk),
     bq: str(search.bq),
-    bp: typeof search.bp === "number" ? search.bp : undefined,
+    bp: num(search.bp),
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
@@ -610,7 +626,7 @@ function FirehoseBrowser({ data }: { data: FirehoseLoaderData }) {
       {data.view === "register-docs" && (
         <>
           {" · "}
-          <Link to="/code/source/$source" params={{ source }} search={{ ry: data.rd.slice(0, 4) }} className="hover:text-foreground">
+          <Link to="/code/source/$source" params={{ source }} search={{ ry: Number(data.rd.slice(0, 4)) }} className="hover:text-foreground">
             {data.rd.slice(0, 4)}
           </Link>
           {" · "}
@@ -643,7 +659,7 @@ function FirehoseBrowser({ data }: { data: FirehoseLoaderData }) {
           <BucketGrid
             source={source}
             items={data.years.map((y: RegisterYear) => ({ key: y.year, label: y.year, count: y.count }))}
-            searchFor={(year) => ({ ry: year })}
+            searchFor={(year) => ({ ry: Number(year) })}
           />
         )}
         {data.view === "register-days" && (
@@ -652,7 +668,7 @@ function FirehoseBrowser({ data }: { data: FirehoseLoaderData }) {
             <BucketGrid
               source={source}
               items={data.days.map((d: RegisterDay) => ({ key: d.date, label: fmtDay(d.date), count: d.count }))}
-              searchFor={(day) => ({ ry: data.ry, rd: day })}
+              searchFor={(day) => ({ ry: Number(data.ry), rd: Number(day) })}
             />
           </>
         )}
