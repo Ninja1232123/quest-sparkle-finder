@@ -25,26 +25,8 @@ import { ResearchShell } from "./ResearchShell";
 import { ComingSoonHeader } from "./ComingSoon";
 import type { Codebook } from "@/lib/codebooks";
 import { CODEBOOKS } from "@/lib/codebooks";
+import { sourceName } from "@/lib/source-groups";
 import type { SourceSummary, SourceTocNode } from "@/lib/documents.functions";
-
-const SOURCE_DISPLAY: Record<string, string> = {
-  const: "U.S. Constitution",
-  usc: "United States Code",
-  cfr: "Code of Federal Regulations",
-  ucc: "Uniform Commercial Code",
-  irm: "Internal Revenue Manual",
-  tfm: "Treasury Financial Manual",
-  usgm: "U.S. Government Manual",
-  fedregister: "Federal Register",
-  bills: "Congressional Bills",
-  plaw: "Public & Private Laws",
-  statute: "Statutes at Large",
-  statcomp: "Statute Compilations",
-  presdoc: "Presidential Documents",
-  pppus: "Public Papers of the Presidents",
-  scotus: "Supreme Court Decisions",
-  flite: "SCOTUS · FLITE (1937–1975)",
-};
 
 type Props = {
   codebook: Codebook;
@@ -330,7 +312,7 @@ function SourceCardGrid({
                 {s.count.toLocaleString()} documents
               </div>
               <div className="subvol-name">
-                {SOURCE_DISPLAY[s.code] ?? s.name}
+                {sourceName(s.code)}
               </div>
               <div className="subvol-browse">
                 Browse <ArrowRight className="h-3 w-3" />

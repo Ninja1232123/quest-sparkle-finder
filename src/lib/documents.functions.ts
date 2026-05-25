@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateQueryEmbedding } from "@/lib/embeddings.functions";
 import { getOptionalUserId } from "@/integrations/supabase/optional-auth";
+import { sourceName } from "@/lib/source-groups";
 
 // Queries that look like natural-language questions get the hybrid FTS + semantic path.
 // Short keyword searches stay on FTS-only (faster, no embedding round-trip).
@@ -46,32 +47,23 @@ export type SourceSummary = {
   count: number;
 };
 
-const SOURCE_NAMES: Record<string, string> = {
-  const: "U.S. Constitution",
-  usc: "United States Code",
-  cfr: "Code of Federal Regulations",
-  ucc: "Uniform Commercial Code",
-  tfm: "Treasury Financial Manual",
-  irm: "Internal Revenue Manual",
-};
+// Firehose sources are too large for the flat parent_label TOC (source_toc):
+// they're browsed by date/Congress via the dedicated RPCs below.
+export const FIREHOSE_SOURCES = new Set(["bill", "register"]);
 
 export const listSources = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await getAdminClient();
-  // Pull the distinct source codes, then count each in parallel using head+exact-count
-  // (avoids loading every row's source_code just to tally).
-  const codes = ["const", "usc", "cfr", "ucc", "tfm", "irm"];
-  const counts = await Promise.all(
-    codes.map(async (code) => {
-      const { count } = await supabaseAdmin
-        .from("documents")
-        .select("id", { count: "exact", head: true })
-        .eq("source_code", code);
-      return { code, count: count ?? 0 };
-    }),
+  // One grouped count over the whole corpus (list_sources RPC) — every source
+  // that actually has rows, with its real display name. No hardcoded list.
+  const { data, error } = await (supabaseAdmin.rpc as unknown as (
+    fn: string,
+  ) => Promise<{ data: { source_code: string; doc_count: number }[] | null; error: { message: string } | null }>)(
+    "list_sources",
   );
-  const sources: SourceSummary[] = counts
-    .filter((c) => c.count > 0)
-    .map(({ code, count }) => ({ code, count, name: SOURCE_NAMES[code] ?? code.toUpperCase() }))
+  if (error) return { sources: [] as SourceSummary[], error: error.message };
+  const sources: SourceSummary[] = (data ?? [])
+    .filter((r) => r.doc_count > 0)
+    .map((r) => ({ code: r.source_code, count: Number(r.doc_count), name: sourceName(r.source_code) }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return { sources, error: null };
 });
@@ -114,6 +106,11 @@ export type SourceTocNode = {
 export const getSourceTOC = createServerFn({ method: "GET" })
   .inputValidator(z.object({ source: z.string().min(2).max(20) }))
   .handler(async ({ data }) => {
+    // Firehoses (bill, register) have 250K-300K distinct parent_labels — the
+    // flat TOC would page forever. They use the date/Congress browser instead.
+    if (FIREHOSE_SOURCES.has(data.source)) {
+      return { toc: [] as SourceTocNode[], error: null as string | null };
+    }
     const supabaseAdmin = await getAdminClient();
     // PostgREST caps result rows (typically at 1000) regardless of the RPC's
     // own ORDER BY. Page through with .range() until we drain the function.
@@ -151,6 +148,114 @@ export const getSourceTOC = createServerFn({ method: "GET" })
       n.parts.sort((a, b) => numKey(a.label) - numKey(b.label) || a.label.localeCompare(b.label));
     }
     return { toc, error: null };
+  });
+
+// ---------------------------------------------------------------------------
+// Firehose browse (bill, register). These sources are too large for source_toc;
+// they're faceted by the indexed sort_key via dedicated RPCs.
+//   register sort_key: 'YYYYMMDD.docnum'
+//   bill     sort_key: 'CONG.TT.NNNNNN.SSSSS'
+// ---------------------------------------------------------------------------
+
+type Bucket = { bucket: string; n: number };
+
+function rpcRows<T>(supabase: Awaited<ReturnType<typeof getAdminClient>>) {
+  return supabase.rpc as unknown as (
+    fn: string,
+    args?: Record<string, unknown>,
+  ) => Promise<{ data: T[] | null; error: { message: string } | null }>;
+}
+
+export type RegisterYear = { year: string; count: number };
+export type RegisterDay = { date: string; count: number };
+
+export const getRegisterYears = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = await getAdminClient();
+  const { data, error } = await rpcRows<Bucket>(supabase)("register_years");
+  if (error) return { years: [] as RegisterYear[], error: error.message };
+  const years = (data ?? []).map((r) => ({ year: r.bucket, count: Number(r.n) }));
+  return { years, error: null as string | null };
+});
+
+export const getRegisterDays = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ year: z.string().regex(/^\d{4}$/) }))
+  .handler(async ({ data: input }) => {
+    const supabase = await getAdminClient();
+    const { data, error } = await rpcRows<Bucket>(supabase)("register_days", { p_year: input.year });
+    if (error) return { days: [] as RegisterDay[], error: error.message };
+    const days = (data ?? []).map((r) => ({ date: r.bucket, count: Number(r.n) }));
+    return { days, error: null as string | null };
+  });
+
+export type BillCongress = { congress: string; count: number };
+export type BillRow = {
+  bill_key: string;
+  label: string;
+  title: string | null;
+  n: number;
+  first_identifier: string;
+  sort_lo: string;
+  sort_hi: string;
+};
+
+export const getBillCongresses = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = await getAdminClient();
+  const { data, error } = await rpcRows<Bucket>(supabase)("bill_congresses");
+  if (error) return { congresses: [] as BillCongress[], error: error.message };
+  const congresses = (data ?? []).map((r) => ({ congress: r.bucket, count: Number(r.n) }));
+  return { congresses, error: null as string | null };
+});
+
+export const getBillList = createServerFn({ method: "GET" })
+  .inputValidator(z.object({
+    congress: z.string().regex(/^\d{1,4}$/),
+    q: z.string().max(120).optional(),
+    limit: z.number().int().min(1).max(200).optional(),
+    offset: z.number().int().min(0).optional(),
+  }))
+  .handler(async ({ data: input }) => {
+    const supabase = await getAdminClient();
+    const padded = input.congress.padStart(4, "0");
+    const limit = input.limit ?? 60;
+    const { data, error } = await rpcRows<BillRow>(supabase)("bill_list", {
+      p_congress: padded,
+      p_q: input.q && input.q.trim().length > 0 ? input.q.trim() : null,
+      p_limit: limit,
+      p_offset: input.offset ?? 0,
+    });
+    if (error) return { bills: [] as BillRow[], hasMore: false, error: error.message };
+    const bills = (data ?? []).map((b) => ({ ...b, n: Number(b.n) }));
+    return { bills, hasMore: bills.length >= limit, error: null as string | null };
+  });
+
+// List the sections in a sort_key range [lo, hi) for a source — the leaf of the
+// firehose drill-down (one Register issue-day, or one bill's sections). Uses the
+// (source_code, sort_key) index, so it's an index range scan, not a table scan.
+export const listDocsBySortRange = createServerFn({ method: "GET" })
+  .inputValidator(z.object({
+    source: z.string().min(2).max(30),
+    lo: z.string().min(1).max(60),
+    hi: z.string().min(1).max(60),
+    limit: z.number().int().min(1).max(2000).optional(),
+  }))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { data: rows, error } = await supabaseAdmin
+      .from("documents")
+      .select("id, identifier, source_code, parent_label, section_label, heading, sort_key, body_text")
+      .eq("source_code", data.source)
+      .gte("sort_key", data.lo)
+      .lt("sort_key", data.hi)
+      .order("sort_key", { ascending: true })
+      .limit(data.limit ?? 1500);
+    if (error) return { documents: [], error: error.message };
+    const documents = (rows ?? []).map((r) => {
+      const body = (r.body_text ?? "").replace(/\s+/g, " ").trim();
+      const preview = body.slice(0, 140);
+      const { body_text: _omit, ...rest } = r as Record<string, unknown> & { body_text?: string };
+      return { ...rest, preview };
+    });
+    return { documents, error: null };
   });
 
 // Fire-and-forget: log a search event. Never blocks user-facing flow on failure.

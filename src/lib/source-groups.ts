@@ -12,6 +12,9 @@ import {
   Building2,
   BookOpen,
   FileText,
+  Newspaper,
+  Vote,
+  Crown,
   type LucideIcon,
 } from "lucide-react";
 
@@ -125,9 +128,25 @@ export const SOURCE_META: Record<string, SourceMeta> = {
     code: "register",
     short: "Fed. Reg.",
     group: "other",
-    accent: "#2f4f7f",
-    icon: FileText,
+    accent: "#c45a2c",
+    icon: Newspaper,
     tagline: "Daily journal of federal agency rules, proposed rules, and notices.",
+  },
+  bill: {
+    code: "bill",
+    short: "Bills",
+    group: "other",
+    accent: "#5b3a8a",
+    icon: Vote,
+    tagline: "Every bill and resolution introduced in Congress, with each text version.",
+  },
+  "public-papers-president": {
+    code: "public-papers-president",
+    short: "Pres. Papers",
+    group: "other",
+    accent: "#7a3b3b",
+    icon: Crown,
+    tagline: "Official addresses, remarks, and statements of the President.",
   },
   "statutes-at-large": {
     code: "statutes-at-large",
@@ -153,15 +172,31 @@ export const SOURCE_META: Record<string, SourceMeta> = {
     icon: FileText,
     tagline: "Public and private laws as enacted, before codification.",
   },
-  "public-papers-president": {
-    code: "public-papers-president",
-    short: "Pres. Papers",
-    group: "other",
-    accent: "#7a3b3b",
-    icon: BookOpen,
-    tagline: "Official public statements, addresses, and remarks of the President.",
-  },
 };
+
+/**
+ * Full display names, keyed by the real `source_code` values in
+ * document_sections. Single source of truth — imported by listSources, the
+ * source browser, and the codebook landing so the names never drift apart.
+ */
+export const SOURCE_NAMES: Record<string, string> = {
+  const: "U.S. Constitution",
+  usc: "United States Code",
+  cfr: "Code of Federal Regulations",
+  ucc: "Uniform Commercial Code",
+  tfm: "Treasury Financial Manual",
+  irm: "Internal Revenue Manual",
+  bill: "Congressional Bills",
+  register: "Federal Register",
+  "statutes-at-large": "Statutes at Large",
+  "statute-compilations": "Statute Compilations",
+  "public-private-law": "Public & Private Laws",
+  "public-papers-president": "Public Papers of the Presidents",
+};
+
+export function sourceName(code: string): string {
+  return SOURCE_NAMES[code] ?? code.toUpperCase();
+}
 
 export function sourceMeta(code: string): SourceMeta {
   return (
