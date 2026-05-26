@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+// Subscriptions live on the CLOUD project (alongside auth), read under RLS with
+// the user's session — not the local read-only backend.
+import { supabaseAuth as supabase } from "@/integrations/supabase/auth-client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
 
