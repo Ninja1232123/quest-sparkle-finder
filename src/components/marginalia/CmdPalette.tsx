@@ -24,6 +24,8 @@ import {
   Zap,
 } from "lucide-react";
 import { searchDocuments } from "@/lib/documents.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { useSearchQuota } from "@/hooks/use-search-quota";
 import { CODEBOOKS, codebookForSource } from "@/lib/codebooks";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -76,6 +78,8 @@ export function CmdPalette() {
   const [compareMode, setCompareMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { blocked } = useSearchQuota();
 
   // Global open/close shortcut
   useEffect(() => {
@@ -181,9 +185,18 @@ export function CmdPalette() {
     setOpen(false);
     if (compareMode) {
       navigate({ to: "/compare", search: { q: term, sources: "const,usc,cfr" } });
-    } else {
-      navigate({ to: "/search", search: { q: term, semantic } });
+      return;
     }
+    // Same gate as the SearchBar — pre-check only; /search does the consume.
+    if (!user) {
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(term)}${semantic ? `&semantic=${semantic}` : ""}` } });
+      return;
+    }
+    if (blocked) {
+      navigate({ to: "/subscribe" });
+      return;
+    }
+    navigate({ to: "/search", search: { q: term, semantic } });
   }
 
   function openHit(h: Hit) {

@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
-import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useSearchQuota, FREE_DAILY_LIMIT } from "@/hooks/use-search-quota";
+import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Lock } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
 
@@ -120,6 +122,30 @@ function SearchPage() {
   const { q, source, exact, words, exclude, semantic } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
   const navigate = useNavigate();
+
+  // ── Freemium gate (the single enforcement point for ALL search paths) ──
+  // Viewing a results page requires sign-in; free users get FREE_DAILY_LIMIT/day.
+  // Auth/quota are client-side (cloud session + localStorage), so the gate runs
+  // on mount. SearchBar/⌘K only pre-check (no consume) — we count once here.
+  const { user, loading: authLoading } = useAuth();
+  const { isPro, consume } = useSearchQuota();
+  const trimmed = q.trim();
+  const consumedFor = useRef<string | null>(null);
+  // True once auth has resolved and a signed-out visitor has a real query —
+  // we hide results and bounce them to sign-up.
+  const needsAuth = !authLoading && !user && trimmed.length >= 2;
+
+  useEffect(() => {
+    if (authLoading || trimmed.length < 2) return;
+    if (!user) {
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(trimmed)}` } });
+      return;
+    }
+    if (isPro) return;
+    if (consumedFor.current === trimmed) return; // don't re-count filter/source changes
+    if (consume()) consumedFor.current = trimmed;
+    else navigate({ to: "/subscribe" });
+  }, [trimmed, user, authLoading, isPro, consume, navigate]);
 
   // Group by source
   const bySource = new Map<string, Hit[]>();
@@ -278,7 +304,26 @@ function SearchPage() {
           </p>
         </div>
 
-        {q && (
+        {/* Signed-out visitor with a query — hide results, the effect bounces
+            them to sign-up. Shown briefly (or if JS redirect is slow). */}
+        {needsAuth && (
+          <div className="mt-10 rounded-2xl border border-border/60 bg-card/60 p-8 text-center">
+            <Lock className="mx-auto h-6 w-6 text-muted-foreground" />
+            <h2 className="mt-3 font-display text-xl font-semibold">Create a free account to search</h2>
+            <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
+              {FREE_DAILY_LIMIT} searches a day, free — across every codebook. Takes a few seconds.
+            </p>
+            <Link
+              to="/auth"
+              search={{ mode: "signup", redirect: `/search?q=${encodeURIComponent(trimmed)}` }}
+              className="mt-4 inline-flex items-center rounded-full border border-foreground/20 bg-foreground px-5 py-2 font-display text-sm text-background hover:opacity-90"
+            >
+              Sign up free →
+            </Link>
+          </div>
+        )}
+
+        {q && !needsAuth && (
           <>
             {/* Source filter tabs */}
             <div className="mt-6 flex flex-wrap gap-2">

@@ -35,7 +35,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { remaining, blocked, isPro, consume, limit } = useSearchQuota();
+  const { remaining, blocked, isPro, limit } = useSearchQuota();
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -90,12 +90,14 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (q.trim().length < 2) return;
+    // Pre-checks only — the actual quota consume happens on the /search page
+    // (the single gate), so a search counts once regardless of entry point.
     if (!user) {
       setOpen(false);
       navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(q.trim())}` } });
       return;
     }
-    if (blocked || !consume()) {
+    if (blocked) {
       setOpen(false);
       navigate({ to: "/subscribe" });
       return;
