@@ -72,6 +72,21 @@ create index if not exists forum_post_citations_post_idx on public.forum_post_ci
 alter table public.forum_post_citations enable row level security;
 drop policy if exists forum_cites_read on public.forum_post_citations;
 create policy forum_cites_read on public.forum_post_citations for select using (true);
+
+-- Ownership check via a helper so the policy doesn't inline a cross-table
+-- subquery. SECURITY INVOKER (runs as the caller): the authenticated role has
+-- SELECT on forum_posts and its RLS is `using (true)`, so the check resolves.
+-- (A SECURITY DEFINER variant runs as the function owner, which lacks SELECT
+-- on forum_posts here → "permission denied for table forum_posts".)
+create or replace function public.owns_forum_post(p_post_id uuid)
+returns boolean language sql security invoker stable set search_path = public as $$
+  select exists (
+    select 1 from public.forum_posts p
+    where p.id = p_post_id and p.user_id = auth.uid()
+  );
+$$;
+grant execute on function public.owns_forum_post(uuid) to authenticated;
+
 drop policy if exists forum_cites_insert_own on public.forum_post_citations;
 create policy forum_cites_insert_own on public.forum_post_citations for insert
-  with check (exists (select 1 from public.forum_posts p where p.id = post_id and p.user_id = auth.uid()));
+  with check (public.owns_forum_post(post_id));
