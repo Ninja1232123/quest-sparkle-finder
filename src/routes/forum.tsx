@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect, useCallback } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  listForumPosts,
+  fetchForumPosts,
   validateCitations,
   createForumPost,
   deleteForumPost,
   type ForumCitation,
   type ForumPost,
-} from "@/lib/forum.functions";
+} from "@/lib/forum.data";
 import { Trash2, Link2, Plus, X, ScrollText } from "lucide-react";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -47,7 +46,6 @@ const KIND_META: Record<PostKind, { label: string; tag: string; hint: string }> 
 };
 
 export const Route = createFileRoute("/forum")({
-  loader: () => listForumPosts(),
   component: ForumPage,
   head: () => ({
     meta: [
@@ -64,11 +62,16 @@ export const Route = createFileRoute("/forum")({
 });
 
 function ForumPage() {
-  const initial = Route.useLoaderData();
-  const router = useRouter();
   const { user, loading } = useAuth();
   const [composing, setComposing] = useState(false);
   const [filter, setFilter] = useState<"all" | PostKind>("all");
+  const [data, setData] = useState<{ posts: ForumPost[]; error: string | null }>({ posts: [], error: null });
+
+  const reload = useCallback(() => {
+    fetchForumPosts().then(setData);
+  }, []);
+  // Load on mount and refetch once auth resolves (so is_owner / delete buttons are correct).
+  useEffect(() => { reload(); }, [reload, user?.id]);
 
   return (
     <div className="min-h-screen">
@@ -135,7 +138,7 @@ function ForumPage() {
           <Composer
             onDone={() => {
               setComposing(false);
-              router.invalidate();
+              reload();
             }}
           />
         </section>
@@ -143,12 +146,12 @@ function ForumPage() {
 
       {/* Posts */}
       <section className="mx-auto max-w-3xl px-6 pb-32">
-        {initial.error && (
+        {data.error && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-            {initial.error}
+            {data.error}
           </div>
         )}
-        {!initial.error && initial.posts.length === 0 && (
+        {!data.error && data.posts.length === 0 && (
           <div className="mx-auto mt-16 max-w-md text-center">
             <ScrollText className="mx-auto h-10 w-10 text-foreground/30" />
             <h2 className="mt-4 font-display text-2xl">The floor is empty.</h2>
@@ -159,14 +162,14 @@ function ForumPage() {
         )}
 
         <ul className="space-y-10">
-          {initial.posts
+          {data.posts
             .filter((p: ForumPost) => filter === "all" || (p.kind ?? "discussion") === filter)
             .map((p: ForumPost) => (
             <li key={p.id}>
               <PostCard
                 post={p}
                 isOwner={p.is_owner}
-                onDelete={() => router.invalidate()}
+                onDelete={() => reload()}
               />
             </li>
           ))}
@@ -187,7 +190,6 @@ function PostCard({
   isOwner: boolean;
   onDelete: () => void;
 }) {
-  const del = useServerFn(deleteForumPost);
   return (
     <article className="group rounded-3xl border bg-card p-6 paper-grain shadow-[var(--shadow-soft)] md:p-8">
       <div className="flex items-start justify-between gap-4">
@@ -215,7 +217,7 @@ function PostCard({
             className="rounded-md p-2 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
             onClick={async () => {
               if (!confirm("Delete this post?")) return;
-              await del({ data: { id: post.id } });
+              await deleteForumPost(post.id);
               onDelete();
             }}
           >
@@ -257,8 +259,6 @@ function PostCard({
 }
 
 function Composer({ onDone }: { onDone: () => void }) {
-  const validate = useServerFn(validateCitations);
-  const create = useServerFn(createForumPost);
   const [kind, setKind] = useState<PostKind>("discussion");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -273,7 +273,7 @@ function Composer({ onDone }: { onDone: () => void }) {
     if (!raw) return;
     setBusy(true);
     setError(null);
-    const res = await validate({ data: { raw: [raw] } });
+    const res = await validateCitations([raw]);
     setBusy(false);
     if (res.resolved.length === 0) {
       setMissing((m) => Array.from(new Set([...m, ...res.missing])));
@@ -290,13 +290,11 @@ function Composer({ onDone }: { onDone: () => void }) {
   async function submit() {
     setError(null);
     setBusy(true);
-    const res = await create({
-      data: {
-        title: title.trim(),
-        body: body.trim(),
-        citations: resolved.map((r) => r.identifier),
-        kind,
-      },
+    const res = await createForumPost({
+      title: title.trim(),
+      body: body.trim(),
+      citations: resolved.map((r) => r.identifier),
+      kind,
     });
     setBusy(false);
     if (!res.ok) {
