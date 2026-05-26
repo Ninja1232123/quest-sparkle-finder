@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+// Auth runs against the cloud Supabase project (the local backend has no auth
+// server). Data elsewhere still uses @/integrations/supabase/client (local).
+import { supabaseAuth as supabase } from "@/integrations/supabase/auth-client";
 
 type AuthCtx = {
   user: User | null;
