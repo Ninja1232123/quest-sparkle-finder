@@ -3,7 +3,6 @@ import { getDocument, listSources, type DocCitationRow, type IncomingCitation } 
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, Plus } from "lucide-react";
-import { AddToCaseButton } from "@/components/marginalia/AddToCaseButton";
 import { linkifyAndHighlight } from "@/lib/auto-link-citations";
 
 // ── Legal body parser ────────────────────────────────────────────────────────
@@ -528,12 +527,6 @@ function DocumentPage() {
               {copied ? <Check className="h-3.5 w-3.5 text-accent" /> : <LinkIcon className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{copied ? "Copied" : "Copy link"}</span>
             </button>
-            <AddToCaseButton
-              identifier={document.identifier}
-              source_code={document.source_code}
-              heading={document.heading}
-              section_label={document.section_label}
-            />
           </div>
         </div>
       </div>

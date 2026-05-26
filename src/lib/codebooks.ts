@@ -212,8 +212,6 @@ export type ToolLink = {
 
 import {
   Search as SearchIcon,
-  BookMarked,
-  Library as LibraryIcon,
   Columns,
   MessagesSquare,
   Info,
@@ -222,8 +220,6 @@ import {
 export const TOOLS: ToolLink[] = [
   { label: "Search", href: "/search", description: "Keyword + semantic across every codebook.", icon: SearchIcon },
   { label: "Compare", href: "/compare", description: "Set the same phrase against multiple sources side by side.", icon: Columns },
-  { label: "Stacks", href: "/stacks", description: "Pre-built reading stacks for common situations.", icon: LibraryIcon },
-  { label: "Cases", href: "/cases", description: "Your bookmarked sections, tagged and noted.", icon: BookMarked, authRequired: true },
   { label: "Forum", href: "/forum", description: "The Floor — discuss what you're researching.", icon: MessagesSquare },
   { label: "About", href: "/about", description: "What Marginalia is and why it exists.", icon: Info },
 ];

@@ -14,7 +14,6 @@ import { Route as UscRouteImport } from './routes/usc'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StatutesRouteImport } from './routes/statutes'
 import { Route as StatesRouteImport } from './routes/states'
-import { Route as StacksRouteImport } from './routes/stacks'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ScotusRouteImport } from './routes/scotus'
@@ -35,17 +34,10 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
-import { Route as CasesIndexRouteImport } from './routes/cases.index'
-import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
-import { Route as StacksViewRouteImport } from './routes/stacks.view'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
-import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
-import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -81,11 +73,6 @@ const StatutesRoute = StatutesRouteImport.update({
 const StatesRoute = StatesRouteImport.update({
   id: '/states',
   path: '/states',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StacksRoute = StacksRouteImport.update({
-  id: '/stacks',
-  path: '/stacks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -188,25 +175,10 @@ const CodeIndexRoute = CodeIndexRouteImport.update({
   path: '/code/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CasesIndexRoute = CasesIndexRouteImport.update({
-  id: '/cases/',
-  path: '/cases/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogIndexRoute = BlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
   getParentRoute: () => rootRouteImport,
-} as any)
-const StacksViewRoute = StacksViewRouteImport.update({
-  id: '/view',
-  path: '/view',
-  getParentRoute: () => StacksRoute,
 } as any)
 const CodeSplatRoute = CodeSplatRouteImport.update({
   id: '/code/$',
@@ -218,29 +190,9 @@ const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
-  id: '/cases/$caseId',
-  path: '/cases/$caseId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/blog/$slug',
-  path: '/blog/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
-  id: '/admin/blog/',
-  path: '/admin/blog/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   id: '/code/source/$source',
   path: '/code/source/$source',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
-  id: '/admin/blog/$id',
-  path: '/admin/blog/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailQueueProcessRoute =
@@ -323,24 +275,16 @@ export interface FileRoutesByFullPath {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stacks': typeof StacksRouteWithChildren
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
-  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
-  '/blog/': typeof BlogIndexRoute
-  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
-  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
-  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
@@ -373,24 +317,16 @@ export interface FileRoutesByTo {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stacks': typeof StacksRouteWithChildren
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
-  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
-  '/blog': typeof BlogIndexRoute
-  '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
-  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
-  '/admin/blog': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
@@ -424,24 +360,16 @@ export interface FileRoutesById {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stacks': typeof StacksRouteWithChildren
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/blog/$slug': typeof BlogSlugRoute
-  '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
-  '/stacks/view': typeof StacksViewRoute
   '/topic/$slug': typeof TopicSlugRoute
-  '/blog/': typeof BlogIndexRoute
-  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
-  '/admin/blog/$id': typeof AdminBlogIdRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
-  '/admin/blog/': typeof AdminBlogIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
@@ -476,24 +404,16 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap.xml'
-    | '/stacks'
     | '/states'
     | '/statutes'
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/blog/$slug'
-    | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
-    | '/stacks/view'
     | '/topic/$slug'
-    | '/blog/'
-    | '/cases/'
     | '/code/'
-    | '/admin/blog/$id'
     | '/code/source/$source'
-    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
@@ -526,24 +446,16 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap.xml'
-    | '/stacks'
     | '/states'
     | '/statutes'
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/blog/$slug'
-    | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
-    | '/stacks/view'
     | '/topic/$slug'
-    | '/blog'
-    | '/cases'
     | '/code'
-    | '/admin/blog/$id'
     | '/code/source/$source'
-    | '/admin/blog'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
@@ -576,24 +488,16 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap.xml'
-    | '/stacks'
     | '/states'
     | '/statutes'
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/blog/$slug'
-    | '/cases/$caseId'
     | '/checkout/return'
     | '/code/$'
-    | '/stacks/view'
     | '/topic/$slug'
-    | '/blog/'
-    | '/cases/'
     | '/code/'
-    | '/admin/blog/$id'
     | '/code/source/$source'
-    | '/admin/blog/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
@@ -627,23 +531,16 @@ export interface RootRouteChildren {
   ScotusRoute: typeof ScotusRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  StacksRoute: typeof StacksRouteWithChildren
   StatesRoute: typeof StatesRoute
   StatutesRoute: typeof StatutesRoute
   SubscribeRoute: typeof SubscribeRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
-  BlogSlugRoute: typeof BlogSlugRoute
-  CasesCaseIdRoute: typeof CasesCaseIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   TopicSlugRoute: typeof TopicSlugRoute
-  BlogIndexRoute: typeof BlogIndexRoute
-  CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
-  AdminBlogIdRoute: typeof AdminBlogIdRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
-  AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1ExportDocumentsRoute: typeof ApiPublicV1ExportDocumentsRoute
   ApiPublicV1IngestBatchRoute: typeof ApiPublicV1IngestBatchRoute
@@ -692,13 +589,6 @@ declare module '@tanstack/react-router' {
       path: '/states'
       fullPath: '/states'
       preLoaderRoute: typeof StatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stacks': {
-      id: '/stacks'
-      path: '/stacks'
-      fullPath: '/stacks'
-      preLoaderRoute: typeof StacksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -841,33 +731,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cases/': {
-      id: '/cases/'
-      path: '/cases'
-      fullPath: '/cases/'
-      preLoaderRoute: typeof CasesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog/': {
-      id: '/blog/'
-      path: '/blog'
-      fullPath: '/blog/'
-      preLoaderRoute: typeof BlogIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/topic/$slug': {
       id: '/topic/$slug'
       path: '/topic/$slug'
       fullPath: '/topic/$slug'
       preLoaderRoute: typeof TopicSlugRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/stacks/view': {
-      id: '/stacks/view'
-      path: '/view'
-      fullPath: '/stacks/view'
-      preLoaderRoute: typeof StacksViewRouteImport
-      parentRoute: typeof StacksRoute
     }
     '/code/$': {
       id: '/code/$'
@@ -883,39 +752,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cases/$caseId': {
-      id: '/cases/$caseId'
-      path: '/cases/$caseId'
-      fullPath: '/cases/$caseId'
-      preLoaderRoute: typeof CasesCaseIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/blog/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/blog/': {
-      id: '/admin/blog/'
-      path: '/admin/blog'
-      fullPath: '/admin/blog/'
-      preLoaderRoute: typeof AdminBlogIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/code/source/$source': {
       id: '/code/source/$source'
       path: '/code/source/$source'
       fullPath: '/code/source/$source'
       preLoaderRoute: typeof CodeSourceSourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/blog/$id': {
-      id: '/admin/blog/$id'
-      path: '/admin/blog/$id'
-      fullPath: '/admin/blog/$id'
-      preLoaderRoute: typeof AdminBlogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
@@ -998,17 +839,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface StacksRouteChildren {
-  StacksViewRoute: typeof StacksViewRoute
-}
-
-const StacksRouteChildren: StacksRouteChildren = {
-  StacksViewRoute: StacksViewRoute,
-}
-
-const StacksRouteWithChildren =
-  StacksRoute._addFileChildren(StacksRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1029,23 +859,16 @@ const rootRouteChildren: RootRouteChildren = {
   ScotusRoute: ScotusRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  StacksRoute: StacksRouteWithChildren,
   StatesRoute: StatesRoute,
   StatutesRoute: StatutesRoute,
   SubscribeRoute: SubscribeRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
-  BlogSlugRoute: BlogSlugRoute,
-  CasesCaseIdRoute: CasesCaseIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   TopicSlugRoute: TopicSlugRoute,
-  BlogIndexRoute: BlogIndexRoute,
-  CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
-  AdminBlogIdRoute: AdminBlogIdRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
-  AdminBlogIndexRoute: AdminBlogIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1ExportDocumentsRoute: ApiPublicV1ExportDocumentsRoute,
   ApiPublicV1IngestBatchRoute: ApiPublicV1IngestBatchRoute,

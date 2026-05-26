@@ -31,7 +31,7 @@ function AuthPage() {
   const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: redirect ?? "/cases" });
+    if (!loading && user) navigate({ to: redirect ?? "/" });
   }, [user, loading, navigate, redirect]);
 
   async function onSubmit(e: React.FormEvent) {
