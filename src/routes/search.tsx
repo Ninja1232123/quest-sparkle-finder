@@ -15,6 +15,7 @@ const searchSchema = z.object({
   exact: fallback(z.boolean(), false).default(false),
   words: fallback(z.string(), "").default(""),   // comma-separated must-have words
   exclude: fallback(z.string(), "").default(""), // comma-separated excluded words
+  semantic: fallback(z.number(), 0).default(0),  // keyword↔meaning blend, 0-100 (0 = keyword)
 });
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -55,6 +56,7 @@ export const Route = createFileRoute("/search")({
     exact: search.exact,
     words: search.words,
     exclude: search.exclude,
+    semantic: search.semantic,
   }),
   loader: async ({ deps }) => {
     const sourcesPromise = listSources();
@@ -75,7 +77,7 @@ export const Route = createFileRoute("/search")({
     }
 
     const [{ hits, error }, { sources }] = await Promise.all([
-      searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined } }),
+      searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined, semantic: deps.semantic || undefined } }),
       sourcesPromise,
     ]);
 
@@ -115,7 +117,7 @@ function parseSnippet(snippet: string): React.ReactNode {
 }
 
 function SearchPage() {
-  const { q, source, exact, words, exclude } = Route.useSearch();
+  const { q, source, exact, words, exclude, semantic } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
   const navigate = useNavigate();
 
@@ -152,7 +154,7 @@ function SearchPage() {
                   className="peer sr-only"
                   checked={exact}
                   onChange={(e) => {
-                    navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude } });
+                    navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude, semantic } });
                   }}
                 />
                 <div className="peer-checked:bg-accent h-5 w-9 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4" />
@@ -170,7 +172,7 @@ function SearchPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const val = (new FormData(e.currentTarget).get("words") as string).trim();
-                navigate({ to: "/search", search: { q, source, exact, words: val, exclude } });
+                navigate({ to: "/search", search: { q, source, exact, words: val, exclude, semantic } });
               }}
               className="mt-1 flex gap-1.5"
             >
@@ -192,7 +194,7 @@ function SearchPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const val = (new FormData(e.currentTarget).get("exclude") as string).trim();
-                navigate({ to: "/search", search: { q, source, exact, words, exclude: val } });
+                navigate({ to: "/search", search: { q, source, exact, words, exclude: val, semantic } });
               }}
               className="mt-1 flex gap-1.5"
             >
@@ -210,7 +212,7 @@ function SearchPage() {
           {hasFilters && (
             <button
               onClick={() => {
-                navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "" } });
+                navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "", semantic } });
               }}
               className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive"
             >
@@ -282,7 +284,7 @@ function SearchPage() {
             <div className="mt-6 flex flex-wrap gap-2">
               <Link
                 to="/search"
-                search={{ q, source: "", exact, words, exclude }}
+                search={{ q, source: "", exact, words, exclude, semantic }}
                 className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                   !source
                     ? "border-foreground bg-foreground text-background"
@@ -303,7 +305,7 @@ function SearchPage() {
                   <Link
                     key={s.code}
                     to="/search"
-                    search={{ q, source: s.code, exact, words, exclude }}
+                    search={{ q, source: s.code, exact, words, exclude, semantic }}
                     className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                       source === s.code
                         ? "border-foreground bg-foreground text-background"
@@ -362,7 +364,7 @@ function SearchPage() {
               <div className="mt-4 rounded-xl border border-ochre/25 bg-ochre/5 px-4 py-2.5 text-sm text-foreground/70">
                 No exact keyword matches — showing closest results by spelling similarity.{" "}
                 <button
-                  onClick={() => navigate({ to: "/search", search: { q: "", source, exact, words, exclude } })}
+                  onClick={() => navigate({ to: "/search", search: { q: "", source, exact, words, exclude, semantic } })}
                   className="text-accent hover:underline"
                 >
                   Try a broader search.
@@ -397,7 +399,7 @@ function SearchPage() {
                       </div>
                       <Link
                         to="/search"
-                        search={{ q, source: src, exact, words, exclude }}
+                        search={{ q, source: src, exact, words, exclude, semantic }}
                         className="text-xs text-accent hover:underline"
                       >
                         Filter to {SOURCE_ABBR[src] ?? src} →
@@ -410,7 +412,7 @@ function SearchPage() {
                       {srcHits.length > 5 && (
                         <Link
                           to="/search"
-                          search={{ q, source: src, exact, words, exclude }}
+                          search={{ q, source: src, exact, words, exclude, semantic }}
                           className="block text-center text-xs text-muted-foreground hover:text-accent py-2"
                         >
                           +{srcHits.length - 5} more in {SOURCE_ABBR[src]}

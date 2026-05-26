@@ -1,118 +1,34 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { embed, embedMany } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// Query-side embedding for semantic search.
+//
+// The fast_text vectors (7.6M chunks, 300-dim) were built by a fastText model
+// trained on the corpus (`fast_text-self_law.bin`). To search that space we
+// must embed the QUERY with the exact same model — so we call the self-hosted
+// fastText service on the box (`scripts/fasttext-embed-service.py`, behind the
+// `/embed` route on the Cloudflare tunnel). Vercel can't reach the box's
+// localhost directly, hence going through the tunnel like the DB does.
+//
+// Returns null on any failure (service down, timeout, bad shape) so search
+// cleanly falls back to keyword/FTS — semantic is always best-effort.
+//
+// NOTE: the old OpenAI/admin embedding path (text-embedding-3-small → the empty
+// document_sections.embedding column) was removed — it was pre-Vercel, wrong
+// dimension (1536 vs 300), and search_hybrid reads fast_text, not that column.
 
-// Restrict admin server functions to a specific user id, set via the
-// ADMIN_USER_ID secret. Without that secret, no one can run them.
-function assertAdmin(userId: string) {
-  const adminId = process.env.ADMIN_USER_ID;
-  if (!adminId) {
-    throw new Error("Forbidden: ADMIN_USER_ID is not configured");
-  }
-  if (userId !== adminId) {
-    throw new Error("Forbidden: not an admin user");
-  }
-}
-
-// Model used for embedding. Must be available on your AI gateway.
-// text-embedding-3-small: 1536 dims, fast, cheap — default.
-// voyage-law-2:           1024 dims, purpose-built for legal text — requires
-//   recreating the vector(1536) column as vector(1024) and a full re-backfill.
-
-async function getAdminClient() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
-
-function getEmbeddingModel() {
-  const key = process.env.OPENAI_API_KEY;
-  const model = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
-  if (!key) throw new Error("OPENAI_API_KEY is not set — add it to your environment to enable semantic search.");
-  return createOpenAI({ apiKey: key }).textEmbeddingModel(model);
-}
-
-// Text we embed for each document: label + heading + first 1500 chars of body.
-// Keeps context focused; cheap to recompute if the model changes.
-function buildEmbedInput(doc: { section_label: string | null; heading: string | null; body_text: string | null }): string {
-  const parts = [doc.section_label, doc.heading, (doc.body_text ?? "").slice(0, 1500)].filter(Boolean);
-  return parts.join(" — ");
-}
-
-function requireCount(label: string, result: { count: number | null; error: { message: string } | null }): number {
-  if (result.error) {
-    throw new Error(`Failed to load ${label}: ${result.error.message}`);
-  }
-  if (typeof result.count !== "number") {
-    throw new Error(`Failed to load ${label}: database returned no count`);
-  }
-  return result.count;
-}
-
-// Generate a single embedding vector for a query string.
-// Used at search time (low latency path, <200 ms on most gateways).
 export async function generateQueryEmbedding(query: string): Promise<number[] | null> {
+  const base = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!base) return null;
   try {
-    const { embedding } = await embed({
-      model: getEmbeddingModel(),
-      value: query,
+    const res = await fetch(`${base.replace(/\/$/, "")}/embed`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: query }),
+      signal: AbortSignal.timeout(5000),
     });
-    return embedding;
+    if (!res.ok) return null;
+    const data = (await res.json()) as { vector?: number[]; dim?: number };
+    return Array.isArray(data.vector) && data.vector.length > 0 ? data.vector : null;
   } catch (err) {
     console.error("[embeddings] query embedding failed:", err);
     return null;
   }
 }
-
-// ── Admin / backfill server functions ────────────────────────────────────────
-
-export const getEmbeddingStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    assertAdmin(context.userId);
-    const supabaseAdmin = await getAdminClient();
-    const [totalRes, embeddedRes] = await Promise.all([
-      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).not("embedding", "is", null),
-    ]);
-    const total = requireCount("document total", totalRes);
-    const embedded = requireCount("embedded count", embeddedRes);
-    const pending = Math.max(0, total - embedded);
-    return { total, embedded: Math.min(total, embedded), pending };
-  });
-
-export const runEmbeddingBatch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ batch_size: z.number().int().min(1).max(200).default(100) }))
-  .handler(async ({ data, context }) => {
-    assertAdmin(context.userId);
-    const supabaseAdmin = await getAdminClient();
-    const model = getEmbeddingModel(); // throws if no API key
-
-    // Fetch the next batch of un-embedded documents.
-    const { data: docs, error } = await supabaseAdmin
-      .from("documents")
-      .select("id, section_label, heading, body_text")
-      .is("embedding", null)
-      .limit(data.batch_size);
-
-    if (error) return { processed: 0, error: error.message };
-    if (!docs || docs.length === 0) return { processed: 0, error: null };
-
-    // Generate embeddings for the batch in a single API call.
-    const values = docs.map(buildEmbedInput);
-    const { embeddings } = await embedMany({ model, values });
-
-    // Write embeddings back to the DB row-by-row.
-    // Could be a single upsert but the ids aren't ordered, so updates are simpler.
-    const updates = docs.map((doc, i) =>
-      supabaseAdmin
-        .from("documents")
-        .update({ embedding: embeddings[i] as unknown as string } as never)
-        .eq("id", doc.id)
-    );
-    await Promise.all(updates);
-
-    return { processed: docs.length, error: null };
-  });

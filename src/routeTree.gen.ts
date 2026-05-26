@@ -43,7 +43,6 @@ import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AdminEmbeddingsRouteImport } from './routes/admin.embeddings'
 import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
@@ -229,11 +228,6 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEmbeddingsRoute = AdminEmbeddingsRouteImport.update({
-  id: '/admin/embeddings',
-  path: '/admin/embeddings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
   id: '/admin/blog/',
   path: '/admin/blog/',
@@ -335,7 +329,6 @@ export interface FileRoutesByFullPath {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -386,7 +379,6 @@ export interface FileRoutesByTo {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -438,7 +430,6 @@ export interface FileRoutesById {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
-  '/admin/embeddings': typeof AdminEmbeddingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -491,7 +482,6 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/admin/embeddings'
     | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
@@ -542,7 +532,6 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/admin/embeddings'
     | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
@@ -593,7 +582,6 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
-    | '/admin/embeddings'
     | '/blog/$slug'
     | '/cases/$caseId'
     | '/checkout/return'
@@ -645,7 +633,6 @@ export interface RootRouteChildren {
   SubscribeRoute: typeof SubscribeRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
-  AdminEmbeddingsRoute: typeof AdminEmbeddingsRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
@@ -910,13 +897,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/embeddings': {
-      id: '/admin/embeddings'
-      path: '/admin/embeddings'
-      fullPath: '/admin/embeddings'
-      preLoaderRoute: typeof AdminEmbeddingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/blog/': {
       id: '/admin/blog/'
       path: '/admin/blog'
@@ -1055,7 +1035,6 @@ const rootRouteChildren: RootRouteChildren = {
   SubscribeRoute: SubscribeRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
-  AdminEmbeddingsRoute: AdminEmbeddingsRoute,
   BlogSlugRoute: BlogSlugRoute,
   CasesCaseIdRoute: CasesCaseIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,

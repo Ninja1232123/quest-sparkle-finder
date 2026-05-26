@@ -1,17 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateQueryEmbedding } from "@/lib/embeddings.functions";
-import { getOptionalUserId } from "@/integrations/supabase/optional-auth";
 import { sourceName } from "@/lib/source-groups";
-
-// Queries that look like natural-language questions get the hybrid FTS + semantic path.
-// Short keyword searches stay on FTS-only (faster, no embedding round-trip).
-function isSemanticQuery(q: string): boolean {
-  const words = q.trim().split(/\s+/);
-  if (words.length >= 4) return true;
-  if (/^(what|when|how|can|does|do|is|are|who|where|why|which|define|explain)\b/i.test(q)) return true;
-  return false;
-}
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
 
@@ -458,6 +448,9 @@ export const searchDocuments = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     q: z.string().min(2).max(200),
     source: z.string().min(2).max(20).optional(),
+    // Keyword↔meaning blend, 0-100 (the UI slider). 0 = pure keyword FTS;
+    // >0 runs search_hybrid with p_semantic_weight = semantic/100. Defaults off.
+    semantic: z.number().min(0).max(100).optional(),
   }))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
@@ -498,21 +491,17 @@ export const searchDocuments = createServerFn({ method: "GET" })
       section_label: string | null; heading: string | null; snippet: string | null; rank: number;
     };
 
-    // 2) Choose search path based on query shape.
-    //    Long / question-like queries → hybrid (FTS + semantic via pgvector).
-    //    Short keyword queries → FTS-only (faster, no embedding round-trip).
+    // 2) Search path. Semantic is a user toggle: when on, run search_hybrid
+    //    (keyword + vector over fast_text, fused by RRF). The query is embedded
+    //    by the self-hosted fastText service (no API cost), so no auth gate; if
+    //    the embedder is unreachable we silently fall back to keyword FTS.
     let rows: SearchRow[] | null = null;
     let usedSemantic = false;
     let usedTrgm = false;
 
-    if (isSemanticQuery(raw)) {
-      // Gate the paid embedding call behind authentication. Anonymous callers
-      // (including direct URL hits to /search?q=…) fall through to FTS-only,
-      // so unauthenticated traffic can never trigger AI cost.
-      const userId = await getOptionalUserId();
-      const embedding = userId ? await generateQueryEmbedding(raw) : null;
+    if (data.semantic && data.semantic > 0) {
+      const embedding = await generateQueryEmbedding(raw);
       if (embedding) {
-        usedSemantic = true;
         const { data: hybridRows, error: hybridError } = await (supabaseAdmin.rpc as unknown as (
           fn: string, args: Record<string, unknown>,
         ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
@@ -520,9 +509,13 @@ export const searchDocuments = createServerFn({ method: "GET" })
             p_query_text: raw,
             p_query_embedding: embedding as unknown as string,
             p_source: data.source ?? null,
-            p_limit: 20,
+            p_limit: 30,
+            p_semantic_weight: data.semantic / 100,
           });
-        if (!hybridError) rows = hybridRows ?? [];
+        if (!hybridError && hybridRows) {
+          rows = hybridRows;
+          usedSemantic = true;
+        }
       }
     }
 

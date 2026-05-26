@@ -37,3 +37,9 @@ dist-ssr
 !.env.example
 .vercel
 .env*
+
+# Large local artifacts — must never hit GitHub (6.8GB model, corpus zips, etc.)
+*.bin
+fast_text-self_law.bin
+*.zip
+*.heartbeat

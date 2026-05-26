@@ -3,10 +3,10 @@
  *
  * Two-pane: results list on the left, citation preview on the right.
  * Compare toggle routes Enter to /compare with a sensible default set of sources.
- * Semantic slider is visual-only for now — the server already picks the hybrid
- * path automatically for natural-language queries, so this is just a hint to
- * the user that semantic recall is on. Wire it to a real param when the API
- * supports it.
+ * The keyword↔meaning slider is a real blend: its value (0-100) is passed to
+ * searchDocuments as `semantic`, which weights search_hybrid's fusion (0 = pure
+ * keyword FTS, 100 = pure semantic over the fastText vectors). It carries
+ * through to /search when you open the full results page.
  *
  * Mounted once in __root.tsx so any page can trigger it via the keyboard.
  */
@@ -124,19 +124,19 @@ export function CmdPalette() {
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await searchDocuments({ data: { q: term } });
+        const res = await searchDocuments({ data: { q: term, semantic } });
         if (!cancelled) setHits(((res.hits as Hit[]) ?? []).slice(0, 8));
       } catch {
         if (!cancelled) setHits([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }, 160);
+    }, 220);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [q]);
+  }, [q, semantic]);
 
   // Build items list
   const items: Item[] =
@@ -182,7 +182,7 @@ export function CmdPalette() {
     if (compareMode) {
       navigate({ to: "/compare", search: { q: term, sources: "const,usc,cfr" } });
     } else {
-      navigate({ to: "/search", search: { q: term } });
+      navigate({ to: "/search", search: { q: term, semantic } });
     }
   }
 
@@ -324,8 +324,8 @@ export function CmdPalette() {
             <span><kbd>esc</kbd>close</span>
             <span className="cmd-foot-spacer" />
             <span className="cmd-foot-hint">
-              <Zap className="h-3 w-3 text-terracotta" />
-              semantic on
+              <Zap className={`h-3 w-3 ${semantic > 0 ? "text-terracotta" : "text-foreground/30"}`} />
+              {semantic > 0 ? `semantic ${semantic}%` : "keyword only"}
             </span>
           </div>
         </div>
