@@ -27,7 +27,7 @@ const searchSchema = z.object({
 // — used to label tabs; the backend enforces the same split via p_scope.
 const SCOPES = [
   { key: "codified", label: "Codified law", blurb: "Constitution, U.S. Code, CFR, UCC, Treasury & IRS manuals", sources: ["const", "usc", "cfr", "ucc", "tfm", "irm"] },
-  { key: "primary", label: "Primary sources", blurb: "Federal Register & Statutes at Large", sources: ["register", "statutes-at-large"] },
+  { key: "primary", label: "Primary sources", blurb: "Federal Register, Statutes at Large, bills & presidential papers", sources: ["register", "statutes-at-large", "bill", "public-papers-president", "statute-compilations", "public-private-law"] },
   { key: "cases", label: "Court cases", blurb: "Supreme Court opinions — coming soon", sources: [] },
 ] as const;
 
@@ -40,6 +40,10 @@ const SOURCE_LABELS: Record<string, string> = {
   irm: "Internal Revenue Manual",
   register: "Federal Register",
   "statutes-at-large": "Statutes at Large",
+  bill: "Congressional Bills",
+  "public-papers-president": "Public Papers of the Presidents",
+  "statute-compilations": "Statute Compilations",
+  "public-private-law": "Public & Private Laws",
 };
 
 const SOURCE_ABBR: Record<string, string> = {
@@ -51,6 +55,10 @@ const SOURCE_ABBR: Record<string, string> = {
   irm: "IRM",
   register: "Fed. Reg.",
   "statutes-at-large": "Stat.",
+  bill: "Bill",
+  "public-papers-president": "Pres. Papers",
+  "statute-compilations": "Stat. Comp.",
+  "public-private-law": "Pub. L.",
 };
 
 type Hit = {
