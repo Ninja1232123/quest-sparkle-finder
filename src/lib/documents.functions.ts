@@ -505,7 +505,13 @@ export const searchDocuments = createServerFn({ method: "GET" })
       section_label: string | null; heading: string | null; snippet: string | null; rank: number;
     };
     type RpcResult = { data: SearchRow[] | null; error: { message: string } | null };
-    const rpc = supabaseAdmin.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<RpcResult>;
+    // Call as a METHOD (supabaseAdmin.rpc), never a detached reference:
+    // supabase-js rpc() does `return this.rest.rpc(...)`, so pulling the
+    // function off the client drops `this` and throws "Cannot read properties
+    // of undefined (reading 'rest')" server-side. Keep the member-call form.
+    type RpcCall = (fn: string, args: Record<string, unknown>) => Promise<RpcResult>;
+    const sb = supabaseAdmin as unknown as { rpc: RpcCall };
+    const rpc: RpcCall = (fn, args) => sb.rpc(fn, args);
 
     const scope = data.scope ?? "codified";
     // Call an FTS-family RPC scope-aware. If the box hasn't run
