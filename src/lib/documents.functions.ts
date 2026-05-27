@@ -402,22 +402,32 @@ export const getDocument = createServerFn({ method: "GET" })
   });
 
 // Detect common citation shapes and return a normalized identifier guess.
-// Examples:
-//   "42 USC 1983"        -> "usc/42/1983"
-//   "42 U.S.C. § 1983"   -> "usc/42/1983"
-//   "29 CFR 1910.95"     -> "cfr/29/1910.95"
-//   "U.C.C. 2-207"       -> "ucc/2-207"
+// Identifiers must match the corpus's actual `documents.identifier` shapes
+// (verified against the live DB), which differ per source:
+//   "42 USC 1983"      -> "/usc/title-42/section-1983"
+//   "42 U.S.C. § 1983" -> "/usc/title-42/section-1983"
+//   "29 CFR 1910.95"   -> "/us/cfr/t29/s§ 1910.95"   (yes, a literal "§ ")
+//   "U.C.C. 2-207"     -> "/us/ucc/a2/s2-207"          (article = before the dash)
 function detectCitation(raw: string): { source: string; identifier?: string; title?: string; section?: string } | null {
   const s = raw.replace(/§/g, " ").replace(/\s+/g, " ").trim();
-  // Title-based: "<title> <code> <section>"
+  // Title-based: "<title> USC|CFR <section>"
   const m1 = s.match(/^(\d+)\s*(u\.?\s*s\.?\s*c\.?|c\.?\s*f\.?\s*r\.?)\s*([\w.\-]+)$/i);
   if (m1) {
-    const code = /c/i.test(m1[2]) && /f/i.test(m1[2]) ? "cfr" : "usc";
-    return { source: code, title: m1[1], section: m1[3], identifier: `${code}/${m1[1]}/${m1[3]}` };
+    const isCfr = /c/i.test(m1[2]) && /f/i.test(m1[2]);
+    const title = m1[1];
+    const section = m1[3];
+    if (isCfr) {
+      return { source: "cfr", title, section, identifier: `/us/cfr/t${title}/s§ ${section}` };
+    }
+    return { source: "usc", title, section, identifier: `/usc/title-${title}/section-${section}` };
   }
-  // UCC: "ucc 2-207" or "u.c.c. 2-207"
-  const m2 = s.match(/^(u\.?\s*c\.?\s*c\.?)\s*([\w.\-]+)$/i);
-  if (m2) return { source: "ucc", section: m2[2], identifier: `ucc/${m2[2]}` };
+  // UCC: "ucc 2-207" or "u.c.c. 2-207" — article number is the part before the dash.
+  const m2 = s.match(/^u\.?\s*c\.?\s*c\.?\s*([\w.]+-[\w.]+)$/i);
+  if (m2) {
+    const section = m2[1];
+    const article = section.split("-")[0];
+    return { source: "ucc", section, identifier: `/us/ucc/a${article}/s${section}` };
+  }
   return null;
 }
 

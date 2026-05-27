@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useState, useEffect, useRef } from "react";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { SearchBar } from "@/components/marginalia/SearchBar";
+import { SearchSyntax } from "@/components/marginalia/SearchSyntax";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { useSearchQuota, FREE_DAILY_LIMIT } from "@/hooks/use-search-quota";
@@ -298,10 +299,7 @@ function SearchPage() {
 
         <div className="mt-8">
           <SearchBar autoFocus />
-          <p className="mt-2 text-[11px] text-muted-foreground/60">
-            Tip: use <code className="font-mono">"exact phrase"</code>, <code className="font-mono">-exclude</code>, or{" "}
-            <code className="font-mono">term OR term</code> directly in the search bar.
-          </p>
+          <SearchSyntax defaultOpen={!q} />
         </div>
 
         {/* Signed-out visitor with a query — hide results, the effect bounces
