@@ -458,8 +458,12 @@ export const searchDocuments = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     q: z.string().min(2).max(200),
     source: z.string().min(2).max(20).optional(),
-    // Keyword↔meaning blend, 0-100 (the UI slider). 0 = pure keyword FTS;
-    // >0 runs search_hybrid with p_semantic_weight = semantic/100. Defaults off.
+    // Search bucket. 'codified' (default) = the codebooks/manuals; 'primary' =
+    // Federal Register + Statutes at Large; 'cases' = caselaw (not in this
+    // corpus yet); 'all' = no restriction. An explicit `source` pins one code.
+    scope: z.enum(["codified", "primary", "cases", "all"]).optional(),
+    // Keyword↔meaning blend, 0-100 (parked). 0 = pure keyword FTS;
+    // >0 would run search_hybrid with p_semantic_weight = semantic/100.
     semantic: z.number().min(0).max(100).optional(),
   }))
   .handler(async ({ data }) => {
@@ -500,6 +504,21 @@ export const searchDocuments = createServerFn({ method: "GET" })
       identifier: string; source_code: string; parent_label: string | null;
       section_label: string | null; heading: string | null; snippet: string | null; rank: number;
     };
+    type RpcResult = { data: SearchRow[] | null; error: { message: string } | null };
+    const rpc = supabaseAdmin.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<RpcResult>;
+
+    const scope = data.scope ?? "codified";
+    // Call an FTS-family RPC scope-aware. If the box hasn't run
+    // citation-authority.sql yet (function still has the 3-arg, no-p_scope
+    // signature), PostgREST can't resolve the call — retry without p_scope so
+    // search keeps working (unscoped) until the box is updated.
+    const scopedSearch = async (fn: string, base: Record<string, unknown>): Promise<RpcResult> => {
+      const res = await rpc(fn, { ...base, p_scope: scope });
+      if (res.error && /scope|find the function|does not exist|schema cache|PGRST202|42883/i.test(res.error.message)) {
+        return rpc(fn, base);
+      }
+      return res;
+    };
 
     // 2) Search path. Semantic is a user toggle: when on, run search_hybrid
     //    (keyword + vector over fast_text, fused by RRF). The query is embedded
@@ -532,14 +551,11 @@ export const searchDocuments = createServerFn({ method: "GET" })
     // Fall through to FTS if semantic was skipped or returned nothing.
     if (!rows || rows.length === 0) {
       usedSemantic = false;
-      const { data: ftsRows, error: ftsError } = await (supabaseAdmin.rpc as unknown as (
-        fn: string, args: Record<string, unknown>,
-      ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
-        "search_documents_fts", {
-          p_query: raw,
-          p_source: data.source ?? null,
-          p_limit: 40,
-        });
+      const { data: ftsRows, error: ftsError } = await scopedSearch("search_documents_fts", {
+        p_query: raw,
+        p_source: data.source ?? null,
+        p_limit: 40,
+      });
       if (ftsError) return { hits: [], error: ftsError.message };
       rows = ftsRows ?? [];
     }
@@ -547,14 +563,11 @@ export const searchDocuments = createServerFn({ method: "GET" })
     // 3) Fallback: trigram similarity when FTS returns nothing (typos, acronyms,
     //    short numeric tokens that the English stemmer doesn't index).
     if (!rows || rows.length === 0) {
-      const { data: trgmRows } = await (supabaseAdmin.rpc as unknown as (
-        fn: string, args: Record<string, unknown>,
-      ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>) (
-        "search_documents_trgm", {
-          p_query: raw,
-          p_source: data.source ?? null,
-          p_limit: 20,
-        });
+      const { data: trgmRows } = await scopedSearch("search_documents_trgm", {
+        p_query: raw,
+        p_source: data.source ?? null,
+        p_limit: 20,
+      });
       rows = trgmRows ?? [];
       if (rows.length > 0) usedTrgm = true;
     }

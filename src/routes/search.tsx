@@ -18,8 +18,18 @@ const searchSchema = z.object({
   exact: fallback(z.boolean(), false).default(false),
   words: fallback(z.string(), "").default(""),   // comma-separated must-have words
   exclude: fallback(z.string(), "").default(""), // comma-separated excluded words
-  semantic: fallback(z.number(), 0).default(0),  // keyword↔meaning blend, 0-100 (0 = keyword)
+  scope: fallback(z.enum(["codified", "primary", "cases"]), "codified").default("codified"),
 });
+
+// The three search buckets. Default lands on the codified law; the bulky
+// primary sources and (forthcoming) caselaw are opt-in, so a plain search
+// isn't 41% Federal Register. `sources` lists which source_codes belong to each
+// — used to label tabs; the backend enforces the same split via p_scope.
+const SCOPES = [
+  { key: "codified", label: "Codified law", blurb: "Constitution, U.S. Code, CFR, UCC, Treasury & IRS manuals", sources: ["const", "usc", "cfr", "ucc", "tfm", "irm"] },
+  { key: "primary", label: "Primary sources", blurb: "Federal Register & Statutes at Large", sources: ["register", "statutes-at-large"] },
+  { key: "cases", label: "Court cases", blurb: "Supreme Court opinions — coming soon", sources: [] },
+] as const;
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "U.S. Constitution",
@@ -28,6 +38,8 @@ const SOURCE_LABELS: Record<string, string> = {
   ucc: "Uniform Commercial Code",
   tfm: "Treasury Financial Manual",
   irm: "Internal Revenue Manual",
+  register: "Federal Register",
+  "statutes-at-large": "Statutes at Large",
 };
 
 const SOURCE_ABBR: Record<string, string> = {
@@ -37,6 +49,8 @@ const SOURCE_ABBR: Record<string, string> = {
   ucc: "U.C.C.",
   tfm: "TFM",
   irm: "IRM",
+  register: "Fed. Reg.",
+  "statutes-at-large": "Stat.",
 };
 
 type Hit = {
@@ -59,11 +73,13 @@ export const Route = createFileRoute("/search")({
     exact: search.exact,
     words: search.words,
     exclude: search.exclude,
-    semantic: search.semantic,
+    scope: search.scope,
   }),
   loader: async ({ deps }) => {
     const sourcesPromise = listSources();
-    if (!deps.q || deps.q.trim().length < 2) {
+    // Court cases live in a separate corpus we haven't wired into search yet —
+    // show the coming-soon panel instead of querying document_sections.
+    if (deps.scope === "cases" || !deps.q || deps.q.trim().length < 2) {
       const { sources } = await sourcesPromise;
       return { hits: [] as Hit[], sources, error: null as string | null };
     }
@@ -80,7 +96,7 @@ export const Route = createFileRoute("/search")({
     }
 
     const [{ hits, error }, { sources }] = await Promise.all([
-      searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined, semantic: deps.semantic || undefined } }),
+      searchDocuments({ data: { q: effectiveQ.trim(), source: deps.source || undefined, scope: deps.scope } }),
       sourcesPromise,
     ]);
 
@@ -120,7 +136,7 @@ function parseSnippet(snippet: string): React.ReactNode {
 }
 
 function SearchPage() {
-  const { q, source, exact, words, exclude, semantic } = Route.useSearch();
+  const { q, source, exact, words, exclude, scope } = Route.useSearch();
   const { hits, sources, error } = Route.useLoaderData();
   const navigate = useNavigate();
 
@@ -132,12 +148,15 @@ function SearchPage() {
   const { isPro, consume } = useSearchQuota();
   const trimmed = q.trim();
   const consumedFor = useRef<string | null>(null);
+  // The 'cases' scope has no search yet (caselaw is a separate corpus), so it
+  // neither gates nor consumes a quota — it just shows the coming-soon panel.
+  const isCases = scope === "cases";
   // True once auth has resolved and a signed-out visitor has a real query —
   // we hide results and bounce them to sign-up.
-  const needsAuth = !authLoading && !user && trimmed.length >= 2;
+  const needsAuth = !authLoading && !user && trimmed.length >= 2 && !isCases;
 
   useEffect(() => {
-    if (authLoading || trimmed.length < 2) return;
+    if (authLoading || trimmed.length < 2 || isCases) return;
     if (!user) {
       navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(trimmed)}` } });
       return;
@@ -146,7 +165,7 @@ function SearchPage() {
     if (consumedFor.current === trimmed) return; // don't re-count filter/source changes
     if (consume()) consumedFor.current = trimmed;
     else navigate({ to: "/subscribe" });
-  }, [trimmed, user, authLoading, isPro, consume, navigate]);
+  }, [trimmed, user, authLoading, isPro, consume, navigate, isCases]);
 
   // Group by source
   const bySource = new Map<string, Hit[]>();
@@ -181,7 +200,7 @@ function SearchPage() {
                   className="peer sr-only"
                   checked={exact}
                   onChange={(e) => {
-                    navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude, semantic } });
+                    navigate({ to: "/search", search: { q, source, exact: e.target.checked, words, exclude, scope } });
                   }}
                 />
                 <div className="peer-checked:bg-accent h-5 w-9 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4" />
@@ -199,7 +218,7 @@ function SearchPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const val = (new FormData(e.currentTarget).get("words") as string).trim();
-                navigate({ to: "/search", search: { q, source, exact, words: val, exclude, semantic } });
+                navigate({ to: "/search", search: { q, source, exact, words: val, exclude, scope } });
               }}
               className="mt-1 flex gap-1.5"
             >
@@ -221,7 +240,7 @@ function SearchPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const val = (new FormData(e.currentTarget).get("exclude") as string).trim();
-                navigate({ to: "/search", search: { q, source, exact, words, exclude: val, semantic } });
+                navigate({ to: "/search", search: { q, source, exact, words, exclude: val, scope } });
               }}
               className="mt-1 flex gap-1.5"
             >
@@ -239,7 +258,7 @@ function SearchPage() {
           {hasFilters && (
             <button
               onClick={() => {
-                navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "", semantic } });
+                navigate({ to: "/search", search: { q, source, exact: false, words: "", exclude: "", scope } });
               }}
               className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive"
             >
@@ -302,6 +321,52 @@ function SearchPage() {
           <SearchSyntax defaultOpen={!q} />
         </div>
 
+        {/* Scope buckets — which body of law to search. Default is the codified
+            law; primary sources and caselaw are opt-in. Switching scope resets
+            the source filter (sources differ per scope). */}
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
+          {SCOPES.map((sc) => {
+            const active = scope === sc.key;
+            return (
+              <Link
+                key={sc.key}
+                to="/search"
+                search={{ q, source: "", exact, words, exclude, scope: sc.key }}
+                title={sc.blurb}
+                className={`rounded-full border px-3.5 py-1.5 text-sm transition-all ${
+                  active
+                    ? "border-accent bg-accent/10 font-medium text-accent"
+                    : "border-border/60 text-foreground/70 hover:border-foreground/40 hover:text-foreground"
+                }`}
+              >
+                {sc.label}
+                {sc.key === "cases" && (
+                  <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+                    soon
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+          <span className="ml-1 hidden text-xs text-muted-foreground/60 lg:inline">
+            {SCOPES.find((s) => s.key === scope)?.blurb}
+          </span>
+        </div>
+
+        {/* Court cases: no search wired yet — show the coming-soon panel. */}
+        {isCases && (
+          <div className="mt-10 rounded-2xl border border-dashed border-border/70 bg-card/40 p-8 text-center">
+            <Network className="mx-auto h-6 w-6 text-muted-foreground" />
+            <h2 className="mt-3 font-display text-xl font-semibold">Court cases are coming</h2>
+            <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
+              Caselaw lives in its own corpus (Supreme Court opinions, with the citation graph
+              tying them to the statutes they interpret). Searching it lands here next — for now,
+              switch to <span className="font-medium text-foreground">Codified law</span> or{" "}
+              <span className="font-medium text-foreground">Primary sources</span>.
+            </p>
+          </div>
+        )}
+
         {/* Signed-out visitor with a query — hide results, the effect bounces
             them to sign-up. Shown briefly (or if JS redirect is slow). */}
         {needsAuth && (
@@ -321,13 +386,13 @@ function SearchPage() {
           </div>
         )}
 
-        {q && !needsAuth && (
+        {!isCases && q && !needsAuth && (
           <>
             {/* Source filter tabs */}
             <div className="mt-6 flex flex-wrap gap-2">
               <Link
                 to="/search"
-                search={{ q, source: "", exact, words, exclude, semantic }}
+                search={{ q, source: "", exact, words, exclude, scope }}
                 className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                   !source
                     ? "border-foreground bg-foreground text-background"
@@ -348,7 +413,7 @@ function SearchPage() {
                   <Link
                     key={s.code}
                     to="/search"
-                    search={{ q, source: s.code, exact, words, exclude, semantic }}
+                    search={{ q, source: s.code, exact, words, exclude, scope }}
                     className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                       source === s.code
                         ? "border-foreground bg-foreground text-background"
@@ -407,7 +472,7 @@ function SearchPage() {
               <div className="mt-4 rounded-xl border border-ochre/25 bg-ochre/5 px-4 py-2.5 text-sm text-foreground/70">
                 No exact keyword matches — showing closest results by spelling similarity.{" "}
                 <button
-                  onClick={() => navigate({ to: "/search", search: { q: "", source, exact, words, exclude, semantic } })}
+                  onClick={() => navigate({ to: "/search", search: { q: "", source, exact, words, exclude, scope } })}
                   className="text-accent hover:underline"
                 >
                   Try a broader search.
@@ -442,7 +507,7 @@ function SearchPage() {
                       </div>
                       <Link
                         to="/search"
-                        search={{ q, source: src, exact, words, exclude, semantic }}
+                        search={{ q, source: src, exact, words, exclude, scope }}
                         className="text-xs text-accent hover:underline"
                       >
                         Filter to {SOURCE_ABBR[src] ?? src} →
@@ -455,7 +520,7 @@ function SearchPage() {
                       {srcHits.length > 5 && (
                         <Link
                           to="/search"
-                          search={{ q, source: src, exact, words, exclude, semantic }}
+                          search={{ q, source: src, exact, words, exclude, scope }}
                           className="block text-center text-xs text-muted-foreground hover:text-accent py-2"
                         >
                           +{srcHits.length - 5} more in {SOURCE_ABBR[src]}
