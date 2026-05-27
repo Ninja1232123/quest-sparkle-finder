@@ -3,10 +3,10 @@
  *
  * Two-pane: results list on the left, citation preview on the right.
  * Compare toggle routes Enter to /compare with a sensible default set of sources.
- * The keyword↔meaning slider is a real blend: its value (0-100) is passed to
- * searchDocuments as `semantic`, which weights search_hybrid's fusion (0 = pure
- * keyword FTS, 100 = pure semantic over the fastText vectors). It carries
- * through to /search when you open the full results page.
+ * Search is keyword/full-text (tsvector) across every codebook — fast, exact,
+ * predictable. (Semantic/vector blending is parked server-side in search_hybrid;
+ * the fastText-over-body-text version surfaced too much noise, so it's being
+ * reworked around the citation graph before it ships back into the UI.)
  *
  * Mounted once in __root.tsx so any page can trigger it via the keyboard.
  */
@@ -21,7 +21,6 @@ import {
   Bookmark,
   ChevronRight,
   Plus,
-  Zap,
 } from "lucide-react";
 import { searchDocuments } from "@/lib/documents.functions";
 import { useAuth } from "@/hooks/use-auth";
@@ -74,7 +73,6 @@ export function CmdPalette() {
   const [hits, setHits] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(0);
-  const [semantic, setSemantic] = useState(60);
   const [compareMode, setCompareMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -128,7 +126,7 @@ export function CmdPalette() {
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await searchDocuments({ data: { q: term, semantic } });
+        const res = await searchDocuments({ data: { q: term } });
         if (!cancelled) setHits(((res.hits as Hit[]) ?? []).slice(0, 8));
       } catch {
         if (!cancelled) setHits([]);
@@ -140,7 +138,7 @@ export function CmdPalette() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [q, semantic]);
+  }, [q]);
 
   // Build items list
   const items: Item[] =
@@ -189,14 +187,14 @@ export function CmdPalette() {
     }
     // Same gate as the SearchBar — pre-check only; /search does the consume.
     if (!user) {
-      navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(term)}${semantic ? `&semantic=${semantic}` : ""}` } });
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(term)}` } });
       return;
     }
     if (blocked) {
       navigate({ to: "/subscribe" });
       return;
     }
-    navigate({ to: "/search", search: { q: term, semantic } });
+    navigate({ to: "/search", search: { q: term } });
   }
 
   function openHit(h: Hit) {
@@ -234,21 +232,6 @@ export function CmdPalette() {
               <Columns className="h-3 w-3" />
               {compareMode ? "Compare on" : "Compare"}
             </button>
-          </div>
-
-          <div className="cmd-slider-row">
-            <span className="cmd-tag">match</span>
-            <span className="cmd-slider-end">keyword</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={semantic}
-              onChange={(e) => setSemantic(parseInt(e.target.value, 10))}
-              aria-label="Match strength — keyword to meaning"
-            />
-            <span className="cmd-slider-end">meaning</span>
-            <span className="cmd-slider-pct">{semantic}%</span>
           </div>
 
           <div className="cmd-results">
@@ -337,8 +320,8 @@ export function CmdPalette() {
             <span><kbd>esc</kbd>close</span>
             <span className="cmd-foot-spacer" />
             <span className="cmd-foot-hint">
-              <Zap className={`h-3 w-3 ${semantic > 0 ? "text-terracotta" : "text-foreground/30"}`} />
-              {semantic > 0 ? `semantic ${semantic}%` : "keyword only"}
+              <SearchIcon className="h-3 w-3 text-foreground/30" />
+              keyword + phrase
             </span>
           </div>
         </div>

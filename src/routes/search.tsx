@@ -488,9 +488,9 @@ function SearchPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <ComingSoonCard
               icon={Brain}
-              status="live"
+              status="building"
               title="Ask in plain English"
-              pitch="Type a full question and semantic search finds the statutes that answer it — even when the exact words don't appear. Just ask."
+              pitch="Type a full question and semantic search finds the statutes that answer it — even when the exact words don't appear. We're rebuilding this on the citation graph so it cites by authority, not just word overlap."
             />
             <ComingSoonCard
               icon={Network}
