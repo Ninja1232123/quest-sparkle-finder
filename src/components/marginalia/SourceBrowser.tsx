@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, ChevronLeft, Search as SearchIcon, X, BookOpen, Network } from "lucide-react";
 import { ResearchShell } from "./ResearchShell";
 import { CodebookHero } from "./CodebookHero";
@@ -94,68 +94,147 @@ function groupPartsByChapter(parts: TocPart[]): ChapterGroup[] | null {
   return groups;
 }
 
-function TitleParts({ parts, linkSelf }: { parts: TocPart[]; linkSelf: LinkSelf }) {
-  const groups = groupPartsByChapter(parts);
-  if (!groups) {
+// ── Catalogue bubbles ──────────────────────────────────────────────────────
+// One visual language for the browse levels: a milk-white card with a
+// per-position accent fade and a solid accent "pull box" carrying the number,
+// so a long list reads as a scannable catalogue, not a wall of text. Ported
+// from the prototype; reuses tokens already in styles.css (--paper-soft /
+// --rule-card / .count-pill / --shadow-*).
+function pullToken(label: string): string {
+  const m = label.match(/\b(?:PART|CHAPTER|SUBCHAPTER|SUBPART|ARTICLE|TITLE)\s*([0-9]+[A-Za-z]?|[IVXLCDM]+|[A-Z])\b/i);
+  if (m) return m[1].toUpperCase();
+  const n = label.match(/\b(\d+[A-Za-z]?)\b/);
+  return n ? n[1] : "§";
+}
+function bubbleKind(label: string): string | undefined {
+  const m = label.match(/^\s*(part|chapter|subchapter|subpart|article|title)\b/i);
+  if (!m) return undefined;
+  const k = m[1].toLowerCase();
+  return k === "chapter" ? "CH." : k === "subchapter" ? "SUBCH" : k.toUpperCase().slice(0, 6);
+}
+function cleanBubbleTitle(label: string): string {
+  const stripped = label
+    .replace(/^\s*(?:PART|CHAPTER|SUBCHAPTER|SUBPART|ARTICLE|TITLE)\s*[0-9IVXLCDM.\-A-Za-z]*\s*[—–-]\s*/i, "")
+    .trim();
+  return stripped || label;
+}
+
+function CatalogueBubble({ kind, token, title, sub, count, accent, index, expandable, expanded }: {
+  kind?: string;
+  token: string;
+  title: string;
+  sub?: string;
+  count?: number;
+  accent: string;
+  index: number;
+  expandable?: boolean;
+  expanded?: boolean;
+}) {
+  // Angle shifts by position so a grid feels hand-arranged, not stamped.
+  const angle = 105 + (index % 6) * 22;
+  return (
+    <div
+      className="flex h-full items-center gap-4 rounded-2xl border-[1.5px] border-[var(--rule-card)] px-5 py-4 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-foreground/40 hover:shadow-[var(--shadow-warm)]"
+      style={{ background: `linear-gradient(${angle}deg, color-mix(in oklch, ${accent} 8%, transparent) 0%, transparent 62%), var(--paper-soft)` }}
+    >
+      <div
+        className="flex h-12 min-w-[3rem] shrink-0 flex-col items-center justify-center rounded-lg px-2 text-white shadow-[inset_0_1px_0_oklch(1_0_0/0.16),0_1px_0_oklch(0_0_0/0.14)]"
+        style={{ background: accent }}
+      >
+        {kind && <span className="font-mono text-[8px] font-bold uppercase tracking-wider opacity-80">{kind}</span>}
+        <span className="font-display text-lg font-extrabold leading-none">{token}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="font-display text-[15px] font-bold leading-snug text-foreground [text-wrap:pretty]">{title}</div>
+        {sub && <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
+      </div>
+      {count != null && (
+        <span className="count-pill shrink-0" style={{ ["--c"]: accent } as CSSProperties}>
+          <span className="num">{count.toLocaleString()}</span>
+          <span className="lbl">§§</span>
+        </span>
+      )}
+      {expandable && (
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+      )}
+    </div>
+  );
+}
+
+// A chapter bubble. Simple chapters drill straight to their sections; chapters
+// with subchapters reveal them inline on click (subchapters stay off-screen by
+// default since they read identically across titles).
+function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent: string; index: number; linkSelf: LinkSelf }) {
+  const [open, setOpen] = useState(false);
+  const simple = cg.rows.length === 1 && cg.rows[0].sub === null;
+  const token = pullToken(cg.chapter);
+  const title = cleanBubbleTitle(cg.chapter);
+
+  if (simple) {
     return (
-      <ul className="grid grid-cols-1 gap-px border-t border-border/60 bg-border/60 sm:grid-cols-2">
-        {parts.map((p) => (
-          <li key={p.parent_label} className="bg-card">
-            <Link
-              to={linkSelf.to as never}
-              search={{ group: p.parent_label }}
-              className="flex items-baseline justify-between gap-3 px-5 py-2.5 transition-colors hover:bg-muted/60"
-            >
-              <span className="font-display text-sm">{p.label}</span>
-              <span className="citation-tag text-muted-foreground">{p.count.toLocaleString()}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <Link to={linkSelf.to as never} search={{ group: cg.rows[0].parent_label }} className="block">
+        <CatalogueBubble kind="CH." token={token} title={title} count={cg.total} accent={accent} index={index} />
+      </Link>
     );
   }
   return (
-    <div className="border-t border-border/60">
-      {groups.map((cg) => {
-        // Simple chapter (no subchapters): one clickable row = the chapter.
-        if (cg.rows.length === 1 && cg.rows[0].sub === null) {
-          const r = cg.rows[0];
-          return (
-            <Link
-              key={cg.chapter}
-              to={linkSelf.to as never}
-              search={{ group: r.parent_label }}
-              className="flex items-baseline justify-between gap-3 border-b border-border/50 px-5 py-2.5 transition-colors hover:bg-muted/60"
-            >
-              <span className="font-display text-sm">{cg.chapter}</span>
-              <span className="citation-tag text-muted-foreground">{r.count.toLocaleString()}</span>
-            </Link>
-          );
-        }
-        // Chapter with subchapters: muted header + nested subchapter rows.
-        return (
-          <div key={cg.chapter} className="border-b border-border/50">
-            <div className="flex items-baseline justify-between gap-3 bg-muted/30 px-5 py-2">
-              <span className="citation-tag font-semibold text-foreground/75">{cg.chapter}</span>
-              <span className="citation-tag text-muted-foreground">{cg.total.toLocaleString()}</span>
-            </div>
-            <ul className="grid grid-cols-1 sm:grid-cols-2">
-              {cg.rows.map((r) => (
-                <li key={r.parent_label}>
-                  <Link
-                    to={linkSelf.to as never}
-                    search={{ group: r.parent_label }}
-                    className="flex items-baseline justify-between gap-3 px-5 py-2 pl-9 transition-colors hover:bg-muted/60"
-                  >
-                    <span className="text-sm text-foreground/80">{r.sub ?? "General provisions"}</span>
-                    <span className="citation-tag text-muted-foreground">{r.count.toLocaleString()}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+    <div>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="block w-full text-left" aria-expanded={open}>
+        <CatalogueBubble
+          kind="CH."
+          token={token}
+          title={title}
+          sub={`${cg.rows.length} subchapters`}
+          count={cg.total}
+          accent={accent}
+          index={index}
+          expandable
+          expanded={open}
+        />
+      </button>
+      {open && (
+        <ul className="mt-2 grid grid-cols-1 gap-1.5 pl-6 sm:grid-cols-2">
+          {cg.rows.map((r) => (
+            <li key={r.parent_label}>
+              <Link
+                to={linkSelf.to as never}
+                search={{ group: r.parent_label }}
+                className="flex items-baseline justify-between gap-3 rounded-lg border border-border/50 bg-card px-4 py-2 transition-colors hover:border-foreground/30 hover:bg-muted/50"
+              >
+                <span className="text-sm text-foreground/80">{r.sub ?? "General provisions"}</span>
+                <span className="citation-tag shrink-0 text-muted-foreground">{r.count.toLocaleString()}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: LinkSelf; accent: string }) {
+  const groups = groupPartsByChapter(parts);
+
+  // No chapter structure (CFR/IRM/statutes/etc.): a flat two-column bubble grid.
+  if (!groups) {
+    return (
+      <div className="grid grid-cols-1 items-stretch gap-3 border-t border-border/60 p-4 sm:grid-cols-2">
+        {parts.map((p, i) => (
+          <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
+            <CatalogueBubble kind={bubbleKind(p.label)} token={pullToken(p.label)} title={cleanBubbleTitle(p.label)} count={p.count} accent={accent} index={i} />
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
+  // Chapter-structured (USC): one bubble per chapter, single column so an inline
+  // subchapter expansion has room.
+  return (
+    <div className="space-y-2.5 border-t border-border/60 p-4">
+      {groups.map((cg, i) => (
+        <ChapterCell key={cg.chapter} cg={cg} accent={accent} index={i} linkSelf={linkSelf} />
+      ))}
     </div>
   );
 }
@@ -356,7 +435,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                       </div>
                     </div>
                   </button>
-                  {open && <TitleParts parts={t.parts} linkSelf={linkSelf} />}
+                  {open && <TitleParts parts={t.parts} linkSelf={linkSelf} accent={meta.accent} />}
                 </div>
               );
             })}
