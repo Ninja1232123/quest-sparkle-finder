@@ -321,6 +321,46 @@ export const bumpDocView = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export type SectionPreview = {
+  identifier: string;
+  source_code: string;
+  section_label: string | null;
+  heading: string | null;
+  parent_label: string | null;
+  text: string;
+  truncated: boolean;
+  word_count: number | null;
+};
+
+// A trimmed body excerpt for the compare page's inline expand — search hits
+// strip body_text to stay light, so the drawer fetches a longer preview on
+// demand. Keeps newlines (USC bodies are now segmented) for readable wrapping.
+export const getSectionPreview = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
+  .handler(async ({ data }): Promise<{ preview: SectionPreview | null }> => {
+    const supabaseAdmin = await getAdminClient();
+    const { data: row } = await supabaseAdmin
+      .from("documents")
+      .select("identifier, source_code, section_label, heading, parent_label, body_text, word_count")
+      .eq("identifier", data.identifier)
+      .maybeSingle();
+    if (!row) return { preview: null };
+    const LIMIT = 1800;
+    const full = (row.body_text ?? "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+    return {
+      preview: {
+        identifier: row.identifier,
+        source_code: row.source_code,
+        section_label: row.section_label,
+        heading: row.heading,
+        parent_label: row.parent_label,
+        text: full.slice(0, LIMIT),
+        truncated: full.length > LIMIT,
+        word_count: row.word_count ?? null,
+      },
+    };
+  });
+
 export type IncomingCitation = {
   identifier: string;
   heading: string | null;
