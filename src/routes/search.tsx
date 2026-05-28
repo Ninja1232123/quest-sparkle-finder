@@ -6,6 +6,7 @@ import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { SearchSyntax } from "@/components/marginalia/SearchSyntax";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
+import { formatGroupCrumb } from "@/lib/label-format";
 import { useAuth } from "@/hooks/use-auth";
 import { useSearchQuota, FREE_DAILY_LIMIT } from "@/hooks/use-search-quota";
 import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Lock } from "lucide-react";
@@ -660,7 +661,9 @@ function ResultCard({ hit, q }: { hit: Hit; q: string }) {
             {SOURCE_ABBR[hit.source_code] ?? hit.source_code.toUpperCase()}
           </span>
           {hit.parent_label && (
-            <span className="citation-tag text-muted-foreground/70">{hit.parent_label}</span>
+            <span className="citation-tag text-muted-foreground/70">
+              {formatGroupCrumb(hit.source_code, hit.parent_label)}
+            </span>
           )}
           {hit.section_label && (
             <span className="citation-tag text-muted-foreground/70">{hit.section_label}</span>

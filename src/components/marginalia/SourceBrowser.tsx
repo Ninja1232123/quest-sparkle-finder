@@ -5,6 +5,7 @@ import { ResearchShell } from "./ResearchShell";
 import { CodebookHero } from "./CodebookHero";
 import { sourceMeta, sourceName } from "@/lib/source-groups";
 import { codebookForSource, cleanPathForSource } from "@/lib/codebooks";
+import { formatGroupCrumb } from "@/lib/label-format";
 import type {
   SourceTocNode,
   SourceSummary,
@@ -67,6 +68,10 @@ export function SourceRouteView({ data, linkSelf }: { data: SourceRouteData; lin
 function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }) {
   const { toc, documents, sources, source, group } = data;
   const tocTyped = toc as SourceTocNode[];
+  // `group` is the raw parent_label (the drill key); `groupLabel` is its cleaned,
+  // de-duplicated display form (e.g. "Title 1 — General Provisions · Part 1 —
+  // Definitions" instead of the full noisy breadcrumb).
+  const groupLabel = group ? formatGroupCrumb(source, group) : "";
   const displayName = sourceName(source);
   const meta = sourceMeta(source);
   // Show the codebook hero only on a dedicated single-source landing (/usc …);
@@ -129,7 +134,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
 
       {group ? (
         <div>
-          <div className="citation-tag mb-1.5 text-muted-foreground">in {group}</div>
+          <div className="citation-tag mb-1.5 text-muted-foreground">in {groupLabel}</div>
           <div className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-foreground/70">
             <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">entries</div>
             <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
@@ -186,7 +191,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                 Table of contents
               </Link>
               {" · "}
-              <span className="text-foreground/80">{group}</span>
+              <span className="text-foreground/80">{groupLabel}</span>
             </>
           )}
         </div>
@@ -209,7 +214,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               onChange={(e) => setFilter(e.target.value)}
               placeholder={
                 group
-                  ? `Filter ${(documents as DocLite[]).length.toLocaleString()} entries in ${group}…`
+                  ? `Filter ${(documents as DocLite[]).length.toLocaleString()} entries in ${groupLabel}…`
                   : `Filter ${toc.length} title${toc.length === 1 ? "" : "s"} — by name or number…`
               }
               className="h-11 w-full rounded-full border border-foreground/15 bg-background/90 pl-10 pr-10 font-display text-sm shadow-[var(--shadow-soft)] focus:border-foreground/40 focus:outline-none"
@@ -282,12 +287,12 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
           <div className="mt-8">
             {groupedSections.length === 0 ? (
               <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
-                {filter ? `No entries in ${group} match "${filter}".` : `No entries found.`}
+                {filter ? `No entries in ${groupLabel} match "${filter}".` : `No entries found.`}
               </div>
             ) : (
               <div className="overflow-hidden rounded-2xl border bg-card">
                 <div className="border-b border-border/60 px-5 py-3">
-                  <div className="citation-tag text-accent">{group}</div>
+                  <div className="citation-tag text-accent">{groupLabel}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
                     {groupedSections.length.toLocaleString()} {groupedSections.length === 1 ? "entry" : "entries"}
                   </div>

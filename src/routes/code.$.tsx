@@ -4,6 +4,7 @@ import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, Plus } from "lucide-react";
 import { linkifyAndHighlight } from "@/lib/auto-link-citations";
+import { formatGroupCrumb } from "@/lib/label-format";
 
 // ── Legal body parser ────────────────────────────────────────────────────────
 // Splits body_text into paragraphs and detects (a)/(1)/(i) paragraph labels,
@@ -186,7 +187,7 @@ export const Route = createFileRoute("/code/$")({
     const d = loaderData?.document;
     if (!d) return { meta: [{ title: "Not found · Marginalia" }] };
     const label = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim();
-    const parent = d.parent_label ?? "";
+    const parent = d.parent_label ? formatGroupCrumb(d.source_code, d.parent_label) : "";
     const fullTitle = `${label}${parent ? ` — ${parent}` : ""} · Marginalia`;
     const ogTitle = `${label}${parent ? ` — ${parent}` : ""}`;
     const body = (d.body_text ?? "").replace(/\s+/g, " ").trim();
@@ -491,7 +492,7 @@ function DocumentPage() {
                 <Link to="/code/source/$source" params={{ source: document.source_code }} className="hover:text-foreground">
                   {SOURCE_NAMES[document.source_code] ?? document.source_code.toUpperCase()}
                 </Link>
-                {document.parent_label ? <> · <span className="text-foreground/70">{document.parent_label}</span></> : null}
+                {document.parent_label ? <> · <span className="text-foreground/70">{formatGroupCrumb(document.source_code, document.parent_label)}</span></> : null}
                 {document.section_label ? <> · <span className="text-foreground/70">{document.section_label}</span></> : null}
               </>
             )}

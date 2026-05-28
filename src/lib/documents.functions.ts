@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateQueryEmbedding } from "@/lib/embeddings.functions";
 import { sourceName } from "@/lib/source-groups";
+import { formatTocLabels } from "@/lib/label-format";
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
 
@@ -115,25 +116,43 @@ export const getSourceTOC = createServerFn({ method: "GET" })
       all.push(...batch);
       if (batch.length < PAGE) break;
     }
-    const map = new Map<string, SourceTocNode>();
+    // The raw `parent_label` (reconstructed as title_group · part_group) stays
+    // the drill key; formatTocLabels only reshapes what's *shown*. Group by the
+    // clean title key so e.g. CFR "Title 1" carries its name and parts drop the
+    // repeated prefix. See src/lib/label-format.ts.
+    const map = new Map<string, { node: SourceTocNode; byLabel: Map<string, number> }>();
     for (const r of all) {
-      const key = r.title_group ?? "Other";
-      let node = map.get(key);
-      if (!node) {
-        node = { title_group: key, parts: [], total: 0 };
-        map.set(key, node);
+      const rawKey = r.title_group ?? "Other";
+      const parent_label = r.part_group ? `${rawKey} · ${r.part_group}` : rawKey;
+      const { titleKey, titleDisplay, partDisplay } = formatTocLabels(data.source, parent_label);
+      let entry = map.get(titleKey);
+      if (!entry) {
+        entry = { node: { title_group: titleDisplay, parts: [], total: 0 }, byLabel: new Map() };
+        map.set(titleKey, entry);
       }
-      const partLabel = r.part_group ?? "—";
-      const parent_label = r.part_group ? `${key} · ${r.part_group}` : key;
-      node.parts.push({ label: partLabel, count: Number(r.doc_count), parent_label });
-      node.total += Number(r.doc_count);
+      const { node, byLabel } = entry;
+      // Prefer the fullest name when a title appears under variant names (the
+      // IRM Chief-Counsel-Directives-Manual rows carry two spellings).
+      if (titleDisplay.length > node.title_group.length) node.title_group = titleDisplay;
+      const count = Number(r.doc_count);
+      node.total += count;
+      const existing = byLabel.get(partDisplay);
+      if (existing === undefined) {
+        byLabel.set(partDisplay, node.parts.length);
+        node.parts.push({ label: partDisplay, count, parent_label });
+      } else {
+        // Same display label under a variant parent_label: keep the fuller
+        // (higher-count) one as the drill target so the TOC stays clean.
+        const part = node.parts[existing];
+        if (count > part.count) { part.count = count; part.parent_label = parent_label; }
+      }
     }
     // Sort numerically when possible
     const numKey = (s: string) => {
       const m = s.match(/(\d+)/);
       return m ? parseInt(m[1], 10) : 9999;
     };
-    const toc = Array.from(map.values()).sort((a, b) => numKey(a.title_group) - numKey(b.title_group) || a.title_group.localeCompare(b.title_group));
+    const toc = Array.from(map.values()).map((e) => e.node).sort((a, b) => numKey(a.title_group) - numKey(b.title_group) || a.title_group.localeCompare(b.title_group));
     for (const n of toc) {
       n.parts.sort((a, b) => numKey(a.label) - numKey(b.label) || a.label.localeCompare(b.label));
     }
