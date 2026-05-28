@@ -6,10 +6,25 @@ import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
   if (!_supabase) {
-    _supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Subscriptions live on the CLOUD auth project (alongside auth + RLS), NOT
+    // the local read-only data backend. So the webhook must use the cloud URL +
+    // a service-role/secret key (it has no user session, so it bypasses RLS for
+    // the upsert). Earlier this used SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY,
+    // which point at the LOCAL backend — writes landed in the wrong database and
+    // Pro never activated. SUPABASE_AUTH_SERVICE_ROLE_KEY is the dedicated var;
+    // the Vercel↔Supabase Marketplace integration exposes the same project's key
+    // as SUPABASE_SECRET_KEY, accepted as a fallback.
+    const url = process.env.SUPABASE_AUTH_URL || process.env.VITE_SUPABASE_AUTH_URL;
+    const key =
+      process.env.SUPABASE_AUTH_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+    if (!url || !key) {
+      throw new Error(
+        "Subscription webhook needs cloud Supabase creds: set SUPABASE_AUTH_URL and SUPABASE_AUTH_SERVICE_ROLE_KEY (or the Supabase integration's SUPABASE_SECRET_KEY).",
+      );
+    }
+    _supabase = createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
   return _supabase;
 }
