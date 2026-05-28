@@ -1,9 +1,13 @@
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { getForumPost, type ForumPostDetail } from "@/lib/forum.server";
-import { postSlug } from "@/lib/forum.data";
-import { ArrowLeft, Link2, MessageSquare, ScrollText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/use-auth";
+import { getForumPost, type ForumPostDetail, type ForumReply } from "@/lib/forum.server";
+import { postSlug, createForumReply, deleteForumReply, fetchForumReplies } from "@/lib/forum.data";
+import { ArrowLeft, Link2, MessageSquare, ScrollText, Trash2 } from "lucide-react";
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "Const.",
@@ -102,8 +106,14 @@ export const Route = createFileRoute("/forum/$slug/$id")({
 
 function PostPage() {
   const { post } = Route.useLoaderData();
+  const { user } = useAuth();
   const date = new Date(post.created_at);
   const canonicalUrl = `https://self-law.org/forum/${postSlug(post.title)}/${post.id}`;
+
+  // Replies are SSR'd (in the loader) for SEO, then become client state so a
+  // posted/deleted reply updates without a full reload.
+  const [replies, setReplies] = useState<ForumReply[]>(post.replies);
+  const refresh = () => fetchForumReplies(post.id).then((r) => setReplies(r.replies));
 
   // Structured data for rich results. Rendered server-side into the document so
   // crawlers pick it up; JSON-LD is valid anywhere in the page.
@@ -116,6 +126,13 @@ function PostPage() {
     url: canonicalUrl,
     author: { "@type": "Person", name: post.display_name ?? "anon" },
     publisher: { "@type": "Organization", name: "Marginalia" },
+    commentCount: post.replies.length,
+    comment: post.replies.map((r) => ({
+      "@type": "Comment",
+      text: r.body,
+      dateCreated: r.created_at,
+      author: { "@type": "Person", name: r.display_name ?? "anon" },
+    })),
   };
 
   return (
@@ -180,22 +197,125 @@ function PostPage() {
           </div>
         )}
 
-        {/* Discussion — replies land here next. */}
-        <div className="mt-12 rounded-3xl border border-dashed border-border/70 bg-card/40 p-6 text-center">
-          <MessageSquare className="mx-auto h-5 w-5 text-foreground/30" />
-          <p className="mt-2 text-sm text-foreground/60">
-            Replies are coming to the floor. For now, start a new post and cite this one.
+        {/* Discussion thread */}
+        <section className="mt-12 border-t border-border/60 pt-8">
+          <h2 className="citation-tag flex items-center gap-2 text-muted-foreground">
+            <MessageSquare className="h-3.5 w-3.5" />
+            {replies.length === 0
+              ? "discussion"
+              : `discussion · ${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
+          </h2>
+
+          {replies.length > 0 && (
+            <ul className="mt-5 space-y-5">
+              {replies.map((r) => (
+                <li key={r.id} className="group rounded-2xl border border-border/60 bg-card p-5">
+                  <div className="citation-tag flex items-center justify-between gap-2 text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-foreground/70">{r.display_name ?? "anon"}</span>
+                      <span>·</span>
+                      <time dateTime={r.created_at}>
+                        {new Date(r.created_at).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </time>
+                    </span>
+                    {user?.id === r.user_id && (
+                      <button
+                        aria-label="Delete reply"
+                        className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        onClick={async () => {
+                          if (!confirm("Delete this reply?")) return;
+                          await deleteForumReply(r.id);
+                          refresh();
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap font-serif text-[15px] leading-[1.7] text-foreground/85">
+                    {r.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-6">
+            {user ? (
+              <ReplyComposer postId={post.id} onPosted={refresh} />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 px-6 py-8 text-center">
+                <p className="text-sm text-foreground/60">
+                  {replies.length === 0
+                    ? "No replies yet. Sign in to start the discussion."
+                    : "Sign in to join the discussion."}
+                </p>
+                <Link
+                  to="/auth"
+                  search={{ mode: "login", redirect: undefined }}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+                >
+                  Sign in to reply
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <p className="mt-6 text-[11px] leading-relaxed text-foreground/55">
+            Replies are research and opinion, not legal advice. If it's about the law, cite the
+            section. Validate any interpretation with a licensed attorney in your jurisdiction
+            before you act on it.
           </p>
-          <Link
-            to="/forum"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-terracotta px-4 py-2 text-sm font-medium text-paper hover:opacity-90"
-          >
-            Back to The Floor
-          </Link>
-        </div>
+        </section>
       </article>
       <SiteFooter />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+    </div>
+  );
+}
+
+function ReplyComposer({ postId, onPosted }: { postId: string; onPosted: () => void }) {
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    setBusy(true);
+    const res = await createForumReply(postId, body);
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    setBody("");
+    onPosted();
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card/60 p-5">
+      <label htmlFor="reply-body" className="citation-tag text-muted-foreground">
+        add to the discussion
+      </label>
+      <Textarea
+        id="reply-body"
+        className="mt-2 min-h-[120px] text-[15px] leading-relaxed"
+        placeholder="Keep it useful and honest. Bring receipts — cite the section if it's about the law."
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        maxLength={4000}
+      />
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="text-[11px] text-muted-foreground">{body.length} / 4000</span>
+        {error && <span className="text-xs text-destructive">{error}</span>}
+        <Button onClick={submit} disabled={busy || body.trim().length < 2}>
+          {busy ? "Posting…" : "Post reply"}
+        </Button>
+      </div>
     </div>
   );
 }

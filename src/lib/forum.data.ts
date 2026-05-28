@@ -29,6 +29,16 @@ export type ForumPost = {
   display_name: string | null;
   is_owner: boolean;
   citations: ForumCitation[];
+  reply_count: number;
+};
+
+export type ForumReply = {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  display_name: string | null;
+  is_owner: boolean;
 };
 
 export type PostKind = "discussion" | "feedback" | "bug";
@@ -120,12 +130,15 @@ export async function fetchForumPosts(): Promise<{ posts: ForumPost[]; error: st
   const { data: auth } = await supabaseAuth.auth.getUser();
   const viewerId = auth?.user?.id ?? null;
 
-  const [{ data: cites }, { data: profiles }] = await Promise.all([
+  const [{ data: cites }, { data: profiles }, { data: replyRows }] = await Promise.all([
     supabaseAuth
       .from("forum_post_citations")
       .select("post_id, identifier, source_code, heading_snapshot, section_label_snapshot")
       .in("post_id", ids),
     supabaseAuth.from("profiles").select("user_id, display_name").in("user_id", userIds),
+    // Just the post_id of each reply — we tally counts client-side (cheap at
+    // this scale, and avoids a per-post count round-trip).
+    supabaseAuth.from("forum_replies").select("post_id").in("post_id", ids),
   ]);
 
   const citesByPost = new Map<string, ForumCitation[]>();
@@ -139,6 +152,10 @@ export async function fetchForumPosts(): Promise<{ posts: ForumPost[]; error: st
     });
     citesByPost.set(c.post_id, arr);
   }
+  const replyCountByPost = new Map<string, number>();
+  for (const r of (replyRows ?? []) as { post_id: string }[]) {
+    replyCountByPost.set(r.post_id, (replyCountByPost.get(r.post_id) ?? 0) + 1);
+  }
   const nameByUser = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
   const out: ForumPost[] = posts.map((p) => ({
@@ -151,6 +168,7 @@ export async function fetchForumPosts(): Promise<{ posts: ForumPost[]; error: st
     display_name: nameByUser.get(p.user_id) ?? null,
     is_owner: !!viewerId && viewerId === p.user_id,
     citations: citesByPost.get(p.id) ?? [],
+    reply_count: replyCountByPost.get(p.id) ?? 0,
   }));
   return { posts: out, error: null };
 }
@@ -191,5 +209,65 @@ export async function createForumPost(input: {
 
 export async function deleteForumPost(id: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabaseAuth.from("forum_posts").delete().eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Re-fetch a post's whole thread (oldest first), resolving author names + the
+// viewer's ownership. Called on the permalink page after posting/deleting a
+// reply so the list reflects the change without a full page reload.
+export async function fetchForumReplies(
+  postId: string,
+): Promise<{ replies: ForumReply[]; error: string | null }> {
+  const { data: rows, error } = await supabaseAuth
+    .from("forum_replies")
+    .select("id, user_id, body, created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+  if (error) return { replies: [], error: error.message };
+  if (!rows || rows.length === 0) return { replies: [], error: null };
+
+  const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+  const { data: auth } = await supabaseAuth.auth.getUser();
+  const viewerId = auth?.user?.id ?? null;
+  const { data: profiles } = await supabaseAuth
+    .from("profiles")
+    .select("user_id, display_name")
+    .in("user_id", userIds);
+  const nameByUser = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
+
+  return {
+    replies: rows.map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      body: r.body,
+      created_at: r.created_at,
+      display_name: nameByUser.get(r.user_id) ?? null,
+      is_owner: !!viewerId && viewerId === r.user_id,
+    })),
+    error: null,
+  };
+}
+
+export async function createForumReply(
+  postId: string,
+  body: string,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const { data: auth } = await supabaseAuth.auth.getUser();
+  const userId = auth?.user?.id;
+  if (!userId) return { ok: false, error: "Please sign in to reply." };
+  const trimmed = body.trim();
+  if (trimmed.length < 2) return { ok: false, error: "Say a little more." };
+
+  const { data: reply, error } = await supabaseAuth
+    .from("forum_replies")
+    .insert({ post_id: postId, user_id: userId, body: trimmed })
+    .select("id")
+    .single();
+  if (error || !reply) return { ok: false, error: error?.message ?? "Could not post reply." };
+  return { ok: true, id: reply.id };
+}
+
+export async function deleteForumReply(id: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabaseAuth.from("forum_replies").delete().eq("id", id);
   return error ? { ok: false, error: error.message } : { ok: true };
 }

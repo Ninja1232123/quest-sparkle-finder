@@ -96,7 +96,7 @@ function ForumPage() {
 
       {/* Masthead */}
       <section className="border-b border-foreground/15">
-        <div className="mx-auto max-w-3xl px-6 pt-20 pb-10 md:pt-28 md:pb-14">
+        <div className="mx-auto max-w-6xl px-6 pt-20 pb-10 md:pt-28 md:pb-14">
           <div className="citation-tag text-muted-foreground">members' floor · post no. 0001</div>
           <h1 className="mt-3 font-display text-5xl font-bold tracking-tight md:text-7xl">
             The Floor.
@@ -115,7 +115,7 @@ function ForumPage() {
       </section>
 
       {/* Tab bar */}
-      <div className="mx-auto max-w-3xl px-6">
+      <div className="mx-auto max-w-6xl px-6">
         <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pt-6">
           <span className="-mb-px inline-flex items-center gap-2 border-b-2 border-foreground px-1 pb-3 font-display text-sm font-semibold text-foreground">
             <Users className="h-3.5 w-3.5" /> The Floor
@@ -179,18 +179,20 @@ function ForumPage() {
 
       {/* Composer */}
       {composing && user && (
-        <section className="mx-auto max-w-3xl px-6 pt-8">
-          <Composer
-            onDone={() => {
-              setComposing(false);
-              reload();
-            }}
-          />
+        <section className="mx-auto max-w-6xl px-6 pt-8">
+          <div className="max-w-3xl">
+            <Composer
+              onDone={() => {
+                setComposing(false);
+                reload();
+              }}
+            />
+          </div>
         </section>
       )}
 
       {/* Posts */}
-      <section className="mx-auto max-w-3xl px-6 pt-8 pb-32">
+      <section className="mx-auto max-w-6xl px-6 pt-8 pb-32">
         {data.error && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
             {data.error}
@@ -210,9 +212,9 @@ function ForumPage() {
           </div>
         )}
 
-        <ul className="space-y-6">
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className="h-full">
               <PostCard post={p} isOwner={p.is_owner} onDelete={() => reload()} />
             </li>
           ))}
@@ -234,90 +236,87 @@ function PostCard({
   onDelete: () => void;
 }) {
   const href = { slug: postSlug(post.title), id: post.id };
+  const firstCite = post.citations[0];
   return (
-    <article className="group rounded-3xl border bg-card p-6 paper-grain shadow-[var(--shadow-soft)] transition hover:border-foreground/25 md:p-7">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="citation-tag flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="text-foreground/70">{post.display_name ?? "anon"}</span>
-            <span>·</span>
-            <span>{new Date(post.created_at).toLocaleDateString()}</span>
-            {post.pinned && (
-              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
-                pinned
-              </span>
-            )}
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${kindPillClass(post.kind ?? "discussion")}`}
-            >
-              {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
+    <article className="group flex h-full flex-col rounded-3xl border bg-card p-5 paper-grain shadow-[var(--shadow-soft)] transition hover:border-foreground/25 hover:shadow-md">
+      {/* meta row */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="citation-tag flex flex-wrap items-center gap-1.5 text-muted-foreground">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${kindPillClass(post.kind ?? "discussion")}`}
+          >
+            {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
+          </span>
+          {post.pinned && (
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+              pinned
             </span>
-          </div>
-          <h2 className="mt-2 font-display text-2xl font-semibold leading-tight md:text-[28px]">
-            <Link
-              to="/forum/$slug/$id"
-              params={href}
-              className="hover:text-terracotta hover:underline decoration-from-font underline-offset-2"
-            >
-              {post.title}
-            </Link>
-          </h2>
+          )}
         </div>
         {isOwner && (
           <button
             aria-label="Delete post"
-            className="rounded-md p-2 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+            className="-mr-1 -mt-1 rounded-md p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
             onClick={async () => {
               if (!confirm("Delete this post?")) return;
               await deleteForumPost(post.id);
               onDelete();
             }}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
 
-      <p className="mt-4 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground/80">
+      <h2 className="mt-3 font-display text-xl font-semibold leading-snug">
+        <Link
+          to="/forum/$slug/$id"
+          params={href}
+          className="line-clamp-2 hover:text-terracotta hover:underline decoration-from-font underline-offset-2"
+        >
+          {post.title}
+        </Link>
+      </h2>
+
+      <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/75">
         {post.body}
       </p>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
-        {post.citations.length > 0 ? (
-          <ul className="flex flex-wrap gap-2">
-            {post.citations.slice(0, 3).map((c) => (
-              <li key={c.identifier}>
-                <Link
-                  to="/code/$"
-                  params={{ _splat: c.identifier.replace(/^\//, "") }}
-                  search={{ q: undefined }}
-                  className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border border-foreground/20 bg-background px-2.5 py-1 text-xs hover:border-foreground/50"
-                >
-                  <Link2 className="h-3 w-3 shrink-0" />
-                  <span className="citation-tag shrink-0 text-foreground/70">
-                    {SOURCE_LABELS[c.source_code ?? ""] ?? (c.source_code ?? "").toUpperCase()}
-                  </span>
-                  <span className="truncate font-display">
-                    {c.section_label_snapshot ?? c.heading_snapshot ?? c.identifier}
-                  </span>
-                </Link>
-              </li>
-            ))}
-            {post.citations.length > 3 && (
-              <li className="self-center text-[11px] text-muted-foreground">
-                +{post.citations.length - 3} more
-              </li>
-            )}
-          </ul>
-        ) : (
-          <span className="text-[11px] text-muted-foreground/60">no citations</span>
-        )}
+      {/* first citation chip, if any */}
+      {firstCite && (
+        <div className="mt-3 flex items-center gap-1.5">
+          <Link
+            to="/code/$"
+            params={{ _splat: firstCite.identifier.replace(/^\//, "") }}
+            search={{ q: undefined }}
+            className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-foreground/20 bg-background px-2.5 py-1 text-xs hover:border-foreground/50"
+          >
+            <Link2 className="h-3 w-3 shrink-0" />
+            <span className="citation-tag shrink-0 text-foreground/70">
+              {SOURCE_LABELS[firstCite.source_code ?? ""] ?? (firstCite.source_code ?? "").toUpperCase()}
+            </span>
+            <span className="truncate font-display">
+              {firstCite.section_label_snapshot ?? firstCite.heading_snapshot ?? firstCite.identifier}
+            </span>
+          </Link>
+          {post.citations.length > 1 && (
+            <span className="shrink-0 text-[10px] text-muted-foreground">+{post.citations.length - 1}</span>
+          )}
+        </div>
+      )}
+
+      {/* footer pinned to the bottom so cards align in the grid */}
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/50 pt-4">
+        <span className="citation-tag truncate text-muted-foreground">
+          {post.display_name ?? "anon"} · {new Date(post.created_at).toLocaleDateString()}
+        </span>
         <Link
           to="/forum/$slug/$id"
           params={href}
           className="inline-flex shrink-0 items-center gap-1.5 font-display text-sm font-medium italic text-terracotta hover:underline"
         >
-          <MessageSquare className="h-3.5 w-3.5" /> Read &amp; discuss →
+          <MessageSquare className="h-3.5 w-3.5" />
+          {post.reply_count > 0 ? post.reply_count : "discuss"} →
         </Link>
       </div>
     </article>

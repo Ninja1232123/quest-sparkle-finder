@@ -16,6 +16,14 @@ export type ForumPostCitation = {
   section_label_snapshot: string | null;
 };
 
+export type ForumReply = {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  display_name: string | null;
+};
+
 export type ForumPostDetail = {
   id: string;
   title: string;
@@ -25,6 +33,7 @@ export type ForumPostDetail = {
   created_at: string;
   display_name: string | null;
   citations: ForumPostCitation[];
+  replies: ForumReply[];
 };
 
 async function cloudAnonClient() {
@@ -54,6 +63,13 @@ type PostRow = {
   created_at: string;
 };
 
+type ReplyRow = {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+};
+
 export const getForumPost = createServerFn({ method: "GET" })
   .inputValidator(z.object({ id: z.string().min(8).max(64) }))
   .handler(async ({ data }): Promise<{ post: ForumPostDetail | null }> => {
@@ -65,15 +81,29 @@ export const getForumPost = createServerFn({ method: "GET" })
       .maybeSingle<PostRow>();
     if (!post) return { post: null };
 
-    const [{ data: cites }, { data: prof }] = await Promise.all([
+    // Citations + the thread's replies in parallel; profiles resolved after, in
+    // one query covering the post author and every reply author.
+    const [{ data: cites }, { data: replyRows }] = await Promise.all([
       sb
         .from("forum_post_citations")
         .select("identifier, source_code, heading_snapshot, section_label_snapshot")
         .eq("post_id", post.id),
-      sb.from("profiles").select("display_name").eq("user_id", post.user_id).maybeSingle<{
-        display_name: string | null;
-      }>(),
+      sb
+        .from("forum_replies")
+        .select("id, user_id, body, created_at")
+        .eq("post_id", post.id)
+        .order("created_at", { ascending: true })
+        .returns<ReplyRow[]>(),
     ]);
+
+    const replies = replyRows ?? [];
+    const userIds = Array.from(new Set([post.user_id, ...replies.map((r) => r.user_id)]));
+    const { data: profiles } = await sb
+      .from("profiles")
+      .select("user_id, display_name")
+      .in("user_id", userIds)
+      .returns<{ user_id: string; display_name: string | null }[]>();
+    const nameByUser = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
     return {
       post: {
@@ -83,8 +113,15 @@ export const getForumPost = createServerFn({ method: "GET" })
         kind: post.kind ?? "discussion",
         pinned: post.pinned,
         created_at: post.created_at,
-        display_name: prof?.display_name ?? null,
+        display_name: nameByUser.get(post.user_id) ?? null,
         citations: (cites ?? []) as ForumPostCitation[],
+        replies: replies.map((r) => ({
+          id: r.id,
+          user_id: r.user_id,
+          body: r.body,
+          created_at: r.created_at,
+          display_name: nameByUser.get(r.user_id) ?? null,
+        })),
       },
     };
   });
