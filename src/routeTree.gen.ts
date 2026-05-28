@@ -38,7 +38,7 @@ import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CompareDiffRouteImport } from './routes/compare_.diff'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
-import { Route as ForumSlugIdRouteImport } from './routes/forum.$slug.$id'
+import { Route as ForumSlugIdRouteImport } from './routes/forum_.$slug.$id'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -198,9 +198,9 @@ const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForumSlugIdRoute = ForumSlugIdRouteImport.update({
-  id: '/$slug/$id',
-  path: '/$slug/$id',
-  getParentRoute: () => ForumRoute,
+  id: '/forum_/$slug/$id',
+  path: '/forum/$slug/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   id: '/code/source/$source',
@@ -278,7 +278,7 @@ export interface FileRoutesByFullPath {
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
-  '/forum': typeof ForumRouteWithChildren
+  '/forum': typeof ForumRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -322,7 +322,7 @@ export interface FileRoutesByTo {
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
-  '/forum': typeof ForumRouteWithChildren
+  '/forum': typeof ForumRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -367,7 +367,7 @@ export interface FileRoutesById {
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
-  '/forum': typeof ForumRouteWithChildren
+  '/forum': typeof ForumRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -387,7 +387,7 @@ export interface FileRoutesById {
   '/topic/$slug': typeof TopicSlugRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
-  '/forum/$slug/$id': typeof ForumSlugIdRoute
+  '/forum_/$slug/$id': typeof ForumSlugIdRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
   '/api/public/v1/ingest-batch': typeof ApiPublicV1IngestBatchRoute
@@ -521,7 +521,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/code/'
     | '/code/source/$source'
-    | '/forum/$slug/$id'
+    | '/forum_/$slug/$id'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
     | '/api/public/v1/ingest-batch'
@@ -546,7 +546,7 @@ export interface RootRouteChildren {
   ChambersRoute: typeof ChambersRoute
   CompareRoute: typeof CompareRoute
   ConstRoute: typeof ConstRoute
-  ForumRoute: typeof ForumRouteWithChildren
+  ForumRoute: typeof ForumRoute
   LawsRoute: typeof LawsRoute
   LibraryRoute: typeof LibraryRoute
   ModelRoute: typeof ModelRoute
@@ -566,6 +566,7 @@ export interface RootRouteChildren {
   TopicSlugRoute: typeof TopicSlugRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
+  ForumSlugIdRoute: typeof ForumSlugIdRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1ExportDocumentsRoute: typeof ApiPublicV1ExportDocumentsRoute
   ApiPublicV1IngestBatchRoute: typeof ApiPublicV1IngestBatchRoute
@@ -784,12 +785,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forum/$slug/$id': {
-      id: '/forum/$slug/$id'
-      path: '/$slug/$id'
+    '/forum_/$slug/$id': {
+      id: '/forum_/$slug/$id'
+      path: '/forum/$slug/$id'
       fullPath: '/forum/$slug/$id'
       preLoaderRoute: typeof ForumSlugIdRouteImport
-      parentRoute: typeof ForumRoute
+      parentRoute: typeof rootRouteImport
     }
     '/code/source/$source': {
       id: '/code/source/$source'
@@ -878,16 +879,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ForumRouteChildren {
-  ForumSlugIdRoute: typeof ForumSlugIdRoute
-}
-
-const ForumRouteChildren: ForumRouteChildren = {
-  ForumSlugIdRoute: ForumSlugIdRoute,
-}
-
-const ForumRouteWithChildren = ForumRoute._addFileChildren(ForumRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -899,7 +890,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChambersRoute: ChambersRoute,
   CompareRoute: CompareRoute,
   ConstRoute: ConstRoute,
-  ForumRoute: ForumRouteWithChildren,
+  ForumRoute: ForumRoute,
   LawsRoute: LawsRoute,
   LibraryRoute: LibraryRoute,
   ModelRoute: ModelRoute,
@@ -919,6 +910,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicSlugRoute: TopicSlugRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
+  ForumSlugIdRoute: ForumSlugIdRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1ExportDocumentsRoute: ApiPublicV1ExportDocumentsRoute,
   ApiPublicV1IngestBatchRoute: ApiPublicV1IngestBatchRoute,

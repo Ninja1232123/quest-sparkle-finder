@@ -36,7 +36,7 @@ function kindPill(kind: string): string {
   }
 }
 
-export const Route = createFileRoute("/forum/$slug/$id")({
+export const Route = createFileRoute("/forum_/$slug/$id")({
   loader: async ({ params }) => {
     const { post } = await getForumPost({ data: { id: params.id } });
     if (!post) throw notFound();
