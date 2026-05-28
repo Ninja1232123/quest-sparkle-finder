@@ -11,10 +11,11 @@ import {
   validateCitations,
   createForumPost,
   deleteForumPost,
+  postSlug,
   type ForumCitation,
   type ForumPost,
 } from "@/lib/forum.data";
-import { Trash2, Link2, Plus, X, ScrollText } from "lucide-react";
+import { Trash2, Link2, Plus, X, ScrollText, Users, Bot, MessageSquare } from "lucide-react";
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "Const.",
@@ -45,6 +46,18 @@ const KIND_META: Record<PostKind, { label: string; tag: string; hint: string }> 
   },
 };
 
+// Kind → accent, using the live design tokens (terracotta/sage/destructive).
+function kindPillClass(kind: string): string {
+  switch (kind) {
+    case "bug":
+      return "border-destructive/40 text-destructive";
+    case "feedback":
+      return "border-terracotta/40 text-terracotta";
+    default:
+      return "border-sage/50 text-sage-deep";
+  }
+}
+
 export const Route = createFileRoute("/forum")({
   component: ForumPage,
   head: () => ({
@@ -73,68 +86,100 @@ function ForumPage() {
   // Load on mount and refetch once auth resolves (so is_owner / delete buttons are correct).
   useEffect(() => { reload(); }, [reload, user?.id]);
 
+  const shown = data.posts.filter(
+    (p) => filter === "all" || (p.kind ?? "discussion") === filter,
+  );
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
 
-      {/* Spacious masthead */}
-      <section className="mx-auto max-w-3xl px-6 pt-20 pb-10 md:pt-28 md:pb-16">
-        <div className="citation-tag text-muted-foreground">members' floor · post no. 0001</div>
-        <h1 className="mt-3 font-display text-5xl font-semibold tracking-tight md:text-7xl">
-          The Floor
-        </h1>
-        <p className="mt-6 max-w-xl font-display text-lg italic text-foreground/70 md:text-xl">
-          One room. One rule of thumb. <span className="not-italic">If you can cite it, cite it.</span>
-        </p>
-        <p className="mt-4 max-w-xl text-sm text-foreground/65">
-          Discussion, feedback, and bug reports all live here. When a post is about the
-          law, link the section in the Code so anyone can read the source themselves —
-          that's what makes this place useful. Anything you read here, including AI
-          summaries, should be checked against the actual document and, before you act
-          on it, a licensed attorney in your jurisdiction.
-        </p>
+      {/* Masthead */}
+      <section className="border-b border-foreground/15">
+        <div className="mx-auto max-w-3xl px-6 pt-20 pb-10 md:pt-28 md:pb-14">
+          <div className="citation-tag text-muted-foreground">members' floor · post no. 0001</div>
+          <h1 className="mt-3 font-display text-5xl font-bold tracking-tight md:text-7xl">
+            The Floor.
+          </h1>
+          <p className="mt-5 max-w-xl font-serif text-lg italic text-foreground/70 md:text-xl">
+            One room. One rule of thumb. <span className="font-display not-italic font-bold">If you can cite it, cite it.</span>
+          </p>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-foreground/65">
+            Discussion, feedback, and bug reports all live here. When a post is about the
+            law, link the section in the Code so anyone can read the source themselves —
+            that's what makes this place useful. Anything you read here, including AI
+            summaries, should be checked against the actual document and, before you act
+            on it, a licensed attorney in your jurisdiction.
+          </p>
+        </div>
+      </section>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          {user ? (
-            <Button onClick={() => setComposing((v) => !v)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {composing ? "Close composer" : "Post to the floor"}
-            </Button>
-          ) : !loading ? (
-            <Link
-              to="/auth"
-              search={{ mode: "login" }}
-              className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-            >
-              Sign in to post
-            </Link>
-          ) : null}
-          <span className="text-xs text-muted-foreground">
-            Reading is open to everyone, always.
+      {/* Tab bar */}
+      <div className="mx-auto max-w-3xl px-6">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pt-6">
+          <span className="-mb-px inline-flex items-center gap-2 border-b-2 border-foreground px-1 pb-3 font-display text-sm font-semibold text-foreground">
+            <Users className="h-3.5 w-3.5" /> The Floor
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {data.posts.length}
+            </span>
           </span>
+          <span
+            className="-mb-px inline-flex cursor-default items-center gap-2 px-1 pb-3 font-display text-sm font-semibold text-foreground/35"
+            title="A daily, citation-grounded brief — coming soon"
+          >
+            <Bot className="h-3.5 w-3.5" /> The Brief
+            <span className="rounded-full border border-border/70 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+              soon
+            </span>
+          </span>
+
+          {/* Actions, right-aligned */}
+          <div className="ml-auto flex items-center gap-2 pb-2">
+            {user ? (
+              <button
+                onClick={() => setComposing((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-terracotta px-4 py-2 text-sm font-medium text-paper transition hover:opacity-90"
+              >
+                {composing ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {composing ? "Close" : "Post to the floor"}
+              </button>
+            ) : !loading ? (
+              <Link
+                to="/auth"
+                search={{ mode: "login", redirect: undefined }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+              >
+                Sign in to post
+              </Link>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-1 text-xs">
+        {/* Filter chips */}
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
           {(["all", "discussion", "feedback", "bug"] as const).map((k) => (
             <button
               key={k}
               onClick={() => setFilter(k)}
               className={
-                "rounded-full px-3 py-1.5 transition " +
+                "rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition " +
                 (filter === k
-                  ? "bg-foreground text-background"
-                  : "text-foreground/60 hover:bg-muted hover:text-foreground")
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border/70 text-foreground/55 hover:border-foreground/40 hover:text-foreground")
               }
             >
-              {k === "all" ? "All" : KIND_META[k].label}
+              {k === "all" ? "all" : k}
             </button>
           ))}
+          <span className="ml-1 self-center text-[11px] text-muted-foreground/70">
+            Reading is open to everyone, always.
+          </span>
         </div>
-      </section>
+      </div>
 
       {/* Composer */}
       {composing && user && (
-        <section className="mx-auto max-w-3xl px-6 pb-12">
+        <section className="mx-auto max-w-3xl px-6 pt-8">
           <Composer
             onDone={() => {
               setComposing(false);
@@ -145,32 +190,30 @@ function ForumPage() {
       )}
 
       {/* Posts */}
-      <section className="mx-auto max-w-3xl px-6 pb-32">
+      <section className="mx-auto max-w-3xl px-6 pt-8 pb-32">
         {data.error && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
             {data.error}
           </div>
         )}
-        {!data.error && data.posts.length === 0 && (
+        {!data.error && shown.length === 0 && (
           <div className="mx-auto mt-16 max-w-md text-center">
             <ScrollText className="mx-auto h-10 w-10 text-foreground/30" />
-            <h2 className="mt-4 font-display text-2xl">The floor is empty.</h2>
+            <h2 className="mt-4 font-display text-2xl">
+              {data.posts.length === 0 ? "The floor is empty." : "Nothing under that filter."}
+            </h2>
             <p className="mt-2 text-sm text-foreground/60">
-              First post sets the tone. Be useful, be honest.
+              {data.posts.length === 0
+                ? "First post sets the tone. Be useful, be honest."
+                : "Try a different tab."}
             </p>
           </div>
         )}
 
-        <ul className="space-y-10">
-          {data.posts
-            .filter((p: ForumPost) => filter === "all" || (p.kind ?? "discussion") === filter)
-            .map((p: ForumPost) => (
+        <ul className="space-y-6">
+          {shown.map((p) => (
             <li key={p.id}>
-              <PostCard
-                post={p}
-                isOwner={p.is_owner}
-                onDelete={() => reload()}
-              />
+              <PostCard post={p} isOwner={p.is_owner} onDelete={() => reload()} />
             </li>
           ))}
         </ul>
@@ -190,25 +233,34 @@ function PostCard({
   isOwner: boolean;
   onDelete: () => void;
 }) {
+  const href = { slug: postSlug(post.title), id: post.id };
   return (
-    <article className="group rounded-3xl border bg-card p-6 paper-grain shadow-[var(--shadow-soft)] md:p-8">
+    <article className="group rounded-3xl border bg-card p-6 paper-grain shadow-[var(--shadow-soft)] transition hover:border-foreground/25 md:p-7">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="citation-tag text-muted-foreground">
-            {post.display_name ?? "anon"} · {new Date(post.created_at).toLocaleDateString()}
+          <div className="citation-tag flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span className="text-foreground/70">{post.display_name ?? "anon"}</span>
+            <span>·</span>
+            <span>{new Date(post.created_at).toLocaleDateString()}</span>
             {post.pinned && (
-              <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
                 pinned
               </span>
             )}
-            {post.kind && post.kind !== "discussion" && (
-              <span className="ml-2 rounded-full border border-foreground/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/70">
-                {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
-              </span>
-            )}
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${kindPillClass(post.kind ?? "discussion")}`}
+            >
+              {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
+            </span>
           </div>
-          <h2 className="mt-2 font-display text-2xl font-semibold leading-tight md:text-3xl">
-            {post.title}
+          <h2 className="mt-2 font-display text-2xl font-semibold leading-tight md:text-[28px]">
+            <Link
+              to="/forum/$slug/$id"
+              params={href}
+              className="hover:text-terracotta hover:underline decoration-from-font underline-offset-2"
+            >
+              {post.title}
+            </Link>
           </h2>
         </div>
         {isOwner && (
@@ -226,20 +278,20 @@ function PostCard({
         )}
       </div>
 
-      <p className="mt-5 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground/85">
+      <p className="mt-4 line-clamp-4 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground/80">
         {post.body}
       </p>
 
-      {post.citations.length > 0 && (
-        <div className="mt-6 border-t border-border/60 pt-4">
-          <div className="citation-tag text-muted-foreground">on the record</div>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {post.citations.map((c) => (
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
+        {post.citations.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {post.citations.slice(0, 3).map((c) => (
               <li key={c.identifier}>
                 <Link
                   to="/code/$"
-                  params={{ _splat: c.identifier }}
-                  className="inline-flex max-w-full items-center gap-2 rounded-full border border-foreground/20 bg-background px-3 py-1.5 text-xs hover:border-foreground/50"
+                  params={{ _splat: c.identifier.replace(/^\//, "") }}
+                  search={{ q: undefined }}
+                  className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border border-foreground/20 bg-background px-2.5 py-1 text-xs hover:border-foreground/50"
                 >
                   <Link2 className="h-3 w-3 shrink-0" />
                   <span className="citation-tag shrink-0 text-foreground/70">
@@ -251,9 +303,23 @@ function PostCard({
                 </Link>
               </li>
             ))}
+            {post.citations.length > 3 && (
+              <li className="self-center text-[11px] text-muted-foreground">
+                +{post.citations.length - 3} more
+              </li>
+            )}
           </ul>
-        </div>
-      )}
+        ) : (
+          <span className="text-[11px] text-muted-foreground/60">no citations</span>
+        )}
+        <Link
+          to="/forum/$slug/$id"
+          params={href}
+          className="inline-flex shrink-0 items-center gap-1.5 font-display text-sm font-medium italic text-terracotta hover:underline"
+        >
+          <MessageSquare className="h-3.5 w-3.5" /> Read &amp; discuss →
+        </Link>
+      </div>
     </article>
   );
 }
@@ -319,7 +385,7 @@ function Composer({ onDone }: { onDone: () => void }) {
                 type="button"
                 onClick={() => setKind(k)}
                 className={
-                  "rounded-full px-3 py-1.5 transition " +
+                  "rounded-full px-3 py-1.5 font-display font-medium transition " +
                   (kind === k
                     ? "bg-foreground text-background"
                     : "border border-foreground/20 text-foreground/70 hover:border-foreground/50")

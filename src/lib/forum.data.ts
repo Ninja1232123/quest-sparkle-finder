@@ -33,6 +33,23 @@ export type ForumPost = {
 
 export type PostKind = "discussion" | "feedback" | "bug";
 
+// SEO-friendly permalink for a post. The UUID id is authoritative (lookups go by
+// id); the slug is cosmetic keyword bait in the URL. Detail route canonicalizes a
+// stale slug via 301, so links never rot when a title is edited.
+export function postSlug(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "post"
+  );
+}
+
+export function postPath(p: { id: string; title: string }): string {
+  return `/forum/${postSlug(p.title)}/${p.id}`;
+}
+
 // Normalize an identifier the user typed/pasted into a corpus path.
 export function normalizeIdentifier(raw: string): string | null {
   let s = raw.trim();
