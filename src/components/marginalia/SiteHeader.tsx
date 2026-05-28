@@ -184,10 +184,10 @@ const TOP_NAV_ITEMS = [
 function TopNav() {
   return (
     <nav
-      className="mx-auto flex max-w-[1900px] items-center overflow-x-auto top-nav lg:px-6"
+      className="mx-auto flex max-w-[1900px] flex-wrap items-center top-nav lg:px-6"
       aria-label="Sections"
     >
-      <div className="flex flex-1 items-center gap-0">
+      <div className="flex flex-1 flex-wrap items-center gap-0">
         {TOP_NAV_ITEMS.map((item) => (
           <Link
             key={item.to}
@@ -249,7 +249,7 @@ export function SiteHeader() {
             <>
               <Link
                 to="/auth"
-                search={{ mode: "login" }}
+                search={{ mode: "login", redirect: undefined }}
                 className="hidden rounded-full px-3 py-1.5 text-sm text-foreground/70 hover:bg-muted hover:text-foreground sm:block"
               >
                 Sign in
@@ -275,15 +275,15 @@ export function SiteHeader() {
 
       {/* Row 3 — codebook tab strip + Tools dropdown */}
       <nav
-        className="mx-auto flex max-w-[1900px] items-center gap-1 overflow-x-auto px-4 pb-2 pt-2 lg:px-6"
+        className="relative mx-auto flex max-w-[1900px] items-start gap-2 px-4 pb-2 pt-2 lg:px-6"
         aria-label="Codebooks"
       >
-        <div className="flex flex-1 items-center gap-1">
+        <div className="flex flex-1 flex-wrap items-center gap-1">
           {CODEBOOKS.map((cb) => (
             <CodebookTab key={cb.slug} cb={cb} />
           ))}
         </div>
-        <div className="ml-2 shrink-0 border-l border-border/40 pl-2">
+        <div className="shrink-0 border-l border-border/40 pl-2">
           <ToolsMenu signedIn={!!user} onSignOut={signOut} />
         </div>
       </nav>
