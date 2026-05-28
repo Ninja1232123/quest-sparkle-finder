@@ -201,6 +201,31 @@ export function codebookForSource(source: string): Codebook | undefined {
   return CODEBOOKS.find((c) => c.sources.includes(source));
 }
 
+/**
+ * The clean single-source slug path for a `source_code`, or null if it has none.
+ * Only LIVE codebooks that own exactly one source qualify (usc, cfr, const,
+ * register, bills→bill, laws→public-private-law, presidential→…, model→ucc).
+ * Multi-source members (irm/tfm/usgm under "agency", statutes-* under
+ * "statutes") return null and keep living at /code/source/$source.
+ */
+export function cleanPathForSource(code: string): string | null {
+  const cb = CODEBOOKS.find(
+    (c) => c.status === "live" && c.sources.length === 1 && c.sources[0] === code,
+  );
+  return cb ? `/${cb.slug}` : null;
+}
+
+/** Inverse of cleanPathForSource: given a pathname like "/usc", the source_code
+ *  it browses (or null for non-codebook paths like /search). */
+export function sourceForCleanPath(pathname: string): string | null {
+  const seg = pathname.split("/")[1];
+  if (!seg) return null;
+  const cb = CODEBOOKS.find(
+    (c) => c.status === "live" && c.sources.length === 1 && c.slug === seg,
+  );
+  return cb ? cb.sources[0] : null;
+}
+
 /** Tools that live in the right-side header dropdown, not next to codebook tabs. */
 export type ToolLink = {
   label: string;

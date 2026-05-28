@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { SourceSummary } from "@/lib/documents.functions";
 import { CORPUS_GROUPS, GROUP_ORDER, sourceMeta, type GroupKey } from "@/lib/source-groups";
+import { cleanPathForSource, sourceForCleanPath } from "@/lib/codebooks";
 
 type Props = {
   sources: SourceSummary[];
@@ -60,6 +61,9 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
   const activeCode = (() => {
     const m = location.pathname.match(/^\/code\/source\/([^/]+)/);
     if (m) return m[1];
+    // Clean single-source slug like /usc → its source_code (highlights + expands).
+    const slugSource = sourceForCleanPath(location.pathname);
+    if (slugSource) return slugSource;
     const m2 = location.pathname.match(/^\/code\/((?:us\/)?[^/]+)/);
     return m2?.[1] ?? null;
   })();
@@ -142,8 +146,7 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
                     return (
                       <li key={s.code}>
                         <Link
-                          to="/code/source/$source"
-                          params={{ source: s.code }}
+                          to={(cleanPathForSource(s.code) ?? `/code/source/${s.code}`) as never}
                           className={`group flex items-center justify-between rounded-md px-2 py-1.5 text-[0.9rem] transition-colors ${
                             isActive
                               ? "bg-foreground/8 text-foreground"

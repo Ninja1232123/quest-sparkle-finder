@@ -1,19 +1,15 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { listSources } from "@/lib/documents.functions";
-import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
-import { getCodebook } from "@/lib/codebooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { loadSourceRoute, validateSourceSearch } from "@/lib/source-browser";
+import { SourceRouteView, SourceBrowserPending } from "@/components/marginalia/SourceBrowser";
 
+// Slug is "presidential"; the source_code in the corpus is "public-papers-president".
 export const Route = createFileRoute("/presidential")({
-  loader: async () => {
-    const cb = getCodebook("presidential");
-    if (!cb) throw notFound();
-    const { sources } = await listSources();
-    return { codebook: cb, sources };
-  },
-  component: () => {
-    const { codebook, sources } = Route.useLoaderData();
-    return <CodebookLanding codebook={codebook} sources={sources} />;
-  },
+  validateSearch: validateSourceSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadSourceRoute({ source: "public-papers-president", deps }),
+  component: () => <SourceRouteView data={Route.useLoaderData()} linkSelf={{ to: "/presidential" }} />,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
       { title: "Presidential Documents · Marginalia" },

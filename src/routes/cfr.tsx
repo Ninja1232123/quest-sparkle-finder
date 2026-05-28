@@ -1,22 +1,14 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { listSources, getSourceTOC } from "@/lib/documents.functions";
-import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
-import { getCodebook } from "@/lib/codebooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { loadSourceRoute, validateSourceSearch } from "@/lib/source-browser";
+import { SourceRouteView, SourceBrowserPending } from "@/components/marginalia/SourceBrowser";
 
 export const Route = createFileRoute("/cfr")({
-  loader: async () => {
-    const cb = getCodebook("cfr");
-    if (!cb) throw notFound();
-    const [{ sources }, tocRes] = await Promise.all([
-      listSources(),
-      getSourceTOC({ data: { source: "cfr" } }),
-    ]);
-    return { codebook: cb, sources, toc: tocRes.toc, tocSource: "cfr" };
-  },
-  component: () => {
-    const { codebook, sources, toc, tocSource } = Route.useLoaderData();
-    return <CodebookLanding codebook={codebook} sources={sources} toc={toc} tocSource={tocSource} />;
-  },
+  validateSearch: validateSourceSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadSourceRoute({ source: "cfr", deps }),
+  component: () => <SourceRouteView data={Route.useLoaderData()} linkSelf={{ to: "/cfr" }} />,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
       { title: "Code of Federal Regulations · Marginalia" },

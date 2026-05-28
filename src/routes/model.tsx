@@ -1,26 +1,16 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { listSources, getSourceTOC } from "@/lib/documents.functions";
-import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
-import { getCodebook } from "@/lib/codebooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { loadSourceRoute, validateSourceSearch } from "@/lib/source-browser";
+import { SourceRouteView, SourceBrowserPending } from "@/components/marginalia/SourceBrowser";
 
 // Model & Uniform Codes — currently houses the UCC (source code "ucc").
-// We load the UCC TOC as the primary so the sub-volume grid populates with
-// UCC articles. When more model codes land (UPC, etc.) revisit this.
+// When more model codes land (UPC, etc.) this becomes a chooser landing.
 export const Route = createFileRoute("/model")({
-  loader: async () => {
-    const cb = getCodebook("model");
-    if (!cb) throw notFound();
-    const primary = cb.sources[0] ?? "ucc";
-    const [{ sources }, tocRes] = await Promise.all([
-      listSources(),
-      getSourceTOC({ data: { source: primary } }),
-    ]);
-    return { codebook: cb, sources, toc: tocRes.toc, tocSource: primary };
-  },
-  component: () => {
-    const { codebook, sources, toc, tocSource } = Route.useLoaderData();
-    return <CodebookLanding codebook={codebook} sources={sources} toc={toc} tocSource={tocSource} />;
-  },
+  validateSearch: validateSourceSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadSourceRoute({ source: "ucc", deps }),
+  component: () => <SourceRouteView data={Route.useLoaderData()} linkSelf={{ to: "/model" }} />,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
       { title: "Model & Uniform Codes · Marginalia" },

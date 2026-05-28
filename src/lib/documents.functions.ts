@@ -60,7 +60,7 @@ export const listSources = createServerFn({ method: "GET" }).handler(async () =>
 
 export const listDocumentsBySource = createServerFn({ method: "GET" })
   .inputValidator(z.object({
-    source: z.string().min(2).max(20),
+    source: z.string().min(2).max(40),
     parent_label: z.string().min(1).max(200).optional(),
     limit: z.number().int().min(1).max(5000).optional(),
   }))
@@ -94,7 +94,7 @@ export type SourceTocNode = {
 };
 
 export const getSourceTOC = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ source: z.string().min(2).max(20) }))
+  .inputValidator(z.object({ source: z.string().min(2).max(40) }))
   .handler(async ({ data }) => {
     // Firehoses (bill, register) have 250K-300K distinct parent_labels — the
     // flat TOC would page forever. They use the date/Congress browser instead.
@@ -259,7 +259,7 @@ export const listDocsBySortRange = createServerFn({ method: "GET" })
 export const logSearchEvent = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     q: z.string().min(1).max(200),
-    source: z.string().min(2).max(20).optional(),
+    source: z.string().min(2).max(40).optional(),
     hit_count: z.number().int().min(0).max(10000),
     exact_hit: z.boolean().optional(),
   }))
@@ -457,7 +457,7 @@ function buildSnippet(body: string, terms: string[], len = 260): string {
 export const searchDocuments = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     q: z.string().min(2).max(200),
-    source: z.string().min(2).max(20).optional(),
+    source: z.string().min(2).max(40).optional(),
     // Search bucket. 'codified' (default) = the codebooks/manuals; 'primary' =
     // Federal Register + Statutes at Large; 'cases' = caselaw (not in this
     // corpus yet); 'all' = no restriction. An explicit `source` pins one code.

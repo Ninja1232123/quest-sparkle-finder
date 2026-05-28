@@ -1,19 +1,15 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { listSources } from "@/lib/documents.functions";
-import { CodebookLanding } from "@/components/marginalia/CodebookLanding";
-import { getCodebook } from "@/lib/codebooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { loadSourceRoute, validateSourceSearch } from "@/lib/source-browser";
+import { SourceRouteView, SourceBrowserPending } from "@/components/marginalia/SourceBrowser";
 
+// Slug is "laws"; the source_code in the corpus is "public-private-law".
 export const Route = createFileRoute("/laws")({
-  loader: async () => {
-    const cb = getCodebook("laws");
-    if (!cb) throw notFound();
-    const { sources } = await listSources();
-    return { codebook: cb, sources };
-  },
-  component: () => {
-    const { codebook, sources } = Route.useLoaderData();
-    return <CodebookLanding codebook={codebook} sources={sources} />;
-  },
+  validateSearch: validateSourceSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadSourceRoute({ source: "public-private-law", deps }),
+  component: () => <SourceRouteView data={Route.useLoaderData()} linkSelf={{ to: "/laws" }} />,
+  pendingMs: 200,
+  pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
       { title: "Public & Private Laws · Marginalia" },
