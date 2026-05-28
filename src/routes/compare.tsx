@@ -598,8 +598,9 @@ function ShelfPanel({
 function FutureNote() {
   return (
     <p className="mt-12 border-t border-border/50 pt-5 text-xs text-muted-foreground">
-      Coming next: pin two sections and see a <span className="font-medium text-foreground/70">word-for-word diff</span>,
-      plus a plain-English summary of what actually differs — every claim linked back to the source.
+      New: pin two sections to the shelf, select them, and get a{" "}
+      <span className="font-medium text-foreground/70">word-for-word diff</span>. Coming next — a
+      plain-English summary of what actually differs, every claim linked back to the source.
     </p>
   );
 }
