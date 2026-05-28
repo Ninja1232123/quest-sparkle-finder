@@ -6,6 +6,17 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
+/* Architects Daughter (SIL OFL) — self-hosted from public/fonts. Powers the
+   reader's handwritten marginalia (--font-hand). Intentionally not in the
+   Google import above so the "hand" works even if that request is blocked. */
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ArchitectsDaughter-Regular.ttf") format("truetype");
+}
+
 /*
  * Design system definition.
  *
@@ -77,6 +88,7 @@
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-hand: "Architects Daughter", "Bradley Hand", "Segoe Print", cursive;
 }
 
 :root {

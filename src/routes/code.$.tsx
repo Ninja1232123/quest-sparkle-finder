@@ -1,8 +1,8 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
 import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
@@ -97,21 +97,182 @@ function buildMarkRe(q?: string): RegExp | null {
   return terms.length ? new RegExp(`(${terms.join("|")})`, "ig") : null;
 }
 
-function ParaRow({ id, body, p, citations, markRe }: {
+// ── Reader marginalia ─────────────────────────────────────────────────────
+// Handwritten notes pinned to a paragraph, persisted in localStorage keyed by
+// section identifier + paragraph index. Device-local by design — nothing
+// leaves the browser. Hydration-safe (loads after mount) so SSR renders the
+// statute clean with no client/server mismatch; mirrors useShelf in compare.tsx.
+const NOTES_KEY_VERSION = "v1";
+function marginaliaKey(identifier: string) {
+  return `marginalia.notes.${NOTES_KEY_VERSION}:${identifier}`;
+}
+
+function useMarginalia(identifier: string) {
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    let loaded: Record<string, string> = {};
+    try {
+      const raw = localStorage.getItem(marginaliaKey(identifier));
+      if (raw) loaded = JSON.parse(raw) as Record<string, string>;
+    } catch {
+      /* ignore corrupt or blocked storage */
+    }
+    setNotes(loaded);
+    setHydrated(true);
+  }, [identifier]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const key = marginaliaKey(identifier);
+      if (Object.keys(notes).length > 0) localStorage.setItem(key, JSON.stringify(notes));
+      else localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }, [notes, hydrated, identifier]);
+
+  const setNote = (idx: number, text: string) =>
+    setNotes((prev) => {
+      const next = { ...prev };
+      const t = text.trim();
+      if (t) next[idx] = t;
+      else delete next[idx];
+      return next;
+    });
+  const removeNote = (idx: number) =>
+    setNotes((prev) => {
+      const next = { ...prev };
+      delete next[idx];
+      return next;
+    });
+
+  return { notes, hydrated, setNote, removeNote, count: Object.keys(notes).length };
+}
+
+function MarginComposer({ initial, onSave, onCancel }: {
+  initial: string;
+  onSave: (text: string) => void;
+  onCancel: () => void;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [draft, setDraft] = useState(initial);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }, []);
+  return (
+    <div className="rounded-xl border-[1.5px] border-ochre bg-card/80 px-3 py-2.5 shadow-[var(--shadow-card)]">
+      <textarea
+        ref={ref}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSave(draft); }
+          if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+        }}
+        rows={3}
+        placeholder="in your own words…"
+        className="w-full resize-y border-0 bg-transparent font-hand text-[19px] leading-snug text-foreground outline-none placeholder:text-foreground/30"
+      />
+      <div className="mt-1.5 flex items-center justify-between">
+        <span className="font-mono text-[9.5px] uppercase tracking-wider text-foreground/40">⏎ save · esc cancel</span>
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={onCancel} className="rounded-full px-2.5 py-1 font-display text-xs font-semibold text-foreground/45 hover:text-foreground">
+            Cancel
+          </button>
+          <button type="button" onClick={() => onSave(draft)} className="rounded-full bg-foreground px-3 py-1 font-display text-xs font-semibold text-background hover:opacity-90">
+            Save note
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarginNote({ text, onEdit, onDelete }: { text: string; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="group/note relative pl-3">
+      <span className="absolute left-0 top-1 h-[calc(100%-0.75rem)] w-[2px] rounded bg-ochre" />
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Click to edit"
+        className="block cursor-text text-left font-hand text-[19px] leading-snug text-foreground/80 hover:text-foreground"
+      >
+        {text}
+      </button>
+      <div className="mt-1 flex gap-3 opacity-0 transition group-hover/note:opacity-100">
+        <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
+        <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
+      </div>
+    </div>
+  );
+}
+
+function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, onStartCompose, onSave, onCancel, onDelete }: {
   id: string;
   body: string;
   p: LegalPara;
   citations: DocCitationRow[];
   markRe: RegExp | null;
+  note: string | undefined;
+  hydrated: boolean;
+  composing: boolean;
+  onStartCompose: () => void;
+  onSave: (text: string) => void;
+  onCancel: () => void;
+  onDelete: () => void;
 }) {
+  const hasNote = hydrated && typeof note === "string" && note.length > 0;
   return (
-    <div id={id} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
-      {p.label && (
-        <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
-          {p.label}
+    <div id={id} className={`group/para ${LEVEL_INDENT[p.level]}`}>
+      <div className="flex gap-3">
+        {p.label && (
+          <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
+            {p.label}
+          </span>
+        )}
+        <span
+          className={
+            p.label
+              ? hasNote
+                ? "flex-1 -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3"
+                : "flex-1"
+              : hasNote
+                ? "block -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3"
+                : ""
+          }
+        >
+          {renderDecorated(body, p.start, p.end, citations, markRe)}
         </span>
+      </div>
+
+      {/* Note zone — client-only (hover-to-add, edit/delete). Absent during SSR
+          and first paint so there's no hydration mismatch. */}
+      {hydrated && (
+        <div className={p.label ? "pl-[2.75rem]" : ""}>
+          {composing ? (
+            <div className="mt-2 max-w-prose">
+              <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
+            </div>
+          ) : hasNote ? (
+            <div className="mt-2 max-w-prose">
+              <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onStartCompose}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[16px] text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
+            >
+              <PenLine className="h-3 w-3 text-ochre" /> write in the margin
+            </button>
+          )}
+        </div>
       )}
-      <span className={p.label ? "flex-1" : ""}>{renderDecorated(body, p.start, p.end, citations, markRe)}</span>
     </div>
   );
 }
@@ -156,21 +317,50 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   );
 }
 
-function LegalBody({ body, segments, opParas, citations, q }: {
+function LegalBody({ body, segments, opParas, citations, q, identifier }: {
   body: string;
   segments: BodySegment[];
   opParas: LegalPara[];
   citations: DocCitationRow[];
   q?: string;
+  identifier: string;
 }) {
   const markRe = useMemo(() => buildMarkRe(q), [q]);
   const spans = useMemo(() => citationSpans(citations), [citations]);
   const notes = useMemo(() => segments.filter((s) => s.kind === "note"), [segments]);
+  const mg = useMarginalia(identifier);
+  const [composing, setComposing] = useState<number | null>(null);
 
   return (
     <div className="space-y-2.5">
+      {/* Marginalia intro / count — client-only, so no hydration mismatch. */}
+      {mg.hydrated && (
+        <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2">
+          <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
+            <PenLine className="h-3 w-3 text-ochre" />
+            {mg.count === 0 ? "marginalia · hover a line to jot a private note" : "your marginalia"}
+          </span>
+          <span className="shrink-0 font-mono text-[10px] text-foreground/40">
+            {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"} · this device`}
+          </span>
+        </div>
+      )}
       {opParas.map((p, i) => (
-        <ParaRow key={`op-${i}`} id={`para-${i}`} body={body} p={p} citations={citations} markRe={markRe} />
+        <ParaRow
+          key={`op-${i}`}
+          id={`para-${i}`}
+          body={body}
+          p={p}
+          citations={citations}
+          markRe={markRe}
+          note={mg.notes[i]}
+          hydrated={mg.hydrated}
+          composing={composing === i}
+          onStartCompose={() => setComposing(i)}
+          onSave={(text) => { mg.setNote(i, text); setComposing(null); }}
+          onCancel={() => setComposing(null)}
+          onDelete={() => mg.removeNote(i)}
+        />
       ))}
       {notes.map((seg, i) => (
         <NotePanel key={`note-${i}`} body={body} seg={seg} citations={citations} markRe={markRe} spans={spans} />
@@ -571,7 +761,7 @@ function DocumentPage() {
         <div className="mt-8">
           <DefinitionsPanel text={body} />
           <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} />
+            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} />
           </div>
         </div>
 
