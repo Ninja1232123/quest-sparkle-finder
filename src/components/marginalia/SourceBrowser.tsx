@@ -138,11 +138,11 @@ function CatalogueBubble({ kind, token, title, sub, count, accent, index, expand
       style={{ background: `linear-gradient(${angle}deg, color-mix(in oklch, ${accent} 8%, transparent) 0%, transparent 62%), var(--paper-soft)` }}
     >
       <div
-        className="flex h-12 min-w-[3rem] shrink-0 flex-col items-center justify-center rounded-lg px-2 text-white shadow-[inset_0_1px_0_oklch(1_0_0/0.16),0_1px_0_oklch(0_0_0/0.14)]"
-        style={{ background: accent }}
+        className="flex h-12 min-w-[3rem] shrink-0 flex-col items-center justify-center rounded-lg px-2 shadow-[inset_0_1px_0_oklch(1_0_0/0.16),0_1px_0_oklch(0_0_0/0.14)]"
+        style={{ background: accent, color: "#fff" }}
       >
-        {kind && <span className="font-mono text-[8px] font-bold uppercase tracking-wider opacity-80">{kind}</span>}
-        <span className="font-display text-lg font-extrabold leading-none">{token}</span>
+        {kind && <span className="font-mono text-[8px] font-bold uppercase tracking-wider opacity-80" style={{ color: "#fff" }}>{kind}</span>}
+        <span className="font-display text-lg font-extrabold leading-none" style={{ color: "#fff" }}>{token}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="font-display text-[15px] font-bold leading-snug text-foreground [text-wrap:pretty]">{title}</div>
