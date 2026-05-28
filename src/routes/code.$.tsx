@@ -175,18 +175,16 @@ function MarginComposer({ initial, onSave, onCancel }: {
         }}
         rows={3}
         placeholder="in your own words…"
-        className="w-full resize-y border-0 bg-transparent font-hand text-[19px] leading-snug text-foreground outline-none placeholder:text-foreground/30"
+        title="Enter to save · Esc to cancel"
+        className="w-full resize-y border-0 bg-transparent font-hand text-[18px] leading-snug text-foreground outline-none placeholder:text-foreground/30"
       />
-      <div className="mt-1.5 flex items-center justify-between">
-        <span className="font-mono text-[9.5px] uppercase tracking-wider text-foreground/40">⏎ save · esc cancel</span>
-        <div className="flex items-center gap-1.5">
-          <button type="button" onClick={onCancel} className="rounded-full px-2.5 py-1 font-display text-xs font-semibold text-foreground/45 hover:text-foreground">
-            Cancel
-          </button>
-          <button type="button" onClick={() => onSave(draft)} className="rounded-full bg-foreground px-3 py-1 font-display text-xs font-semibold text-background hover:opacity-90">
-            Save note
-          </button>
-        </div>
+      <div className="mt-1 flex items-center justify-end gap-1.5">
+        <button type="button" onClick={onCancel} className="rounded-full px-2 py-0.5 font-display text-[11px] font-semibold text-foreground/45 hover:text-foreground">
+          Cancel
+        </button>
+        <button type="button" onClick={() => onSave(draft)} className="rounded-full bg-foreground px-2.5 py-0.5 font-display text-[11px] font-semibold text-background hover:opacity-90">
+          Save
+        </button>
       </div>
     </div>
   );
@@ -228,8 +226,9 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
 }) {
   const hasNote = hydrated && typeof note === "string" && note.length > 0;
   return (
-    <div id={id} className={`group/para ${LEVEL_INDENT[p.level]}`}>
-      <div className="flex gap-3">
+    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start lg:gap-6">
+      {/* statute text */}
+      <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
           <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
             {p.label}
@@ -237,12 +236,10 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
         )}
         <span
           className={
-            p.label
-              ? hasNote
-                ? "flex-1 -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3"
-                : "flex-1"
-              : hasNote
-                ? "block -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3"
+            hasNote
+              ? `${p.label ? "flex-1" : "block"} -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3`
+              : p.label
+                ? "flex-1"
                 : ""
           }
         >
@@ -250,25 +247,22 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
         </span>
       </div>
 
-      {/* Note zone — client-only (hover-to-add, edit/delete). Absent during SSR
-          and first paint so there's no hydration mismatch. */}
+      {/* Margin — beside the text at lg+, stacked below on narrow screens.
+          Client-only (hover-to-add, edit/delete) so there's no SSR/hydration
+          mismatch; top-aligned to the paragraph so a note pins to its line. */}
       {hydrated && (
-        <div className={p.label ? "pl-[2.75rem]" : ""}>
+        <div className={`mt-2 ${LEVEL_INDENT[p.level]} lg:mt-0 lg:pl-0`}>
           {composing ? (
-            <div className="mt-2 max-w-prose">
-              <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
-            </div>
+            <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
           ) : hasNote ? (
-            <div className="mt-2 max-w-prose">
-              <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
-            </div>
+            <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
           ) : (
             <button
               type="button"
               onClick={onStartCompose}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[16px] text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
+              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[15px] leading-tight text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
             >
-              <PenLine className="h-3 w-3 text-ochre" /> write in the margin
+              <PenLine className="h-3 w-3 shrink-0 text-ochre" /> note
             </button>
           )}
         </div>
