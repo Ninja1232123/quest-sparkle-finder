@@ -3,72 +3,36 @@ import { getDocument, listSources, type DocCitationRow, type IncomingCitation } 
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, Plus } from "lucide-react";
-import { linkifyAndHighlight } from "@/lib/auto-link-citations";
+import { renderDecorated } from "@/lib/auto-link-citations";
+import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
 
-// ── Legal body parser ────────────────────────────────────────────────────────
-// Splits body_text into paragraphs and detects (a)/(1)/(i) paragraph labels,
-// rendering three indent levels without touching the source data.
+// Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
+// and @/lib/auto-link-citations (renderDecorated). Both work in original
+// body_text offsets so citation_edges spans stay valid. See CITATION_GAMEPLAN.md.
 
-type LegalParagraph = {
-  label: string | null; // "(a)", "(1)", "(ii)", or null for unlabeled text
-  level: 0 | 1 | 2 | 3;
-  text: string;
-};
+const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
 
-function labelLevel(inner: string): 0 | 1 | 2 | 3 {
-  if (/^\d+$/.test(inner)) return 2; // (1), (2), …
-  // Multi-char roman numerals are unambiguous level 3
-  if (/^(ii|iii|iv|vi{0,3}|ix|xi{0,3}|xiv|xv)$/i.test(inner)) return 3;
-  // Single letter (including "i", "v", "x" treated as letter-level)
-  if (/^[a-z]$/i.test(inner)) return 1;
-  return 0;
-}
-
-function parseLegalBody(text: string): LegalParagraph[] {
-  const out: LegalParagraph[] = [];
-  let current = "";
-
-  const flush = () => {
-    const para = current.trim();
-    if (!para) return;
-    // Check for a leading paragraph label: "(a)", "(1)", "(iv)", etc.
-    const m = para.match(/^\(([a-zA-Z0-9]{1,4})\)\s*/);
-    if (m) {
-      const level = labelLevel(m[1]);
-      out.push({ label: `(${m[1]})`, level: level || 1, text: para.slice(m[0].length) });
-    } else {
-      out.push({ label: null, level: 0, text: para });
-    }
-    current = "";
-  };
-
-  // Most source bodies arrive as one giant blob with no newlines. Normalize
-  // by inserting a break before every inline enumerator like "(a)", "(1)",
-  // "(iv)" — but only when it sits between whitespace, so cross-references
-  // like "section 1983(a)(2)" or "Pub. L. 93-579" stay intact.
-  const normalized = text.replace(
-    /([^\s(])\s+(?=\([a-zA-Z0-9]{1,4}\)\s)/g,
-    "$1\n",
-  );
-
-  for (const line of normalized.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      flush();
-    } else if (/^\([a-zA-Z0-9]{1,4}\)/.test(trimmed) && current.trim()) {
-      // A new labeled paragraph starts — flush the current one first
-      flush();
-      current = line;
-    } else {
-      current += (current ? "\n" : "") + line;
-    }
+// Citation byte spans, used both to place inline chips and to keep the
+// soft-paragraph splitter from cutting through a cite.
+function citationSpans(citations: DocCitationRow[]): { s: number; e: number }[] {
+  const out: { s: number; e: number }[] = [];
+  for (const c of citations) {
+    if (c.span_start != null && c.span_end != null) out.push({ s: c.span_start, e: c.span_end });
   }
-  flush();
   return out;
 }
 
-const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
+// The operative paragraphs, flattened across every operative segment, in order.
+// The flat index is the anchor id used by both the body and the outline, so
+// they must derive it from the same inputs (segments + spans).
+function operativeParagraphs(body: string, segments: BodySegment[], spans: { s: number; e: number }[]): LegalPara[] {
+  const out: LegalPara[] = [];
+  for (const seg of segments) {
+    if (seg.kind === "operative") out.push(...splitParagraphs(body, seg.start, seg.end, spans));
+  }
+  return out;
+}
 
 // ── Defined-terms extractor ──────────────────────────────────────────────────
 // Scans body_text for "term" means / is defined as / refers to patterns common
@@ -127,29 +91,89 @@ function DefinitionsPanel({ text }: { text: string }) {
   );
 }
 
-function LegalBody({ text, q, citations }: { text: string; q?: string; citations: DocCitationRow[] }) {
-  const paragraphs = useMemo(() => parseLegalBody(text), [text]);
-  const markRe = useMemo(() => {
-    if (!q?.trim()) return null;
-    const terms = q.trim().split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-    return terms.length ? new RegExp(`(${terms.join("|")})`, "ig") : null;
-  }, [q]);
+function buildMarkRe(q?: string): RegExp | null {
+  if (!q?.trim()) return null;
+  const terms = q.trim().split(/\s+/).filter((t) => t.length >= 2).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return terms.length ? new RegExp(`(${terms.join("|")})`, "ig") : null;
+}
 
-  function renderText(content: string) {
-    return linkifyAndHighlight(content, citations, markRe);
-  }
+function ParaRow({ id, body, p, citations, markRe }: {
+  id: string;
+  body: string;
+  p: LegalPara;
+  citations: DocCitationRow[];
+  markRe: RegExp | null;
+}) {
+  return (
+    <div id={id} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
+      {p.label && (
+        <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
+          {p.label}
+        </span>
+      )}
+      <span className={p.label ? "flex-1" : ""}>{renderDecorated(body, p.start, p.end, citations, markRe)}</span>
+    </div>
+  );
+}
+
+// Apparatus (Editorial/Statutory notes, Executive Documents) collapses into a
+// disclosure panel so the operative law reads on its own. Citations inside the
+// notes still link.
+function NotePanel({ body, seg, citations, markRe, spans }: {
+  body: string;
+  seg: BodySegment;
+  citations: DocCitationRow[];
+  markRe: RegExp | null;
+  spans: { s: number; e: number }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const paras = useMemo(() => splitParagraphs(body, seg.start, seg.end, spans), [body, seg.start, seg.end, spans]);
+  if (paras.length === 0) return null;
+  return (
+    <div className="mt-4 rounded-2xl border border-border/60 bg-card/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="citation-tag text-muted-foreground">{seg.heading}</span>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{paras.length}</span>
+        </div>
+        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-border/40 px-4 pb-4 pt-3 text-[0.95em] text-foreground/70">
+          {paras.map((p, i) => (
+            <div key={i} className={LEVEL_INDENT[p.level]}>
+              {p.label && <span className="mr-1.5 font-mono text-[11px] text-foreground/40">{p.label}</span>}
+              {renderDecorated(body, p.start, p.end, citations, markRe)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LegalBody({ body, segments, opParas, citations, q }: {
+  body: string;
+  segments: BodySegment[];
+  opParas: LegalPara[];
+  citations: DocCitationRow[];
+  q?: string;
+}) {
+  const markRe = useMemo(() => buildMarkRe(q), [q]);
+  const spans = useMemo(() => citationSpans(citations), [citations]);
+  const notes = useMemo(() => segments.filter((s) => s.kind === "note"), [segments]);
 
   return (
     <div className="space-y-2.5">
-      {paragraphs.map((p, i) => (
-        <div key={i} id={`para-${i}`} className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
-          {p.label && (
-            <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
-              {p.label}
-            </span>
-          )}
-          <span className={p.label ? "flex-1" : ""}>{renderText(p.text)}</span>
-        </div>
+      {opParas.map((p, i) => (
+        <ParaRow key={`op-${i}`} id={`para-${i}`} body={body} p={p} citations={citations} markRe={markRe} />
+      ))}
+      {notes.map((seg, i) => (
+        <NotePanel key={`note-${i}`} body={body} seg={seg} citations={citations} markRe={markRe} spans={spans} />
       ))}
     </div>
   );
@@ -237,11 +261,13 @@ const SOURCE_NAMES: Record<string, string> = {
   irm: "IRM",
 };
 
-function DocOutline({ text }: { text: string }) {
-  const paragraphs = useMemo(() => parseLegalBody(text), [text]);
+function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
   const items = useMemo(
-    () => paragraphs.map((p, i) => ({ ...p, idx: i })).filter((p) => p.level === 1 && p.label),
-    [paragraphs],
+    () =>
+      opParas
+        .map((p, i) => ({ ...p, idx: i, preview: body.slice(p.start, p.end).trim() }))
+        .filter((p) => p.level === 1 && p.label),
+    [body, opParas],
   );
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
@@ -284,7 +310,7 @@ function DocOutline({ text }: { text: string }) {
               }`}
             >
               <span className="mt-0.5 shrink-0 font-mono text-[9px] text-foreground/40">{p.label}</span>
-              <span className="line-clamp-2">{p.text.length > 55 ? p.text.slice(0, 55) + "…" : p.text}</span>
+              <span className="line-clamp-2">{p.preview.length > 55 ? p.preview.slice(0, 55) + "…" : p.preview}</span>
             </a>
           );
         })}
@@ -294,7 +320,7 @@ function DocOutline({ text }: { text: string }) {
 }
 
 function DocumentPage() {
-  const { document, citations, incoming, prev, next, sources } = Route.useLoaderData();
+  const { document, citations, incoming, incoming_total, prev, next, sources } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
@@ -316,12 +342,32 @@ function DocumentPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const body = document?.body_text ?? "";
+  const spans = useMemo(() => citationSpans(citations), [citations]);
+  const segments = useMemo(() => segmentBody(document?.source_code ?? "", body), [document?.source_code, body]);
+  const opParas = useMemo(() => operativeParagraphs(body, segments, spans), [body, segments, spans]);
+
   if (!document) return null;
 
-  const internal = citations.filter((c: DocCitationRow) => c.to_document_id);
-  const external = citations.filter((c: DocCitationRow) => !c.to_document_id);
+  // Outgoing citations: dedupe by target (a section often cites the same doc
+  // many times). Resolved → grouped link rail; unresolved → "not in our index".
+  const seenInternal = new Set<string>();
+  const internal: DocCitationRow[] = [];
+  for (const c of citations) {
+    if (!c.to_identifier || seenInternal.has(c.to_identifier)) continue;
+    seenInternal.add(c.to_identifier);
+    internal.push(c);
+  }
+  const seenExternal = new Set<string>();
+  const external: DocCitationRow[] = [];
+  for (const c of citations) {
+    if (c.to_identifier) continue;
+    const key = c.target_cite || `${c.target_type}:${c.span_start}`;
+    if (seenExternal.has(key)) continue;
+    seenExternal.add(key);
+    external.push(c);
+  }
 
-  // Group internal traces by source for clarity
   const traceBySource = new Map<string, DocCitationRow[]>();
   for (const c of internal) {
     const k = c.target_source ?? "?";
@@ -347,13 +393,13 @@ function DocumentPage() {
 
   // Citation/connection panels — rendered in the right rail at xl+, and
   // inline below the article on smaller screens so nothing is hidden.
-  const crossSource = incoming.filter((c: IncomingCitation) => c.source !== document.source_code);
-  const sameSource = incoming.filter((c: IncomingCitation) => c.source === document.source_code);
-  const crossBySource = new Map<string, IncomingCitation[]>();
-  for (const c of crossSource) {
-    const arr = crossBySource.get(c.source) ?? [];
+  // `incoming` is the authority-ranked top slice; `incoming_total` is the true
+  // count. Group the slice by source for display.
+  const incomingBySource = new Map<string, IncomingCitation[]>();
+  for (const c of incoming) {
+    const arr = incomingBySource.get(c.source) ?? [];
     arr.push(c);
-    crossBySource.set(c.source, arr);
+    incomingBySource.set(c.source, arr);
   }
 
   const tracesPanel = internal.length > 0 ? (
@@ -372,7 +418,7 @@ function DocumentPage() {
                 <li key={i}>
                   <Link
                     to="/code/$"
-                    params={{ _splat: c.to_identifier.replace(/^\//, "") }}
+                    params={{ _splat: (c.to_identifier ?? "").replace(/^\//, "") }}
                     className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
                   >
                     <div className="font-display font-semibold leading-snug">
@@ -391,18 +437,21 @@ function DocumentPage() {
     </div>
   ) : null;
 
-  const crossPanel = crossSource.length > 0 ? (
-    <div className="rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3">
-      <div className="citation-tag text-accent mb-2">
-        Cited across {crossBySource.size} other codebook{crossBySource.size !== 1 ? "s" : ""}
+  const citedByPanel = incoming.length > 0 ? (
+    <div>
+      <div className="citation-tag text-accent">
+        Cited by {incoming_total.toLocaleString()} section{incoming_total === 1 ? "" : "s"}
+        {incoming_total > incoming.length ? (
+          <span className="text-muted-foreground"> · top {incoming.length}</span>
+        ) : null}
       </div>
-      <div className="space-y-3">
-        {Array.from(crossBySource.entries()).map(([src, items]) => (
+      <div className="mt-3 space-y-5">
+        {Array.from(incomingBySource.entries()).map(([src, items]) => (
           <div key={src}>
-            <div className="mb-1 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="mb-2 font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {SOURCE_NAMES[src] ?? src}
             </div>
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {items.map((c: IncomingCitation, i: number) => (
                 <li key={i}>
                   <Link
@@ -424,30 +473,6 @@ function DocumentPage() {
     </div>
   ) : null;
 
-  const citedByPanel = sameSource.length > 0 ? (
-    <div>
-      <div className="citation-tag text-accent">
-        Cited by {sameSource.length} section{sameSource.length !== 1 ? "s" : ""} in this codebook
-      </div>
-      <ul className="mt-3 space-y-2">
-        {sameSource.map((c: IncomingCitation, i: number) => (
-          <li key={i}>
-            <Link
-              to="/code/$"
-              params={{ _splat: c.identifier.replace(/^\//, "") }}
-              className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
-            >
-              <div className="citation-tag text-muted-foreground">
-                {c.section_label ?? c.identifier}
-              </div>
-              <div className="font-display font-semibold leading-snug">{c.heading}</div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  ) : null;
-
   const graphPlaceholder = (
     <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
       <div className="flex items-center gap-1.5 font-medium text-foreground/80">
@@ -462,9 +487,8 @@ function DocumentPage() {
 
   const rightRail = (
     <div className="space-y-6 text-sm">
-      <DocOutline text={document.body_text ?? ""} />
+      <DocOutline body={body} opParas={opParas} />
       {tracesPanel}
-      {crossPanel}
       {citedByPanel}
       {graphPlaceholder}
     </div>
@@ -545,9 +569,9 @@ function DocumentPage() {
         </div>
 
         <div className="mt-8">
-          <DefinitionsPanel text={document.body_text ?? ""} />
+          <DefinitionsPanel text={body} />
           <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-            <LegalBody text={document.body_text ?? ""} q={search.q} citations={citations} />
+            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} />
           </div>
         </div>
 
@@ -589,7 +613,6 @@ function DocumentPage() {
         {/* Citation panels — visible only on screens where the right rail is hidden (< xl). */}
         <div className="mt-12 space-y-10 xl:hidden">
           {tracesPanel}
-          {crossPanel}
           {citedByPanel}
         </div>
 
@@ -600,7 +623,7 @@ function DocumentPage() {
             </div>
             <ul className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
               {external.slice(0, 40).map((c: DocCitationRow, i: number) => (
-                <li key={i} className="truncate font-mono text-xs">{c.to_identifier}</li>
+                <li key={i} className="truncate font-mono text-xs">{c.target_cite}</li>
               ))}
             </ul>
             {external.length > 40 && (

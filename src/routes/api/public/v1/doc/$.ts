@@ -21,28 +21,37 @@ export const Route = createFileRoute("/api/public/v1/doc/$")({
         if (error) return jsonResponse({ error: error.message }, { status: 500 });
         if (!doc) return jsonResponse({ error: "not found" }, { status: 404 });
 
-        // Outgoing citations: identifiers + headings the agent can cite next.
-        const { data: outgoing } = await supabaseAdmin
-          .from("doc_citations")
-          .select("to_identifier, to_document_id")
-          .eq("from_document_id", doc.id);
-        const targetIds = (outgoing ?? []).map((c) => c.to_document_id).filter(Boolean) as string[];
-        const targetMap = new Map<string, { heading: string | null; source_code: string }>();
+        // Outgoing citations: resolved targets the agent can cite next. Sourced
+        // from citation_edges (not the old phantom doc_citations). It isn't in
+        // the generated Database types, so use a loose handle — service_role
+        // already has SELECT on it.
+        const edgeDb = supabaseAdmin as unknown as {
+          from: (t: string) => {
+            select: (cols: string) => {
+              eq: (c: string, v: number) => { limit: (n: number) => Promise<{ data: { target_id: number | null }[] | null }> };
+            };
+          };
+        };
+        const { data: edges } = await edgeDb
+          .from("citation_edges")
+          .select("target_id")
+          .eq("source_id", doc.id)
+          .limit(2000);
+        const targetIds = Array.from(
+          new Set((edges ?? []).map((e) => e.target_id).filter((x): x is number => x != null)),
+        ).slice(0, 800);
+        const targetMap = new Map<number, { identifier: string; heading: string | null }>();
         if (targetIds.length) {
           const { data: targets } = await supabaseAdmin
             .from("documents")
-            .select("id, heading, source_code")
+            .select("id, identifier, heading")
             .in("id", targetIds);
-          for (const t of targets ?? []) targetMap.set(t.id, { heading: t.heading, source_code: t.source_code });
+          for (const t of targets ?? []) targetMap.set(t.id as number, { identifier: t.identifier, heading: t.heading });
         }
-        const citations = (outgoing ?? []).map((c) => {
-          const t = c.to_document_id ? targetMap.get(c.to_document_id) : null;
-          return {
-            identifier: c.to_identifier,
-            heading: t?.heading ?? null,
-            url: canonicalUrl(c.to_identifier),
-          };
-        });
+        const citations = targetIds
+          .map((id) => targetMap.get(id))
+          .filter((t): t is { identifier: string; heading: string | null } => !!t)
+          .map((t) => ({ identifier: t.identifier, heading: t.heading, url: canonicalUrl(t.identifier) }));
 
         return jsonResponse({
           identifier: doc.identifier,

@@ -12,7 +12,7 @@ async function getAdminClient() {
 }
 
 export type DocumentRow = {
-  id: string;
+  id: number;
   source_code: string;
   identifier: string;
   parent_label: string | null;
@@ -24,13 +24,31 @@ export type DocumentRow = {
   word_count: number | null;
 };
 
+// One detected citation out of this document. Sourced from citation_edges, so
+// every row carries the body_text byte span (span_start/end) that produced it —
+// the body renderer places its inline chips by those offsets. When the indexer
+// resolved the cite to a real document, target_id + the to_* fields are set;
+// otherwise it's a recognized-but-unhosted cite (a Pub. L. / Stat. / case ref).
 export type DocCitationRow = {
-  to_identifier: string;
-  to_document_id: string | null;
+  target_type: string; // usc, cfr, pub_l, stat, eo, irm, scotus, …
+  target_cite: string; // display string, e.g. "Pub. L. 117-228", "128 Stat. 2014"
+  target_id: number | null;
+  span_start: number | null;
+  span_end: number | null;
+  to_identifier: string | null;
   target_heading: string | null;
   target_source: string | null;
   target_section_label: string | null;
 };
+
+type EdgeRow = {
+  target_type: string;
+  target_cite: string;
+  target_id: number | null;
+  span_start: number | null;
+  span_end: number | null;
+};
+type AuthorityRow = { id: number; authority: number };
 
 export type SourceSummary = {
   code: string;
@@ -308,6 +326,7 @@ export type IncomingCitation = {
   heading: string | null;
   source: string;
   section_label: string | null;
+  authority: number; // doc_authority score of the citing doc, for ranking the rail
 };
 
 export type SiblingNav = {
@@ -330,56 +349,102 @@ export const getDocument = createServerFn({ method: "GET" })
         document: null as DocumentRow | null,
         citations: [] as DocCitationRow[],
         incoming: [] as IncomingCitation[],
+        incoming_total: 0,
         prev: null as SiblingNav,
         next: null as SiblingNav,
         error: error?.message ?? "Not found",
       };
     }
 
-    const { data: outgoing } = await supabaseAdmin
-      .from("doc_citations")
-      .select("to_identifier, to_document_id")
-      .eq("from_document_id", doc.id);
+    // citation_edges / doc_authority aren't in the generated Database types
+    // (the old generated types still carry a phantom `doc_citations`). Use a
+    // loosely-typed handle for just these two, the same way rpc() is cast above.
+    const edgeDb = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (cols: string, opts?: { count?: "exact"; head?: boolean }) => {
+          eq: (c: string, v: number) => {
+            order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: EdgeRow[] | null }> };
+            limit: (n: number) => Promise<{ data: { source_id: number | null }[] | null; count: number | null }>;
+          };
+          in: (c: string, v: number[]) => Promise<{ data: AuthorityRow[] | null }>;
+        };
+      };
+    };
 
-    const targetIds = (outgoing ?? []).map((c) => c.to_document_id).filter(Boolean) as string[];
-    let targetMap = new Map<string, { heading: string | null; source: string; label: string | null }>();
+    // Outgoing citations — from citation_edges, which carries the body_text
+    // byte spans and resolved target ids. Ordered by span so the body renderer
+    // can place chips in reading order. Capped generously.
+    const { data: edges } = await edgeDb
+      .from("citation_edges")
+      .select("target_type, target_cite, target_id, span_start, span_end")
+      .eq("source_id", doc.id)
+      .order("span_start", { ascending: true })
+      .limit(4000);
+
+    const targetIds = Array.from(
+      new Set((edges ?? []).map((e) => e.target_id).filter((x): x is number => x != null)),
+    ).slice(0, 800);
+    let targetMap = new Map<number, { identifier: string; heading: string | null; source: string; label: string | null }>();
     if (targetIds.length > 0) {
       const { data: targets } = await supabaseAdmin
         .from("documents")
-        .select("id, heading, source_code, section_label")
+        .select("id, identifier, heading, source_code, section_label")
         .in("id", targetIds);
-      targetMap = new Map((targets ?? []).map((t) => [t.id, { heading: t.heading, source: t.source_code, label: t.section_label }]));
+      targetMap = new Map(
+        (targets ?? []).map((t) => [t.id as number, { identifier: t.identifier, heading: t.heading, source: t.source_code, label: t.section_label }]),
+      );
     }
-    const citations: DocCitationRow[] = (outgoing ?? []).map((c) => {
-      const t = c.to_document_id ? targetMap.get(c.to_document_id) : null;
+    const citations: DocCitationRow[] = (edges ?? []).map((e) => {
+      const t = e.target_id != null ? targetMap.get(e.target_id) : null;
       return {
-        to_identifier: c.to_identifier,
-        to_document_id: c.to_document_id,
+        target_type: e.target_type,
+        target_cite: e.target_cite,
+        target_id: e.target_id,
+        span_start: e.span_start,
+        span_end: e.span_end,
+        to_identifier: t?.identifier ?? null,
         target_heading: t?.heading ?? null,
         target_source: t?.source ?? null,
         target_section_label: t?.label ?? null,
       };
     });
 
-    // Incoming citations (other docs that cite this one)
-    const { data: incomingRaw } = await supabaseAdmin
-      .from("doc_citations")
-      .select("from_document_id")
-      .eq("to_document_id", doc.id)
-      .limit(50);
-    const fromIds = (incomingRaw ?? []).map((r) => r.from_document_id);
+    // Incoming citations (other docs that cite this one). The total can be huge
+    // for popular sections, so report an exact count but only hydrate a ranked
+    // top slice: pull a candidate window, rank by doc_authority, keep the
+    // strongest. (Ranking is over the window, not the whole set.)
+    const { count: incomingTotalRaw } = await edgeDb
+      .from("citation_edges")
+      .select("source_id", { count: "exact", head: true })
+      .eq("target_id", doc.id)
+      .limit(1);
+    const incoming_total = incomingTotalRaw ?? 0;
+
+    const { data: incomingRaw } = await edgeDb
+      .from("citation_edges")
+      .select("source_id")
+      .eq("target_id", doc.id)
+      .limit(400);
+    const fromIds = Array.from(
+      new Set((incomingRaw ?? []).map((r) => r.source_id).filter((x): x is number => x != null)),
+    );
     let incoming: IncomingCitation[] = [];
     if (fromIds.length > 0) {
-      const { data: fromDocs } = await supabaseAdmin
-        .from("documents")
-        .select("identifier, heading, source_code, section_label")
-        .in("id", fromIds);
-      incoming = (fromDocs ?? []).map((d) => ({
-        identifier: d.identifier,
-        heading: d.heading,
-        source: d.source_code,
-        section_label: d.section_label,
-      }));
+      const [{ data: fromDocs }, { data: auth }] = await Promise.all([
+        supabaseAdmin.from("documents").select("id, identifier, heading, source_code, section_label").in("id", fromIds),
+        edgeDb.from("doc_authority").select("id, authority").in("id", fromIds),
+      ]);
+      const authMap = new Map((auth ?? []).map((a) => [a.id as number, a.authority as number]));
+      incoming = (fromDocs ?? [])
+        .map((d) => ({
+          identifier: d.identifier,
+          heading: d.heading,
+          source: d.source_code,
+          section_label: d.section_label,
+          authority: authMap.get(d.id as number) ?? 0,
+        }))
+        .sort((a, b) => b.authority - a.authority)
+        .slice(0, 60);
     }
 
     // Prev / next sibling within the same source + parent_label, by sort_key.
@@ -414,6 +479,7 @@ export const getDocument = createServerFn({ method: "GET" })
       document: doc as DocumentRow,
       citations,
       incoming,
+      incoming_total,
       prev,
       next,
       error: null as string | null,
