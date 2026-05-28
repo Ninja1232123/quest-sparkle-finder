@@ -65,6 +65,101 @@ export function SourceRouteView({ data, linkSelf }: { data: SourceRouteData; lin
   return <SourceBrowser data={data} linkSelf={linkSelf} />;
 }
 
+// USC TOC parts arrive chapter-qualified, e.g.
+//   "CHAPTER 1— NATIONAL PARKS … · SUBCHAPTER III— NATIONAL PARK FOUNDATION"
+// Cluster consecutive same-chapter parts so each chapter shows once as a header
+// with its subchapters nested beneath, instead of repeating the chapter on every
+// row. Returns null for sources whose parts aren't chapter-structured (CFR/IRM/
+// statutes/etc.), so the caller keeps the flat two-column grid.
+type TocPart = { label: string; count: number; parent_label: string };
+type ChapterRow = { sub: string | null; count: number; parent_label: string };
+type ChapterGroup = { chapter: string; rows: ChapterRow[]; total: number };
+
+function groupPartsByChapter(parts: TocPart[]): ChapterGroup[] | null {
+  if (!parts.some((p) => /^CHAPTER\b/i.test(p.label))) return null;
+  const groups: ChapterGroup[] = [];
+  for (const p of parts) {
+    const segs = p.label.split(" · ");
+    const isChap = /^CHAPTER\b/i.test(segs[0]);
+    const chapter = isChap ? segs[0] : p.label;
+    const sub = isChap && segs.length > 1 ? segs.slice(1).join(" · ") : null;
+    const last = groups[groups.length - 1];
+    if (last && last.chapter === chapter) {
+      last.rows.push({ sub, count: p.count, parent_label: p.parent_label });
+      last.total += p.count;
+    } else {
+      groups.push({ chapter, rows: [{ sub, count: p.count, parent_label: p.parent_label }], total: p.count });
+    }
+  }
+  return groups;
+}
+
+function TitleParts({ parts, linkSelf }: { parts: TocPart[]; linkSelf: LinkSelf }) {
+  const groups = groupPartsByChapter(parts);
+  if (!groups) {
+    return (
+      <ul className="grid grid-cols-1 gap-px border-t border-border/60 bg-border/60 sm:grid-cols-2">
+        {parts.map((p) => (
+          <li key={p.parent_label} className="bg-card">
+            <Link
+              to={linkSelf.to as never}
+              search={{ group: p.parent_label }}
+              className="flex items-baseline justify-between gap-3 px-5 py-2.5 transition-colors hover:bg-muted/60"
+            >
+              <span className="font-display text-sm">{p.label}</span>
+              <span className="citation-tag text-muted-foreground">{p.count.toLocaleString()}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <div className="border-t border-border/60">
+      {groups.map((cg) => {
+        // Simple chapter (no subchapters): one clickable row = the chapter.
+        if (cg.rows.length === 1 && cg.rows[0].sub === null) {
+          const r = cg.rows[0];
+          return (
+            <Link
+              key={cg.chapter}
+              to={linkSelf.to as never}
+              search={{ group: r.parent_label }}
+              className="flex items-baseline justify-between gap-3 border-b border-border/50 px-5 py-2.5 transition-colors hover:bg-muted/60"
+            >
+              <span className="font-display text-sm">{cg.chapter}</span>
+              <span className="citation-tag text-muted-foreground">{r.count.toLocaleString()}</span>
+            </Link>
+          );
+        }
+        // Chapter with subchapters: muted header + nested subchapter rows.
+        return (
+          <div key={cg.chapter} className="border-b border-border/50">
+            <div className="flex items-baseline justify-between gap-3 bg-muted/30 px-5 py-2">
+              <span className="citation-tag font-semibold text-foreground/75">{cg.chapter}</span>
+              <span className="citation-tag text-muted-foreground">{cg.total.toLocaleString()}</span>
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2">
+              {cg.rows.map((r) => (
+                <li key={r.parent_label}>
+                  <Link
+                    to={linkSelf.to as never}
+                    search={{ group: r.parent_label }}
+                    className="flex items-baseline justify-between gap-3 px-5 py-2 pl-9 transition-colors hover:bg-muted/60"
+                  >
+                    <span className="text-sm text-foreground/80">{r.sub ?? "General provisions"}</span>
+                    <span className="citation-tag text-muted-foreground">{r.count.toLocaleString()}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }) {
   const { toc, documents, sources, source, group } = data;
   const tocTyped = toc as SourceTocNode[];
@@ -261,22 +356,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                       </div>
                     </div>
                   </button>
-                  {open && (
-                    <ul className="grid grid-cols-1 gap-px border-t border-border/60 bg-border/60 sm:grid-cols-2">
-                      {t.parts.map((p) => (
-                        <li key={p.parent_label} className="bg-card">
-                          <Link
-                            to={linkSelf.to as never}
-                            search={{ group: p.parent_label }}
-                            className="flex items-baseline justify-between gap-3 px-5 py-2.5 transition-colors hover:bg-muted/60"
-                          >
-                            <span className="font-display text-sm">{p.label}</span>
-                            <span className="citation-tag text-muted-foreground">{p.count.toLocaleString()}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {open && <TitleParts parts={t.parts} linkSelf={linkSelf} />}
                 </div>
               );
             })}
