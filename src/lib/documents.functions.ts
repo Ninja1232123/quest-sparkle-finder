@@ -361,6 +361,102 @@ export const getSectionPreview = createServerFn({ method: "GET" })
     };
   });
 
+// ---------------------------------------------------------------------------
+// Two-section word diff (compare → "true diff mode"). Self-contained LCS over
+// word+whitespace tokens so reassembly preserves spacing/newlines. Capped per
+// side to keep the DP table bounded; legal sections are mostly small (median
+// ~300 words) so full coverage is the common case.
+// ---------------------------------------------------------------------------
+export type DiffSeg = { t: "eq" | "add" | "del"; v: string };
+const DIFF_TOKEN_CAP = 4000;
+
+function tokenizeForDiff(s: string): string[] {
+  return s.match(/\s+|\S+/g) ?? [];
+}
+
+function wordDiff(aText: string, bText: string): { segs: DiffSeg[]; truncated: boolean } {
+  let A = tokenizeForDiff(aText);
+  let B = tokenizeForDiff(bText);
+  const truncated = A.length > DIFF_TOKEN_CAP || B.length > DIFF_TOKEN_CAP;
+  if (A.length > DIFF_TOKEN_CAP) A = A.slice(0, DIFF_TOKEN_CAP);
+  if (B.length > DIFF_TOKEN_CAP) B = B.slice(0, DIFF_TOKEN_CAP);
+  const n = A.length;
+  const m = B.length;
+  const W = m + 1;
+  const dp = new Int32Array((n + 1) * W);
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i * W + j] =
+        A[i] === B[j]
+          ? dp[(i + 1) * W + (j + 1)] + 1
+          : Math.max(dp[(i + 1) * W + j], dp[i * W + (j + 1)]);
+    }
+  }
+  const segs: DiffSeg[] = [];
+  const push = (t: DiffSeg["t"], v: string) => {
+    const last = segs[segs.length - 1];
+    if (last && last.t === t) last.v += v;
+    else segs.push({ t, v });
+  };
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (A[i] === B[j]) { push("eq", A[i]); i++; j++; }
+    else if (dp[(i + 1) * W + j] >= dp[i * W + (j + 1)]) { push("del", A[i]); i++; }
+    else { push("add", B[j]); j++; }
+  }
+  while (i < n) { push("del", A[i]); i++; }
+  while (j < m) { push("add", B[j]); j++; }
+  return { segs, truncated };
+}
+
+export type DiffDocMeta = {
+  identifier: string;
+  source_code: string;
+  section_label: string | null;
+  heading: string | null;
+  parent_label: string | null;
+};
+export type DiffPair = {
+  a: DiffDocMeta;
+  b: DiffDocMeta;
+  segments: DiffSeg[];
+  truncated: boolean;
+  stats: { added: number; removed: number; common: number };
+};
+
+export const getDiffPair = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ a: z.string().min(1).max(300), b: z.string().min(1).max(300) }))
+  .handler(async ({ data }): Promise<{ pair: DiffPair | null }> => {
+    const supabaseAdmin = await getAdminClient();
+    const { data: rows } = await supabaseAdmin
+      .from("documents")
+      .select("identifier, source_code, section_label, heading, parent_label, body_text")
+      .in("identifier", [data.a, data.b]);
+    const byId = new Map((rows ?? []).map((r) => [r.identifier, r]));
+    const ra = byId.get(data.a);
+    const rb = byId.get(data.b);
+    if (!ra || !rb) return { pair: null };
+    const { segs, truncated } = wordDiff(ra.body_text ?? "", rb.body_text ?? "");
+    let added = 0;
+    let removed = 0;
+    let common = 0;
+    for (const s of segs) {
+      const words = (s.v.match(/\S+/g) ?? []).length;
+      if (s.t === "add") added += words;
+      else if (s.t === "del") removed += words;
+      else common += words;
+    }
+    const meta = (r: typeof ra): DiffDocMeta => ({
+      identifier: r.identifier,
+      source_code: r.source_code,
+      section_label: r.section_label,
+      heading: r.heading,
+      parent_label: r.parent_label,
+    });
+    return { pair: { a: meta(ra), b: meta(rb), segments: segs, truncated, stats: { added, removed, common } } };
+  });
+
 export type IncomingCitation = {
   identifier: string;
   heading: string | null;

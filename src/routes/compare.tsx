@@ -214,6 +214,12 @@ function ComparePage() {
   const { q, sources } = Route.useSearch();
   const { columns, error } = Route.useLoaderData();
   const shelf = useShelf();
+  // Up to two shelf items selected for a side-by-side diff (keep the last two).
+  const [diffPick, setDiffPick] = useState<string[]>([]);
+  const togglePick = (id: string) =>
+    setDiffPick((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= 2 ? [prev[1], id] : [...prev, id],
+    );
 
   return (
     <div className="min-h-screen">
@@ -297,7 +303,7 @@ function ComparePage() {
           </main>
 
           <aside className="lg:sticky lg:top-20 lg:w-80 lg:shrink-0 lg:self-start">
-            <ShelfPanel shelf={shelf} q={q} />
+            <ShelfPanel shelf={shelf} q={q} diffPick={diffPick} onTogglePick={togglePick} />
           </aside>
         </div>
 
@@ -459,9 +465,21 @@ function HitCard({ hit, q, shelf }: { hit: Hit; q: string; shelf: Shelf }) {
   );
 }
 
-function ShelfPanel({ shelf, q }: { shelf: Shelf; q: string }) {
+function ShelfPanel({
+  shelf,
+  q,
+  diffPick,
+  onTogglePick,
+}: {
+  shelf: Shelf;
+  q: string;
+  diffPick: string[];
+  onTogglePick: (id: string) => void;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const count = shelf.items.length;
+  // Only diff picks that are still on the shelf, in pick order.
+  const validPick = diffPick.filter((id) => shelf.items.some((i) => i.identifier === id));
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card paper-grain">
@@ -499,40 +517,79 @@ function ShelfPanel({ shelf, q }: { shelf: Shelf; q: string }) {
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-border/40">
-            {shelf.items.map((it) => (
-              <li key={it.identifier} className="group px-4 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="citation-tag text-muted-foreground">
-                      {SOURCE_SHORT[it.source_code ?? ""] ?? (it.source_code ?? "").toUpperCase()}
-                    </span>
-                    <Link
-                      to="/code/$"
-                      params={{ _splat: it.identifier.replace(/^\//, "") }}
-                      search={{ q: q || undefined }}
-                      className="mt-0.5 block font-display text-sm font-medium leading-tight hover:text-terracotta"
-                    >
-                      {it.heading || it.section_label || it.identifier}
-                    </Link>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => shelf.remove(it.identifier)}
-                    aria-label="Remove from shelf"
-                    className="shrink-0 rounded-md p-1 text-muted-foreground/50 opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          <>
+            {count >= 2 && (
+              <div className="border-b border-border/60 px-4 py-3">
+                {validPick.length === 2 ? (
+                  <Link
+                    to="/compare/diff"
+                    search={{ a: validPick[0], b: validPick[1] }}
+                    className="flex items-center justify-center gap-1.5 rounded-lg bg-terracotta px-3 py-2 text-xs font-semibold text-paper hover:opacity-90"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                {it.snippet && (
-                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-foreground/55">
-                    {renderMarked(it.snippet)}
+                    <GitCompare className="h-3.5 w-3.5" /> Compare these two →
+                  </Link>
+                ) : (
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    {validPick.length === 1
+                      ? "Pick one more with the ⇄ toggle to diff."
+                      : "Select two with the ⇄ toggle for a word-for-word diff."}
                   </p>
                 )}
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+            <ul className="divide-y divide-border/40">
+              {shelf.items.map((it) => {
+                const slot = validPick.indexOf(it.identifier);
+                return (
+                  <li key={it.identifier} className="group px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="citation-tag text-muted-foreground">
+                          {SOURCE_SHORT[it.source_code ?? ""] ?? (it.source_code ?? "").toUpperCase()}
+                        </span>
+                        <Link
+                          to="/code/$"
+                          params={{ _splat: it.identifier.replace(/^\//, "") }}
+                          search={{ q: q || undefined }}
+                          className="mt-0.5 block font-display text-sm font-medium leading-tight hover:text-terracotta"
+                        >
+                          {it.heading || it.section_label || it.identifier}
+                        </Link>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onTogglePick(it.identifier)}
+                          aria-label={slot >= 0 ? "Unselect from diff" : "Select for diff"}
+                          title="Select for diff"
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold transition ${
+                            slot >= 0
+                              ? "border-terracotta bg-terracotta text-paper"
+                              : "border-border/70 text-muted-foreground/60 hover:border-foreground/40 hover:text-foreground"
+                          }`}
+                        >
+                          {slot >= 0 ? slot + 1 : "⇄"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => shelf.remove(it.identifier)}
+                          aria-label="Remove from shelf"
+                          className="rounded-md p-1 text-muted-foreground/50 opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {it.snippet && (
+                      <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-foreground/55">
+                        {renderMarked(it.snippet)}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         ))}
     </div>
   );
