@@ -4,13 +4,15 @@ import { TopicCard } from "@/components/marginalia/TopicCard";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
-import { MarginalNotes } from "@/components/marginalia/MarginalNote";
 import { listSources } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
 import heroCollage from "@/assets/hero-collage.jpg";
-import { GitCompare, Highlighter, FileDown, Bell, Zap, Map, Brain, Network, Scale, Calendar, GraduationCap } from "lucide-react";
-import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
+import {
+  GitCompare, Highlighter, FileDown, Bell, Zap, Folder, Network,
+  Map, Brain, Scale, Calendar, GraduationCap, ArrowRight,
+} from "lucide-react";
 
+// Full names (cards) and short codes (hero chips), keyed by source code.
 const SOURCE_LABELS: Record<string, string> = {
   const: "U.S. Constitution",
   usc: "United States Code",
@@ -19,9 +21,46 @@ const SOURCE_LABELS: Record<string, string> = {
   tfm: "Treasury Financial Manual",
   irm: "Internal Revenue Manual",
 };
+const SOURCE_SHORT: Record<string, string> = {
+  const: "Const.", usc: "U.S. Code", cfr: "CFR", ucc: "UCC", tfm: "TFM", irm: "IRM",
+};
+const SOURCE_TAGLINE: Record<string, string> = {
+  const: "founding charter",
+  usc: "statutory law",
+  cfr: "agency rules",
+  ucc: "commercial code",
+  tfm: "treasury manual",
+  irm: "irs manual",
+};
 
-// Per-source accent — falls back to ink. Pulls from the codebooks registry
-// so colors stay consistent with the header tab strip and codebook landings.
+const TRY_TERMS = ["due process", "right to cure", "15 USC 1692", "4th amendment", "commercial paper"];
+
+const METHOD_STEPS = [
+  { n: "I.", h: "Read primary sources", p: "No paraphrase replaces the original. Every result links back to the actual statute, regulation, or agency manual it came from." },
+  { n: "II.", h: "Trace the connections", p: "A statute rarely stands alone. The citation graph shows how rules across agencies cross-reference and depend on each other." },
+  { n: "III.", h: "Build your case", p: "Save citations into private Case folders. Annotate with your own notes. Export to PDF. Your research, organized." },
+];
+
+const PRO_FEATURES = [
+  { icon: GitCompare, label: "Side-by-side compare" },
+  { icon: Highlighter, label: "Highlight & annotate" },
+  { icon: FileDown, label: "Export to PDF" },
+  { icon: Bell, label: "Keyword alerts" },
+  { icon: Folder, label: "Unlimited Cases" },
+  { icon: Network, label: "Citation graph" },
+];
+
+const NEXT_ROOMS = [
+  { icon: Map, status: "building", title: "All 50 states, indexed", pitch: "Every state code, every state constitution, every state regulation — rolled into the same search bar." },
+  { icon: Brain, status: "building", title: "Plain-English mode", pitch: "A toggle that translates any statute into everyday language, side-by-side with the original." },
+  { icon: Network, status: "soon", title: "Citation graph", pitch: "See every rule a statute spawned. Walk the law like a map, not a phone book." },
+  { icon: Scale, status: "soon", title: "Caselaw threading", pitch: "Open a section and see the decisions that interpret it — with the holdings pulled out so you don't read 80 pages to find the one line that matters." },
+  { icon: Calendar, status: "vision", title: "Deadline calculator", pitch: "Tell us your situation and get the statutory deadlines counted out on a real calendar, with the citation behind every date." },
+  { icon: GraduationCap, status: "vision", title: "Pro se starter courses", pitch: "Short, free walkthroughs of the procedures most people face alone — built straight from the rules they cite." },
+];
+
+// Per-source accent — falls back to ink. Pulls from the codebooks registry so
+// colors stay consistent with the header tab strip and codebook landings.
 function accentForSource(code: string): string {
   return codebookForSource(code)?.accent ?? "var(--ink)";
 }
@@ -51,6 +90,8 @@ export const Route = createFileRoute("/")({
   }),
 });
 
+type SourceRow = { code: string; name: string; count: number };
+
 function Index() {
   const { sources } = Route.useLoaderData();
   const totalDocs = sources.reduce((n: number, s: { count: number }) => n + s.count, 0);
@@ -60,353 +101,209 @@ function Index() {
       <SiteHeader />
 
       <main>
-        {/* Scattered marginalia — real, lesser-cited rights and statutes
-            in the outer gutters of the page. Different notes per route so
-            re-visits feel like the reader added new annotations. */}
-        <MarginalNotes
-          items={[
-            { idx: 0,  side: "right", top: 360 },
-            { idx: 4,  side: "left",  top: 1020 },
-            { idx: 8,  side: "right", top: 1680 },
-            { idx: 11, side: "left",  top: 2340 },
-            { idx: 14, side: "right", top: 2980 },
-          ]}
-        />
+        {/* HERO */}
+        <section className="hero">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="hero-grid">
+              <div>
+                <div className="hero-eyebrow">Vol. I · the citizen's index</div>
+                <h1 className="hero-h1">
+                  Marginalia —<br />
+                  <span className="ink-underline italic">a citizen's law index.</span>
+                </h1>
+                <p className="hero-sub">If you don't know your rights, you don't have any.</p>
+                <p className="hero-lede">
+                  Six federal codebooks — Constitution, U.S. Code, CFR, UCC, TFM, IRM — indexed
+                  together, cross-referenced, and searchable in one place. No summaries. No gurus.
+                  Just the source.
+                </p>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/60">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[1.15fr_0.85fr] lg:pt-24">
-          <div className="relative z-10">
-            <div className="citation-tag text-muted-foreground">Vol. I · the citizen's index</div>
-            <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-[5.25rem]">
-              Marginalia — <span className="ink-underline italic">A citizen's law index</span>
-            </h1>
-            <p className="mt-5 max-w-xl font-display text-2xl italic text-foreground/70 md:text-3xl">
-              If you don't know your rights, you don't have any.
-            </p>
-            <p className="mt-7 max-w-xl text-lg leading-relaxed text-foreground/75">
-              Six federal codebooks — Constitution, U.S. Code, CFR, UCC, TFM, IRM — indexed together,
-              cross-referenced, and searchable in one place. No summaries. No gurus. Just the source.
-            </p>
+                <div className="hero-search-wrap">
+                  <SearchBar />
+                  <div className="try-row">
+                    <span className="cite-tag">try:</span>
+                    {TRY_TERMS.map((s) => (
+                      <Link key={s} to="/search" search={{ q: s, source: "" }} className="try-chip">
+                        {s}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="mt-8">
-              <SearchBar />
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="font-display italic">try:</span>
-                {["due process", "right to cure", "15 USC 1692", "4th amendment", "commercial paper"].map((s) => (
-                  <Link
-                    key={s}
-                    to="/search"
-                    search={{ q: s, source: "" }}
-                    className="citation-tag rounded-full border border-border bg-background/60 px-2.5 py-1 hover:border-foreground/40 hover:text-foreground"
-                  >
-                    {s}
-                  </Link>
-                ))}
-              </div>
-            </div>
+                {/* Indexed sources — accent-tinted chips with solid count pills */}
+                <div style={{ marginTop: 24 }}>
+                  <div className="cite-tag" style={{ marginBottom: 10 }}>indexed sources</div>
+                  <div className="source-chips">
+                    {sources.map((s: SourceRow) => {
+                      const accent = accentForSource(s.code);
+                      return (
+                        <Link
+                          key={s.code}
+                          to="/code/source/$source"
+                          params={{ source: s.code }}
+                          className="source-chip-v2"
+                          style={{ ["--c" as never]: accent }}
+                        >
+                          <span className="dot" />
+                          {SOURCE_SHORT[s.code] ?? s.name}
+                          <span className="mini-pill">{s.count.toLocaleString()}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
 
-            <div className="mt-10 space-y-3">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="citation-tag font-semibold text-foreground/80">
-                  {totalDocs.toLocaleString()} documents indexed
-                </span>
-                <span className="citation-tag rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700 dark:text-green-400 font-medium">
-                  ✓ Updated May 2026 · direct from source
-                </span>
-              </div>
-              {/* Indexed sources — accent-tinted chips with solid count pills.
-                  Each chip picks up its codebook accent (red Const, navy USC,
-                  forest CFR …) so the row reads as a stack of distinct books. */}
-              <div className="flex flex-wrap gap-2.5">
-                {sources.map((s: { code: string; name: string; count: number }) => {
-                  const accent = accentForSource(s.code);
-                  return (
-                    <Link
-                      key={s.code}
-                      to="/code/source/$source"
-                      params={{ source: s.code }}
-                      className="accent-surface-row inline-flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground"
-                      style={{ ["--c" as never]: accent }}
-                    >
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />
-                      {SOURCE_LABELS[s.code] ?? s.name}
-                      <span className="count-pill" style={{ ["--c" as never]: accent }}>
-                        <span className="num">{s.count.toLocaleString()}</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div
-              className="absolute -inset-6 rounded-[2rem] opacity-50 blur-2xl"
-              style={{ background: "var(--gradient-sage)" }}
-              aria-hidden
-            />
-            <div className="relative overflow-hidden rounded-[1.5rem] border border-foreground/15 shadow-[var(--shadow-warm)]">
-              <img
-                src={heroCollage}
-                alt="Federal regulations open on a research desk with citation connections visible"
-                width={1536}
-                height={1152}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Compare Mode CTA banner */}
-      <section className="border-b border-border/60 bg-gradient-to-r from-sage-deep/5 to-terracotta/5">
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="citation-tag text-sage-deep flex items-center gap-1.5">
-                <GitCompare className="h-3.5 w-3.5" />
-                new · side-by-side compare
-              </div>
-              <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-                The same term across every codebook, at once.
-              </h2>
-              <p className="mt-1.5 max-w-xl text-sm text-foreground/65">
-                Type one search. See how the Constitution, U.S. Code, CFR, and UCC each handle it — in
-                split panes with matched sections highlighted. Spot the gaps. Find the authority.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:items-end shrink-0">
-              <Link
-                to="/compare"
-                search={{ q: "due process", sources: "const,usc,cfr" }}
-                className="inline-flex items-center gap-2 rounded-full bg-sage-deep px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 whitespace-nowrap"
-              >
-                <GitCompare className="h-4 w-4" />
-                Try Compare Mode
-              </Link>
-              <Link
-                to="/compare"
-                className="text-center text-xs text-muted-foreground hover:text-foreground"
-              >
-                Open blank →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Method */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-10">
-          <div className="citation-tag text-muted-foreground">the method</div>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-            How Marginalia works
-          </h2>
-        </div>
-        <div className="grid gap-10 md:grid-cols-3">
-          {[
-            {
-              n: "I.",
-              h: "Read primary sources",
-              p: "No paraphrase replaces the original. Every result links back to the actual statute, regulation, or agency manual it came from. No second-hand interpretations.",
-            },
-            {
-              n: "II.",
-              h: "Trace the connections",
-              p: "A statute rarely stands alone. The citation graph shows how rules across agencies cross-reference, modify, and depend on each other — visually.",
-            },
-            {
-              n: "III.",
-              h: "Build your case",
-              p: "Save citations to private Case folders. Annotate sections with your own notes. Export to PDF. Your research, organized the way you need it.",
-            },
-          ].map((step) => (
-            <div key={step.n} className="border-l border-border pl-5">
-              <div className="font-display text-2xl text-accent">{step.n}</div>
-              <h3 className="mt-1 font-display text-xl font-semibold">{step.h}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/75">{step.p}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Browse the Code (primary CTA) — accent-tinted cards with solid pills */}
-      <section className="mx-auto max-w-7xl px-6 pb-12 pt-4">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <div className="citation-tag text-muted-foreground">primary sources</div>
-             <h2 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-               Open the <span className="ink-underline italic">Code</span>.
-             </h2>
-            <p className="mt-3 max-w-2xl text-foreground/70">
-              Six codebooks, indexed and cross-linked. Browse the table of contents or jump in by citation.
-            </p>
-          </div>
-          <Link to="/code" className="btn-ink">
-            Open The Code →
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sources.map((s: { code: string; name: string; count: number }) => {
-            const accent = accentForSource(s.code);
-            const cb = codebookForSource(s.code);
-            const Icon = cb?.icon;
-            return (
-              <Link
-                key={s.code}
-                to="/code/source/$source"
-                params={{ source: s.code }}
-                className="accent-surface group relative flex flex-col gap-3 overflow-hidden rounded-2xl p-5"
-                style={{ ["--c" as never]: accent }}
-              >
-                {/* Spine — left accent bar */}
-                <span
-                  className="absolute left-0 top-0 bottom-0 w-1.5"
-                  style={{ background: accent }}
-                  aria-hidden
-                />
-                <div className="flex items-center justify-between gap-2 pl-1.5">
-                  {Icon ? (
-                    <span
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white"
-                      style={{ background: accent }}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                  ) : <span />}
-                  <span className="count-pill" style={{ ["--c" as never]: accent }}>
-                    <span className="num">{s.count.toLocaleString()}</span>
-                    <span className="lbl">docs</span>
+                <div style={{ marginTop: 18 }} className="flex flex-wrap items-center gap-3">
+                  <span className="live-pill">
+                    <span className="dot" />✓ Updated May 2026 · direct from source
                   </span>
+                  <span className="cite-tag">{totalDocs.toLocaleString()} documents indexed</span>
                 </div>
-                <div className="pl-1.5">
-                  <div className="font-display text-xl font-semibold leading-tight">{SOURCE_LABELS[s.code] ?? s.name}</div>
-                </div>
-                <div className="mt-auto flex items-center justify-between pl-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                  <span>{cb?.tagline?.split(",")[0] ?? "primary source"}</span>
-                  <span className="font-display text-sm font-semibold normal-case tracking-normal text-foreground group-hover:text-terracotta">Browse →</span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+              </div>
 
-      {/* Pro features pitch */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="rounded-3xl border border-sage-deep/20 bg-gradient-to-br from-sage-deep/5 to-background p-8 paper-grain shadow-[var(--shadow-soft)] md:p-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-xl">
-              <div className="citation-tag text-sage-deep">Pro · $5/month</div>
-              <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-                The full research desk.
-              </h2>
-              <p className="mt-3 text-foreground/70">
-                Every codebook is free to read. The power tools are $5/month. Less than a cup of coffee.
-                More useful than a lawyer's first call.
+              <div className="hero-art">
+                <img
+                  src={heroCollage}
+                  alt="Federal regulations open on a research desk with citation connections visible"
+                  width={1536}
+                  height={1152}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* METHOD */}
+        <section className="mx-auto max-w-7xl px-6 py-14">
+          <div className="section-title-bar">
+            <div>
+              <div className="eyebrow">the method</div>
+              <h2 className="sec-h2">How Marginalia works.</h2>
+            </div>
+            <Link to="/about" className="btn-paper">Read the whole story →</Link>
+          </div>
+          <div className="method-grid mt-8">
+            {METHOD_STEPS.map((step) => (
+              <div key={step.n} className="method-step">
+                <span className="method-roman">{step.n}</span>
+                <h3 className="method-h3">{step.h}</h3>
+                <p className="method-p">{step.p}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CODEBOOKS — the centerpiece */}
+        <section className="mx-auto max-w-7xl px-6 py-14">
+          <div className="section-title-bar">
+            <div>
+              <div className="eyebrow">primary sources</div>
+              <h2 className="sec-h2">Open the <span className="ink-underline italic">Code</span>.</h2>
+            </div>
+            <Link to="/code" className="btn-ink">
+              Browse all codebooks <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="codebook-grid mt-8">
+            {sources.map((s: SourceRow) => {
+              const accent = accentForSource(s.code);
+              const Icon = codebookForSource(s.code)?.icon;
+              return (
+                <Link
+                  key={s.code}
+                  to="/code/source/$source"
+                  params={{ source: s.code }}
+                  className="cb-card-v2"
+                  style={{ ["--c" as never]: accent }}
+                >
+                  <div className="cb-row">
+                    {Icon ? <span className="cb-icon"><Icon /></span> : <span />}
+                    <span className="count-pill" style={{ ["--c" as never]: accent }}>
+                      <span className="num">{s.count.toLocaleString()}</span>
+                      <span className="lbl">docs</span>
+                    </span>
+                  </div>
+                  <div className="cb-name">{SOURCE_LABELS[s.code] ?? s.name}</div>
+                  <div className="cb-foot">
+                    <span>{SOURCE_TAGLINE[s.code] ?? "primary source"}</span>
+                    <span className="arrow">Browse <ArrowRight className="h-3 w-3" /></span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* PRO PANEL */}
+        <section className="mx-auto max-w-7xl px-6 py-10">
+          <div className="pro-panel-v2">
+            <div>
+              <div className="eyebrow">Pro · the research desk</div>
+              <h2>The full research desk.</h2>
+              <p>
+                Reading the law stays free. The power tools — Compare, annotate, export, alerts —
+                are $5 a month. Less than a cup of coffee. More useful than a lawyer's first call.
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {[
-                  { icon: GitCompare, label: "Side-by-side compare" },
-                  { icon: Highlighter, label: "Highlight & annotate" },
-                  { icon: FileDown, label: "Export to PDF" },
-                  { icon: Bell, label: "Keyword alerts" },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-2 text-sm text-foreground/80">
-                    <Icon className="h-4 w-4 shrink-0 text-sage-deep" />
+              <div className="pro-features-v2">
+                {PRO_FEATURES.map(({ icon: Icon, label }) => (
+                  <div key={label} className="pf">
+                    <span className="ico"><Icon /></span>
                     {label}
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
-              <Link
-                to="/subscribe"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-sage-deep px-6 py-3.5 font-semibold text-primary-foreground shadow-[var(--shadow-warm)] hover:opacity-90 transition-opacity"
-              >
-                <Zap className="h-4 w-4" />
-                Go Pro — $5/mo
-              </Link>
-              <Link
-                to="/auth"
-                search={{ mode: "signup" }}
-                className="text-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                Free account first →
+            <div className="price">
+              <span className="per">Pro · cancel anytime</span>
+              <span className="amt">$5<span style={{ fontSize: 18, marginLeft: 4, fontWeight: 600 }}>/mo</span></span>
+              <span className="note">Every $5 funds the next book on the shelf.</span>
+              <Link to="/subscribe" className="btn-ink go" style={{ justifyContent: "center", width: "100%" }}>
+                <Zap className="h-4 w-4" />Go Pro · $5/mo
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Topics — samplers */}
-      <section className="mx-auto max-w-7xl px-6 pb-20 pt-4">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <div className="citation-tag text-muted-foreground">curated walkthroughs</div>
-            <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight md:text-3xl">
-              Topic samplers
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-foreground/65">
-              Hand-threaded readings that trace a single issue across multiple codebooks.
-            </p>
+        {/* TOPIC SAMPLERS */}
+        <section className="mx-auto max-w-7xl px-6 py-14">
+          <div className="section-title-bar">
+            <div>
+              <div className="eyebrow">curated walkthroughs</div>
+              <h2 className="sec-h2">Topic samplers.</h2>
+            </div>
           </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          {TOPICS.map((t) => (
-            <TopicCard key={t.slug} topic={t} />
-          ))}
-        </div>
-      </section>
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {TOPICS.map((t) => (
+              <TopicCard key={t.slug} topic={t} />
+            ))}
+          </div>
+        </section>
 
-      {/* Vision strip — make the "what could be" tangible */}
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <ComingSoonHeader
-          eyebrow="vol. ii · the build list"
-          title="What this becomes once we get there."
-          subtitle="The federal floor is live. These are the rooms we haven't built out yet — locked for now, but on the blueprint."
-        />
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ComingSoonCard
-            icon={Map}
-            status="building"
-            title="All 50 states, indexed"
-            pitch="Every state code, every state constitution, every state regulation — rolled into the same search bar. Start federal, finish in Wyoming, never leave the page."
-          />
-          <ComingSoonCard
-            icon={Brain}
-            status="building"
-            title="Plain-English mode"
-            pitch="A toggle that translates any statute or rule into everyday language, side-by-side with the original. The law stays the law — you just get a translator."
-          />
-          <ComingSoonCard
-            icon={Network}
-            status="soon"
-            title="Citation graph"
-            pitch="See every rule a statute spawned, and every statute a rule traces back to. Walk the law like a map, not a phone book."
-          />
-          <ComingSoonCard
-            icon={Scale}
-            status="soon"
-            title="Caselaw threading"
-            pitch="Open a section and see the Supreme Court and circuit decisions that interpret it — with the holdings pulled out so you don't have to read 80 pages of opinion to find the one line that matters."
-          />
-          <ComingSoonCard
-            icon={Calendar}
-            status="vision"
-            title="Deadline calculator"
-            pitch="Tell us your situation — eviction notice, debt suit, agency complaint — and get the actual statutory deadlines counted out on a real calendar with the citations behind every date."
-          />
-          <ComingSoonCard
-            icon={GraduationCap}
-            status="vision"
-            title="Pro se starter courses"
-            pitch="Short, free walkthroughs of the procedures most people face alone — small claims, eviction defense, debt collection answers — built straight from the rules they cite."
-          />
-        </div>
-      </section>
+        {/* WHAT'S NEXT */}
+        <section className="mx-auto max-w-7xl px-6 py-14 pb-24">
+          <div className="section-title-bar">
+            <div>
+              <div className="eyebrow terracotta">vol. II · the build list</div>
+              <h2 className="sec-h2">Rooms we haven't built yet.</h2>
+            </div>
+            <Link to="/whitepaper" className="btn-paper">Read the whitepaper →</Link>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {NEXT_ROOMS.map((c) => {
+              const Icon = c.icon;
+              return (
+                <div key={c.title} className="cs-card">
+                  <div className="cs-row">
+                    <Icon className="cs-icon" />
+                    <span className={`cs-status ${c.status}`}>{c.status}</span>
+                  </div>
+                  <div className="cs-title">{c.title}</div>
+                  <p className="cs-pitch">{c.pitch}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </main>
 
       <SiteFooter />

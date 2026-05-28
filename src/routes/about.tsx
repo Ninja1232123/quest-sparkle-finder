@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
-import { MarginalNotes } from "@/components/marginalia/MarginalNote";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
 export const Route = createFileRoute("/about")({
@@ -30,15 +29,6 @@ function About() {
     <div className="min-h-screen">
       <SiteHeader />
       <main>
-        {/* Marginalia annotations in the page gutters — the brand name made literal */}
-        <MarginalNotes
-          items={[
-            { idx: 0,  side: "left",  top: 360 },
-            { idx: 9,  side: "right", top: 880 },
-            { idx: 14, side: "left",  top: 1320 },
-          ]}
-        />
-
         <section className="mx-auto max-w-2xl px-6 py-20">
         <div className="citation-tag text-accent">a working note</div>
         <h1 className="mt-3 font-display text-5xl font-semibold leading-tight md:text-6xl">

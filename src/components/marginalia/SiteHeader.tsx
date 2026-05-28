@@ -246,13 +246,19 @@ export function SiteHeader() {
 
         <div className="flex shrink-0 items-center gap-1">
           {!user && !loading && (
-            <Link
-              to="/auth"
-              search={{ mode: "login" }}
-              className="hidden rounded-full px-3 py-1.5 text-sm text-foreground/70 hover:bg-muted hover:text-foreground sm:block"
-            >
-              Sign in
-            </Link>
+            <>
+              <Link
+                to="/auth"
+                search={{ mode: "login" }}
+                className="hidden rounded-full px-3 py-1.5 text-sm text-foreground/70 hover:bg-muted hover:text-foreground sm:block"
+              >
+                Sign in
+              </Link>
+              <Link to="/subscribe" className="btn-ink hidden sm:inline-flex" style={{ padding: "8px 16px", fontSize: 13 }}>
+                <Sparkles className="h-3.5 w-3.5" />
+                Go Pro · $5
+              </Link>
+            </>
           )}
           <button
             onClick={toggle}

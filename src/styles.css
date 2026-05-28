@@ -21,13 +21,18 @@
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* v2 radii — tighter "warm paper, not bubbly" scale (prototype tokens.css).
+     Was calc() off --radius:0.875rem; flattened to fixed px so every Tailwind
+     rounded-* utility adopts the sharper scale. REVERT this block (restore the
+     calc() lines) to go back to the rounder v1 look. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
+  --radius-4xl: 36px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -132,6 +137,52 @@
   --shadow-warm: 0 10px 30px -14px oklch(0.42 0.13 30 / 0.30);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 6px 18px -10px oklch(0 0 0 / 0.10);
   --shadow-card-lift: 0 2px 0 oklch(0 0 0 / 0.04), 0 6px 18px -4px oklch(0 0 0 / 0.10);
+
+  /* ===== v2 prototype tokens (prototype/tokens.css — superset of the above).
+     Additive: nothing here redefines an existing var, so the live palette is
+     unchanged. These feed the ported prototype component classes. ===== */
+  /* Finer ink shades (current only had --ink-muted) */
+  --ink-2: oklch(0.280 0.010 70);   /* strong secondary */
+  --ink-3: oklch(0.380 0.014 75);   /* muted (== --ink-muted) */
+  --ink-4: oklch(0.560 0.014 75);   /* caption */
+  --ink-card: var(--paper-soft);    /* alias used by prototype card classes */
+  /* Accent variants */
+  --terracotta-2: oklch(0.560 0.140 32);
+  --ochre-wash: oklch(0.880 0.110 85);
+  --indigo: oklch(0.350 0.080 245);
+  /* Codebook accents (mirror src/lib/codebooks.ts) */
+  --cb-const: #b22234;  --cb-usc: #0a1f44;  --cb-cfr: #1a4a2e;  --cb-register: #c45a2c;
+  --cb-bills: #5b3a8a;  --cb-laws: #0a1f44;  --cb-statutes: #6b3a2a;  --cb-presidential: #8b4513;
+  --cb-scotus: #3d3d5c; --cb-agency: #1a4a6e; --cb-model: #c9a84c;   --cb-states: #4a6741;
+  /* Semantic feedback */
+  --green: oklch(0.55 0.13 145);  --green-soft: oklch(0.92 0.06 145 / 0.5);
+  --amber: oklch(0.70 0.14 70);
+  --red: oklch(0.50 0.18 28);     --red-soft: oklch(0.92 0.06 28 / 0.5);
+  /* Borders / rules */
+  --border-strong: oklch(0.62 0.020 75);
+  --rule: oklch(0.18 0.008 70 / 0.18);
+  --rule-strong: oklch(0.18 0.008 70 / 0.45);
+  /* Radius scale as real runtime custom props. The @theme inline block above
+     INLINES its values into rounded-* utilities and does NOT emit them to
+     :root, so component classes using var(--radius-*) need them defined here.
+     Values mirror the @theme scale so utilities + var() stay in lockstep. */
+  --radius-xs: 2px;  --radius-sm: 4px;  --radius-md: 6px;  --radius-lg: 10px;
+  --radius-xl: 14px; --radius-2xl: 20px; --radius-pill: 999px;
+  /* Spacing scale (4-pt) */
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;  --space-4: 16px;  --space-5: 20px;
+  --space-6: 24px; --space-8: 32px;  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+  --space-20: 80px; --space-24: 96px;
+  /* Layout maxes */
+  --layout-max: 1440px;  --layout-wide: 1760px;  --layout-reading: 760px;
+  /* Type scale (semantic) */
+  --t-eyebrow: 11px; --t-caption: 12px; --t-body-sm: 13px; --t-body: 15px; --t-body-lg: 17px;
+  --t-reading: 18px; --t-h6: 16px; --t-h5: 18px; --t-h4: 22px; --t-h3: 28px; --t-h2: 36px;
+  --t-h1: 52px; --t-display: 72px;
+  /* Brand face — Monomakh .ttf not yet present, falls back to Fraunces */
+  --font-brand: "Monomakh", "Fraunces", Georgia, serif;
+  /* Semantic aliases */
+  --bg: var(--paper);   --bg-elev: var(--paper-soft);  --bg-sunken: var(--paper-tint);
+  --fg: var(--ink);     --fg-muted: var(--ink-3);      --fg-faint: var(--ink-4);
 }
 
 .dark {
@@ -186,6 +237,17 @@
   --shadow-warm: 0 10px 30px -14px oklch(0.62 0.10 40 / 0.45);
   --shadow-card: 0 1px 0 oklch(1 0 0 / 0.03) inset, 0 1px 3px oklch(0 0 0 / 0.45), 0 10px 24px -14px oklch(0 0 0 / 0.55);
   --shadow-card-lift: 0 2px 0 oklch(0 0 0 / 0.30), 0 6px 18px -4px oklch(0 0 0 / 0.50);
+
+  /* ===== v2 prototype tokens (dark). Only the absolute-valued vars need an
+     override; --ink-card/--bg*/--fg* are var()-aliases that auto-flip. ===== */
+  --ink-2: oklch(0.82 0.014 80);
+  --ink-3: oklch(0.72 0.013 75);
+  --ink-4: oklch(0.58 0.012 75);
+  --terracotta-2: oklch(0.72 0.12 38);
+  --ochre-wash: oklch(0.74 0.12 80 / 0.4);
+  --border-strong: oklch(0.40 0.010 70);
+  --rule: oklch(0.90 0.014 80 / 0.15);
+  --rule-strong: oklch(0.90 0.014 80 / 0.35);
 }
 
 @layer base {
@@ -381,12 +443,13 @@
     --c: var(--ink);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     white-space: nowrap;
-    border-radius: 6px;
-    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--ink);
     background: color-mix(in oklch, var(--c) 6%, transparent);
     border: 1px solid color-mix(in oklch, var(--c) 18%, transparent);
@@ -501,102 +564,9 @@
   .btn-terracotta:hover { background: oklch(0.46 0.135 30); }
 }
 
-/* ============================================================
-   MARGINAL NOTES — handwritten side annotations
-   ============================================================
-   Sit in the outer gutter of <main>. Each parent screen must be
-   position:relative (most are by default since they contain children
-   with absolute positioning). Hidden below 1100px so they don't
-   overlap content on tablet/phone. */
-
+/* main stays a positioning context for absolutely-positioned descendants. */
 main {
   position: relative;
-}
-
-.margin-note {
-  position: absolute;
-  width: 220px;
-  z-index: 2;
-  pointer-events: auto;
-  opacity: 0.78;
-  transition: opacity 220ms ease-out, transform 220ms ease-out;
-}
-.margin-note:hover {
-  opacity: 1;
-  transform: rotate(0deg) translateY(-1px) !important;
-}
-
-/* Anchor outside a ~840px reading column. Tucks to viewport edge when
-   there's no gutter room. */
-.margin-note.left {
-  left: max(8px, calc(50vw - 420px - 240px));
-}
-.margin-note.right {
-  right: max(8px, calc(50vw - 420px - 240px));
-}
-
-.margin-note .mn-bar {
-  position: absolute;
-  left: -10px;
-  top: 0;
-  bottom: 0;
-  width: 2.5px;
-  background: var(--terracotta);
-  border-radius: 1px;
-}
-.margin-note.right .mn-bar {
-  left: auto;
-  right: -10px;
-  background: var(--ochre);
-}
-
-.margin-note .mn-cite {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--terracotta);
-  display: inline-block;
-  margin-bottom: 6px;
-  padding-bottom: 1px;
-  border-bottom: 1.5px solid color-mix(in oklch, var(--ochre) 70%, transparent);
-}
-.margin-note.right .mn-cite {
-  color: var(--sage-deep);
-  border-bottom-color: var(--ochre);
-}
-
-.margin-note .mn-body {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink-muted);
-  margin: 0;
-}
-.margin-note .mn-aside {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: oklch(0.55 0.014 75);
-  margin: 8px 0 0;
-  padding-left: 8px;
-  border-left: 1px solid var(--rule-card);
-}
-
-/* Hide on narrow viewports — no gutter to live in */
-@media (max-width: 1100px) {
-  .margin-note {
-    display: none;
-  }
-}
-
-/* Tweak switch (write data-margins="off" on <html> to hide globally) */
-html[data-margins="off"] .margin-note {
-  display: none;
 }
 
 /* ============================================================
@@ -1311,3 +1281,275 @@ html[data-margins="off"] .margin-note {
   }
 }
 
+
+/* ============================================================
+   v2 HOME (ported from prototype/screens-home.jsx)
+   ============================================================
+   Hardcoded light-only oklch values from the prototype were
+   re-pointed at theme tokens so dark mode flips correctly.
+   The prototype's calc(Npx * var(--tw-radius)) Tweaks knob is
+   replaced by the fixed --radius-* scale. */
+@layer components {
+  /* ----- Hero ----- */
+  .hero {
+    padding: 56px 0 64px;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .hero-h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(44px, 5vw, 76px);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin: 18px 0 0;
+  }
+  .hero-sub {
+    font-family: var(--font-display);
+    font-style: italic; font-weight: 500;
+    font-size: 26px; line-height: 1.2;
+    color: var(--ink-3);
+    margin: 20px 0 0; max-width: 520px;
+  }
+  .hero-lede {
+    font-size: 17px; line-height: 1.55;
+    color: var(--ink-2);
+    margin: 24px 0 0; max-width: 540px;
+  }
+  .hero-search-wrap { margin-top: 32px; }
+  .try-row {
+    margin-top: 14px;
+    display: flex; flex-wrap: wrap;
+    align-items: center; gap: 8px;
+  }
+  .try-chip {
+    border: 1.5px solid var(--ink-3);
+    background: var(--ink-card);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-pill);
+    padding: 5px 13px;
+    transition: background 150ms, color 150ms, border-color 150ms;
+  }
+  .try-chip:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .hero-art {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1.5px solid var(--ink);
+    box-shadow: 0 24px 48px -24px oklch(0.42 0.13 30 / 0.35);
+  }
+  .hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .hero-art::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% 60%, transparent 60%, oklch(0 0 0 / 0.10) 100%);
+  }
+
+  /* ----- Indexed-source chips ----- */
+  .source-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .source-chip-v2 {
+    display: inline-flex; align-items: center; gap: 10px;
+    background:
+      linear-gradient(to right, color-mix(in oklch, var(--c, var(--ink)) 8%, transparent), transparent 80%),
+      var(--ink-card);
+    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 30%, var(--rule-card));
+    border-radius: var(--radius-lg);
+    padding: 8px 8px 8px 14px;
+    font-family: var(--font-sans);
+    font-size: 13.5px; font-weight: 600;
+    color: var(--ink);
+    transition: border-color 160ms, transform 160ms;
+  }
+  .source-chip-v2:hover { border-color: var(--c, var(--ink)); transform: translateY(-1px); }
+  .source-chip-v2 .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--c, var(--ink)); }
+  .source-chip-v2 .mini-pill {
+    display: inline-flex; align-items: center;
+    background: var(--c, var(--ink)); color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    border-radius: 999px; padding: 3px 9px; margin-left: 2px;
+  }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: color-mix(in oklch, var(--green) 12%, transparent);
+    color: var(--green);
+    border: 1px solid color-mix(in oklch, var(--green) 35%, transparent);
+    border-radius: 999px; padding: 4px 10px;
+  }
+  .live-pill .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--green); }
+
+  /* ----- Home section heading (scoped class, not bare h2, so it can't
+     override the codebook landing's .cb-section-title) ----- */
+  .sec-h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 38px; letter-spacing: -0.022em;
+    margin: 8px 0 0; color: var(--ink); line-height: 1.05;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .eyebrow.terracotta { color: var(--terracotta); }
+  .eyebrow.sage { color: var(--sage-deep); }
+
+  /* ----- Method strip ----- */
+  .method-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .method-step { border-left: 3px solid var(--ink); padding-left: 22px; }
+  .method-roman {
+    display: inline-block;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 13px; padding: 2px 10px; border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+  .method-h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 22px; letter-spacing: -0.014em;
+    margin: 10px 0 8px; color: var(--ink);
+  }
+  .method-p { font-size: 14.5px; line-height: 1.55; color: var(--ink-3); margin: 0; }
+
+  /* ----- Codebook card v2 ----- */
+  .codebook-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .cb-card-v2 {
+    position: relative;
+    background:
+      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 7%, transparent) 0%, transparent 55%),
+      var(--ink-card);
+    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 14px;
+    transition: transform 160ms, border-color 160ms, box-shadow 160ms;
+    overflow: hidden; min-height: 180px;
+  }
+  .cb-card-v2::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 6px; background: var(--c, var(--ink));
+  }
+  .cb-card-v2:hover {
+    transform: translateY(-1px);
+    border-color: var(--c, var(--ink));
+    box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
+  }
+  .cb-card-v2 .cb-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .cb-card-v2 .cb-icon {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--c, var(--ink)); color: #fff;
+    border-radius: var(--radius-md);
+  }
+  .cb-card-v2 .cb-icon svg { width: 18px; height: 18px; }
+  .cb-card-v2 .cb-name {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 22px; letter-spacing: -0.018em;
+    color: var(--ink); line-height: 1.15;
+  }
+  .cb-card-v2 .cb-foot {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3);
+  }
+  .cb-card-v2 .cb-foot .arrow {
+    color: var(--ink);
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--font-display); font-style: italic; font-weight: 600;
+    font-size: 13px; text-transform: none;
+  }
+
+  /* ----- Pro panel (ink card; inverts in dark, stays readable) ----- */
+  .pro-panel-v2 {
+    background: var(--ink); color: var(--paper);
+    border-radius: var(--radius-xl);
+    padding: 36px 44px;
+    display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 32px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .pro-panel-v2 .eyebrow { color: var(--ochre); }
+  .pro-panel-v2 h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 36px; letter-spacing: -0.022em; line-height: 1.1;
+    margin: 8px 0 12px; color: var(--paper);
+  }
+  .pro-panel-v2 p { color: color-mix(in oklch, var(--paper) 78%, transparent); font-size: 15px; line-height: 1.55; margin: 0; }
+  .pro-features-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 22px; }
+  .pro-features-v2 .pf {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--paper); font-family: var(--font-sans);
+  }
+  .pro-features-v2 .pf .ico {
+    width: 28px; height: 28px;
+    background: color-mix(in oklch, var(--paper) 8%, transparent);
+    border: 1px solid color-mix(in oklch, var(--paper) 15%, transparent);
+    border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ochre); flex-shrink: 0;
+  }
+  .pro-features-v2 .pf .ico svg { width: 15px; height: 15px; }
+  .pro-panel-v2 .price {
+    background: var(--ochre); color: var(--ink);
+    border-radius: var(--radius-lg);
+    padding: 24px; text-align: center;
+    display: flex; flex-direction: column; gap: 6px;
+    border: 1.5px solid var(--ochre);
+  }
+  .pro-panel-v2 .price .amt {
+    font-family: var(--font-display); font-weight: 800; font-size: 56px;
+    letter-spacing: -0.03em; color: var(--ink); line-height: 1;
+  }
+  .pro-panel-v2 .price .per { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-2); text-transform: uppercase; }
+  .pro-panel-v2 .price .note { font-family: var(--font-serif); font-style: italic; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+  .pro-panel-v2 .price .go { margin-top: 14px; }
+
+  /* ----- "What's next" coming-soon cards ----- */
+  .cs-card {
+    position: relative; overflow: hidden;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius-xl);
+    background: var(--paper-soft);
+    padding: 18px 20px;
+  }
+  .cs-row { display: flex; align-items: center; gap: 8px; }
+  .cs-icon { width: 16px; height: 16px; color: var(--ink-3); }
+  .cs-status {
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border-radius: 999px; padding: 2px 9px;
+    border: 1px solid; margin-left: auto;
+  }
+  .cs-status.soon { color: var(--ochre); border-color: color-mix(in oklch, var(--ochre) 40%, transparent); background: color-mix(in oklch, var(--ochre) 8%, transparent); }
+  .cs-status.building { color: var(--amber); border-color: color-mix(in oklch, var(--amber) 40%, transparent); background: color-mix(in oklch, var(--amber) 8%, transparent); }
+  .cs-status.vision { color: var(--ink-4); border-color: var(--border-strong); }
+  .cs-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.012em; color: var(--ink); margin: 8px 0 6px; }
+  .cs-pitch { font-size: 13.5px; line-height: 1.5; color: var(--ink-3); margin: 0; }
+
+  /* ----- Responsive collapse ----- */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+    .hero-art { order: -1; }
+    .method-grid { grid-template-columns: 1fr; }
+    .codebook-grid { grid-template-columns: 1fr; }
+    .pro-panel-v2 { grid-template-columns: 1fr; padding: 28px 24px; }
+  }
+}
