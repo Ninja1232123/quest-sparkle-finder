@@ -27,7 +27,7 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { sub, isPro, loading: subLoading } = useSubscription();
+  const { sub, isPro, isAdmin, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +82,18 @@ function AccountPage() {
           <div className="font-display text-xs uppercase tracking-wider text-muted-foreground">subscription</div>
           {subLoading ? (
             <div className="mt-2 text-foreground/60">Checking…</div>
+          ) : isAdmin && !sub ? (
+            <>
+              <div className="mt-1 text-lg font-semibold">
+                Marginalia Pro{" "}
+                <span className="ml-2 rounded-full bg-foreground px-2 py-0.5 text-xs uppercase tracking-wider text-background">
+                  admin
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-foreground/70">
+                Full access — comped admin account. No billing, no search limit.
+              </p>
+            </>
           ) : !sub ? (
             <>
               <div className="mt-1 text-lg font-semibold">Free reader</div>

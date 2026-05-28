@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 // the user's session — not the local read-only backend.
 import { supabaseAuth as supabase } from "@/integrations/supabase/auth-client";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { isAdminEmail } from "@/lib/admin";
 import { useAuth } from "@/hooks/use-auth";
 
 type Sub = {
@@ -62,5 +63,8 @@ export function useSubscription() {
     (sub.status === "canceled" && periodEndMs !== null && periodEndMs > now)
   );
 
-  return { sub, isActive, isPro: isActive, loading: loading || authLoading, refetch };
+  // Admins (VITE_ADMIN_EMAILS) get full Pro access without a Stripe row.
+  const isAdmin = isAdminEmail(user?.email);
+
+  return { sub, isActive, isAdmin, isPro: isActive || isAdmin, loading: loading || authLoading, refetch };
 }
