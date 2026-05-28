@@ -35,7 +35,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
-import { Route as CompareDiffRouteImport } from './routes/compare.diff'
+import { Route as CompareDiffRouteImport } from './routes/compare_.diff'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ForumSlugIdRouteImport } from './routes/forum.$slug.$id'
@@ -183,9 +183,9 @@ const TopicSlugRoute = TopicSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareDiffRoute = CompareDiffRouteImport.update({
-  id: '/diff',
-  path: '/diff',
-  getParentRoute: () => CompareRoute,
+  id: '/compare_/diff',
+  path: '/compare/diff',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CodeSplatRoute = CodeSplatRouteImport.update({
   id: '/code/$',
@@ -276,7 +276,7 @@ export interface FileRoutesByFullPath {
   '/bills': typeof BillsRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
-  '/compare': typeof CompareRouteWithChildren
+  '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
   '/forum': typeof ForumRouteWithChildren
   '/laws': typeof LawsRoute
@@ -320,7 +320,7 @@ export interface FileRoutesByTo {
   '/bills': typeof BillsRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
-  '/compare': typeof CompareRouteWithChildren
+  '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
   '/forum': typeof ForumRouteWithChildren
   '/laws': typeof LawsRoute
@@ -365,7 +365,7 @@ export interface FileRoutesById {
   '/bills': typeof BillsRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
-  '/compare': typeof CompareRouteWithChildren
+  '/compare': typeof CompareRoute
   '/const': typeof ConstRoute
   '/forum': typeof ForumRouteWithChildren
   '/laws': typeof LawsRoute
@@ -383,7 +383,7 @@ export interface FileRoutesById {
   '/whitepaper': typeof WhitepaperRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
-  '/compare/diff': typeof CompareDiffRoute
+  '/compare_/diff': typeof CompareDiffRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
@@ -517,7 +517,7 @@ export interface FileRouteTypes {
     | '/whitepaper'
     | '/checkout/return'
     | '/code/$'
-    | '/compare/diff'
+    | '/compare_/diff'
     | '/topic/$slug'
     | '/code/'
     | '/code/source/$source'
@@ -544,7 +544,7 @@ export interface RootRouteChildren {
   BillsRoute: typeof BillsRoute
   CfrRoute: typeof CfrRoute
   ChambersRoute: typeof ChambersRoute
-  CompareRoute: typeof CompareRouteWithChildren
+  CompareRoute: typeof CompareRoute
   ConstRoute: typeof ConstRoute
   ForumRoute: typeof ForumRouteWithChildren
   LawsRoute: typeof LawsRoute
@@ -562,6 +562,7 @@ export interface RootRouteChildren {
   WhitepaperRoute: typeof WhitepaperRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
+  CompareDiffRoute: typeof CompareDiffRoute
   TopicSlugRoute: typeof TopicSlugRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
@@ -762,12 +763,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopicSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/compare/diff': {
-      id: '/compare/diff'
-      path: '/diff'
+    '/compare_/diff': {
+      id: '/compare_/diff'
+      path: '/compare/diff'
       fullPath: '/compare/diff'
       preLoaderRoute: typeof CompareDiffRouteImport
-      parentRoute: typeof CompareRoute
+      parentRoute: typeof rootRouteImport
     }
     '/code/$': {
       id: '/code/$'
@@ -877,17 +878,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface CompareRouteChildren {
-  CompareDiffRoute: typeof CompareDiffRoute
-}
-
-const CompareRouteChildren: CompareRouteChildren = {
-  CompareDiffRoute: CompareDiffRoute,
-}
-
-const CompareRouteWithChildren =
-  CompareRoute._addFileChildren(CompareRouteChildren)
-
 interface ForumRouteChildren {
   ForumSlugIdRoute: typeof ForumSlugIdRoute
 }
@@ -907,7 +897,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillsRoute: BillsRoute,
   CfrRoute: CfrRoute,
   ChambersRoute: ChambersRoute,
-  CompareRoute: CompareRouteWithChildren,
+  CompareRoute: CompareRoute,
   ConstRoute: ConstRoute,
   ForumRoute: ForumRouteWithChildren,
   LawsRoute: LawsRoute,
@@ -925,6 +915,7 @@ const rootRouteChildren: RootRouteChildren = {
   WhitepaperRoute: WhitepaperRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
+  CompareDiffRoute: CompareDiffRoute,
   TopicSlugRoute: TopicSlugRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,

@@ -17,7 +17,7 @@ function labelOf(d: DiffDocMeta): string {
   return d.heading || d.section_label || d.identifier;
 }
 
-export const Route = createFileRoute("/compare/diff")({
+export const Route = createFileRoute("/compare_/diff")({
   validateSearch: (s: Record<string, unknown>) => ({
     a: typeof s.a === "string" ? s.a : "",
     b: typeof s.b === "string" ? s.b : "",
