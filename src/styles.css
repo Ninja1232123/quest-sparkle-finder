@@ -509,11 +509,30 @@
   .top-nav {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 8px;
     padding: 0 1.5rem;
     border-top: 1px solid var(--border);
   }
+  .top-nav-side { flex: 1 1 0; display: flex; align-items: center; min-width: 0; }
+  .top-nav-side-right { justify-content: flex-end; }
+  .top-nav-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  /* gold stars flanking the centered links — small banner flourish */
+  .top-nav-star {
+    color: var(--terracotta);
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0.65;
+    padding: 0 10px;
+    text-shadow: 0 0 8px currentColor;
+  }
   .top-nav-link {
+    position: relative;
     font-family: var(--font-display);
     font-size: 13.5px;
     font-weight: 600;
@@ -521,10 +540,12 @@
     padding: 10px 14px;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
-    transition: color 150ms, border-color 150ms;
+    border-radius: 6px 6px 0 0;
+    transition: color 150ms, border-color 150ms, background 150ms;
   }
   .top-nav-link:hover {
     color: var(--ink);
+    background: color-mix(in oklab, var(--terracotta) 8%, transparent);
   }
   .top-nav-link[data-active="true"] {
     color: var(--ink);
@@ -1901,14 +1922,19 @@ main {
      Americana header skin — applied via .am-header on <header>.
      =========================================================================== */
   .am-header {
-    background: #0a1a47;
+    /* navy field with a gold glow rising from top-center — echoes the home
+       hero. Bold 'Merica up top, still a clean reading tool underneath. */
+    background:
+      radial-gradient(130% 140% at 50% -20%, rgba(231,205,126,0.14) 0%, rgba(200,162,75,0.05) 30%, transparent 60%),
+      linear-gradient(180deg, #0c2052 0%, #0a1a47 60%, #081640 100%);
     border-bottom: 3px solid #c8a24b !important;
     backdrop-filter: blur(8px);
   }
   .am-header .top-nav { border-top-color: rgba(200,162,75,0.25); }
   .am-header .top-nav-link { color: #9fabcb; }
-  .am-header .top-nav-link:hover { color: #fbf6e8; }
+  .am-header .top-nav-link:hover { color: #fbf6e8; background: rgba(200,162,75,0.12); }
   .am-header .top-nav-link[data-active="true"] { color: #fbf6e8; border-bottom-color: #c8a24b; }
+  .am-header .top-nav-star { color: #c8a24b; opacity: 0.8; }
   .am-header .top-nav-support { color: #9fabcb; }
   .am-header .top-nav-support:hover { color: #c8a24b; }
   .am-header .cb-tab { color: #c2cde6; background: rgba(255,255,255,0.05); border-color: rgba(200,162,75,0.18); }

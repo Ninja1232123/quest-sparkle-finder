@@ -184,10 +184,15 @@ const TOP_NAV_ITEMS = [
 function TopNav() {
   return (
     <nav
-      className="mx-auto flex max-w-[1900px] flex-wrap items-center top-nav lg:px-6"
+      className="mx-auto flex max-w-[1900px] items-center top-nav lg:px-6"
       aria-label="Sections"
     >
-      <div className="flex flex-1 flex-wrap items-center gap-0">
+      {/* left spacer — balances the support slot so the links sit dead center */}
+      <div className="top-nav-side" aria-hidden />
+
+      {/* centered section links, flanked by gold stars (banner treatment) */}
+      <div className="top-nav-center">
+        <span className="top-nav-star" aria-hidden>★</span>
         {TOP_NAV_ITEMS.map((item) => (
           <Link
             key={item.to}
@@ -199,12 +204,17 @@ function TopNav() {
             {item.label}
           </Link>
         ))}
+        <span className="top-nav-star" aria-hidden>★</span>
       </div>
-      <a href="mailto:support@self-law.org" className="top-nav-support shrink-0">
-        <Mail className="h-3 w-3" />
-        <span className="hidden sm:inline">support@self-law.org</span>
-        <span className="sm:hidden">Support</span>
-      </a>
+
+      {/* right slot — support, mirrors the left spacer */}
+      <div className="top-nav-side top-nav-side-right">
+        <a href="mailto:support@self-law.org" className="top-nav-support">
+          <Mail className="h-3 w-3" />
+          <span className="hidden lg:inline">support@self-law.org</span>
+          <span className="lg:hidden">Support</span>
+        </a>
+      </div>
     </nav>
   );
 }
