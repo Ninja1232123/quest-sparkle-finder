@@ -1,0 +1,230 @@
+/* ============================================================================
+   JURI (deranged Clippy) — desktop ASCII-pet styles. Archived for later.
+   Pairs with juri-clippy/Juri.tsx. Append inside an @layer components block,
+   or wrap these rules in one, when re-integrating.
+   ============================================================================ */
+  /* ============================================================================
+     JURI — the desktop pet. ASCII eagle that lives on the page.
+     ============================================================================ */
+  /* ── The eagle container ── */
+  .juri-pet {
+    position: fixed;
+    bottom: 8px;
+    left: 0;
+    z-index: 55;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    /* Intentionally using transform for position so it's choppy
+       with the setInterval. This is a feature. */
+    will-change: transform;
+    transition: none; /* NO smoothing. Choppy. */
+  }
+  .juri-pet:active {
+    cursor: grabbing;
+  }
+
+  /* ── ASCII sprite rendering ── */
+  .juri-sprite {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0;
+    padding: 0;
+    white-space: pre;
+    pointer-events: none;
+    /* Slight text shadow for readability on any background */
+    text-shadow:
+      0 0 3px var(--paper),
+      0 0 6px var(--paper),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper),
+      1px -1px 0 var(--paper),
+      -1px 1px 0 var(--paper);
+  }
+  .dark .juri-sprite {
+    color: var(--ink);
+    text-shadow:
+      0 0 3px var(--paper),
+      0 0 6px var(--paper),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper);
+  }
+
+  /* ── Stuck/glitch state ── */
+  .juri-stuck {
+    cursor: help;
+  }
+  .juri-sprite-glitch {
+    animation: juri-glitch 4s step-end infinite;
+  }
+  @keyframes juri-glitch {
+    0%, 95% { opacity: 1; }
+    96% { opacity: 0.3; transform: translateX(1px); }
+    97% { opacity: 1; transform: translateX(-1px); }
+    98% { opacity: 0.5; transform: translateX(0); }
+    99% { opacity: 1; }
+  }
+
+  /* ── The door ── */
+  .juri-door {
+    position: fixed;
+    bottom: 8px;
+    z-index: 54;
+    animation: juri-door-in 400ms ease-out;
+  }
+  .juri-door-sprite {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.15;
+    color: var(--ink-muted);
+    margin: 0;
+    white-space: pre;
+    text-shadow:
+      0 0 3px var(--paper),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper);
+  }
+  @keyframes juri-door-in {
+    from { opacity: 0; transform: scaleY(0.3); transform-origin: bottom; }
+    to   { opacity: 1; transform: scaleY(1); }
+  }
+
+  /* ── Speech bubble ── */
+  .juri-bubble {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--paper-soft);
+    border: 1.5px solid var(--ink);
+    border-radius: 8px 8px 8px 2px;
+    padding: 5px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink);
+    white-space: nowrap;
+    max-width: 320px;
+    box-shadow: 0 2px 8px oklch(0 0 0 / 0.15);
+    animation: juri-bubble-in 180ms ease-out;
+    pointer-events: auto;
+    z-index: 56;
+  }
+  .juri-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 16px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--ink);
+  }
+  @keyframes juri-bubble-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ── Query bubble (wider, interactive) ── */
+  .juri-query-bubble {
+    white-space: normal;
+    min-width: 240px;
+    max-width: 340px;
+  }
+  .juri-query-input-wrap {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .juri-query-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 8px;
+    outline: none;
+    min-width: 0;
+  }
+  .juri-query-input::placeholder {
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+  .juri-query-input:focus {
+    border-color: var(--ink);
+  }
+  .juri-query-send {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .juri-query-send:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .juri-query-result {
+    max-height: 260px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .juri-query-answer {
+    font-family: var(--font-serif);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .juri-query-cites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border);
+  }
+  .juri-cite-link {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--terracotta);
+    background: color-mix(in oklch, var(--terracotta) 8%, transparent);
+    border: 1px solid color-mix(in oklch, var(--terracotta) 25%, transparent);
+    border-radius: 3px;
+    padding: 1px 5px;
+    text-decoration: none;
+  }
+  .juri-cite-link:hover {
+    background: color-mix(in oklch, var(--terracotta) 18%, transparent);
+  }
+  .juri-close-query {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--ink-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+  .juri-close-query:hover {
+    color: var(--ink);
+  }
+  .juri-need-auth {
+    font-size: 9px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+    font-style: italic;
+  }

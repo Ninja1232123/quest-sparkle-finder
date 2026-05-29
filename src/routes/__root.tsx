@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { CmdPalette } from "@/components/marginalia/CmdPalette";
+import { Juri } from "@/components/marginalia/Juri";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <CmdPalette />
+        <Juri />
       </AuthProvider>
     </QueryClientProvider>
   );

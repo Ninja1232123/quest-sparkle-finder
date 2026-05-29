@@ -1,0 +1,305 @@
+/**
+ * Juri — the talking eagle.
+ *
+ * Bottom-left corner widget: a gold eagle icon that opens a grounded AI
+ * chat panel. Every response is retrieved from the corpus and cited by
+ * section identifier. Credit-gated — the badge shows remaining credits.
+ *
+ * Mounted once in __root.tsx, visible on every page. Reads the current
+ * route to know which section the user is viewing (passes context_identifier
+ * to the server function so Juri reads the page they're on).
+ */
+
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useRouter } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
+import { askJuri, getJuriCredits } from "@/lib/juri.functions";
+import { X, Send, Coins, ArrowUpRight, Loader2 } from "lucide-react";
+
+// ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
+function EagleSvg({ className = "", size = 40 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={className}
+      aria-hidden
+      fill="currentColor"
+    >
+      {/* Stylized bald eagle head profile — right-facing, bold strokes */}
+      <path d="M72 18c-8-6-18-4-24 2-4 4-6 10-5 16l-2 1c-3 1-6 4-7 7-2 5 0 10 3 13l4 3c-1 3 0 6 2 8l6 4-1 3c-1 4 1 8 4 10l8 4c3 2 7 1 9-1l3-4 4-1c5-2 8-7 8-12v-6l2-3c3-5 3-11 0-16-2-4-5-7-8-9l-3-8c-1-4-3-7-6-9l2-2zM58 32c1-4 4-7 8-8 3-1 6 0 8 2l2 5c-3-1-6-1-9 1-3 1-5 4-6 7l-3-2v-5zm14 8c2 0 4 2 4 4s-2 4-4 4-4-2-4-4 2-4 4-4zm-8 22l6-2c2 0 3 1 3 3l-2 4-6 2c-2 0-3-1-3-3l2-4z" />
+      {/* Beak accent */}
+      <path
+        d="M76 48l8-2c3-1 5 0 6 2l-3 5-8 3c-3 1-5-1-5-3l2-5z"
+        fill="var(--m-gold, #c8a24b)"
+        opacity="0.9"
+      />
+    </svg>
+  );
+}
+
+// ── Types ────────────────────────────────────────────────────────────────
+
+type JuriCitation = {
+  identifier: string;
+  section_label: string | null;
+  heading: string | null;
+  source_code: string;
+};
+
+type Message = {
+  role: "user" | "juri";
+  text: string;
+  citations?: JuriCitation[];
+  error?: boolean;
+};
+
+const SOURCE_SHORT: Record<string, string> = {
+  const: "Const.", usc: "U.S.C.", cfr: "C.F.R.", ucc: "U.C.C.",
+  tfm: "TFM", irm: "IRM", register: "Fed. Reg.", bill: "Bill",
+};
+
+// ── Component ───────────────────────────────────────────────────────────
+
+export function Juri() {
+  const [open, setOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { user, session } = useAuth();
+  const router = useRouter();
+
+  // Current section identifier from the URL (if viewing a document)
+  const contextId = (() => {
+    const path = router.state.location.pathname;
+    const m = path.match(/^\/code\/(.+)/);
+    if (m && !m[1].startsWith("source/")) return "/" + m[1];
+    return undefined;
+  })();
+
+  // Fetch credits on mount and when auth changes
+  useEffect(() => {
+    if (!user) { setCredits(null); return; }
+    getJuriCredits().then((r) => setCredits(r.credits)).catch(() => setCredits(0));
+  }, [user?.id]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  // Focus input when panel opens
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  const submit = useCallback(async () => {
+    const q = draft.trim();
+    if (!q || loading) return;
+
+    setDraft("");
+    setMessages((prev) => [...prev, { role: "user", text: q }]);
+    setLoading(true);
+
+    try {
+      const res = await askJuri({
+        data: {
+          query: q,
+          context_identifier: contextId,
+          auth_token: session?.access_token,
+        },
+      });
+
+      if (res.error) {
+        setMessages((prev) => [...prev, { role: "juri", text: res.error!, error: true }]);
+      } else {
+        setMessages((prev) => [...prev, {
+          role: "juri",
+          text: res.answer,
+          citations: res.citations,
+        }]);
+        setCredits(res.credits_remaining);
+      }
+    } catch (e) {
+      setMessages((prev) => [...prev, {
+        role: "juri",
+        text: "Something went wrong. Try again.",
+        error: true,
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  }, [draft, loading, contextId, session?.access_token]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
+  };
+
+  // ── Render ──
+
+  return (
+    <>
+      {/* Eagle button — bottom-left */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`juri-btn ${open ? "juri-btn-active" : ""}`}
+        aria-label={open ? "Close Juri" : "Ask Juri"}
+        title="Ask Juri"
+      >
+        {open ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <>
+            <EagleSvg size={32} />
+            {user && credits !== null && credits < 9999 && (
+              <span className="juri-badge">{credits}</span>
+            )}
+          </>
+        )}
+      </button>
+
+      {/* Chat panel */}
+      {open && (
+        <div className="juri-panel" role="dialog" aria-label="Juri — AI assistant">
+          {/* Header */}
+          <div className="juri-header">
+            <div className="juri-header-left">
+              <EagleSvg size={28} className="juri-header-eagle" />
+              <div>
+                <div className="juri-wordmark">JURI</div>
+                <div className="juri-subtitle">reads the statute · cites the source</div>
+              </div>
+            </div>
+            {user && credits !== null && (
+              <div className="juri-credit-pill" title="Juri credits remaining">
+                <Coins className="h-3 w-3" />
+                <span>{credits >= 9999 ? "∞" : credits}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Messages */}
+          <div className="juri-messages" ref={scrollRef}>
+            {messages.length === 0 && !loading && (
+              <div className="juri-empty">
+                <EagleSvg size={48} className="juri-empty-eagle" />
+                <div className="juri-empty-title">What are you reading?</div>
+                <div className="juri-empty-hint">
+                  {contextId
+                    ? "Ask me about this section — I'll read it and tell you what it says."
+                    : "Ask about any statute or regulation. I'll find it, read it, and cite it."}
+                </div>
+                <div className="juri-empty-examples">
+                  <button type="button" onClick={() => setDraft("What does this section actually say in plain English?")}>
+                    "What does this say?"
+                  </button>
+                  <button type="button" onClick={() => setDraft("What are the deadlines and requirements here?")}>
+                    "What are the deadlines?"
+                  </button>
+                  <button type="button" onClick={() => setDraft("Are any terms undefined or ambiguous in this section?")}>
+                    "Any vague terms?"
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i} className={`juri-msg ${msg.role === "user" ? "juri-msg-user" : "juri-msg-eagle"} ${msg.error ? "juri-msg-error" : ""}`}>
+                {msg.role === "juri" && (
+                  <div className="juri-msg-avatar">★</div>
+                )}
+                <div className="juri-msg-body">
+                  <div className="juri-msg-text">{msg.text}</div>
+                  {msg.citations && msg.citations.length > 0 && (
+                    <div className="juri-sources">
+                      <div className="juri-sources-label">Sources consulted</div>
+                      {msg.citations.map((c) => (
+                        <Link
+                          key={c.identifier}
+                          to="/code/$"
+                          params={{ _splat: c.identifier.replace(/^\//, "") }}
+                          className="juri-source-chip"
+                          onClick={() => setOpen(false)}
+                        >
+                          <span className="juri-source-code">
+                            {SOURCE_SHORT[c.source_code] ?? c.source_code.toUpperCase()}
+                          </span>
+                          <span className="juri-source-label">
+                            {c.section_label ?? c.heading ?? c.identifier}
+                          </span>
+                          <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="juri-msg juri-msg-eagle">
+                <div className="juri-msg-avatar juri-msg-avatar-loading">★</div>
+                <div className="juri-msg-body">
+                  <div className="juri-loading-dots">
+                    <span /><span /><span />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="juri-input-wrap">
+            {!user ? (
+              <Link
+                to="/auth"
+                search={{ mode: "signup", redirect: undefined }}
+                className="juri-signin-prompt"
+                onClick={() => setOpen(false)}
+              >
+                Sign in to talk to Juri →
+              </Link>
+            ) : (
+              <div className="juri-input-row">
+                <textarea
+                  ref={inputRef}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={contextId ? "Ask about this section…" : "Ask about any statute…"}
+                  rows={1}
+                  className="juri-input"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={submit}
+                  disabled={loading || !draft.trim()}
+                  className="juri-send"
+                  aria-label="Send"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+            )}
+            <div className="juri-disclaimer">
+              Not legal advice. Every claim cites the source — read it yourself.
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
