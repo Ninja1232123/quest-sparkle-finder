@@ -1,24 +1,11 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
 import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
-import { sourceMeta } from "@/lib/source-groups";
-import { cleanPathForSource } from "@/lib/codebooks";
-
-// The bare identifier for a section_label — strips the leading type word so a
-// big "ghost" numeral can sit behind the title (e.g. "§ 8" → "8",
-// "Article XIV" → "XIV", "Amendment I" → "I"). Falls back to the whole label.
-function ghostNumeral(sectionLabel: string | null): string {
-  if (!sectionLabel) return "§";
-  const stripped = sectionLabel
-    .replace(/^\s*(§+|Section|Sec\.?|Article|Amendment|Part|Subpart|Chapter|Subchapter|Title|Rule|Art\.?|Amdt\.?)\s*/i, "")
-    .trim();
-  return stripped || sectionLabel;
-}
 
 // Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
 // and @/lib/auto-link-citations (renderDecorated). Both work in original
@@ -243,8 +230,8 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
       {/* statute text */}
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
-          <span className="rdr-clause-no shrink-0 select-none" aria-hidden>
-            {p.label.replace(/[()]/g, "")}
+          <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
+            {p.label}
           </span>
         )}
         <span
@@ -324,14 +311,13 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   );
 }
 
-function LegalBody({ body, segments, opParas, citations, q, identifier, accent }: {
+function LegalBody({ body, segments, opParas, citations, q, identifier }: {
   body: string;
   segments: BodySegment[];
   opParas: LegalPara[];
   citations: DocCitationRow[];
   q?: string;
   identifier: string;
-  accent: string;
 }) {
   const markRe = useMemo(() => buildMarkRe(q), [q]);
   const spans = useMemo(() => citationSpans(citations), [citations]);
@@ -340,7 +326,7 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, accent }
   const [composing, setComposing] = useState<number | null>(null);
 
   return (
-    <div className="space-y-2.5" style={{ ["--c"]: accent } as CSSProperties}>
+    <div className="space-y-2.5">
       {/* Marginalia intro / count — client-only, so no hydration mismatch. */}
       {mg.hydrated && (
         <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2">
@@ -459,7 +445,7 @@ const SOURCE_NAMES: Record<string, string> = {
   irm: "IRM",
 };
 
-function DocOutline({ body, opParas, accent }: { body: string; opParas: LegalPara[]; accent: string }) {
+function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
   const items = useMemo(
     () =>
       opParas
@@ -492,23 +478,23 @@ function DocOutline({ body, opParas, accent }: { body: string; opParas: LegalPar
   if (items.length < 3) return null;
 
   return (
-    <div style={{ ["--c"]: accent } as CSSProperties}>
-      <div className="citation-tag mb-2 border-b border-border/60 pb-1.5 text-muted-foreground">In this section</div>
-      <nav className="max-h-[60vh] space-y-1 overflow-y-auto pr-1">
+    <div>
+      <div className="citation-tag mb-2 px-1 text-muted-foreground">in this section</div>
+      <nav className="max-h-[60vh] space-y-0.5 overflow-y-auto pr-1">
         {items.map((p) => {
           const isActive = p.idx === activeIdx;
           return (
             <a
               key={p.idx}
               href={`#para-${p.idx}`}
-              className={`grid grid-cols-[2.4rem_1fr] items-center gap-2 rounded-lg border px-2 py-1.5 transition-colors ${
-                isActive ? "border-foreground/30 bg-card" : "border-transparent hover:border-border hover:bg-card/70"
+              className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[11px] leading-snug transition-colors ${
+                isActive
+                  ? "bg-foreground/10 text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
             >
-              <span className="rdr-jno">{(p.label ?? "").replace(/[()]/g, "")}</span>
-              <span className="line-clamp-2 font-display text-[12px] leading-tight text-foreground/75">
-                {p.preview.length > 56 ? p.preview.slice(0, 56) + "…" : p.preview}
-              </span>
+              <span className="mt-0.5 shrink-0 font-mono text-[9px] text-foreground/40">{p.label}</span>
+              <span className="line-clamp-2">{p.preview.length > 55 ? p.preview.slice(0, 55) + "…" : p.preview}</span>
             </a>
           );
         })}
@@ -546,17 +532,6 @@ function DocumentPage() {
   const opParas = useMemo(() => operativeParagraphs(body, segments, spans), [body, segments, spans]);
 
   if (!document) return null;
-
-  // Codebook accent drives the whole reader skin (header color, clause-box
-  // border tint, desk spines). White boxes / app tokens carry the rest.
-  const meta = sourceMeta(document.source_code);
-  const accent = meta.accent;
-  const sourcePath = cleanPathForSource(document.source_code);
-  // Breadcrumb hierarchy: the cleaned parent_label, split into its segments
-  // (Title · Chapter · Part …) so each "plops into" its own bubble.
-  const crumbSegs = document.parent_label
-    ? formatGroupCrumb(document.source_code, document.parent_label).split(" · ").filter(Boolean)
-    : [];
 
   // Outgoing citations: dedupe by target (a section often cites the same doc
   // many times). Resolved → grouped link rail; unresolved → "not in our index".
@@ -628,13 +603,13 @@ function DocumentPage() {
                   <Link
                     to="/code/$"
                     params={{ _splat: (c.to_identifier ?? "").replace(/^\//, "") }}
-                    className="rdr-concard text-sm"
+                    className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
                   >
-                    <div className="citation-tag" style={{ color: "var(--c)" }}>
-                      {c.target_section_label ?? c.to_identifier}
-                    </div>
-                    <div className="mt-0.5 font-display font-semibold leading-snug">
+                    <div className="font-display font-semibold leading-snug">
                       {c.target_heading || c.to_identifier}
+                    </div>
+                    <div className="citation-tag mt-0.5 text-muted-foreground">
+                      {c.target_section_label ?? c.to_identifier}
                     </div>
                   </Link>
                 </li>
@@ -666,12 +641,12 @@ function DocumentPage() {
                   <Link
                     to="/code/$"
                     params={{ _splat: c.identifier.replace(/^\//, "") }}
-                    className="rdr-concard text-sm"
+                    className="block rounded-lg border bg-card px-3 py-2 text-sm hover:bg-muted/60"
                   >
                     <div className="citation-tag text-muted-foreground">
                       {c.section_label ?? c.identifier}
                     </div>
-                    <div className="mt-0.5 font-display font-semibold leading-snug">{c.heading}</div>
+                    <div className="font-display font-semibold leading-snug">{c.heading}</div>
                   </Link>
                 </li>
               ))}
@@ -695,8 +670,8 @@ function DocumentPage() {
   );
 
   const rightRail = (
-    <div className="space-y-6 text-sm" style={{ ["--c"]: accent } as CSSProperties}>
-      <DocOutline body={body} opParas={opParas} accent={accent} />
+    <div className="space-y-6 text-sm">
+      <DocOutline body={body} opParas={opParas} />
       {tracesPanel}
       {citedByPanel}
       {graphPlaceholder}
@@ -722,12 +697,10 @@ function DocumentPage() {
               <>
                 <Link to="/code" className="hover:text-foreground">Code</Link>
                 {" · "}
-                <Link
-                  to={(sourcePath ?? `/code/source/${document.source_code}`) as never}
-                  className="hover:text-foreground"
-                >
+                <Link to="/code/source/$source" params={{ source: document.source_code }} className="hover:text-foreground">
                   {SOURCE_NAMES[document.source_code] ?? document.source_code.toUpperCase()}
                 </Link>
+                {document.parent_label ? <> · <span className="text-foreground/70">{formatGroupCrumb(document.source_code, document.parent_label)}</span></> : null}
                 {document.section_label ? <> · <span className="text-foreground/70">{document.section_label}</span></> : null}
               </>
             )}
@@ -767,51 +740,22 @@ function DocumentPage() {
         </div>
       </div>
 
-      <article style={{ ["--c"]: accent } as CSSProperties}>
-        {/* Breadcrumb bubble band — the title hierarchy, each segment in its
-            own pill (codebook → Title · Chapter · Part → this section). */}
-        <nav className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-2" aria-label="Breadcrumb">
-          <Link to={(sourcePath ?? `/code/source/${document.source_code}`) as never} className="rdr-bubble">
-            <span className="tag">{meta.short}</span>
-            <span className="nm">{SOURCE_NAMES[document.source_code] ?? document.source_code.toUpperCase()}</span>
-          </Link>
-          {crumbSegs.map((seg, i) => (
-            <span key={i} className="inline-flex items-center gap-2">
-              <span className="rdr-crumb-sep">›</span>
-              <span className="rdr-bubble plain"><span className="nm">{seg}</span></span>
-            </span>
-          ))}
-          {document.section_label && (
-            <span className="inline-flex items-center gap-2">
-              <span className="rdr-crumb-sep">›</span>
-              <span className="rdr-bubble cur">
-                <span className="tag">{document.section_label}</span>
-              </span>
-            </span>
-          )}
-        </nav>
-
-        <header className="rdr-titleblock">
-          {document.section_label && <div className="rdr-ghost" aria-hidden>{ghostNumeral(document.section_label)}</div>}
-          {document.section_label && <div className="rdr-docnum">{document.section_label}</div>}
-          <h1 className="relative z-[1] mt-0.5 font-display text-3xl font-bold tracking-tight md:text-[2.6rem] md:leading-[1.04]">
-            {document.heading}
-          </h1>
-          <div className="relative z-[1] mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-muted-foreground">
-            {opParas.length > 0 ? <span><b className="font-bold text-foreground">{opParas.length}</b> passages</span> : null}
-            {document.word_count ? <><span className="text-foreground/25">·</span><span><b className="font-bold text-foreground">{document.word_count.toLocaleString()}</b> words</span></> : null}
-            {readingMin ? <><span className="text-foreground/25">·</span><span>~<b className="font-bold text-foreground">{readingMin}</b> min read</span></> : null}
-            {incoming_total > 0 ? <><span className="text-foreground/25">·</span><span>cited by <b className="font-bold text-foreground">{incoming_total.toLocaleString()}</b></span></> : null}
-          </div>
-          <div className="rdr-rule" />
-        </header>
-
-        <div className="mt-3 font-mono text-[10px] text-foreground/40">{document.identifier}</div>
+      <article>
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
+          <span className="ink-underline italic">{document.heading}</span>
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
+          {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
+          <span className="text-foreground/30">·</span>
+          <code className="font-mono text-[11px]">{document.identifier}</code>
+        </div>
 
         <div className="mt-8">
           <DefinitionsPanel text={body} />
           <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
-            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} accent={accent} />
+            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} />
           </div>
         </div>
 
