@@ -292,41 +292,6 @@ export const listDocsBySortRange = createServerFn({ method: "GET" })
     return { documents, error: null };
   });
 
-// The Constitution is a fixed 35-document set (preamble + 7 articles + 27
-// amendments). The /const landing is a bespoke themed front door, so it loads
-// the whole set in sort order plus the full preamble text for its feature
-// block — not the generic firehose/TOC browse.
-export type ConstDoc = {
-  identifier: string;
-  section_label: string | null;
-  heading: string | null;
-  word_count: number | null;
-};
-
-export const getConstitutionLanding = createServerFn({ method: "GET" }).handler(async () => {
-  const supabaseAdmin = await getAdminClient();
-  const { data: rows, error } = await supabaseAdmin
-    .from("documents")
-    .select("identifier, section_label, heading, word_count, sort_key, body_text")
-    .eq("source_code", "const")
-    .order("sort_key", { ascending: true })
-    .limit(60);
-  if (error) return { docs: [] as ConstDoc[], preambleText: "", error: error.message };
-  let preambleText = "";
-  const docs: ConstDoc[] = (rows ?? []).map((r) => {
-    if (r.identifier === "/us/const/preamble") {
-      preambleText = (r.body_text ?? "").replace(/\s+/g, " ").trim();
-    }
-    return {
-      identifier: r.identifier as string,
-      section_label: (r.section_label as string) ?? null,
-      heading: (r.heading as string) ?? null,
-      word_count: (r.word_count as number) ?? null,
-    };
-  });
-  return { docs, preambleText, error: null };
-});
-
 // Fire-and-forget: log a search event. Never blocks user-facing flow on failure.
 export const logSearchEvent = createServerFn({ method: "POST" })
   .inputValidator(z.object({
