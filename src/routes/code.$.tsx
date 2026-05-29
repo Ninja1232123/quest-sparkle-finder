@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
 import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
@@ -226,7 +226,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
 }) {
   const hasNote = hydrated && typeof note === "string" && note.length > 0;
   return (
-    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start lg:gap-6">
+    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start lg:gap-8">
       {/* statute text */}
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
@@ -501,6 +501,48 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
   );
 }
 
+// Cross-references collapse into a single disclosure below the statute. The
+// reader sees the law first; "what else points here" waits until they ask for
+// it. Replaces the old always-on right rail. Default closed.
+function ConnectionsDisclosure({
+  citedByTotal,
+  tracesCount,
+  externalCount,
+  children,
+}: {
+  citedByTotal: number;
+  tracesCount: number;
+  externalCount: number;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  if (citedByTotal === 0 && tracesCount === 0 && externalCount === 0) return null;
+  const bits: string[] = [];
+  if (citedByTotal > 0) bits.push(`${citedByTotal.toLocaleString()} cite this`);
+  if (tracesCount > 0) bits.push(`traces to ${tracesCount}`);
+  if (externalCount > 0 && citedByTotal === 0 && tracesCount === 0) bits.push(`${externalCount} off-index`);
+  return (
+    <section className="mt-12 rounded-2xl border border-border/60 bg-card/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+        aria-expanded={open}
+      >
+        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <Network className="h-4 w-4 shrink-0 text-accent" />
+          <span className="font-display text-sm font-semibold text-foreground">Connections</span>
+          <span className="citation-tag text-muted-foreground">{bits.join(" · ")}</span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="space-y-8 border-t border-border/40 px-5 pb-7 pt-6">{children}</div>}
+    </section>
+  );
+}
+
 function DocumentPage() {
   const { document, citations, incoming, incoming_total, prev, next, sources } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
@@ -667,17 +709,8 @@ function DocumentPage() {
     </div>
   );
 
-  const rightRail = (
-    <div className="space-y-6 text-sm">
-      <DocOutline body={body} opParas={opParas} />
-      {tracesPanel}
-      {citedByPanel}
-      {graphPlaceholder}
-    </div>
-  );
-
   return (
-    <ResearchShell sources={sources} right={rightRail} rightLabel="Connections" centerMaxWidth="max-w-3xl">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-5xl">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -751,11 +784,41 @@ function DocumentPage() {
         </div>
 
         <div className="mt-8">
+          <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
           <DefinitionsPanel text={body} />
           <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
             <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} />
           </div>
         </div>
+
+        {/* Everything that references or feeds this section, folded into one
+            disclosure so the operative law reads uninterrupted. Default closed. */}
+        <ConnectionsDisclosure
+          citedByTotal={incoming_total}
+          tracesCount={internal.length}
+          externalCount={external.length}
+        >
+          <div className="grid gap-8 lg:grid-cols-2">
+            {citedByPanel}
+            {tracesPanel}
+          </div>
+          {graphPlaceholder}
+          {external.length > 0 && (
+            <div>
+              <div className="citation-tag text-muted-foreground">
+                {external.length} reference{external.length === 1 ? "" : "s"} not yet in our index
+              </div>
+              <ul className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+                {external.slice(0, 40).map((c: DocCitationRow, i: number) => (
+                  <li key={i} className="truncate font-mono text-xs">{c.target_cite}</li>
+                ))}
+              </ul>
+              {external.length > 40 && (
+                <div className="mt-2 text-xs text-muted-foreground">+ {external.length - 40} more</div>
+              )}
+            </div>
+          )}
+        </ConnectionsDisclosure>
 
         {(prev || next) && (
           <nav className="mt-12 grid grid-cols-1 gap-3 border-t border-border/60 pt-6 sm:grid-cols-2">
@@ -792,29 +855,9 @@ function DocumentPage() {
           </nav>
         )}
 
-        {/* Citation panels — visible only on screens where the right rail is hidden (< xl). */}
-        <div className="mt-12 space-y-10 xl:hidden">
-          {tracesPanel}
-          {citedByPanel}
-        </div>
-
-        {external.length > 0 && (
-          <div className="mt-10">
-            <div className="citation-tag text-muted-foreground">
-              {external.length} reference{external.length === 1 ? "" : "s"} not yet in our index
-            </div>
-            <ul className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-              {external.slice(0, 40).map((c: DocCitationRow, i: number) => (
-                <li key={i} className="truncate font-mono text-xs">{c.target_cite}</li>
-              ))}
-            </ul>
-            {external.length > 40 && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                + {external.length - 40} more
-              </div>
-            )}
-          </div>
-        )}
+        {/* Cross-references now live in the <ConnectionsDisclosure> above,
+            directly beneath the statute text — no separate rail or duplicate
+            mobile block. */}
       </article>
 
       {showTop && (
