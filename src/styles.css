@@ -278,7 +278,7 @@
     /* Global zoom-out. To back it off further, lower --site-zoom and the
        width auto-compensates so there's no horizontal overflow:
          0.80 -> 125%   0.75 -> 133.333%   0.70 -> 142.857%   (width = 100/zoom) */
-    --site-zoom: 0.7;
+    --site-zoom: 0.75;
     transform: scale(var(--site-zoom));
     transform-origin: 0 0;                 /* anchor to top-left */
     width: calc(100% / var(--site-zoom));  /* fill the gap left by scaling down */
