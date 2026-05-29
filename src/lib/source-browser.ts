@@ -27,10 +27,12 @@ export const num = (v: unknown) => {
 };
 
 // All keys optional so Links may pass any subset (or none) without TS demanding
-// the full shape. `group` = TOC drill; ry/rd = register; bc/bk/bq/bp = bill.
+// the full shape. `group` = section drill; `tg` = title-group drill (intermediate
+// level between title list and section list); ry/rd = register; bc/bk/bq/bp = bill.
 // ry/rd/bp are numbers (clean URLs); the loader stringifies ry/rd as needed.
 export type SourceSearch = {
   group?: string;
+  tg?: string;
   ry?: number;
   rd?: number;
   bc?: string;
@@ -43,6 +45,7 @@ export type SourceSearch = {
 export function validateSourceSearch(search: Record<string, unknown>): SourceSearch {
   return {
     group: str(search.group),
+    tg: str(search.tg),
     ry: num(search.ry),
     rd: num(search.rd),
     bc: str(search.bc),
@@ -141,6 +144,7 @@ export async function loadSourceRoute({ source, deps }: { source: string; deps: 
     sources: sourcesRes.sources,
     source,
     group: deps.group,
+    tg: deps.tg,
   };
 }
 

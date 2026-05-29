@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, ChevronLeft, Search as SearchIcon, X, BookOpen, Network } from "lucide-react";
 import { ResearchShell } from "./ResearchShell";
 import { CodebookHero } from "./CodebookHero";
@@ -225,7 +225,7 @@ function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: L
 }
 
 function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }) {
-  const { toc, documents, sources, source, group } = data;
+  const { toc, documents, sources, source, group, tg } = data;
   const tocTyped = toc as SourceTocNode[];
   // `group` is the raw parent_label (the drill key); `groupLabel` is its cleaned,
   // de-duplicated display form (e.g. "Title 1 — General Provisions · Part 1 —
@@ -237,12 +237,16 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
   // sub-sources of a multi-source codebook (/code/source/irm) keep a plain head.
   const codebook = cleanPathForSource(source) ? codebookForSource(source) : undefined;
   const [filter, setFilter] = useState("");
-  const [openTitles, setOpenTitles] = useState<Record<string, boolean>>(() => {
-    if (!group) return {};
-    // Auto-open the title containing the active group
-    const activeTitle = tocTyped.find((t) => t.parts.some((p) => p.parent_label === group))?.title_group;
-    return activeTitle ? { [activeTitle]: true } : {};
-  });
+
+  // Reset filter when navigating between levels.
+  useEffect(() => { setFilter(""); }, [tg, group]);
+
+  // Title node for the tg (intermediate) level.
+  const titleNode = tg ? tocTyped.find((t) => t.title_group === tg) : null;
+  // Parent title group for back-links from section view.
+  const parentTg = group
+    ? tocTyped.find((t) => t.parts.some((p) => p.parent_label === group))?.title_group
+    : undefined;
 
   const filteredToc = useMemo<SourceTocNode[]>(() => {
     const f = filter.trim().toLowerCase();
@@ -301,9 +305,26 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
             </div>
             <Link
               to={linkSelf.to as never}
+              search={parentTg ? { tg: parentTg } : {}}
               className="mt-2 inline-block text-[11px] text-accent hover:underline"
             >
-              ← back to table of contents
+              ← back{parentTg ? ` to ${cleanBubbleTitle(parentTg)}` : " to table of contents"}
+            </Link>
+          </div>
+        </div>
+      ) : tg && titleNode ? (
+        <div>
+          <div className="citation-tag mb-1.5 text-muted-foreground">in {cleanBubbleTitle(tg)}</div>
+          <div className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-foreground/70">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">parts</div>
+            <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
+              {titleNode.parts.length.toLocaleString()}
+            </div>
+            <Link
+              to={linkSelf.to as never}
+              className="mt-2 inline-block text-[11px] text-accent hover:underline"
+            >
+              ← back to all titles
             </Link>
           </div>
         </div>
@@ -343,12 +364,30 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
       <section>
         <div className="citation-tag text-muted-foreground">
           <Link to="/code" className="hover:text-foreground">All sources</Link> · {totalDocs.toLocaleString()} documents
-          {group && (
+          {(tg || group) && (
             <>
               {" · "}
               <Link to={linkSelf.to as never} className="hover:text-foreground">
                 Table of contents
               </Link>
+            </>
+          )}
+          {tg && !group && (
+            <>
+              {" · "}
+              <span className="text-foreground/80">{cleanBubbleTitle(tg)}</span>
+            </>
+          )}
+          {group && (
+            <>
+              {parentTg && (
+                <>
+                  {" · "}
+                  <Link to={linkSelf.to as never} search={{ tg: parentTg }} className="hover:text-foreground">
+                    {cleanBubbleTitle(parentTg)}
+                  </Link>
+                </>
+              )}
               {" · "}
               <span className="text-foreground/80">{groupLabel}</span>
             </>
@@ -374,7 +413,9 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               placeholder={
                 group
                   ? `Filter ${(documents as DocLite[]).length.toLocaleString()} entries in ${groupLabel}…`
-                  : `Filter ${toc.length} title${toc.length === 1 ? "" : "s"} — by name or number…`
+                  : tg && titleNode
+                    ? `Filter ${titleNode.parts.length} parts in ${cleanBubbleTitle(tg)}…`
+                    : `Filter ${toc.length} title${toc.length === 1 ? "" : "s"} — by name or number…`
               }
               className="h-11 w-full rounded-full border border-foreground/15 bg-background/90 pl-10 pr-10 font-display text-sm shadow-[var(--shadow-soft)] focus:border-foreground/40 focus:outline-none"
             />
@@ -391,36 +432,59 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
           </div>
         </div>
 
-        {!group && (
-          <div className="mt-8 space-y-3">
+        {/* Title list — each title is a direct-link bubble (no accordion) */}
+        {!group && !tg && (
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filteredToc.length === 0 && (
-              <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+              <div className="col-span-2 rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
                 Nothing in the table of contents matches "{filter}".
               </div>
             )}
-            {filteredToc.map((t) => {
-              const open = openTitles[t.title_group] ?? false;
+            {filteredToc.map((t, i) => {
               const token = pullToken(t.title_group);
               const titleClean = cleanBubbleTitle(t.title_group);
-              const kind = bubbleKind(t.title_group)?.replace(/CH\./,'CH') ?? "TITLE";
+              const kind = bubbleKind(t.title_group)?.replace(/CH\./, "CH") ?? "TITLE";
               return (
-                <div key={t.title_group} className="am-card" style={{ ["--c" as never]: meta.accent }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenTitles((c) => ({ ...c, [t.title_group]: !open }))}
-                    className="block w-full text-left"
-                  >
-                    <div className="am-num">{kind} {token}</div>
-                    <div className="am-title">{titleClean}</div>
-                    <div className="am-meta">
-                      <span className="am-count">{t.parts.length} {t.parts.length === 1 ? "part" : "parts"} · {t.total.toLocaleString()} sections</span>
-                      <span className="am-go">{open ? "Collapse ▲" : "Browse →"}</span>
-                    </div>
-                  </button>
-                  {open && <TitleParts parts={t.parts} linkSelf={linkSelf} accent={meta.accent} />}
-                </div>
+                <Link
+                  key={t.title_group}
+                  to={linkSelf.to as never}
+                  search={{ tg: t.title_group }}
+                  className="block"
+                >
+                  <CatalogueBubble
+                    kind={kind}
+                    token={token}
+                    title={titleClean}
+                    count={t.total}
+                    accent={meta.accent}
+                    index={i}
+                  />
+                </Link>
               );
             })}
+          </div>
+        )}
+
+        {/* Parts/chapters for a selected title group */}
+        {tg && !group && (
+          <div className="mt-8">
+            {!titleNode ? (
+              <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+                Title not found.
+              </div>
+            ) : (
+              <TitleParts
+                parts={
+                  filter
+                    ? titleNode.parts.filter((p) =>
+                        p.label.toLowerCase().includes(filter.trim().toLowerCase()),
+                      )
+                    : titleNode.parts
+                }
+                linkSelf={linkSelf}
+                accent={meta.accent}
+              />
+            )}
           </div>
         )}
 
