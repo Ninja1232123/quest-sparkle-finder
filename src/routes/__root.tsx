@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
@@ -137,6 +138,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <CmdPalette />
+        <Analytics />
       </AuthProvider>
     </QueryClientProvider>
   );
