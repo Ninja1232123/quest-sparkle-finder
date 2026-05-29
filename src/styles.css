@@ -1,7 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-
+@import { Juri } from "@/components/marginalia/Juri";
 @custom-variant dark (&:is(.dark *));
 
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
@@ -276,6 +276,11 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    transform: scale(0.9);
+/* Ensure the site stays anchored to the top-left */
+    transform-origin: 0 0;
+/* Adjust width to fill the gap created by scaling down */
+    width: 125%; /* (100 / 0.8) */
   }
 
   h1,
@@ -342,7 +347,7 @@
 
   .citation-tag {
     font-family: var(--font-mono);
-    font-size: 1.19rem;
+    font-size: 0.68rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
@@ -2052,6 +2057,436 @@ main {
     );
     animation: foil-spin 140s linear infinite;
   }
+  /* ── Eagle button ── */
+  .juri-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 190;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid #c8a24b;
+    background: #0a1a47;
+    color: #e7cd7e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow:
+      0 4px 16px -4px rgba(0,0,0,0.5),
+      0 0 0 3px rgba(200,162,75,0.15);
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  }
+  .juri-btn:hover {
+    transform: scale(1.08);
+    box-shadow:
+      0 6px 24px -6px rgba(0,0,0,0.6),
+      0 0 0 4px rgba(200,162,75,0.25);
+  }
+  .juri-btn:active {
+    transform: scale(0.96);
+  }
+  .juri-btn-active {
+    background: #b22234;
+    border-color: #fbf6e8;
+    color: #fbf6e8;
+  }
+
+  /* Credit badge on the eagle button */
+  .juri-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #c8a24b;
+    color: #0a1a47;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border: 2px solid #0a1a47;
+    line-height: 1;
+  }
+
+  /* ── Chat panel ── */
+  .juri-panel {
+    position: fixed;
+    bottom: 86px;
+    left: 20px;
+    z-index: 189;
+    width: 380px;
+    max-height: calc(100vh - 140px);
+    background: #0a1a47;
+    border: 2px solid #c8a24b;
+    border-radius: 14px;
+    box-shadow:
+      0 20px 60px -12px rgba(0,0,0,0.65),
+      0 0 0 1px rgba(200,162,75,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: juri-slide-up 200ms ease-out;
+  }
+  @keyframes juri-slide-up {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Header ── */
+  .juri-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(200,162,75,0.25);
+    background: linear-gradient(135deg, rgba(200,162,75,0.08) 0%, transparent 60%);
+  }
+  .juri-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .juri-header-eagle {
+    color: #c8a24b;
+    flex-shrink: 0;
+  }
+  .juri-wordmark {
+    font-family: "Rye", serif;
+    font-size: 16px;
+    color: #e7cd7e;
+    letter-spacing: 0.12em;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+    line-height: 1;
+  }
+  .juri-subtitle {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7a8bb0;
+    margin-top: 2px;
+  }
+  .juri-credit-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(200,162,75,0.15);
+    border: 1px solid rgba(200,162,75,0.35);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: #c8a24b;
+  }
+
+  /* ── Messages area ── */
+  .juri-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+    max-height: 380px;
+  }
+  .juri-messages::-webkit-scrollbar { width: 4px; }
+  .juri-messages::-webkit-scrollbar-track { background: transparent; }
+  .juri-messages::-webkit-scrollbar-thumb { background: rgba(200,162,75,0.3); border-radius: 2px; }
+
+  /* Empty state */
+  .juri-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+    padding: 20px 10px;
+  }
+  .juri-empty-eagle {
+    color: rgba(200,162,75,0.3);
+    margin-bottom: 4px;
+  }
+  .juri-empty-title {
+    font-family: "Rye", serif;
+    font-size: 15px;
+    color: #c2cde6;
+    letter-spacing: 0.02em;
+  }
+  .juri-empty-hint {
+    font-size: 12px;
+    color: #7a8bb0;
+    line-height: 1.45;
+    max-width: 280px;
+  }
+  .juri-empty-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .juri-empty-examples button {
+    background: rgba(200,162,75,0.1);
+    border: 1px solid rgba(200,162,75,0.25);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11px;
+    color: #c2cde6;
+    cursor: pointer;
+    transition: background 140ms, border-color 140ms;
+  }
+  .juri-empty-examples button:hover {
+    background: rgba(200,162,75,0.2);
+    border-color: rgba(200,162,75,0.5);
+    color: #e7cd7e;
+  }
+
+  /* ── Message bubbles ── */
+  .juri-msg {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .juri-msg-user {
+    justify-content: flex-end;
+  }
+  .juri-msg-user .juri-msg-body {
+    background: rgba(200,162,75,0.15);
+    border: 1px solid rgba(200,162,75,0.3);
+    border-radius: 12px 12px 4px 12px;
+    padding: 8px 12px;
+    max-width: 85%;
+  }
+  .juri-msg-user .juri-msg-text {
+    font-size: 13px;
+    color: #e7cd7e;
+    line-height: 1.45;
+  }
+  .juri-msg-eagle .juri-msg-body {
+    background: rgba(251,246,232,0.06);
+    border: 1px solid rgba(251,246,232,0.1);
+    border-radius: 12px 12px 12px 4px;
+    padding: 10px 14px;
+    max-width: 92%;
+  }
+  .juri-msg-eagle .juri-msg-text {
+    font-family: var(--font-serif);
+    font-size: 13px;
+    color: #c2cde6;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+  .juri-msg-error .juri-msg-body {
+    border-color: rgba(178,34,52,0.4);
+    background: rgba(178,34,52,0.1);
+  }
+  .juri-msg-error .juri-msg-text {
+    color: #e88a95;
+  }
+  .juri-msg-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #c8a24b;
+    color: #0a1a47;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .juri-msg-avatar-loading {
+    animation: juri-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes juri-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Loading dots */
+  .juri-loading-dots {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .juri-loading-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7a8bb0;
+    animation: juri-dot 1.4s ease-in-out infinite;
+  }
+  .juri-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .juri-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes juri-dot {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.1); }
+  }
+
+  /* ── Sources / citations ── */
+  .juri-sources {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(200,162,75,0.15);
+  }
+  .juri-sources-label {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7a8bb0;
+    margin-bottom: 5px;
+  }
+  .juri-source-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    margin-top: 3px;
+    border-radius: 6px;
+    background: rgba(200,162,75,0.08);
+    border: 1px solid rgba(200,162,75,0.18);
+    font-size: 11px;
+    color: #c2cde6;
+    transition: background 120ms, border-color 120ms;
+    text-decoration: none;
+  }
+  .juri-source-chip:hover {
+    background: rgba(200,162,75,0.18);
+    border-color: rgba(200,162,75,0.4);
+    color: #e7cd7e;
+  }
+  .juri-source-code {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #c8a24b;
+    flex-shrink: 0;
+  }
+  .juri-source-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
+
+  /* ── Input area ── */
+  .juri-input-wrap {
+    padding: 10px 14px 10px;
+    border-top: 1px solid rgba(200,162,75,0.2);
+    background: rgba(0,0,0,0.15);
+  }
+  .juri-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .juri-input {
+    flex: 1;
+    resize: none;
+    border: 1.5px solid rgba(200,162,75,0.3);
+    border-radius: 10px;
+    background: rgba(251,246,232,0.06);
+    color: #fbf6e8;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 8px 12px;
+    min-height: 38px;
+    max-height: 100px;
+    outline: none;
+    transition: border-color 150ms;
+  }
+  .juri-input::placeholder {
+    color: #5a6a8a;
+    font-style: italic;
+  }
+  .juri-input:focus {
+    border-color: #c8a24b;
+  }
+  .juri-send {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #c8a24b;
+    color: #0a1a47;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 140ms, transform 140ms;
+  }
+  .juri-send:hover:not(:disabled) {
+    background: #e7cd7e;
+    transform: scale(1.06);
+  }
+  .juri-send:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .juri-signin-prompt {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    color: #c8a24b;
+    text-decoration: none;
+    border: 1.5px solid rgba(200,162,75,0.3);
+    border-radius: 10px;
+    transition: background 140ms;
+  }
+  .juri-signin-prompt:hover {
+    background: rgba(200,162,75,0.1);
+  }
+  .juri-disclaimer {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #4a5a78;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ── Responsive — on narrow screens, panel goes full-width ── */
+  @media (max-width: 460px) {
+    .juri-panel {
+      left: 8px;
+      right: 8px;
+      width: auto;
+      bottom: 84px;
+    }
+    .juri-btn {
+      bottom: 16px;
+      left: 16px;
+      width: 48px;
+      height: 48px;
+    }
+  }
+}
 
   /* ===========================================================================
      Home page — Constitution cartouche (overlaps eagle from below).
