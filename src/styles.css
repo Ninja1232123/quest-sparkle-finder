@@ -275,14 +275,24 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Global zoom-out. To back it off further, lower --site-zoom and the
-       width auto-compensates so there's no horizontal overflow:
-         0.80 -> 125%   0.75 -> 133.333%   0.70 -> 142.857%   (width = 100/zoom) */
+    /* Global zoom-out via CSS `zoom` (NOT transform). transform on <body>
+       makes it the containing block for position:fixed, which detaches Juri
+       and all fixed UI from the viewport (that's what stranded Juri as a band
+       at the page bottom). `zoom` keeps fixed positioning correct. Its one
+       quirk — it shrinks vh units — is handled by the .min-h-screen rule
+       below. Tune one number: 0.7, 0.75, 0.8 … */
     --site-zoom: 0.75;
-    transform: scale(var(--site-zoom));
-    transform-origin: 0 0;                 /* anchor to top-left */
-    width: calc(100% / var(--site-zoom));  /* fill the gap left by scaling down */
+    zoom: var(--site-zoom);
   }
+
+  /* `zoom` shrinks vh units, so 100vh shells stop filling the screen and leave
+     a gap at the bottom (read as an "empty footer"). Compensate so full-height
+     pages still reach the real viewport floor. */
+  .min-h-screen { min-height: calc(100vh / var(--site-zoom)); }
+
+  /* Canvas background, so any residual sub-viewport area is parchment, never
+     a stray color. (:root === html, where --background lives.) */
+  html { background-color: var(--background); }
 
   h1,
   h2,
@@ -587,6 +597,15 @@
 /* main stays a positioning context for absolutely-positioned descendants. */
 main {
   position: relative;
+}
+
+/* When Juri's drawer is open, push the page content right (lg+ only) so the
+   drawer never sits on top of the text the user is asking about. Closed =
+   full width. Juri.tsx toggles `.juri-open` on <html>. The 380px matches the
+   drawer width; both live in the same zoom space so they line up. */
+#main { transition: padding-left 220ms ease; }
+@media (min-width: 1024px) {
+  html.juri-open #main { padding-left: 380px; }
 }
 
 /* ============================================================
@@ -2232,28 +2251,29 @@ main {
     line-height: 1;
   }
 
-  /* ── Chat panel ── */
+  /* ── Chat panel — full-height left drawer. Sticky (position:fixed, works
+     now that the zoom hack is gone). Pushes content right via #main, below. ── */
   .juri-panel {
     position: fixed;
-    bottom: 86px;
-    left: 20px;
+    top: 0;
+    bottom: 0;
+    left: 0;
     z-index: 189;
     width: 380px;
-    max-height: calc(100vh - 140px);
+    max-width: 92vw;
     background: #0a1a47;
-    border: 2px solid #c8a24b;
-    border-radius: 14px;
+    border-right: 2px solid #c8a24b;
     box-shadow:
-      0 20px 60px -12px rgba(0,0,0,0.65),
+      24px 0 60px -20px rgba(0,0,0,0.65),
       0 0 0 1px rgba(200,162,75,0.1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: juri-slide-up 200ms ease-out;
+    animation: juri-slide-in 200ms ease-out;
   }
-  @keyframes juri-slide-up {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+  @keyframes juri-slide-in {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
   }
 
   /* ── Header ── */
@@ -2313,7 +2333,6 @@ main {
     flex-direction: column;
     gap: 12px;
     min-height: 200px;
-    max-height: 380px;
   }
   .juri-messages::-webkit-scrollbar { width: 4px; }
   .juri-messages::-webkit-scrollbar-track { background: transparent; }
@@ -2589,13 +2608,11 @@ main {
     line-height: 1.4;
   }
 
-  /* ── Responsive — on narrow screens, panel goes full-width ── */
+  /* ── Responsive — on narrow screens the drawer goes full-width ── */
   @media (max-width: 460px) {
     .juri-panel {
-      left: 8px;
-      right: 8px;
-      width: auto;
-      bottom: 84px;
+      width: 100%;
+      max-width: 100%;
     }
     .juri-btn {
       bottom: 16px;

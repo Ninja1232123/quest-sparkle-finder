@@ -101,6 +101,14 @@ export function Juri() {
     }
   }, [open]);
 
+  // Tell the layout when the drawer is open so it can push content right
+  // (see `html.juri-open #main` in styles.css). Cleared on unmount.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("juri-open", open);
+    return () => root.classList.remove("juri-open");
+  }, [open]);
+
   const submit = useCallback(async () => {
     const q = draft.trim();
     if (!q || loading) return;
