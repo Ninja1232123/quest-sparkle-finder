@@ -1,6 +1,24 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+// A deploy replaces the hashed route chunks; a tab that loaded the old shell
+// then navigates and tries to lazy-import a chunk hash that's been purged →
+// "Failed to fetch dynamically imported module" → a white-screen React crash.
+// Catch Vite's preload-error event and reload once to pick up the fresh
+// manifest. Time-guarded so a genuinely-missing chunk can't loop forever.
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    const KEY = "preload-error-reloaded-at";
+    let last = 0;
+    try { last = Number(sessionStorage.getItem(KEY) || 0); } catch { /* ignore */ }
+    if (Date.now() - last > 10_000) {
+      try { sessionStorage.setItem(KEY, String(Date.now())); } catch { /* ignore */ }
+      event.preventDefault();
+      window.location.reload();
+    }
+  });
+}
+
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
