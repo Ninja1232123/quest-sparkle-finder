@@ -158,25 +158,22 @@ export function Juri() {
 
   return (
     <>
-      {/* Eagle button — bottom-left */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`juri-btn ${open ? "juri-btn-active" : ""}`}
-        aria-label={open ? "Close Juri" : "Ask Juri"}
-        title="Ask Juri"
-      >
-        {open ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <>
-            <EagleSvg size={32} />
-            {user && credits !== null && credits < 9999 && (
-              <span className="juri-badge">{credits}</span>
-            )}
-          </>
-        )}
-      </button>
+      {/* Eagle launcher — bottom-left. Closed only; the close control lives
+          in the drawer header so it never overlaps the input. */}
+      {!open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="juri-btn"
+          aria-label="Ask Juri"
+          title="Ask Juri"
+        >
+          <EagleSvg size={32} />
+          {user && credits !== null && credits < 9999 && (
+            <span className="juri-badge">{credits}</span>
+          )}
+        </button>
+      )}
 
       {/* Chat panel */}
       {open && (
@@ -190,12 +187,23 @@ export function Juri() {
                 <div className="juri-subtitle">reads the statute · cites the source</div>
               </div>
             </div>
-            {user && credits !== null && (
-              <div className="juri-credit-pill" title="Juri credits remaining">
-                <Coins className="h-3 w-3" />
-                <span>{credits >= 9999 ? "∞" : credits}</span>
-              </div>
-            )}
+            <div className="juri-header-right">
+              {user && credits !== null && (
+                <div className="juri-credit-pill" title="Juri credits remaining">
+                  <Coins className="h-3 w-3" />
+                  <span>{credits >= 9999 ? "∞" : credits}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="juri-close-btn"
+                aria-label="Close Juri"
+                title="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}

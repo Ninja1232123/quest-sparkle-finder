@@ -2323,6 +2323,29 @@ main {
     font-weight: 700;
     color: #c8a24b;
   }
+  .juri-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .juri-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    border: 1px solid rgba(200,162,75,0.35);
+    border-radius: 8px;
+    background: rgba(200,162,75,0.10);
+    color: #e7cd7e;
+    cursor: pointer;
+    transition: background 140ms, color 140ms;
+  }
+  .juri-close-btn:hover {
+    background: rgba(200,162,75,0.22);
+    color: #fbf6e8;
+  }
 
   /* ── Messages area ── */
   .juri-messages {
