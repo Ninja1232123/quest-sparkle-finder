@@ -1693,7 +1693,7 @@ main {
     text-transform: uppercase; color: var(--m-gold-lite); margin-bottom: 6px;
   }
   .merica .m-wethepeople {
-    font-family: 'Western Rye', cursive; font-size: clamp(64px, 13vw, 150px); line-height: 0.8;
+    font-family: var(--m-western); font-size: clamp(64px, 13vw, 150px); line-height: 0.8;
     color: var(--m-gold-lite); margin: 4px 0 -6px;
     text-shadow: 0 2px 0 var(--m-gold), 0 0 40px rgba(231,205,126,0.45);
   }
