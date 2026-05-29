@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "./SearchBar";
 import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
-import { ChevronDown, LogOut, Sun, Moon, Sparkles, Mail } from "lucide-react";
+import { ChevronDown, LogOut, Sun, Moon, Sparkles } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { CODEBOOKS, TOOLS, type Codebook } from "@/lib/codebooks";
 
@@ -168,56 +168,15 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
   );
 }
 
-/* -----------------------------------------------------------
-   Top-nav row — sits between the brand row and the codebook
-   tab strip. Whitepaper gets its own slot (was buried in About);
-   support email is always visible on the right.
-   ----------------------------------------------------------- */
-const TOP_NAV_ITEMS = [
-  { to: "/",            label: "Home" },
-  { to: "/code",        label: "Browse the Code" },
+/* Secondary section links — folded into the primary row's right cluster so
+   the header is two rows, not three. (Home = the logo; browsing lives in the
+   codebook strip below.) */
+const SECONDARY_LINKS = [
+  { to: "/code",        label: "Browse" },
   { to: "/whitepaper",  label: "Whitepaper" },
   { to: "/forum",       label: "The Floor" },
   { to: "/about",       label: "About" },
 ] as const;
-
-function TopNav() {
-  return (
-    <nav
-      className="mx-auto flex max-w-[1900px] items-center top-nav lg:px-6"
-      aria-label="Sections"
-    >
-      {/* left spacer — balances the support slot so the links sit dead center */}
-      <div className="top-nav-side" aria-hidden />
-
-      {/* centered section links, flanked by gold stars (banner treatment) */}
-      <div className="top-nav-center">
-        <span className="top-nav-star" aria-hidden>★</span>
-        {TOP_NAV_ITEMS.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to as never}
-            className="top-nav-link"
-            activeProps={{ "data-active": "true" } as never}
-            activeOptions={{ exact: item.to === "/" }}
-          >
-            {item.label}
-          </Link>
-        ))}
-        <span className="top-nav-star" aria-hidden>★</span>
-      </div>
-
-      {/* right slot — support, mirrors the left spacer */}
-      <div className="top-nav-side top-nav-side-right">
-        <a href="mailto:support@self-law.org" className="top-nav-support">
-          <Mail className="h-3 w-3" />
-          <span className="hidden lg:inline">support@self-law.org</span>
-          <span className="lg:hidden">Support</span>
-        </a>
-      </div>
-    </nav>
-  );
-}
 
 export function SiteHeader() {
   const { user, signOut, loading } = useAuth();
@@ -234,12 +193,11 @@ export function SiteHeader() {
 
   return (
     <header className="am-header sticky top-0 z-40">
-      {/* Flag stripe */}
-      <div style={{ height: 5, background: "repeating-linear-gradient(90deg, #b22234 0 26px, #fbf6e8 26px 52px)" }} />
+      <div className="am-flagstripe" />
       <DevNoticeBanner />
 
-      {/* Row 1 — brand, search, utility */}
-      <div className="mx-auto flex max-w-[1900px] items-center gap-4 px-4 py-3 lg:px-6">
+      {/* Row 1 — brand · search · actions */}
+      <div className="mx-auto flex max-w-[1900px] items-center gap-4 px-4 py-2.5 lg:px-6">
         <Link to="/" className="group flex shrink-0 items-center gap-2.5">
           <BrandMark />
           <div className="leading-none">
@@ -256,7 +214,20 @@ export function SiteHeader() {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <nav className="flex shrink-0 items-center gap-0.5" aria-label="Sections">
+          <div className="hidden items-center lg:flex">
+            {SECONDARY_LINKS.map((it) => (
+              <Link
+                key={it.to}
+                to={it.to as never}
+                className="am-navlink"
+                activeProps={{ "data-active": "true" } as never}
+              >
+                {it.label}
+              </Link>
+            ))}
+          </div>
+          <span className="am-actions-sep hidden lg:block" aria-hidden />
           {!user && !loading && (
             <>
               <Link
@@ -266,7 +237,7 @@ export function SiteHeader() {
               >
                 Sign in
               </Link>
-              <Link to="/subscribe" className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#c8a24b] bg-[#c8a24b] px-4 py-1.5 font-display text-sm font-semibold text-[#0a1a47] transition-opacity hover:opacity-90" style={{ fontSize: 13 }}>
+              <Link to="/subscribe" className="am-pro hidden sm:inline-flex">
                 <Sparkles className="h-3.5 w-3.5" />
                 Go Pro · $5
               </Link>
@@ -274,28 +245,26 @@ export function SiteHeader() {
           )}
           <button
             onClick={toggle}
-            className="flex items-center justify-center rounded-full p-1.5 text-[#9fabcb] hover:text-[#fbf6e8]"
+            className="ml-0.5 flex items-center justify-center rounded-full p-1.5 text-[#9fabcb] hover:text-[#fbf6e8]"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
           </button>
-        </div>
+        </nav>
       </div>
 
-      {/* Row 2 — top-level sections + support */}
-      <TopNav />
-
-      {/* Row 3 — codebook tab strip + Tools dropdown */}
+      {/* Row 2 — the corpora ("the law about everything, everywhere") */}
       <nav
-        className="relative mx-auto flex max-w-[1900px] items-start gap-2 px-4 pb-2 pt-2 lg:px-6"
+        className="am-codebooks relative mx-auto flex max-w-[1900px] items-center gap-2 px-4 lg:px-6"
         aria-label="Codebooks"
       >
+        <span className="am-codebooks-label hidden xl:inline-flex">★&nbsp;The&nbsp;Library</span>
         <div className="flex flex-1 flex-wrap items-center gap-1">
           {CODEBOOKS.map((cb) => (
             <CodebookTab key={cb.slug} cb={cb} />
           ))}
         </div>
-        <div className="shrink-0 border-l border-border/40 pl-2">
+        <div className="shrink-0 border-l border-[rgba(200,162,75,0.25)] pl-2">
           <ToolsMenu signedIn={!!user} onSignOut={signOut} />
         </div>
       </nav>
