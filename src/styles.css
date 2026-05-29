@@ -275,12 +275,13 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Global zoom-out. Uses the CSS `zoom` property (not transform): it
-       reflows properly — no horizontal overflow, no width hack — and unlike
-       transform it does NOT break position:fixed elements. Tune one number:
-       0.7 = 70%, 0.75, 0.8, etc. */
-    --site-zoom: 0.8;
-    zoom: var(--site-zoom);
+    /* Global zoom-out. To back it off further, lower --site-zoom and the
+       width auto-compensates so there's no horizontal overflow:
+         0.80 -> 125%   0.75 -> 133.333%   0.70 -> 142.857%   (width = 100/zoom) */
+    --site-zoom: 0.7;
+    transform: scale(var(--site-zoom));
+    transform-origin: 0 0;                 /* anchor to top-left */
+    width: calc(100% / var(--site-zoom));  /* fill the gap left by scaling down */
   }
 
   h1,
@@ -2232,30 +2233,27 @@ main {
   }
 
   /* ── Chat panel ── */
-  /* Full-height left floating drawer — the slot the old Corpus drawer left.
-     Overlays content (fixed), doesn't reflow the layout. */
   .juri-panel {
     position: fixed;
-    top: 68px;
-    bottom: 0;
-    left: 0;
+    bottom: 86px;
+    left: 20px;
     z-index: 189;
     width: 380px;
-    max-width: 92vw;
+    max-height: calc(100vh - 140px);
     background: #0a1a47;
-    border-right: 2px solid #c8a24b;
-    border-top: 1px solid rgba(200,162,75,0.25);
+    border: 2px solid #c8a24b;
+    border-radius: 14px;
     box-shadow:
-      24px 0 60px -20px rgba(0,0,0,0.65),
+      0 20px 60px -12px rgba(0,0,0,0.65),
       0 0 0 1px rgba(200,162,75,0.1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: juri-slide-in 200ms ease-out;
+    animation: juri-slide-up 200ms ease-out;
   }
-  @keyframes juri-slide-in {
-    from { opacity: 0; transform: translateX(-16px); }
-    to   { opacity: 1; transform: translateX(0); }
+  @keyframes juri-slide-up {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   /* ── Header ── */
@@ -2315,6 +2313,7 @@ main {
     flex-direction: column;
     gap: 12px;
     min-height: 200px;
+    max-height: 380px;
   }
   .juri-messages::-webkit-scrollbar { width: 4px; }
   .juri-messages::-webkit-scrollbar-track { background: transparent; }
@@ -2590,11 +2589,13 @@ main {
     line-height: 1.4;
   }
 
-  /* ── Responsive — on narrow screens the drawer goes full-width ── */
+  /* ── Responsive — on narrow screens, panel goes full-width ── */
   @media (max-width: 460px) {
     .juri-panel {
-      width: 100%;
-      max-width: 100%;
+      left: 8px;
+      right: 8px;
+      width: auto;
+      bottom: 84px;
     }
     .juri-btn {
       bottom: 16px;
