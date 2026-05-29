@@ -1,32 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { loadSourceRoute, validateSourceSearch } from "@/lib/source-browser";
-import { SourceRouteView, SourceBrowserPending } from "@/components/marginalia/SourceBrowser";
+import { getConstitutionLanding } from "@/lib/documents.functions";
+import { ConstitutionLanding } from "@/components/marginalia/ConstitutionLanding";
 
 export const Route = createFileRoute("/const")({
-  validateSearch: validateSourceSearch,
-  loaderDeps: ({ search }) => search,
-  loader: ({ deps }) => loadSourceRoute({ source: "const", deps }),
-  component: () => <SourceRouteView data={Route.useLoaderData()} linkSelf={{ to: "/const" }} />,
-  pendingMs: 200,
-  pendingComponent: SourceBrowserPending,
+  loader: () => getConstitutionLanding(),
+  component: ConstPage,
   head: () => ({
     meta: [
-      { title: "U.S. Constitution · Marginalia" },
-      { name: "description", content: "The founding charter — articles and amendments." },
-      { property: "og:title", content: "U.S. Constitution · Marginalia" },
-      { property: "og:description", content: "The founding charter — articles and amendments." },
+      { title: "The U.S. Constitution — We the People · Marginalia" },
+      { name: "description", content: "Read the U.S. Constitution whole — all seven articles and twenty-seven amendments, in plain text, exactly as written. The founding charter, indexed." },
+      { property: "og:title", content: "The U.S. Constitution — We the People · Marginalia" },
+      { property: "og:description", content: "Seven articles. Twenty-seven amendments. One stubborn experiment in self-rule — read it whole." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/const" }],
   }),
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="font-display text-2xl">Couldn't load this codebook</h1>
+      <h1 className="font-display text-2xl">Couldn't load the Constitution</h1>
       <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
     </div>
   ),
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="font-display text-2xl">Codebook not found</h1>
-    </div>
-  ),
 });
+
+function ConstPage() {
+  const { docs, preambleText } = Route.useLoaderData();
+  return <ConstitutionLanding docs={docs} preambleText={preambleText} />;
+}
