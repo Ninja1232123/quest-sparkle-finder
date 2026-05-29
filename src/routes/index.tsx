@@ -6,7 +6,6 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { listSources } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
-import heroCollage from "@/assets/hero-collage.jpg";
 import {
   GitCompare, Highlighter, FileDown, Bell, Zap, Folder, Network,
   Map, Brain, Scale, Calendar, GraduationCap, ArrowRight,
@@ -101,74 +100,97 @@ function Index() {
       <SiteHeader />
 
       <main>
-        {/* HERO */}
-        <section className="hero">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="hero-grid">
+        {/* EAGLE HERO */}
+        <section className="home-hero-am">
+          <div className="hh-rays" />
+          <img
+            className="home-eagle-img"
+            src="/bald-eagle.png"
+            alt="Screaming bald eagle, wings spread — Land of the Free"
+          />
+          <div className="home-hero-foot" />
+        </section>
+
+        {/* "LAND OF THE FREE" RIBBON */}
+        <div className="home-am-ribbon">
+          Land of the Free <span className="star">★</span> Home of the Brave
+        </div>
+
+        {/* SEARCH */}
+        <section className="mx-auto max-w-7xl px-6 py-10">
+          <div className="text-center mb-6">
+            <div className="eyebrow mb-2">Vol. I · the citizen's index</div>
+            <h1 className="hero-h1" style={{ fontSize: "clamp(32px, 4vw, 60px)", margin: "0 0 14px" }}>
+              Marginalia —&nbsp;<span className="ink-underline italic">a citizen's law index.</span>
+            </h1>
+            <p className="hero-sub" style={{ maxWidth: 560, margin: "0 auto 24px", fontSize: 20 }}>
+              If you don't know your rights, you don't have any.
+            </p>
+          </div>
+          <div className="mx-auto max-w-2xl">
+            <SearchBar />
+            <div className="try-row justify-center mt-3">
+              <span className="cite-tag">try:</span>
+              {TRY_TERMS.map((s) => (
+                <Link key={s} to="/search" search={{ q: s, source: "" }} className="try-chip">
+                  {s}
+                </Link>
+              ))}
+            </div>
+            <div className="flex flex-wrap justify-center items-center gap-3 mt-4">
+              <span className="live-pill">
+                <span className="dot" />✓ Updated May 2026 · direct from source
+              </span>
+              <span className="cite-tag">{totalDocs.toLocaleString()} documents indexed</span>
+            </div>
+          </div>
+        </section>
+
+        {/* CODEBOOKS — Constitution as centerpiece */}
+        <section className="home-codebook-shelf">
+          <div className="mx-auto max-w-7xl">
+            <div className="home-shelf-head">
               <div>
-                <div className="hero-eyebrow">Vol. I · the citizen's index</div>
-                <h1 className="hero-h1">
-                  Marginalia —<br />
-                  <span className="ink-underline italic">a citizen's law index.</span>
-                </h1>
-                <p className="hero-sub">If you don't know your rights, you don't have any.</p>
-                <p className="hero-lede">
-                  Six federal codebooks — Constitution, U.S. Code, CFR, UCC, TFM, IRM — indexed
-                  together, cross-referenced, and searchable in one place. No summaries. No gurus.
-                  Just the source.
-                </p>
-
-                <div className="hero-search-wrap">
-                  <SearchBar />
-                  <div className="try-row">
-                    <span className="cite-tag">try:</span>
-                    {TRY_TERMS.map((s) => (
-                      <Link key={s} to="/search" search={{ q: s, source: "" }} className="try-chip">
-                        {s}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Indexed sources — accent-tinted chips with solid count pills */}
-                <div style={{ marginTop: 24 }}>
-                  <div className="cite-tag" style={{ marginBottom: 10 }}>indexed sources</div>
-                  <div className="source-chips">
-                    {sources.map((s: SourceRow) => {
-                      const accent = accentForSource(s.code);
-                      return (
-                        <Link
-                          key={s.code}
-                          to="/code/source/$source"
-                          params={{ source: s.code }}
-                          className="source-chip-v2"
-                          style={{ ["--c" as never]: accent }}
-                        >
-                          <span className="dot" />
-                          {SOURCE_SHORT[s.code] ?? s.name}
-                          <span className="mini-pill">{s.count.toLocaleString()}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 18 }} className="flex flex-wrap items-center gap-3">
-                  <span className="live-pill">
-                    <span className="dot" />✓ Updated May 2026 · direct from source
-                  </span>
-                  <span className="cite-tag">{totalDocs.toLocaleString()} documents indexed</span>
-                </div>
+                <div className="home-shelf-eyebrow">★ primary sources</div>
+                <div className="home-shelf-h2">Open the Code.</div>
               </div>
+              <span className="home-shelf-count">{sources.length} codebooks · {totalDocs.toLocaleString()} sections</span>
+            </div>
 
-              <div className="hero-art">
-                <img
-                  src={heroCollage}
-                  alt="Federal regulations open on a research desk with citation connections visible"
-                  width={1536}
-                  height={1152}
-                />
+            {/* Constitution featured — gold border, center of attention */}
+            <Link to="/const" className="const-hero-card block mb-4">
+              <div className="chc-eyebrow">★ the foundation of american law ★</div>
+              <h3>The Constitution</h3>
+              <div className="chc-sub">Seven articles. Twenty-seven amendments. One stubborn experiment in self-rule — the law all other law answers to.</div>
+              <div className="chc-pills">
+                <span className="chc-pill">7 Articles</span>
+                <span className="chc-pill red">27 Amendments</span>
+                <span className="chc-pill">founding charter</span>
               </div>
+              <div className="chc-cta">★ Read the whole thing →</div>
+            </Link>
+
+            {/* All other codebooks — Americana pill cards */}
+            <div className="home-am-grid">
+              {sources.filter((s: SourceRow) => s.code !== "const").map((s: SourceRow) => {
+                const accent = accentForSource(s.code);
+                return (
+                  <Link
+                    key={s.code}
+                    to="/code/source/$source"
+                    params={{ source: s.code }}
+                    className="am-card"
+                    style={{ ["--c" as never]: accent }}
+                  >
+                    <div className="am-num">{SOURCE_SHORT[s.code] ?? s.code.toUpperCase()}</div>
+                    <div className="am-title">{SOURCE_LABELS[s.code] ?? s.name}</div>
+                    <div className="am-meta">
+                      <span className="am-count">{s.count.toLocaleString()} sections</span>
+                      <span className="am-go">Browse →</span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

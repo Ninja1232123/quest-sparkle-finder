@@ -119,7 +119,7 @@ function cleanBubbleTitle(label: string): string {
   return stripped || label;
 }
 
-function CatalogueBubble({ kind, token, title, sub, count, accent, index, expandable, expanded }: {
+function CatalogueBubble({ kind, token, title, sub, count, accent, expandable, expanded }: {
   kind?: string;
   token: string;
   title: string;
@@ -130,33 +130,18 @@ function CatalogueBubble({ kind, token, title, sub, count, accent, index, expand
   expandable?: boolean;
   expanded?: boolean;
 }) {
-  // Angle shifts by position so a grid feels hand-arranged, not stamped.
-  const angle = 105 + (index % 6) * 22;
+  const numLabel = kind ? `${kind} ${token}` : token;
   return (
-    <div
-      className="flex h-full items-center gap-4 rounded-2xl border-[1.5px] border-[var(--rule-card)] px-5 py-4 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-foreground/40 hover:shadow-[var(--shadow-warm)]"
-      style={{ background: `linear-gradient(${angle}deg, color-mix(in oklch, ${accent} 8%, transparent) 0%, transparent 62%), var(--paper-soft)` }}
-    >
-      <div
-        className="flex h-12 min-w-[3rem] shrink-0 flex-col items-center justify-center rounded-lg px-2 shadow-[inset_0_1px_0_oklch(1_0_0/0.16),0_1px_0_oklch(0_0_0/0.14)]"
-        style={{ background: accent, color: "#fff" }}
-      >
-        {kind && <span className="font-mono text-[8px] font-bold uppercase tracking-wider opacity-80" style={{ color: "#fff" }}>{kind}</span>}
-        <span className="font-display text-lg font-extrabold leading-none" style={{ color: "#fff" }}>{token}</span>
+    <div className="am-card h-full" style={{ ["--c" as never]: accent }}>
+      <div className="am-num">{numLabel}</div>
+      <div className="am-title">{title}</div>
+      {sub && <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
+      <div className="am-meta">
+        {count != null ? (
+          <span className="am-count">{count.toLocaleString()} sections</span>
+        ) : <span />}
+        <span className="am-go">{expandable ? (expanded ? "Collapse ▲" : "Browse →") : "Open →"}</span>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-display text-[15px] font-bold leading-snug text-foreground [text-wrap:pretty]">{title}</div>
-        {sub && <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
-      </div>
-      {count != null && (
-        <span className="count-pill shrink-0" style={{ ["--c"]: accent } as CSSProperties}>
-          <span className="num">{count.toLocaleString()}</span>
-          <span className="lbl">§§</span>
-        </span>
-      )}
-      {expandable && (
-        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
-      )}
     </div>
   );
 }
@@ -415,24 +400,21 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
             )}
             {filteredToc.map((t) => {
               const open = openTitles[t.title_group] ?? false;
+              const token = pullToken(t.title_group);
+              const titleClean = cleanBubbleTitle(t.title_group);
+              const kind = bubbleKind(t.title_group)?.replace(/CH\./,'CH') ?? "TITLE";
               return (
-                <div key={t.title_group} className="overflow-hidden rounded-2xl border bg-card">
+                <div key={t.title_group} className="am-card" style={{ ["--c" as never]: meta.accent }}>
                   <button
                     type="button"
                     onClick={() => setOpenTitles((c) => ({ ...c, [t.title_group]: !open }))}
-                    className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-muted/40"
+                    className="block w-full text-left"
                   >
-                    {open ? (
-                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <BookOpen className="h-4 w-4 shrink-0 text-accent/80" />
-                    <div className="min-w-0 flex-1">
-                      <div className="font-display text-base font-semibold">{t.title_group}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t.parts.length} {t.parts.length === 1 ? "part" : "parts"} · {t.total.toLocaleString()} sections
-                      </div>
+                    <div className="am-num">{kind} {token}</div>
+                    <div className="am-title">{titleClean}</div>
+                    <div className="am-meta">
+                      <span className="am-count">{t.parts.length} {t.parts.length === 1 ? "part" : "parts"} · {t.total.toLocaleString()} sections</span>
+                      <span className="am-go">{open ? "Collapse ▲" : "Browse →"}</span>
                     </div>
                   </button>
                   {open && <TitleParts parts={t.parts} linkSelf={linkSelf} accent={meta.accent} />}
@@ -449,38 +431,35 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                 {filter ? `No entries in ${groupLabel} match "${filter}".` : `No entries found.`}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border bg-card">
-                <div className="border-b border-border/60 px-5 py-3">
+              <div>
+                <div className="mb-3">
                   <div className="citation-tag text-accent">{groupLabel}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
                     {groupedSections.length.toLocaleString()} {groupedSections.length === 1 ? "entry" : "entries"}
                   </div>
                 </div>
-                <ul className="divide-y divide-border/60">
+                <div className="grid gap-2 sm:grid-cols-2" style={{ ["--c" as never]: meta.accent }}>
                   {groupedSections.map((d) => (
-                    <li key={d.id}>
-                      <Link
-                        to="/code/$"
-                        params={{ _splat: d.identifier.replace(/^\//, "") }}
-                        className="flex items-baseline gap-4 px-5 py-3 transition-colors hover:bg-muted/60"
-                      >
-                        <span className="citation-tag w-28 shrink-0 text-muted-foreground">
-                          {d.section_label ?? ""}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          {isWeakHeading(d.heading, d.section_label) ? (
-                            <span className="line-clamp-2 text-sm text-foreground/80">
-                              {d.preview || d.heading || "—"}
-                              {d.preview && d.preview.length >= 140 ? "…" : ""}
-                            </span>
-                          ) : (
-                            <span className="font-display text-sm font-semibold">{d.heading}</span>
-                          )}
-                        </span>
-                      </Link>
-                    </li>
+                    <Link
+                      key={d.id}
+                      to="/code/$"
+                      params={{ _splat: d.identifier.replace(/^\//, "") }}
+                      className="am-card compact block"
+                      style={{ ["--c" as never]: meta.accent }}
+                    >
+                      <div className="am-num">{d.section_label ?? "§"}</div>
+                      <div className="am-title">
+                        {isWeakHeading(d.heading, d.section_label)
+                          ? (d.preview ? (d.preview.length > 100 ? d.preview.slice(0, 100) + "…" : d.preview) : d.heading || "—")
+                          : d.heading}
+                      </div>
+                      <div className="am-meta">
+                        <span />
+                        <span className="am-go">Read →</span>
+                      </div>
+                    </Link>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </div>

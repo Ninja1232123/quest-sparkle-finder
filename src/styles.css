@@ -1776,3 +1776,253 @@ main {
   @media (max-width: 880px) { .merica .m-grid { grid-template-columns: repeat(2, 1fr); } .merica .m-cartouche { margin-top: -120px; } }
   @media (max-width: 560px) { .merica .m-grid { grid-template-columns: 1fr; } .merica .m-cartouche { margin-top: -70px; } }
 }
+
+/* ===========================================================================
+   Americana Browse Pill Card (am-card)
+   Applies the Constitution m-card aesthetic to ALL browse hierarchies.
+   --c carries the corpus accent color (passed via style="--c: #hex").
+   =========================================================================== */
+@layer components {
+  .am-card {
+    position: relative;
+    display: block;
+    background: var(--paper-soft);
+    border: 2px solid var(--rule-card);
+    border-radius: 8px;
+    padding: 18px 18px 16px 22px;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .am-card::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 7px;
+    background: var(--c, var(--terracotta));
+  }
+  .am-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--ink);
+    box-shadow: 0 12px 26px -12px oklch(0 0 0 / 0.32);
+  }
+  .am-card .am-num {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--c, var(--terracotta));
+  }
+  .am-card .am-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 3px 0 0;
+    line-height: 1.15;
+  }
+  .am-card .am-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+  }
+  .am-card .am-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .am-card .am-go {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  /* Compact: section list rows */
+  .am-card.compact {
+    padding: 12px 14px 12px 18px;
+    border-radius: 6px;
+    border-width: 1.5px;
+  }
+  .am-card.compact .am-title { font-size: 15px; margin: 2px 0 0; line-height: 1.25; }
+  .am-card.compact .am-meta { margin-top: 8px; }
+  .am-card.compact:hover { transform: translateY(-2px); }
+
+  /* ===========================================================================
+     CI / clause-number pill — milk-white, used in the reader body and outline.
+     =========================================================================== */
+  .ci-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper-soft);
+    border: 1.5px solid var(--rule-card);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink);
+    min-width: 28px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  /* ===========================================================================
+     Americana header skin — applied via .am-header on <header>.
+     =========================================================================== */
+  .am-header {
+    background: #0a1a47;
+    border-bottom: 3px solid #c8a24b !important;
+    backdrop-filter: blur(8px);
+  }
+  .am-header .top-nav { border-top-color: rgba(200,162,75,0.25); }
+  .am-header .top-nav-link { color: #9fabcb; }
+  .am-header .top-nav-link:hover { color: #fbf6e8; }
+  .am-header .top-nav-link[data-active="true"] { color: #fbf6e8; border-bottom-color: #c8a24b; }
+  .am-header .top-nav-support { color: #9fabcb; }
+  .am-header .top-nav-support:hover { color: #c8a24b; }
+  .am-header .cb-tab { color: #c2cde6; background: rgba(255,255,255,0.05); border-color: rgba(200,162,75,0.18); }
+  .am-header .cb-tab:hover { color: #fbf6e8; background: rgba(255,255,255,0.12); border-color: rgba(200,162,75,0.45); }
+  .am-header .cb-tab.active,
+  .am-header .cb-tab[data-active="true"] { color: #e7cd7e; background: rgba(200,162,75,0.15); border-color: #c8a24b; }
+  .am-header .cb-tab.soon { color: #7a8bb0; }
+
+  /* ===========================================================================
+     Home page eagle hero (Americana style).
+     =========================================================================== */
+  .home-hero-am {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    background:
+      radial-gradient(120% 90% at 50% 8%, rgba(231,205,126,0.18) 0%, transparent 42%),
+      radial-gradient(140% 120% at 50% 0%, #122a63 0%, #0a1a47 50%, #060f2c 100%);
+    border-bottom: 4px solid #c8a24b;
+  }
+  .home-hero-am .hh-rays {
+    position: absolute; top: 0; left: 50%;
+    width: 1400px; height: 480px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(231,205,126,0.09) 0deg 6deg, transparent 6deg 12deg);
+    -webkit-mask-image: radial-gradient(ellipse 70% 100% at 50% 50%, #000 0%, transparent 70%);
+    mask-image: radial-gradient(ellipse 70% 100% at 50% 50%, #000 0%, transparent 70%);
+  }
+  .home-eagle-img {
+    display: block;
+    position: relative; z-index: 2;
+    width: min(1100px, 100vw);
+    height: 360px;
+    object-fit: cover;
+    object-position: center 14%;
+    margin: 0 auto;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.60)) drop-shadow(0 0 2px rgba(231,205,126,0.35));
+  }
+  .home-hero-foot {
+    height: 14px;
+    background: repeating-linear-gradient(90deg, #b22234 0 40px, #fbf6e8 40px 80px);
+  }
+  .home-am-ribbon {
+    text-align: center;
+    padding: 16px;
+    color: #fbf6e8;
+    background: linear-gradient(0deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12)), #b22234;
+    border-top: 3px solid #c8a24b;
+    border-bottom: 3px solid #c8a24b;
+    font-family: "Rye", serif;
+    font-size: clamp(18px, 2.8vw, 28px);
+    letter-spacing: 0.02em;
+    text-shadow: 2px 2px 0 #8c1a28;
+  }
+  .home-am-ribbon .star { color: #e7cd7e; margin: 0 14px; }
+
+  /* Constitution featured card on home page */
+  .const-hero-card {
+    position: relative;
+    display: block;
+    background: #fbf6e8;
+    border: 3px solid #c8a24b;
+    border-radius: 10px;
+    padding: 22px 24px 22px 30px;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .const-hero-card::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 10px; background: #b22234;
+  }
+  .const-hero-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -12px rgba(0,0,0,0.4); }
+  .const-hero-card .chc-eyebrow {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #b22234;
+  }
+  .const-hero-card h3 {
+    font-family: "Rye", serif; font-size: clamp(20px, 2.8vw, 28px);
+    color: #0a1a47; margin: 6px 0 0; text-shadow: 1px 1px 0 #c8a24b; line-height: 1.1;
+  }
+  .const-hero-card .chc-sub {
+    font-style: italic; color: #4a3a22; font-size: 15px; margin: 8px 0 0; font-family: var(--font-serif);
+  }
+  .const-hero-card .chc-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .const-hero-card .chc-pill {
+    display: inline-flex; align-items: center;
+    background: #0a1a47; color: #fbf6e8;
+    border: 1.5px solid #c8a24b; border-radius: 999px;
+    padding: 4px 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .const-hero-card .chc-pill.red { background: #b22234; }
+  .const-hero-card .chc-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0a1a47; color: #fbf6e8; border: 2px solid #c8a24b;
+    border-radius: 6px; padding: 9px 20px; font-family: var(--font-serif);
+    font-weight: 600; font-size: 15px; margin-top: 16px;
+    transition: transform 140ms ease;
+  }
+  .const-hero-card .chc-cta:hover { transform: translateY(-2px); }
+
+  /* Home codebook shelf (parchment bg + am-cards for every source) */
+  .home-codebook-shelf {
+    background: #f3e7c9;
+    padding: 52px 24px 60px;
+  }
+  .home-shelf-head {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+    border-bottom: 3px solid #0a1a47; padding-bottom: 14px; margin-bottom: 24px;
+  }
+  .home-shelf-eyebrow {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: #b22234; margin-bottom: 4px;
+  }
+  .home-shelf-h2 {
+    font-family: "Rye", serif; font-size: clamp(22px, 3.5vw, 32px);
+    color: #0a1a47; margin: 0; text-shadow: 1px 1px 0 #c8a24b;
+  }
+  .home-shelf-count {
+    font-family: var(--font-mono); font-size: 12px; color: #6b5836;
+    text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;
+  }
+  /* am-card overrides for the parchment background */
+  .home-codebook-shelf .am-card {
+    background: #fbf6e8; border-color: #d8c79b;
+  }
+  .home-codebook-shelf .am-card .am-num { color: var(--c, #b22234); }
+  .home-codebook-shelf .am-card .am-title { color: #20180c; }
+  .home-codebook-shelf .am-card .am-count { color: #6b5836; }
+  .home-codebook-shelf .am-card .am-go { color: #0a1a47; }
+  .home-codebook-shelf .am-card:hover { border-color: #0a1a47; }
+
+  .home-am-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+  @media (max-width: 860px) { .home-am-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .home-am-grid { grid-template-columns: 1fr; } }
+}

@@ -223,7 +223,9 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
+    <header className="am-header sticky top-0 z-40">
+      {/* Flag stripe */}
+      <div style={{ height: 5, background: "repeating-linear-gradient(90deg, #b22234 0 26px, #fbf6e8 26px 52px)" }} />
       <DevNoticeBanner />
 
       {/* Row 1 — brand, search, utility */}
@@ -231,8 +233,8 @@ export function SiteHeader() {
         <Link to="/" className="group flex shrink-0 items-center gap-2.5">
           <BrandMark />
           <div className="leading-none">
-            <div className="font-display text-lg font-semibold tracking-tight">Marginalia</div>
-            <div className="hidden font-display text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
+            <div className="font-display text-lg font-semibold tracking-tight text-[#fbf6e8]">Marginalia</div>
+            <div className="hidden font-display text-[10px] uppercase tracking-[0.18em] text-[#c8a24b]/80 sm:block">
               a citizen's law index
             </div>
           </div>
@@ -250,11 +252,11 @@ export function SiteHeader() {
               <Link
                 to="/auth"
                 search={{ mode: "login", redirect: undefined }}
-                className="hidden rounded-full px-3 py-1.5 text-sm text-foreground/70 hover:bg-muted hover:text-foreground sm:block"
+                className="hidden rounded-full px-3 py-1.5 text-sm text-[#c2cde6] hover:text-[#fbf6e8] sm:block"
               >
                 Sign in
               </Link>
-              <Link to="/subscribe" className="btn-ink hidden sm:inline-flex" style={{ padding: "8px 16px", fontSize: 13 }}>
+              <Link to="/subscribe" className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#c8a24b] bg-[#c8a24b] px-4 py-1.5 font-display text-sm font-semibold text-[#0a1a47] transition-opacity hover:opacity-90" style={{ fontSize: 13 }}>
                 <Sparkles className="h-3.5 w-3.5" />
                 Go Pro · $5
               </Link>
@@ -262,7 +264,7 @@ export function SiteHeader() {
           )}
           <button
             onClick={toggle}
-            className="flex items-center justify-center rounded-full p-1.5 text-foreground/60 hover:bg-muted hover:text-foreground"
+            className="flex items-center justify-center rounded-full p-1.5 text-[#9fabcb] hover:text-[#fbf6e8]"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}

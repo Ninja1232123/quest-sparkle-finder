@@ -230,9 +230,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
       {/* statute text */}
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
-          <span className="shrink-0 w-8 pt-0.5 font-mono text-[11px] leading-relaxed text-foreground/35 select-none">
-            {p.label}
-          </span>
+          <span className="ci-pill">{p.label}</span>
         )}
         <span
           className={
@@ -493,7 +491,7 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
             >
-              <span className="mt-0.5 shrink-0 font-mono text-[9px] text-foreground/40">{p.label}</span>
+              <span className="ci-pill">{p.label}</span>
               <span className="line-clamp-2">{p.preview.length > 55 ? p.preview.slice(0, 55) + "…" : p.preview}</span>
             </a>
           );
