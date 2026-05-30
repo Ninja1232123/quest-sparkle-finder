@@ -6,6 +6,7 @@ import { listSources } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
 import { Marginalia } from "@/components/marginalia/Marginalia";
 import { HOME_NOTES } from "@/components/marginalia/marginalia-home-notes";
+import { Analytics } from "@vercel/analytics/next"
 
 // Full names (cards) and short codes (hero chips), keyed by source code.
 const SOURCE_LABELS: Record<string, string> = {
