@@ -83,6 +83,36 @@ end;
 $$;
 grant execute on function public.deduct_juri_credit(uuid) to authenticated;
 
+-- 5b. Deduct N credits at once (metered billing) — MONTHLY first, then TOPUP.
+--     Deducts up to p_amount (never below zero in either bucket) and returns the
+--     number of credits actually taken. A deep query that costs more than the
+--     remaining balance just drains it to 0 (bounded overage, capped per query
+--     by JURI_MODES[mode].maxCredits on the app side).
+create or replace function public.deduct_juri_credits(p_user_id uuid, p_amount integer)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_m integer; v_t integer; from_m integer; from_t integer;
+begin
+  if p_amount is null or p_amount <= 0 then return 0; end if;
+  select monthly_credits, topup_credits into v_m, v_t
+    from public.juri_credits where user_id = p_user_id for update;
+  if not found then return 0; end if;
+  from_m := least(p_amount, greatest(v_m, 0));
+  from_t := least(p_amount - from_m, greatest(v_t, 0));
+  update public.juri_credits
+    set monthly_credits = monthly_credits - from_m,
+        topup_credits   = topup_credits   - from_t,
+        updated_at = now()
+    where user_id = p_user_id;
+  return from_m + from_t;
+end;
+$$;
+grant execute on function public.deduct_juri_credits(uuid, integer) to authenticated;
+
 -- 6. Add TOP-UP credits (Stripe pack purchase, admin grant). Returns new total.-
 create or replace function public.add_topup_credits(p_user_id uuid, p_amount integer)
 returns integer
@@ -158,6 +188,8 @@ create table if not exists public.juri_queries (
   credited           boolean not null default false,
   created_at         timestamptz not null default now()
 );
+alter table public.juri_queries add column if not exists credits_charged integer not null default 0;
+alter table public.juri_queries add column if not exists mode text;
 create index if not exists juri_queries_user_idx on public.juri_queries (user_id, created_at desc);
 alter table public.juri_queries enable row level security;
 drop policy if exists juri_queries_read_own on public.juri_queries;

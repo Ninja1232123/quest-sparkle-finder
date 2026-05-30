@@ -14,7 +14,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { isAdminEmail } from "@/lib/admin";
-import { JURI_REQUIRES_PRO, JURI_FREE_TASTE } from "@/lib/juri-credits";
+import {
+  JURI_REQUIRES_PRO,
+  JURI_FREE_TASTE,
+  JURI_MODES,
+  usageToCents,
+  costToCredits,
+  type JuriMode,
+} from "@/lib/juri-credits";
 
 // ---------------------------------------------------------------------------
 // Supabase clients — cloud for credits/auth, local for corpus.
@@ -85,15 +92,20 @@ async function getUserCredits(userId: string): Promise<number> {
   }
 }
 
-async function deductCredit(userId: string): Promise<boolean> {
+// Metered deduction — charge N credits (monthly bucket first, then top-ups).
+// Returns the number actually deducted. See deduct_juri_credits in the SQL.
+async function deductCredits(userId: string, amount: number): Promise<number> {
+  if (amount <= 0) return 0;
   try {
     const cloud = await getCloudClient();
-    // Atomic decrement — only if balance > 0
-    const { data, error } = await cloud.rpc("deduct_juri_credit", { p_user_id: userId });
-    if (error) return false;
-    return !!data;
+    const { data, error } = await cloud.rpc("deduct_juri_credits", {
+      p_user_id: userId,
+      p_amount: amount,
+    });
+    if (error) return 0;
+    return typeof data === "number" ? data : 0;
   } catch {
-    return false;
+    return 0;
   }
 }
 
@@ -153,6 +165,8 @@ async function logQuery(
   sources: string[],
   tokensUsed: number,
   credited: boolean,
+  creditsCharged = 0,
+  mode: JuriMode | null = null,
 ) {
   try {
     const cloud = await getCloudClient();
@@ -162,6 +176,8 @@ async function logQuery(
       sources_consulted: sources,
       tokens_used: tokensUsed,
       credited,
+      credits_charged: creditsCharged,
+      mode,
     });
   } catch {
     // Non-fatal — don't break the response for a logging failure
@@ -227,6 +243,14 @@ type JuriResponse = {
   pro_required?: boolean;
   /** Set when the block is "you're out of credits" — UI shows a buy CTA. */
   out_of_credits?: boolean;
+  /** Credits this answer actually cost (metered by model usage). */
+  credits_charged?: number;
+  /** How many sections Juri read for this answer. */
+  sections_read?: number;
+  /** Of those, how many were pulled in via the citation graph (deep mode). */
+  connections_read?: number;
+  /** Which depth this answer ran at. */
+  mode?: JuriMode;
 };
 
 export const askJuri = createServerFn({ method: "POST" })
@@ -236,9 +260,13 @@ export const askJuri = createServerFn({ method: "POST" })
     context_identifier: z.string().max(300).optional(),
     // Auth token passed from client
     auth_token: z.string().optional(),
+    // Depth intent — billing is metered regardless (see JURI_MODES).
+    mode: z.enum(["quick", "deep"]).default("quick"),
   }))
   .handler(async ({ data }): Promise<JuriResponse> => {
-    const EMPTY: JuriResponse = { answer: "", citations: [], credits_remaining: 0, error: null };
+    const mode: JuriMode = data.mode;
+    const profile = JURI_MODES[mode];
+    const EMPTY: JuriResponse = { answer: "", citations: [], credits_remaining: 0, error: null, mode };
 
     // 1. Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -288,74 +316,111 @@ export const askJuri = createServerFn({ method: "POST" })
         }
       }
 
-      // 3b. Credit gate (monthly allowance first, then top-ups — see SQL).
+      // 3b. Credit gate. Each mode needs a minimum balance to start (a Deep dive
+      // can cost several credits, so don't begin one that can't be paid for).
       const balance = await getUserCredits(userId);
-      if (balance <= 0) {
+      if (balance < profile.minCredits) {
         return {
           ...EMPTY,
-          credits_remaining: 0,
+          credits_remaining: balance,
           out_of_credits: true,
-          error: "You're out of credits. Grab a top-up pack to keep asking.",
+          error:
+            balance <= 0
+              ? "You're out of credits. Grab a top-up pack to keep asking."
+              : `A ${profile.label} needs at least ${profile.minCredits} credits (you have ${balance}). Try Quick, or top up.`,
         };
       }
     }
 
-    // 4. Search the corpus for relevant documents
+    // 4. Retrieve. Seed with a broad keyword search across ALL sources (plus the
+    //    section the user is reading). In Deep mode, then follow the citation
+    //    graph (citation_edges) out to the sections those hits connect to,
+    //    ranked by doc_authority — "search all the law, find the connections."
+    //    Quick mode skips the graph hop.
     const corpus = await getCorpusClient();
-    const docs: Array<{
-      id: string;
-      identifier: string;
-      source_code: string;
-      section_label: string | null;
-      heading: string | null;
-      body_text: string | null;
-      parent_label: string | null;
-    }> = [];
+    type Doc = {
+      id: number; identifier: string; source_code: string;
+      section_label: string | null; heading: string | null;
+      body_text: string | null; parent_label: string | null;
+    };
+    const DOC_COLS = "id, identifier, source_code, section_label, heading, body_text, parent_label";
+    const seenIdent = new Set<string>();
+    const pushDoc = (arr: Doc[], d: { id: number | string; identifier: string } & Partial<Doc>) => {
+      if (!d || seenIdent.has(d.identifier)) return;
+      seenIdent.add(d.identifier);
+      arr.push({ ...(d as Doc), id: Number(d.id) });
+    };
 
-    // If user is reading a specific section, fetch it directly
+    const seeds: Doc[] = [];
+    // The section the user is reading is always a seed.
     if (data.context_identifier) {
       const { data: doc } = await corpus
-        .from("documents")
-        .select("id, identifier, source_code, section_label, heading, body_text, parent_label")
-        .eq("identifier", data.context_identifier)
-        .maybeSingle();
-      if (doc) docs.push(doc);
+        .from("documents").select(DOC_COLS)
+        .eq("identifier", data.context_identifier).maybeSingle();
+      if (doc) pushDoc(seeds, doc as never);
     }
 
-    // Search for additional relevant documents
-    type SearchRow = {
-      identifier: string; source_code: string; parent_label: string | null;
-      section_label: string | null; heading: string | null; snippet: string | null; rank: number;
-    };
-    const { data: searchResults, error: searchErr } = await (corpus.rpc as unknown as (
+    // Broad keyword search across every source.
+    const { data: searchResults } = await (corpus.rpc as unknown as (
       fn: string, args: Record<string, unknown>,
-    ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>)(
+    ) => Promise<{ data: { identifier: string }[] | null; error: unknown }>)(
       "search_documents_fts",
-      { p_query: data.query, p_source: null, p_limit: 5 },
+      { p_query: data.query, p_source: null, p_limit: profile.maxSeedDocs },
     );
+    const seedIdents = (searchResults ?? [])
+      .map((r) => r.identifier)
+      .filter((id) => !seenIdent.has(id))
+      .slice(0, profile.maxSeedDocs);
+    if (seedIdents.length) {
+      const { data: full } = await corpus
+        .from("documents").select(DOC_COLS).in("identifier", seedIdents);
+      for (const d of full ?? []) pushDoc(seeds, d as never);
+    }
 
-    if (searchResults && searchResults.length > 0) {
-      // Fetch full body_text for top results
-      const ids = searchResults
-        .map((r) => r.identifier)
-        .filter((id) => !docs.some((d) => d.identifier === id))
-        .slice(0, 4);
-
-      if (ids.length > 0) {
-        const { data: fullDocs } = await corpus
-          .from("documents")
-          .select("id, identifier, source_code, section_label, heading, body_text, parent_label")
-          .in("identifier", ids);
-        if (fullDocs) docs.push(...fullDocs);
+    // Deep mode: traverse the citation graph from the seeds.
+    const connections: Doc[] = [];
+    if (profile.useGraph && seeds.length) {
+      const edgeDb = corpus as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { in: (col: string, v: number[]) => Promise<{ data: Record<string, number | null>[] | null }> };
+        };
+      };
+      const seedIds = seeds.map((d) => d.id).filter((n) => Number.isFinite(n));
+      const [out, inc] = await Promise.all([
+        edgeDb.from("citation_edges").select("target_id").in("source_id", seedIds),
+        edgeDb.from("citation_edges").select("source_id").in("target_id", seedIds),
+      ]);
+      const connIds = new Set<number>();
+      for (const e of out.data ?? []) if (e.target_id != null) connIds.add(Number(e.target_id));
+      for (const e of inc.data ?? []) if (e.source_id != null) connIds.add(Number(e.source_id));
+      for (const d of seeds) connIds.delete(d.id);
+      let ranked = Array.from(connIds);
+      if (ranked.length) {
+        // Rank candidates by doc_authority; keep the strongest.
+        const { data: auth } = await edgeDb.from("doc_authority").select("id, authority").in("id", ranked);
+        const authMap = new Map((auth ?? []).map((a) => [Number(a.id), Number(a.authority) || 0]));
+        ranked.sort((a, b) => (authMap.get(b) ?? 0) - (authMap.get(a) ?? 0));
+        ranked = ranked.slice(0, profile.maxConnections);
+        // documents.id is bigint at runtime; the generated types mistype it as
+        // string (endemic — see documents.functions.ts). Cast to satisfy TS.
+        const { data: connDocs } = await corpus
+          .from("documents").select(DOC_COLS).in("id", ranked as unknown as string[]);
+        for (const d of connDocs ?? []) pushDoc(connections, d as never);
       }
     }
 
-    // 5. Build the context for the AI
-    const docContext = docs
-      .filter((d) => d.body_text)
-      .map((d) => {
-        const body = (d.body_text ?? "").slice(0, 3000); // Cap per doc
-        return `--- DOCUMENT ---
+    // 5. Assemble context within the mode's char budget (this is what bounds
+    //    cost). Seeds first, then graph connections, until the budget is spent.
+    const connSet = new Set(connections);
+    const ordered = [...seeds, ...connections].filter((d) => d.body_text);
+    const perDocCap = profile.useGraph ? 2400 : 3000;
+    let usedChars = 0;
+    const docs: Doc[] = [];
+    const blocks: string[] = [];
+    for (const d of ordered) {
+      if (usedChars >= profile.maxContextChars) break;
+      const body = (d.body_text ?? "").slice(0, perDocCap);
+      const block = `--- ${connSet.has(d) ? "CONNECTED " : ""}DOCUMENT ---
 Identifier: ${d.identifier}
 Source: ${d.source_code}
 Section: ${d.section_label ?? "N/A"}
@@ -364,31 +429,42 @@ Parent: ${d.parent_label ?? "N/A"}
 
 ${body}
 --- END DOCUMENT ---`;
-      })
-      .join("\n\n");
+      blocks.push(block);
+      docs.push(d);
+      usedChars += block.length;
+    }
+    const docContext = blocks.join("\n\n");
+    const sectionsRead = docs.length;
+    const connectionsRead = docs.filter((d) => connSet.has(d)).length;
 
     if (docs.length === 0) {
-      // Still log the query for metadata collection
-      await logQuery(userId, data.query, [], 0, false);
+      // Nothing matched → no model call, so no charge. Still log for metadata.
+      await logQuery(userId, data.query, [], 0, false, 0, mode);
       const balance = isAdmin ? 9999 : await getUserCredits(userId);
       return {
+        ...EMPTY,
         answer: "That's not on the shelf. Nothing in the corpus matched that query. Try rephrasing — a section number like \"15 USC 1692\" or broader terms like \"debt collection\" might land.",
-        citations: [],
         credits_remaining: balance,
-        error: null,
+        credits_charged: 0,
+        sections_read: 0,
+        connections_read: 0,
       };
     }
 
     // 6. Call Anthropic API
+    const deepNote = mode === "deep"
+      ? `\n\nThis is a DEEP search. Documents marked "CONNECTED DOCUMENT" were pulled in by following the citation graph out from the best matches. Use them to show how the law connects — cross-references, definitions that live in one section and bind another, and chains of authority. After the direct answer, map those connections explicitly.`
+      : "";
     const userMessage = `USER QUERY: ${data.query}
 
 DOCUMENTS FROM THE CORPUS:
 ${docContext}
 
-Read the documents above and answer the user's query. Cite every claim by its identifier. If the documents don't answer the query, say so.`;
+Read the documents above and answer the user's query. Cite every claim by its identifier — §[section_label] ([identifier]). If the documents don't answer the query, say so.${deepNote}`;
 
     let answer = "";
     let tokensUsed = 0;
+    let usage: Record<string, number> = {};
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -399,7 +475,7 @@ Read the documents above and answer the user's query. Cite every claim by its id
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
-          max_tokens: 1200,
+          max_tokens: profile.maxTokens,
           // System prompt is static across every call — mark it cacheable so we
           // stop re-billing it at full input price. cache_control is GA (no beta
           // header). Caching only activates once the cached prefix clears Sonnet
@@ -422,25 +498,29 @@ Read the documents above and answer the user's query. Cite every claim by its id
         .filter((b: { type: string }) => b.type === "text")
         .map((b: { text: string }) => b.text)
         .join("\n");
-      const u = result.usage ?? {};
+      usage = result.usage ?? {};
       tokensUsed =
-        (u.input_tokens ?? 0) +
-        (u.output_tokens ?? 0) +
-        (u.cache_read_input_tokens ?? 0) +
-        (u.cache_creation_input_tokens ?? 0);
+        (usage.input_tokens ?? 0) +
+        (usage.output_tokens ?? 0) +
+        (usage.cache_read_input_tokens ?? 0) +
+        (usage.cache_creation_input_tokens ?? 0);
     } catch (e) {
       console.error("Juri API call failed:", e);
       return { ...EMPTY, error: "Couldn't reach the API. Try again in a moment." };
     }
 
-    // 7. Deduct credit (non-admin only)
-    if (!isAdmin) {
-      await deductCredit(userId);
+    // 7. Meter the cost and charge credits (non-admin only). Credits scale with
+    //    the model usage this answer actually incurred — a deep dive that read
+    //    dozens of linked sections costs more than a quick lookup.
+    const costCents = usageToCents(usage);
+    const creditsCharged = isAdmin ? 0 : costToCredits(costCents, mode);
+    if (!isAdmin && creditsCharged > 0) {
+      await deductCredits(userId, creditsCharged);
     }
 
     // 8. Log the query
     const sourcesList = docs.map((d) => d.identifier);
-    await logQuery(userId, data.query, sourcesList, tokensUsed, !isAdmin);
+    await logQuery(userId, data.query, sourcesList, tokensUsed, !isAdmin, creditsCharged, mode);
 
     // 9. Build citations list
     const citations: JuriCitation[] = docs.map((d) => ({
@@ -457,5 +537,9 @@ Read the documents above and answer the user's query. Cite every claim by its id
       citations,
       credits_remaining: creditsRemaining,
       error: null,
+      credits_charged: creditsCharged,
+      sections_read: sectionsRead,
+      connections_read: connectionsRead,
+      mode,
     };
   });

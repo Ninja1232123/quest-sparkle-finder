@@ -2785,6 +2785,53 @@ main {
     line-height: 1.4;
   }
 
+  /* ── Quick / Deep depth toggle (above the input) ── */
+  .juri-mode-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+  .juri-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(200,162,75,0.3);
+    background: transparent;
+    color: #9fb0cf;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 140ms, color 140ms, border-color 140ms;
+  }
+  .juri-mode-btn:hover { color: #fbf6e8; }
+  .juri-mode-btn.active {
+    background: #c8a24b;
+    border-color: #c8a24b;
+    color: #0a1a47;
+  }
+  .juri-mode-hint {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #5a6a8a;
+  }
+
+  /* ── Per-answer metering receipt ── */
+  .juri-receipt {
+    margin-top: 7px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6a7a9a;
+  }
+
   /* ── Responsive — on narrow screens the drawer goes full-width ── */
   @media (max-width: 460px) {
     .juri-panel {

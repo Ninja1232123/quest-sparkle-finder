@@ -67,3 +67,72 @@ export function packByLookupKey(key: string): CreditPack | undefined {
 export function centsPerCredit(pack: CreditPack): number {
   return pack.priceCents / pack.credits;
 }
+
+// ===========================================================================
+// METERED CREDITS — a credit is a unit of FUEL, not a flat per-question toll.
+// An answer spends credits in proportion to the model cost it actually incurs,
+// so Juri can read as deep as a question deserves. Credits = ceil(modelCost /
+// CREDIT_COST_CENTS), clamped to the mode's ceiling. Because credits are sold
+// at the pack rate (~5¢) over this ~3¢ cost basis, every answer carries margin.
+// ===========================================================================
+
+/** Model cost (cents) that one credit represents. Sold to users at the pack rate. */
+export const CREDIT_COST_CENTS = 3;
+
+/** Sonnet 4.6 price, dollars per 1M tokens — used to turn token usage into cost. */
+export const MODEL_PRICE = { inPerM: 3, outPerM: 15, cacheReadPerM: 0.3, cacheWritePerM: 3.75 };
+
+export type JuriMode = "quick" | "deep";
+
+/**
+ * Depth profiles. The user picks intent (Quick vs Deep dive); billing follows
+ * the actual work. Deep traverses the citation graph to surface connections and
+ * reads far more of the corpus, so it costs more credits — that's the point.
+ */
+export const JURI_MODES: Record<JuriMode, {
+  label: string;
+  blurb: string;
+  maxSeedDocs: number;     // FTS hits to seed from (across ALL sources)
+  useGraph: boolean;       // follow citation_edges to pull connected sections
+  maxConnections: number;  // top connected sections (ranked by doc_authority)
+  maxContextChars: number; // total context budget (bounds cost)
+  maxTokens: number;       // answer length cap
+  minCredits: number;      // balance required to start this mode
+  maxCredits: number;      // hard per-answer credit ceiling (cost safety)
+}> = {
+  quick: {
+    label: "Quick",
+    blurb: "Fast lookup — a handful of sections.",
+    maxSeedDocs: 6, useGraph: false, maxConnections: 0,
+    maxContextChars: 14000, maxTokens: 1000, minCredits: 1, maxCredits: 3,
+  },
+  deep: {
+    label: "Deep dive",
+    blurb: "Searches all law + follows the citation graph for connections.",
+    maxSeedDocs: 18, useGraph: true, maxConnections: 24,
+    maxContextChars: 60000, maxTokens: 2600, minCredits: 3, maxCredits: 14,
+  },
+};
+
+/** Model cost in cents from an Anthropic usage object. */
+export function usageToCents(u: {
+  input_tokens?: number; output_tokens?: number;
+  cache_read_input_tokens?: number; cache_creation_input_tokens?: number;
+}): number {
+  const inT = u.input_tokens ?? 0;
+  const outT = u.output_tokens ?? 0;
+  const cr = u.cache_read_input_tokens ?? 0;
+  const cw = u.cache_creation_input_tokens ?? 0;
+  const dollars =
+    (inT / 1e6) * MODEL_PRICE.inPerM +
+    (outT / 1e6) * MODEL_PRICE.outPerM +
+    (cr / 1e6) * MODEL_PRICE.cacheReadPerM +
+    (cw / 1e6) * MODEL_PRICE.cacheWritePerM;
+  return dollars * 100;
+}
+
+/** Credits to charge for an answer: ceil(cost / credit) clamped to the mode ceiling. */
+export function costToCredits(cents: number, mode: JuriMode): number {
+  const raw = Math.max(1, Math.ceil(cents / CREDIT_COST_CENTS));
+  return Math.min(raw, JURI_MODES[mode].maxCredits);
+}

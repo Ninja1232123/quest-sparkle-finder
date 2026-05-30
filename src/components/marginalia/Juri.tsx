@@ -15,7 +15,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
-import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, type CreditPack } from "@/lib/juri-credits";
+import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check } from "lucide-react";
 
@@ -58,6 +58,10 @@ type Message = {
   error?: boolean;
   /** A call-to-action to render under an error: upsell Pro, or buy credits. */
   cta?: "pro" | "buy";
+  /** Metering receipt shown under an answer. */
+  creditsCharged?: number;
+  sectionsRead?: number;
+  connectionsRead?: number;
 };
 
 const SOURCE_SHORT: Record<string, string> = {
@@ -70,6 +74,7 @@ const SOURCE_SHORT: Record<string, string> = {
 export function Juri() {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<"chat" | "buy">("chat");
+  const [mode, setMode] = useState<JuriMode>("quick");
   const [checkoutPack, setCheckoutPack] = useState<CreditPack | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -132,6 +137,7 @@ export function Juri() {
           query: q,
           context_identifier: contextId,
           auth_token: session?.access_token,
+          mode,
         },
       });
 
@@ -143,6 +149,9 @@ export function Juri() {
           role: "juri",
           text: res.answer,
           citations: res.citations,
+          creditsCharged: res.credits_charged,
+          sectionsRead: res.sections_read,
+          connectionsRead: res.connections_read,
         }]);
         setCredits(res.credits_remaining);
       }
@@ -155,7 +164,7 @@ export function Juri() {
     } finally {
       setLoading(false);
     }
-  }, [draft, loading, contextId, session?.access_token]);
+  }, [draft, loading, contextId, session?.access_token, mode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -374,6 +383,13 @@ export function Juri() {
                       ))}
                     </div>
                   )}
+                  {msg.role === "juri" && !msg.error && msg.creditsCharged != null && (
+                    <div className="juri-receipt">
+                      {msg.creditsCharged} credit{msg.creditsCharged === 1 ? "" : "s"}
+                      {msg.sectionsRead ? ` · read ${msg.sectionsRead} section${msg.sectionsRead === 1 ? "" : "s"}` : ""}
+                      {msg.connectionsRead ? ` · ${msg.connectionsRead} via citations` : ""}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -402,27 +418,48 @@ export function Juri() {
                 Sign in to talk to Juri →
               </Link>
             ) : (
-              <div className="juri-input-row">
-                <textarea
-                  ref={inputRef}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={contextId ? "Ask about this section…" : "Ask about any statute…"}
-                  rows={1}
-                  className="juri-input"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={submit}
-                  disabled={loading || !draft.trim()}
-                  className="juri-send"
-                  aria-label="Send"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </button>
-              </div>
+              <>
+                <div className="juri-mode-row" role="radiogroup" aria-label="Search depth">
+                  {(Object.keys(JURI_MODES) as JuriMode[]).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={mode === m}
+                      onClick={() => setMode(m)}
+                      className={`juri-mode-btn ${mode === m ? "active" : ""}`}
+                      title={JURI_MODES[m].blurb}
+                    >
+                      {m === "deep" && <Sparkles className="h-3 w-3" />}
+                      {JURI_MODES[m].label}
+                    </button>
+                  ))}
+                  <span className="juri-mode-hint">
+                    {mode === "deep" ? "all law + connections · costs more" : "fast · ~1 credit"}
+                  </span>
+                </div>
+                <div className="juri-input-row">
+                  <textarea
+                    ref={inputRef}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={contextId ? "Ask about this section…" : "Ask about any statute…"}
+                    rows={1}
+                    className="juri-input"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={loading || !draft.trim()}
+                    className="juri-send"
+                    aria-label="Send"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
+                </div>
+              </>
             )}
             <div className="juri-disclaimer">
               Not legal advice. Every claim cites the source — read it yourself.
