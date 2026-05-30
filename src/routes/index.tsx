@@ -88,8 +88,8 @@ function Index() {
 
           {/* The punchline */}
           <div className="hero-pitch">
-            <span className="hero-pitch-line">You were born to argue.</span>
-            <span className="hero-pitch-amt">Here's all the rules.</span>
+            <span className="hero-pitch-line"></span>
+            <span className="hero-pitch-amt">You were born to argue.</span>
           </div>
 
           <div className="home-hero-foot" />
