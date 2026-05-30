@@ -73,11 +73,11 @@ function Index() {
           {/* Flanking law quotes — fill the navy on either side of the eagle */}
           <blockquote className="hero-quote hero-quote-l">
             <p>Not legal advice, A legal tool.</p>
-            <cite>Hi I'm a tool. 9</cite>
+            <cite></cite>
           </blockquote>
           <blockquote className="hero-quote hero-quote-r">
-            <p>If an attorney can do it</p>
-            <cite>You can do it better.</cite>
+            <p>"Freedom's Favorite Legal tool"</p>
+            <cite>Search and see ALL the laws in one place.</cite>
           </blockquote>
 
           <img
@@ -89,7 +89,7 @@ function Index() {
           {/* The punchline */}
           <div className="hero-pitch">
             <span className="hero-pitch-line">You were born to argue.</span>
-            <span className="hero-pitch-amt"></span>
+            <span className="hero-pitch-amt">Here's all the rules.</span>
           </div>
 
           <div className="home-hero-foot" />
