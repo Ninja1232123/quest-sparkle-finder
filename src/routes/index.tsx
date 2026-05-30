@@ -75,8 +75,8 @@ function Index() {
             <cite>Hi I'm a tool. 9</cite>
           </blockquote>
           <blockquote className="hero-quote hero-quote-r">
-            <p>Don't forget who really makes the rules.</p>
-            <cite>The law stops working when it's illogical.</cite>
+            <p>If an attorney can do it</p>
+            <cite>You can do it better.</cite>
           </blockquote>
 
           <img
