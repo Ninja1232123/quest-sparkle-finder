@@ -62,6 +62,7 @@ type Message = {
   creditsCharged?: number;
   sectionsRead?: number;
   connectionsRead?: number;
+  searches?: string[];
 };
 
 const SOURCE_SHORT: Record<string, string> = {
@@ -132,12 +133,20 @@ export function Juri() {
     setLoading(true);
 
     try {
+      // Thread so far (excludes the question we're about to send) → lets Juri
+      // handle follow-ups and the clarify → refine → search flow.
+      const history = messages
+        .filter((m) => !m.error && m.text.trim())
+        .slice(-10)
+        .map((m) => ({ role: m.role, text: m.text }));
+
       const res = await askJuri({
         data: {
           query: q,
           context_identifier: contextId,
           auth_token: session?.access_token,
           mode,
+          history,
         },
       });
 
@@ -152,6 +161,7 @@ export function Juri() {
           creditsCharged: res.credits_charged,
           sectionsRead: res.sections_read,
           connectionsRead: res.connections_read,
+          searches: res.searches,
         }]);
         setCredits(res.credits_remaining);
       }
@@ -164,7 +174,7 @@ export function Juri() {
     } finally {
       setLoading(false);
     }
-  }, [draft, loading, contextId, session?.access_token, mode]);
+  }, [draft, loading, contextId, session?.access_token, mode, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -388,6 +398,11 @@ export function Juri() {
                       {msg.creditsCharged} credit{msg.creditsCharged === 1 ? "" : "s"}
                       {msg.sectionsRead ? ` · read ${msg.sectionsRead} section${msg.sectionsRead === 1 ? "" : "s"}` : ""}
                       {msg.connectionsRead ? ` · ${msg.connectionsRead} via citations` : ""}
+                      {msg.searches && msg.searches.length > 0 && (
+                        <div className="juri-receipt-searches">
+                          searched: {msg.searches.slice(0, 4).map((s) => `"${s}"`).join(", ")}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

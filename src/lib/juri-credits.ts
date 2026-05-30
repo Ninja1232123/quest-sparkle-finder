@@ -98,25 +98,26 @@ export type JuriMode = "quick" | "deep";
 export const JURI_MODES: Record<JuriMode, {
   label: string;
   blurb: string;
-  maxSeedDocs: number;     // FTS hits to seed from (across ALL sources)
-  useGraph: boolean;       // follow citation_edges to pull connected sections
-  maxConnections: number;  // top connected sections (ranked by doc_authority)
-  maxContextChars: number; // total context budget (bounds cost)
+  maxRounds: number;       // agentic tool-use rounds before Juri must answer
+  searchLimit: number;     // default hits per search_law call
+  useGraph: boolean;       // expose the find_connections (citation graph) tool
+  maxConnections: number;  // connections returned per find_connections call
+  maxContextChars: number; // total section text Juri may read (bounds cost)
   maxTokens: number;       // answer length cap
   minCredits: number;      // balance required to start this mode
   maxCredits: number;      // hard per-answer credit ceiling (cost safety)
 }> = {
   quick: {
     label: "Quick",
-    blurb: "Fast lookup — a handful of sections.",
-    maxSeedDocs: 6, useGraph: false, maxConnections: 0,
-    maxContextChars: 14000, maxTokens: 1000, minCredits: 1, maxCredits: 3,
+    blurb: "A search or two, then a focused answer.",
+    maxRounds: 3, searchLimit: 8, useGraph: false, maxConnections: 0,
+    maxContextChars: 16000, maxTokens: 1100, minCredits: 1, maxCredits: 4,
   },
   deep: {
     label: "Deep dive",
-    blurb: "Searches all law + follows the citation graph for connections.",
-    maxSeedDocs: 18, useGraph: true, maxConnections: 24,
-    maxContextChars: 60000, maxTokens: 2600, minCredits: 3, maxCredits: 14,
+    blurb: "Researches multiple angles + mines the citation graph for connections.",
+    maxRounds: 7, searchLimit: 12, useGraph: true, maxConnections: 18,
+    maxContextChars: 70000, maxTokens: 2600, minCredits: 3, maxCredits: 16,
   },
 };
 

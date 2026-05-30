@@ -52,23 +52,23 @@ async function getCorpusClient() {
 // grows past that floor — it just won't error. The real per-call cost in Juri is
 // the retrieved document context in the user message, which varies per query and
 // isn't cacheable. Left wired so caching activates automatically if this grows.
-const SYSTEM_PROMPT = `You are Juri — the eagle of Marginalia, a citizen's index of actual U.S. law (the Constitution, the U.S. Code, the CFR, the UCC, agency manuals, and more). You help people read and understand the law in plain English.
+const SYSTEM_PROMPT = `You are Juri — the eagle of Marginalia, a citizen's index of actual U.S. law (the Constitution, the U.S. Code, the CFR, the UCC, agency manuals, and more).
 
-You're sharp, direct, and a little dry — an eagle, not a paralegal reading off a script. Explain things the way a smart person explains them to another smart person, not the way a terms-of-service page reads.
+You are a RESEARCH PARTNER, not an oracle. You begin as uncertain as the user about which law actually applies — that's the honest starting point, and you're on level ground with them from the first message. What you're genuinely good at is searching this corpus far better than a person could, and pulling out the connections between sections they'd never dig up by hand. Think out loud, propose, confirm, then dig.
 
-HOW YOU WORK
-- For each question you're handed the most relevant sections retrieved from the corpus. Treat those as your primary source: read them, say what they actually say, and cite what you draw from them as §[section_label] ([identifier]) so the user can click through and verify.
-- Lead with the real answer. Then the supporting detail, cited. Then whatever complicates it — undefined terms, ambiguity, exceptions, jurisdictional splits.
-- When the retrieved sections don't fully cover the question, say so and keep helping from what you know about the law generally. Just be honest about which is which: "the statute says X (cited); more broadly, courts tend to Y — general knowledge, worth verifying." Do NOT stonewall with "that's not on the shelf." You're Claude; act like it.
-- If the question is really just a lookup ("what does 15 USC 1692g say"), give them the section.
-- Lay out multi-step rules in order, with the authority for each step. When a term is defined in one section and used in another, connect them.
+YOUR TOOLS — use them. Don't answer from memory when you can check the actual text:
+- search_law(query, source?, limit?): full-text search across the corpus. Try SEVERAL angles and real legal terms — the right section usually uses words the user didn't. One literal search of their sentence is the lazy, wrong move.
+- read_sections(identifiers[]): pull the full text of promising hits so you read what they actually say before relying on them.
+- find_connections(identifier): follow the citation graph out from a section — what it cites and what cites it. This is the goldmine. It surfaces the related law — definitions that live elsewhere, cross-references, implementing regulations, chains of authority — that answers "what ELSE bears on this." Run it on the sections that matter and follow the useful threads.
 
-WHAT YOU ARE AND AREN'T
-- You're a research tool, not the user's lawyer. Explaining what the law says, what it likely means, and what someone's options generally are — that's the job, so do it. But don't claim certainty you don't have, don't guarantee outcomes, and for anything high-stakes or about to be acted on, tell them to confirm against the cited text and check with a licensed attorney in their state.
-- Plain English, no legalese, no hedging filler, no padding. If you don't know, say so.
-- Match length to the question: a quick one gets a tight answer; a deep one can run long and map how the pieces connect.
+HOW TO WORK
+- If the ask is vague or you're genuinely unsure what they want, DON'T burn a search on a guess. Say what you think they mean, offer a few concrete legal terms or angles you could search, and ask them to point you. A clarifying turn is cheap and worth it.
+- When there's a thread to pull: search a few ways, read the strongest hits, run find_connections on the key sections, follow the useful ones. Then surface what the law IS and what else MIGHT apply.
+- Cite what you pulled from the corpus as §[section_label] ([identifier]) so the user can click through and verify. Lead with the real answer, then the connections, then what's uncertain.
+- Be honest about uncertainty — undefined terms, ambiguity, splits, "this is the federal rule; your state may differ." Never fake confidence about what the law means.
+- If searches genuinely come up empty, say so and help from general legal knowledge — clearly flagged as such — and tell them what to search.
 
-If someone just wants to talk or kick the tires, engage with it — it's their credits to spend.`;
+WHAT YOU ARE: a research tool, not the user's lawyer. Explaining what the law says, what it likely means, and what someone's options generally are is the job — do it. But no guarantees, and for anything high-stakes tell them to verify against the cited text and check with a licensed attorney in their state. Plain English, no legalese, no hedging filler. Match length to the question.`;
 
 // ---------------------------------------------------------------------------
 // Credit helpers
@@ -231,6 +231,73 @@ type JuriCitation = {
   source_code: string;
 };
 
+// ---------------------------------------------------------------------------
+// Research tools — the agentic loop calls these against the LOCAL corpus.
+// (corpus is loosely typed: citation_edges/doc_authority aren't in the
+//  generated Database types, and documents.id is bigint mistyped as string —
+//  endemic, see documents.functions.ts.)
+// ---------------------------------------------------------------------------
+
+type ToolDoc = {
+  id: number; identifier: string; source_code: string;
+  section_label: string | null; heading: string | null;
+  body_text: string | null; parent_label: string | null;
+};
+const JURI_DOC_COLS = "id, identifier, source_code, section_label, heading, body_text, parent_label";
+
+// full-text search across all (or one) source
+async function jSearchLaw(corpus: any, query: string, source: string | null, limit: number) {
+  const { data } = await corpus.rpc("search_documents_fts", {
+    p_query: query, p_source: source || null, p_limit: Math.min(Math.max(limit, 1), 20),
+  });
+  return (data ?? []).map((r: any) => ({
+    identifier: r.identifier, source: r.source_code,
+    section_label: r.section_label, heading: r.heading,
+    snippet: (r.snippet ?? "").slice(0, 280),
+  }));
+}
+
+// pull full section text by identifier
+async function jReadSections(corpus: any, identifiers: string[]): Promise<ToolDoc[]> {
+  const ids = identifiers.slice(0, 10);
+  if (!ids.length) return [];
+  const { data } = await corpus.from("documents").select(JURI_DOC_COLS).in("identifier", ids);
+  return (data ?? []) as ToolDoc[];
+}
+
+// citation-graph neighbours of a section, ranked by doc_authority
+async function jFindConnections(corpus: any, identifier: string, maxN: number) {
+  const empty = { cites: [] as any[], cited_by: [] as any[] };
+  if (!identifier) return empty;
+  const { data: doc } = await corpus.from("documents").select("id").eq("identifier", identifier).maybeSingle();
+  if (!doc) return empty;
+  const id = Number(doc.id);
+  const [out, inc] = await Promise.all([
+    corpus.from("citation_edges").select("target_id").eq("source_id", id).limit(1000),
+    corpus.from("citation_edges").select("source_id").eq("target_id", id).limit(1000),
+  ]);
+  const ids = (rows: any[], col: string): number[] =>
+    Array.from(new Set<number>((rows ?? []).map((e: any) => Number(e[col])).filter((n: number) => Number.isFinite(n))));
+  const outIds = ids(out.data, "target_id");
+  const incIds = ids(inc.data, "source_id");
+  const all = Array.from(new Set<number>([...outIds, ...incIds]));
+  if (!all.length) return empty;
+  const { data: auth } = await corpus.from("doc_authority").select("id, authority").in("id", all as unknown as string[]);
+  const authMap = new Map<number, number>(
+    (auth ?? []).map((a: any) => [Number(a.id), Number(a.authority) || 0] as [number, number]),
+  );
+  const rank = (ids: number[]) => [...ids].sort((a, b) => (authMap.get(b) ?? 0) - (authMap.get(a) ?? 0)).slice(0, maxN);
+  const topOut = rank(outIds), topInc = rank(incIds);
+  const wanted = Array.from(new Set([...topOut, ...topInc]));
+  const { data: docs } = await corpus.from("documents")
+    .select("id, identifier, source_code, section_label, heading").in("id", wanted as unknown as string[]);
+  const meta = new Map((docs ?? []).map((d: any) => [Number(d.id), {
+    identifier: d.identifier, source: d.source_code, section_label: d.section_label, heading: d.heading,
+  }]));
+  const pick = (ids: number[]) => ids.map((i) => meta.get(i)).filter(Boolean);
+  return { cites: pick(topOut), cited_by: pick(topInc) };
+}
+
 type JuriResponse = {
   answer: string;
   citations: JuriCitation[];
@@ -246,6 +313,8 @@ type JuriResponse = {
   sections_read?: number;
   /** Of those, how many were pulled in via the citation graph (deep mode). */
   connections_read?: number;
+  /** The searches Juri actually ran (transparency). */
+  searches?: string[];
   /** Which depth this answer ran at. */
   mode?: JuriMode;
 };
@@ -259,6 +328,11 @@ export const askJuri = createServerFn({ method: "POST" })
     auth_token: z.string().optional(),
     // Depth intent — billing is metered regardless (see JURI_MODES).
     mode: z.enum(["quick", "deep"]).default("quick"),
+    // Prior turns in this thread, so follow-ups + clarify→refine→search work.
+    history: z.array(z.object({
+      role: z.enum(["user", "juri"]),
+      text: z.string().max(6000),
+    })).max(20).optional(),
   }))
   .handler(async ({ data }): Promise<JuriResponse> => {
     const mode: JuriMode = data.mode;
@@ -329,197 +403,177 @@ export const askJuri = createServerFn({ method: "POST" })
       }
     }
 
-    // 4. Retrieve. Seed with a broad keyword search across ALL sources (plus the
-    //    section the user is reading). In Deep mode, then follow the citation
-    //    graph (citation_edges) out to the sections those hits connect to,
-    //    ranked by doc_authority — "search all the law, find the connections."
-    //    Quick mode skips the graph hop.
+    // 4. Research loop setup. Juri drives its own search via tools — it decides
+    //    what to look up, what to read, and which connections to follow (or asks
+    //    a clarifying question instead of searching). We execute the tools
+    //    against the corpus and feed results back until it answers.
     const corpus = await getCorpusClient();
-    type Doc = {
-      id: number; identifier: string; source_code: string;
-      section_label: string | null; heading: string | null;
-      body_text: string | null; parent_label: string | null;
-    };
-    const DOC_COLS = "id, identifier, source_code, section_label, heading, body_text, parent_label";
-    const seenIdent = new Set<string>();
-    const pushDoc = (arr: Doc[], d: { id: number | string; identifier: string } & Partial<Doc>) => {
-      if (!d || seenIdent.has(d.identifier)) return;
-      seenIdent.add(d.identifier);
-      arr.push({ ...(d as Doc), id: Number(d.id) });
-    };
 
-    const seeds: Doc[] = [];
-    // The section the user is reading is always a seed.
-    if (data.context_identifier) {
-      const { data: doc } = await corpus
-        .from("documents").select(DOC_COLS)
-        .eq("identifier", data.context_identifier).maybeSingle();
-      if (doc) pushDoc(seeds, doc as never);
-    }
-
-    // Broad keyword search across every source.
-    const { data: searchResults } = await (corpus.rpc as unknown as (
-      fn: string, args: Record<string, unknown>,
-    ) => Promise<{ data: { identifier: string }[] | null; error: unknown }>)(
-      "search_documents_fts",
-      { p_query: data.query, p_source: null, p_limit: profile.maxSeedDocs },
-    );
-    const seedIdents = (searchResults ?? [])
-      .map((r) => r.identifier)
-      .filter((id) => !seenIdent.has(id))
-      .slice(0, profile.maxSeedDocs);
-    if (seedIdents.length) {
-      const { data: full } = await corpus
-        .from("documents").select(DOC_COLS).in("identifier", seedIdents);
-      for (const d of full ?? []) pushDoc(seeds, d as never);
-    }
-
-    // Deep mode: traverse the citation graph from the seeds.
-    const connections: Doc[] = [];
-    if (profile.useGraph && seeds.length) {
-      const edgeDb = corpus as unknown as {
-        from: (t: string) => {
-          select: (c: string) => { in: (col: string, v: number[]) => Promise<{ data: Record<string, number | null>[] | null }> };
-        };
-      };
-      const seedIds = seeds.map((d) => d.id).filter((n) => Number.isFinite(n));
-      const [out, inc] = await Promise.all([
-        edgeDb.from("citation_edges").select("target_id").in("source_id", seedIds),
-        edgeDb.from("citation_edges").select("source_id").in("target_id", seedIds),
-      ]);
-      const connIds = new Set<number>();
-      for (const e of out.data ?? []) if (e.target_id != null) connIds.add(Number(e.target_id));
-      for (const e of inc.data ?? []) if (e.source_id != null) connIds.add(Number(e.source_id));
-      for (const d of seeds) connIds.delete(d.id);
-      let ranked = Array.from(connIds);
-      if (ranked.length) {
-        // Rank candidates by doc_authority; keep the strongest.
-        const { data: auth } = await edgeDb.from("doc_authority").select("id, authority").in("id", ranked);
-        const authMap = new Map((auth ?? []).map((a) => [Number(a.id), Number(a.authority) || 0]));
-        ranked.sort((a, b) => (authMap.get(b) ?? 0) - (authMap.get(a) ?? 0));
-        ranked = ranked.slice(0, profile.maxConnections);
-        // documents.id is bigint at runtime; the generated types mistype it as
-        // string (endemic — see documents.functions.ts). Cast to satisfy TS.
-        const { data: connDocs } = await corpus
-          .from("documents").select(DOC_COLS).in("id", ranked as unknown as string[]);
-        for (const d of connDocs ?? []) pushDoc(connections, d as never);
-      }
-    }
-
-    // 5. Assemble context within the mode's char budget (this is what bounds
-    //    cost). Seeds first, then graph connections, until the budget is spent.
-    const connSet = new Set(connections);
-    const ordered = [...seeds, ...connections].filter((d) => d.body_text);
-    const perDocCap = profile.useGraph ? 2400 : 3000;
-    let usedChars = 0;
-    const docs: Doc[] = [];
-    const blocks: string[] = [];
-    for (const d of ordered) {
-      if (usedChars >= profile.maxContextChars) break;
-      const body = (d.body_text ?? "").slice(0, perDocCap);
-      const block = `--- ${connSet.has(d) ? "CONNECTED " : ""}DOCUMENT ---
-Identifier: ${d.identifier}
-Source: ${d.source_code}
-Section: ${d.section_label ?? "N/A"}
-Heading: ${d.heading ?? "N/A"}
-Parent: ${d.parent_label ?? "N/A"}
-
-${body}
---- END DOCUMENT ---`;
-      blocks.push(block);
-      docs.push(d);
-      usedChars += block.length;
-    }
-    const docContext = blocks.join("\n\n");
-    const sectionsRead = docs.length;
-    const connectionsRead = docs.filter((d) => connSet.has(d)).length;
-
-    // 6. Call Anthropic API. Note: an empty corpus result is NOT a hard refuse
-    //    anymore — Juri still answers from general knowledge, flagged as such.
-    const deepNote = mode === "deep"
-      ? `\n\nThis is a DEEP search. Documents marked "CONNECTED DOCUMENT" were pulled in by following the citation graph out from the best matches. Use them to show how the law connects — cross-references, definitions that live in one section and bind another, and chains of authority. After the direct answer, map those connections explicitly.`
-      : "";
-    const userMessage = docs.length > 0
-      ? `USER QUERY: ${data.query}
-
-RELEVANT SECTIONS RETRIEVED FROM THE CORPUS:
-${docContext}
-
-Answer the user using these sections as your primary source — cite what you draw from them as §[section_label] ([identifier]). If they don't fully cover the question, say what's missing and fill the gap from your general legal knowledge, clearly marked as such.${deepNote}`
-      : `USER QUERY: ${data.query}
-
-No specific sections in the corpus matched this query. Help anyway from your general legal knowledge — be upfront that you're not citing retrieved text, give the user the lay of the land, and point them at what to search for (a code, a section number, better terms) to pull the actual law here on Marginalia.`;
-
-    let answer = "";
-    let tokensUsed = 0;
-    let usage: Record<string, number> = {};
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
+    const tools: Record<string, unknown>[] = [
+      {
+        name: "search_law",
+        description: "Full-text search across the law corpus (Constitution, U.S. Code, CFR, UCC, agency manuals, and more). Returns matching sections with snippets. Try several angles and real legal terms.",
+        input_schema: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Search terms — legal vocabulary works better than the user's literal phrasing." },
+            source: { type: "string", description: "Optional: limit to one source code, e.g. usc, cfr, const, ucc, irm, tfm." },
+            limit: { type: "number", description: `Max results (default ${profile.searchLimit}).` },
+          },
+          required: ["query"],
         },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: profile.maxTokens,
-          // System prompt is static across every call — mark it cacheable so we
-          // stop re-billing it at full input price. cache_control is GA (no beta
-          // header). Caching only activates once the cached prefix clears Sonnet
-          // 4.6's 2048-token floor; see note where SYSTEM_PROMPT is defined.
-          system: [
-            { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-          ],
-          messages: [{ role: "user", content: userMessage }],
-        }),
+      },
+      {
+        name: "read_sections",
+        description: "Read the full text of specific sections by identifier (from search_law or find_connections results) before relying on them.",
+        input_schema: {
+          type: "object",
+          properties: { identifiers: { type: "array", items: { type: "string" }, description: "Section identifiers to read (max 10)." } },
+          required: ["identifiers"],
+        },
+      },
+    ];
+    if (profile.useGraph) {
+      tools.push({
+        name: "find_connections",
+        description: "Follow the citation graph out from a section: what it cites and what cites it, ranked by authority. The way to surface related law — definitions, cross-references, implementing rules, chains of authority.",
+        input_schema: {
+          type: "object",
+          properties: { identifier: { type: "string", description: "Section identifier to find connections for." } },
+          required: ["identifier"],
+        },
       });
+    }
 
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => "");
-        console.error("Anthropic API error:", res.status, errBody);
-        return { ...EMPTY, error: "Juri couldn't process that right now. Try again." };
+    // Trackers for transparency + citations + the read budget (bounds cost).
+    const searches: string[] = [];
+    const readMeta = new Map<string, { section_label: string | null; heading: string | null; source_code: string }>();
+    const connectionCandidates = new Set<string>();
+    let charBudget = profile.maxContextChars;
+
+    const runTool = async (name: string, input: any): Promise<unknown> => {
+      try {
+        if (name === "search_law") {
+          const q = String(input?.query ?? "").slice(0, 300);
+          if (q) searches.push(q);
+          const rows = await jSearchLaw(corpus, q, input?.source ? String(input.source) : null, Number(input?.limit) || profile.searchLimit);
+          return { results: rows };
+        }
+        if (name === "read_sections") {
+          const idents: string[] = Array.isArray(input?.identifiers) ? input.identifiers.map(String) : [];
+          const sections = (await jReadSections(corpus, idents)).map((d) => {
+            readMeta.set(d.identifier, { section_label: d.section_label, heading: d.heading, source_code: d.source_code });
+            const take = Math.max(1, Math.min(2600, charBudget));
+            const text = (d.body_text ?? "").slice(0, take);
+            charBudget -= text.length;
+            return { identifier: d.identifier, source: d.source_code, section_label: d.section_label, heading: d.heading, text };
+          });
+          return { sections, note: charBudget <= 0 ? "context budget reached — synthesize from what you've read" : undefined };
+        }
+        if (name === "find_connections") {
+          const conn = await jFindConnections(corpus, String(input?.identifier ?? ""), profile.maxConnections);
+          for (const c of [...conn.cites, ...conn.cited_by]) if (c?.identifier) connectionCandidates.add(c.identifier);
+          return conn;
+        }
+        return { error: "unknown tool" };
+      } catch {
+        return { error: "tool failed" };
       }
+    };
 
-      const result = await res.json();
-      answer = (result.content ?? [])
-        .filter((b: { type: string }) => b.type === "text")
-        .map((b: { text: string }) => b.text)
-        .join("\n");
-      usage = result.usage ?? {};
-      tokensUsed =
-        (usage.input_tokens ?? 0) +
-        (usage.output_tokens ?? 0) +
-        (usage.cache_read_input_tokens ?? 0) +
-        (usage.cache_creation_input_tokens ?? 0);
+    // Conversation so far + the current question (with mode + context hints).
+    const contextHint = data.context_identifier ? `[The user is currently reading ${data.context_identifier}.]\n` : "";
+    const modeHint = mode === "deep"
+      ? "\n\n(Deep dive: research thoroughly — search several angles, read the strongest hits, and use find_connections to surface related law.)"
+      : "\n\n(Quick: a search or two, then a focused answer.)";
+    const history = (data.history ?? [])
+      .filter((m) => m.text && m.text.trim())
+      .slice(-8)
+      .map((m) => ({ role: m.role === "juri" ? "assistant" : "user", content: m.text.slice(0, 4000) }));
+    const messages: { role: string; content: unknown }[] = [
+      ...history,
+      { role: "user", content: `${contextHint}${data.query}${modeHint}` },
+    ];
+
+    // 5. Run the loop. Tools available every round except the last, where we
+    //    drop them so Juri must produce a final answer (no infinite searching).
+    let answer = "";
+    const usage: Record<string, number> = {};
+    const addUsage = (u: Record<string, number> | undefined) => {
+      for (const k of ["input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]) {
+        usage[k] = (usage[k] ?? 0) + (u?.[k] ?? 0);
+      }
+    };
+    try {
+      for (let round = 1; round <= profile.maxRounds; round++) {
+        const lastRound = round === profile.maxRounds;
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: profile.maxTokens,
+            // Static system prompt → cacheable (GA, no-op below the 2048-tok floor).
+            system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+            ...(lastRound ? {} : { tools }),
+            messages,
+          }),
+        });
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => "");
+          console.error("Anthropic API error:", res.status, errBody);
+          if (round === 1) return { ...EMPTY, error: "Juri couldn't process that right now. Try again." };
+          break; // mid-loop failure → answer with whatever we have
+        }
+        const result = await res.json();
+        addUsage(result.usage);
+        const content = result.content ?? [];
+        if (!lastRound && result.stop_reason === "tool_use") {
+          messages.push({ role: "assistant", content });
+          const toolResults: unknown[] = [];
+          for (const block of content) {
+            if (block.type !== "tool_use") continue;
+            const out = await runTool(block.name, block.input);
+            toolResults.push({ type: "tool_result", tool_use_id: block.id, content: JSON.stringify(out).slice(0, 24000) });
+          }
+          messages.push({ role: "user", content: toolResults });
+          continue;
+        }
+        answer = content
+          .filter((b: { type: string }) => b.type === "text")
+          .map((b: { text: string }) => b.text)
+          .join("\n")
+          .trim();
+        break;
+      }
     } catch (e) {
-      console.error("Juri API call failed:", e);
+      console.error("Juri research loop failed:", e);
       return { ...EMPTY, error: "Couldn't reach the API. Try again in a moment." };
     }
-
-    // 7. Meter the cost and charge credits (non-admin only). Credits scale with
-    //    the model usage this answer actually incurred — a deep dive that read
-    //    dozens of linked sections costs more than a quick lookup.
-    const costCents = usageToCents(usage);
-    const creditsCharged = isAdmin ? 0 : costToCredits(costCents, mode);
-    if (!isAdmin && creditsCharged > 0) {
-      await deductCredits(userId, creditsCharged);
+    if (!answer) {
+      answer = "I couldn't pin that down. Try narrowing it — a specific code, a section number, or the exact terms you're after.";
     }
 
-    // 8. Log the query
-    const sourcesList = docs.map((d) => d.identifier);
-    await logQuery(userId, data.query, sourcesList, tokensUsed, !isAdmin, creditsCharged, mode);
+    const tokensUsed =
+      (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) +
+      (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0);
+    const sectionsRead = readMeta.size;
+    const connectionsRead = Array.from(readMeta.keys()).filter((id) => connectionCandidates.has(id)).length;
 
-    // 9. Build citations list
-    const citations: JuriCitation[] = docs.map((d) => ({
-      identifier: d.identifier,
-      section_label: d.section_label,
-      heading: d.heading,
-      source_code: d.source_code,
-    }));
+    // 6. Meter cost → credits (non-admin). Summed model usage across all rounds.
+    const costCents = usageToCents(usage);
+    const creditsCharged = isAdmin ? 0 : costToCredits(costCents, mode);
+    if (!isAdmin && creditsCharged > 0) await deductCredits(userId, creditsCharged);
+
+    // 7. Log + build citations from the sections Juri actually read.
+    const readIdents = Array.from(readMeta.keys());
+    await logQuery(userId, data.query, readIdents, tokensUsed, !isAdmin, creditsCharged, mode);
+    const citations: JuriCitation[] = readIdents.map((id) => {
+      const m = readMeta.get(id)!;
+      return { identifier: id, section_label: m.section_label, heading: m.heading, source_code: m.source_code };
+    });
 
     const creditsRemaining = isAdmin ? 9999 : await getUserCredits(userId);
-
     return {
       answer,
       citations,
@@ -528,6 +582,7 @@ No specific sections in the corpus matched this query. Help anyway from your gen
       credits_charged: creditsCharged,
       sections_read: sectionsRead,
       connections_read: connectionsRead,
+      searches,
       mode,
     };
   });
