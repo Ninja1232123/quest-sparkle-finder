@@ -2042,6 +2042,65 @@ main {
     height: 14px;
     background: repeating-linear-gradient(90deg, #b22234 0 40px, #fbf6e8 40px 80px);
   }
+
+  /* ── Hero punchline: "The law is now $5" ── */
+  .hero-pitch {
+    position: absolute;
+    left: 50%;
+    top: 34px;
+    transform: translateX(-50%);
+    z-index: 4;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .hero-pitch-line {
+    font-family: "Rye", serif;
+    font-size: clamp(22px, 3vw, 40px);
+    color: #e7cd7e;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 0 #9c7c2e, 0 0 34px rgba(231,205,126,0.4);
+  }
+  .hero-pitch-amt {
+    font-family: "Rye", serif;
+    font-size: clamp(34px, 4.6vw, 64px);
+    color: #fbf6e8;
+    line-height: 0.9;
+    text-shadow: 0 2px 0 #b22234, 0 0 40px rgba(251,246,232,0.45);
+  }
+
+  /* ── Flanking law quotes in the navy beside the eagle ── */
+  .hero-quote {
+    position: absolute;
+    top: 30%;
+    z-index: 3;
+    width: clamp(180px, 16vw, 250px);
+    margin: 0;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(16px, 1.3vw, 20px);
+    line-height: 1.42;
+    color: #d7deef;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .hero-quote cite {
+    display: block;
+    margin-top: 9px;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c8a24b;
+  }
+  .hero-quote-l { left: 3.2vw; text-align: right; }
+  .hero-quote-l cite { text-align: right; }
+  .hero-quote-r { right: 3.2vw; text-align: left; }
+  /* below ~1500px there's no room beside the eagle — hide them */
+  @media (max-width: 1500px) { .hero-quote { display: none; } }
+
   .home-am-ribbon {
     text-align: center;
     padding: 16px;

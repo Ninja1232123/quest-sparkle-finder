@@ -68,11 +68,29 @@ function Index() {
         <section className="home-hero-am">
           <div className="hh-foil" />
           <div className="hh-rays" />
+
+          {/* Flanking law quotes — fill the navy on either side of the eagle */}
+          <blockquote className="hero-quote hero-quote-l">
+            <p>The Writ of Habeas Corpus shall not be suspended.</p>
+            <cite>Art. I, § 9</cite>
+          </blockquote>
+          <blockquote className="hero-quote hero-quote-r">
+            <p>Rights not listed here are still yours.</p>
+            <cite>Amend. IX</cite>
+          </blockquote>
+
           <img
             className="home-eagle-img"
             src="/bald-eagle.png"
             alt="Screaming bald eagle, wings spread — Land of the Free"
           />
+
+          {/* The punchline */}
+          <div className="hero-pitch">
+            <span className="hero-pitch-line">The law is now</span>
+            <span className="hero-pitch-amt">$5</span>
+          </div>
+
           <div className="home-hero-foot" />
         </section>
 
