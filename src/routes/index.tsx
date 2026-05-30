@@ -87,7 +87,7 @@ function Index() {
 
           {/* The punchline */}
           <div className="hero-pitch">
-            <span className="hero-pitch-line">The law is now</span>
+            <span className="hero-pitch-line">You were born to argue.</span>
             <span className="hero-pitch-amt"></span>
           </div>
 
