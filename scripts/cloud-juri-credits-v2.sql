@@ -228,6 +228,29 @@ create policy juri_purchases_read_own on public.juri_credit_purchases
   for select using (auth.uid() = user_id);
 
 -- ============================================================================
+-- 9. SECURITY — credit-mutating RPCs must be SERVICE-ROLE ONLY.
+--    Postgres grants EXECUTE to PUBLIC by default and PostgREST exposes that to
+--    the anon key (which ships in the browser). Without this revoke, anyone can
+--    POST /rest/v1/rpc/add_topup_credits with their own user_id and mint free
+--    credits, or drain another user via deduct. The app calls these with the
+--    service-role key, which is unaffected by the revoke.
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure::text as sig
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in (
+        'deduct_juri_credit', 'deduct_juri_credits',
+        'add_topup_credits', 'add_juri_credits', 'set_pro_monthly_credits'
+      )
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', r.sig);
+    execute format('grant execute on function %s to service_role', r.sig);
+  end loop;
+end $$;
+
 \echo
 \echo '=== Juri credits v2 (monthly + topup buckets) ready ==='
 select
