@@ -71,12 +71,12 @@ function Index() {
 
           {/* Flanking law quotes — fill the navy on either side of the eagle */}
           <blockquote className="hero-quote hero-quote-l">
-            <p>The Writ of Habeas Corpus shall not be suspended.</p>
-            <cite>Art. I, § 9</cite>
+            <p>Not legal advice, A legal tool.</p>
+            <cite>Hi I'm a tool. 9</cite>
           </blockquote>
           <blockquote className="hero-quote hero-quote-r">
-            <p>Rights not listed here are still yours.</p>
-            <cite>Amend. IX</cite>
+            <p>Don't forget who really makes the rules.</p>
+            <cite>The law stops working when it's illogical.</cite>
           </blockquote>
 
           <img
@@ -88,7 +88,7 @@ function Index() {
           {/* The punchline */}
           <div className="hero-pitch">
             <span className="hero-pitch-line">The law is now</span>
-            <span className="hero-pitch-amt">$5</span>
+            <span className="hero-pitch-amt"></span>
           </div>
 
           <div className="home-hero-foot" />
