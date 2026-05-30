@@ -2567,6 +2567,63 @@ main {
     color: #e7cd7e;
   }
 
+  /* ── First-prompt template (fill-in opener) ── */
+  .juri-template {
+    width: 100%;
+    margin-top: 12px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .juri-tmpl-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a97b5;
+    margin-top: 4px;
+  }
+  .juri-tmpl-input {
+    width: 100%;
+    resize: none;
+    border: 1.5px solid rgba(200,162,75,0.28);
+    border-radius: 9px;
+    background: rgba(251,246,232,0.06);
+    color: #fbf6e8;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 150ms;
+  }
+  .juri-tmpl-input::placeholder { color: #5a6a8a; font-style: italic; }
+  .juri-tmpl-input:focus { border-color: #c8a24b; }
+  .juri-tmpl-go {
+    margin-top: 8px;
+    align-self: flex-start;
+    background: #c8a24b;
+    color: #0a1a47;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 16px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 140ms, transform 140ms;
+  }
+  .juri-tmpl-go:hover:not(:disabled) { background: #e7cd7e; transform: translateY(-1px); }
+  .juri-tmpl-go:disabled { opacity: 0.4; cursor: not-allowed; }
+  .juri-tmpl-or {
+    margin-top: 6px;
+    text-align: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11px;
+    color: #6a7a9a;
+  }
+
   /* ── Message bubbles ── */
   .juri-msg {
     display: flex;

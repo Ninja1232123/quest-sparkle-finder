@@ -76,6 +76,8 @@ export function Juri() {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<"chat" | "buy">("chat");
   const [mode, setMode] = useState<JuriMode>("quick");
+  const [caseText, setCaseText] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [checkoutPack, setCheckoutPack] = useState<CreditPack | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -124,8 +126,8 @@ export function Juri() {
     return () => root.classList.remove("juri-open");
   }, [open]);
 
-  const submit = useCallback(async () => {
-    const q = draft.trim();
+  const submit = useCallback(async (textOverride?: string) => {
+    const q = (typeof textOverride === "string" ? textOverride : draft).trim();
     if (!q || loading) return;
 
     setDraft("");
@@ -182,6 +184,22 @@ export function Juri() {
       submit();
     }
   };
+
+  // First-prompt template → compose the user's situation + seed keywords into
+  // the opening message so Juri starts with real intent and search terms.
+  const startFromTemplate = useCallback(() => {
+    const c = caseText.trim();
+    const k = keywords.trim();
+    if (!c && !k) return;
+    const composed = [
+      c && `Here's my situation, in one sentence: ${c}`,
+      k && `Keywords I think might be relevant: ${k}`,
+      "Let's take a look at what comes up.",
+    ].filter(Boolean).join("\n");
+    setCaseText("");
+    setKeywords("");
+    submit(composed);
+  }, [caseText, keywords, submit]);
 
   // ── Render ──
 
@@ -325,23 +343,38 @@ export function Juri() {
           <div className="juri-messages" ref={scrollRef}>
             {messages.length === 0 && !loading && (
               <div className="juri-empty">
-                <EagleSvg size={48} className="juri-empty-eagle" />
-                <div className="juri-empty-title">What are you reading?</div>
+                <EagleSvg size={44} className="juri-empty-eagle" />
+                <div className="juri-empty-title">Let's figure out what's written.</div>
                 <div className="juri-empty-hint">
-                  {contextId
-                    ? "Ask me about this section — I'll read it and tell you what it says."
-                    : "Ask about any statute or regulation. I'll find it, read it, and cite it."}
+                  I'm not a search box — we work this together. Tell me the gist and a few
+                  terms you'd start with, and I'll go pull threads and see what comes up.
                 </div>
-                <div className="juri-empty-examples">
-                  <button type="button" onClick={() => setDraft("What does this section actually say in plain English?")}>
-                    "What does this say?"
+                <div className="juri-template">
+                  <label className="juri-tmpl-label">Your situation, in one sentence</label>
+                  <textarea
+                    value={caseText}
+                    onChange={(e) => setCaseText(e.target.value)}
+                    placeholder={contextId ? "e.g. I'm trying to understand how this section applies to a dispute over…" : "e.g. A collector is calling about a debt I don't think is mine."}
+                    rows={2}
+                    className="juri-tmpl-input"
+                  />
+                  <label className="juri-tmpl-label">Keywords you think are relevant</label>
+                  <input
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startFromTemplate(); } }}
+                    placeholder="e.g. debt validation, dispute, 30 days"
+                    className="juri-tmpl-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={startFromTemplate}
+                    disabled={!caseText.trim() && !keywords.trim()}
+                    className="juri-tmpl-go"
+                  >
+                    Let's take a look →
                   </button>
-                  <button type="button" onClick={() => setDraft("What are the deadlines and requirements here?")}>
-                    "What are the deadlines?"
-                  </button>
-                  <button type="button" onClick={() => setDraft("Are any terms undefined or ambiguous in this section?")}>
-                    "Any vague terms?"
-                  </button>
+                  <div className="juri-tmpl-or">…or just ask me anything below.</div>
                 </div>
               </div>
             )}
@@ -373,7 +406,7 @@ export function Juri() {
                   )}
                   {msg.citations && msg.citations.length > 0 && (
                     <div className="juri-sources">
-                      <div className="juri-sources-label">Sources consulted</div>
+                      <div className="juri-sources-label">What we pulled up — open any of these</div>
                       {msg.citations.map((c) => (
                         <Link
                           key={c.identifier}
@@ -466,7 +499,7 @@ export function Juri() {
                   />
                   <button
                     type="button"
-                    onClick={submit}
+                    onClick={() => submit()}
                     disabled={loading || !draft.trim()}
                     className="juri-send"
                     aria-label="Send"
