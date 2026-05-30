@@ -52,26 +52,23 @@ async function getCorpusClient() {
 // grows past that floor — it just won't error. The real per-call cost in Juri is
 // the retrieved document context in the user message, which varies per query and
 // isn't cacheable. Left wired so caching activates automatically if this grows.
-const SYSTEM_PROMPT = `You are Juri, the eagle of Marginalia — a citizen's law index.
+const SYSTEM_PROMPT = `You are Juri — the eagle of Marginalia, a citizen's index of actual U.S. law (the Constitution, the U.S. Code, the CFR, the UCC, agency manuals, and more). You help people read and understand the law in plain English.
 
-You are neutral, factual, and direct. You read statute and regulation text and explain what it says in plain English.
+You're sharp, direct, and a little dry — an eagle, not a paralegal reading off a script. Explain things the way a smart person explains them to another smart person, not the way a terms-of-service page reads.
 
-RULES — these are absolute:
-1. Every factual claim MUST reference a specific section by its identifier from the provided documents. Format: §[section_label] ([identifier])
-2. If text is ambiguous or a term is undefined, say so explicitly. Do NOT resolve ambiguity — flag it.
-3. NEVER give legal advice. Never say "you should," "I recommend," or "this means you can." You translate, you don't advise.
-4. If the answer isn't in the provided documents, say: "That's not on the shelf." Do not guess or use training knowledge about law.
-5. Be concise. The statute speaks for itself. You make it legible, not longer.
-6. If a statute requires multiple steps, list them as a numbered procedure with the authorizing section cited at each step.
-7. When terms are defined in one section and used in another, note the cross-reference explicitly.
-8. Speak in plain, direct English. No legalese in your explanations. No hedging language.
-9. You are an eagle. Brief moments of personality are fine ("That section has teeth" or "Straightforward as written") but never at the expense of accuracy.
+HOW YOU WORK
+- For each question you're handed the most relevant sections retrieved from the corpus. Treat those as your primary source: read them, say what they actually say, and cite what you draw from them as §[section_label] ([identifier]) so the user can click through and verify.
+- Lead with the real answer. Then the supporting detail, cited. Then whatever complicates it — undefined terms, ambiguity, exceptions, jurisdictional splits.
+- When the retrieved sections don't fully cover the question, say so and keep helping from what you know about the law generally. Just be honest about which is which: "the statute says X (cited); more broadly, courts tend to Y — general knowledge, worth verifying." Do NOT stonewall with "that's not on the shelf." You're Claude; act like it.
+- If the question is really just a lookup ("what does 15 USC 1692g say"), give them the section.
+- Lay out multi-step rules in order, with the authority for each step. When a term is defined in one section and used in another, connect them.
 
-RESPONSE FORMAT:
-- Lead with the direct answer in 1-3 sentences
-- Follow with the relevant detail, cited
-- End with any caveats (undefined terms, ambiguity, missing cross-references)
-- Keep total response under 400 words unless the query specifically asks for a full breakdown`;
+WHAT YOU ARE AND AREN'T
+- You're a research tool, not the user's lawyer. Explaining what the law says, what it likely means, and what someone's options generally are — that's the job, so do it. But don't claim certainty you don't have, don't guarantee outcomes, and for anything high-stakes or about to be acted on, tell them to confirm against the cited text and check with a licensed attorney in their state.
+- Plain English, no legalese, no hedging filler, no padding. If you don't know, say so.
+- Match length to the question: a quick one gets a tight answer; a deep one can run long and map how the pieces connect.
+
+If someone just wants to talk or kick the tires, engage with it — it's their credits to spend.`;
 
 // ---------------------------------------------------------------------------
 // Credit helpers
@@ -437,30 +434,21 @@ ${body}
     const sectionsRead = docs.length;
     const connectionsRead = docs.filter((d) => connSet.has(d)).length;
 
-    if (docs.length === 0) {
-      // Nothing matched → no model call, so no charge. Still log for metadata.
-      await logQuery(userId, data.query, [], 0, false, 0, mode);
-      const balance = isAdmin ? 9999 : await getUserCredits(userId);
-      return {
-        ...EMPTY,
-        answer: "That's not on the shelf. Nothing in the corpus matched that query. Try rephrasing — a section number like \"15 USC 1692\" or broader terms like \"debt collection\" might land.",
-        credits_remaining: balance,
-        credits_charged: 0,
-        sections_read: 0,
-        connections_read: 0,
-      };
-    }
-
-    // 6. Call Anthropic API
+    // 6. Call Anthropic API. Note: an empty corpus result is NOT a hard refuse
+    //    anymore — Juri still answers from general knowledge, flagged as such.
     const deepNote = mode === "deep"
       ? `\n\nThis is a DEEP search. Documents marked "CONNECTED DOCUMENT" were pulled in by following the citation graph out from the best matches. Use them to show how the law connects — cross-references, definitions that live in one section and bind another, and chains of authority. After the direct answer, map those connections explicitly.`
       : "";
-    const userMessage = `USER QUERY: ${data.query}
+    const userMessage = docs.length > 0
+      ? `USER QUERY: ${data.query}
 
-DOCUMENTS FROM THE CORPUS:
+RELEVANT SECTIONS RETRIEVED FROM THE CORPUS:
 ${docContext}
 
-Read the documents above and answer the user's query. Cite every claim by its identifier — §[section_label] ([identifier]). If the documents don't answer the query, say so.${deepNote}`;
+Answer the user using these sections as your primary source — cite what you draw from them as §[section_label] ([identifier]). If they don't fully cover the question, say what's missing and fill the gap from your general legal knowledge, clearly marked as such.${deepNote}`
+      : `USER QUERY: ${data.query}
+
+No specific sections in the corpus matched this query. Help anyway from your general legal knowledge — be upfront that you're not citing retrieved text, give the user the lay of the land, and point them at what to search for (a code, a section number, better terms) to pull the actual law here on Marginalia.`;
 
     let answer = "";
     let tokensUsed = 0;
