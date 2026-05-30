@@ -4,8 +4,6 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { listSources } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
-import { Marginalia } from "@/components/marginalia/Marginalia";
-import { HOME_NOTES } from "@/components/marginalia/marginalia-home-notes";
 import { Analytics } from "@vercel/analytics/next"
 
 // Full names (cards) and short codes (hero chips), keyed by source code.
@@ -64,7 +62,6 @@ function Index() {
       <SiteHeader />
 
       <main className="relative">
-        <Marginalia notes={HOME_NOTES} />
         {/* EAGLE HERO — navy bg, spinning gold foil disc, screaming eagle */}
         <section className="home-hero-am">
           <div className="hh-foil" />

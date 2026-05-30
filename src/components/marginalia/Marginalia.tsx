@@ -104,7 +104,7 @@ function MarginaliaStyle() {
   position: absolute;
   font-family: "Architects Daughter", "Comic Sans MS", cursive;
   z-index: 2;
-  opacity: 0.9;
+  opacity: 1;
   transition: opacity 200ms ease-out;
 }
 .mn-cite {

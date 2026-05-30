@@ -102,8 +102,8 @@
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
   --paper-tint: oklch(0.945 0.014 80);  /* between paper and paper-deep — sidebars / chip backgrounds */
   --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
-  --ink-muted: oklch(0.38 0.014 75);    /* darker muted body for contrast on cream */
-  --rule-card: oklch(0.74 0.020 75);    /* darker tan border for "ink-on-paper" cards */
+  --ink-muted: oklch(0.34 0.015 75);    /* darker muted body for contrast on cream/white */
+  --rule-card: oklch(0.66 0.022 75);    /* visible edge for bright-white "ink-on-paper" cards */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
   --terracotta: oklch(0.42 0.13 30);    /* #8B2E1F deep oxblood */
@@ -112,7 +112,7 @@
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: var(--paper-soft);
+  --card: oklch(1 0 0);                 /* bright white — bubbles read against parchment */
   --card-foreground: var(--ink);
   --popover: var(--paper-soft);
   --popover-foreground: var(--ink);
@@ -157,7 +157,7 @@
   /* Finer ink shades (current only had --ink-muted) */
   --ink-2: oklch(0.280 0.010 70);   /* strong secondary */
   --ink-3: oklch(0.380 0.014 75);   /* muted (== --ink-muted) */
-  --ink-4: oklch(0.560 0.014 75);   /* caption */
+  --ink-4: oklch(0.48 0.015 75);   /* caption */
   --ink-card: var(--paper-soft);    /* alias used by prototype card classes */
   /* Accent variants */
   --terracotta-2: oklch(0.560 0.140 32);
@@ -1902,7 +1902,8 @@ main {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--paper-soft);
+    align-self: flex-start;  /* never stretch to the paragraph's height */
+    background: #ffffff;
     border: 1.5px solid var(--rule-card);
     border-radius: 4px;
     padding: 2px 8px;
@@ -1916,6 +1917,10 @@ main {
     flex-shrink: 0;
     white-space: nowrap;
     line-height: 1.4;
+  }
+  .dark .ci-pill {
+    background: var(--paper-soft);
+    border-color: var(--rule-card);
   }
 
   /* ===========================================================================

@@ -59,7 +59,7 @@ function DefinitionsPanel({ text }: { text: string }) {
   if (defs.size === 0) return null;
   const entries = Array.from(defs.entries()).sort(([a], [b]) => a.localeCompare(b));
   return (
-    <div className="mb-6 rounded-2xl border border-border/60 bg-card/60 paper-grain">
+    <div className="mb-6 rounded-2xl border border-border/60 bg-card paper-grain">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -246,23 +246,27 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
       </div>
 
       {/* Margin — beside the text at lg+, stacked below on narrow screens.
-          Client-only (hover-to-add, edit/delete) so there's no SSR/hydration
-          mismatch; top-aligned to the paragraph so a note pins to its line. */}
+          The note floats (absolute) inside its reserved 16rem column at lg+, so
+          a growing note expands DOWN over the gutter without stretching this
+          paragraph's grid row — the statute column never reflows. Client-only
+          (hover-to-add, edit/delete) so there's no SSR/hydration mismatch. */}
       {hydrated && (
-        <div className={`mt-2 ${LEVEL_INDENT[p.level]} lg:mt-0 lg:pl-0`}>
-          {composing ? (
-            <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
-          ) : hasNote ? (
-            <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
-          ) : (
-            <button
-              type="button"
-              onClick={onStartCompose}
-              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[15px] leading-tight text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
-            >
-              <PenLine className="h-3 w-3 shrink-0 text-ochre" /> note
-            </button>
-          )}
+        <div className={`mt-2 ${LEVEL_INDENT[p.level]} lg:relative lg:mt-0 lg:pl-0`}>
+          <div className="lg:absolute lg:inset-x-0 lg:top-0">
+            {composing ? (
+              <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
+            ) : hasNote ? (
+              <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
+            ) : (
+              <button
+                type="button"
+                onClick={onStartCompose}
+                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[15px] leading-tight text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
+              >
+                <PenLine className="h-3 w-3 shrink-0 text-ochre" /> note
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -283,7 +287,7 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   const paras = useMemo(() => splitParagraphs(body, seg.start, seg.end, spans), [body, seg.start, seg.end, spans]);
   if (paras.length === 0) return null;
   return (
-    <div className="mt-4 rounded-2xl border border-border/60 bg-card/40">
+    <div className="mt-4 rounded-2xl border border-border/60 bg-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -522,7 +526,7 @@ function ConnectionsDisclosure({
   if (tracesCount > 0) bits.push(`traces to ${tracesCount}`);
   if (externalCount > 0 && citedByTotal === 0 && tracesCount === 0) bits.push(`${externalCount} off-index`);
   return (
-    <section className="mt-12 rounded-2xl border border-border/60 bg-card/40">
+    <section className="mt-12 rounded-2xl border border-border/60 bg-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -698,7 +702,7 @@ function DocumentPage() {
   ) : null;
 
   const graphPlaceholder = (
-    <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+    <div className="rounded-lg border border-dashed border-border/70 bg-card p-3 text-xs text-foreground/65">
       <div className="flex items-center gap-1.5 font-medium text-foreground/80">
         <Network className="h-3.5 w-3.5" />
         Citation graph

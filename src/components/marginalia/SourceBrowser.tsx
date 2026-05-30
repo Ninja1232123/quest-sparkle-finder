@@ -52,7 +52,7 @@ export function SourceBrowserPending() {
         <div className="mt-8 h-11 w-full animate-pulse rounded-full bg-muted/40" />
         <div className="mt-8 space-y-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-2xl border bg-card/60" />
+            <div key={i} className="h-14 animate-pulse rounded-2xl border bg-card" />
           ))}
         </div>
       </div>
@@ -275,7 +275,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
     <div className="space-y-5 text-sm">
       <div>
         <div className="citation-tag mb-1.5 text-muted-foreground">this source</div>
-        <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+        <div className="rounded-lg border border-border/60 bg-card p-3">
           <div className="flex items-center gap-2">
             <span
               aria-hidden
@@ -298,7 +298,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
       {group ? (
         <div>
           <div className="citation-tag mb-1.5 text-muted-foreground">in {groupLabel}</div>
-          <div className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-foreground/70">
+          <div className="rounded-lg border border-border/60 bg-card p-3 text-xs text-foreground/70">
             <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">entries</div>
             <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
               {(documents as DocLite[]).length.toLocaleString()}
@@ -315,7 +315,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
       ) : tg && titleNode ? (
         <div>
           <div className="citation-tag mb-1.5 text-muted-foreground">in {cleanBubbleTitle(tg)}</div>
-          <div className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-foreground/70">
+          <div className="rounded-lg border border-border/60 bg-card p-3 text-xs text-foreground/70">
             <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">parts</div>
             <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
               {titleNode.parts.length.toLocaleString()}
@@ -346,7 +346,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
 
       <div>
         <div className="citation-tag mb-1.5 text-muted-foreground">soon · here</div>
-        <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs text-foreground/65">
+        <div className="rounded-lg border border-dashed border-border/70 bg-card p-3 text-xs text-foreground/65">
           <div className="flex items-center gap-1.5 font-medium text-foreground/80">
             <Network className="h-3.5 w-3.5" />
             Citation graph
@@ -436,7 +436,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
         {!group && !tg && (
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filteredToc.length === 0 && (
-              <div className="col-span-2 rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+              <div className="col-span-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
                 Nothing in the table of contents matches "{filter}".
               </div>
             )}
@@ -469,7 +469,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
         {tg && !group && (
           <div className="mt-8">
             {!titleNode ? (
-              <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
                 Title not found.
               </div>
             ) : (
@@ -491,7 +491,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
         {group && (
           <div className="mt-8">
             {groupedSections.length === 0 ? (
-              <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
                 {filter ? `No entries in ${groupLabel} match "${filter}".` : `No entries found.`}
               </div>
             ) : (
@@ -625,7 +625,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
     <div className="space-y-5 text-sm">
       <div>
         <div className="citation-tag mb-1.5 text-muted-foreground">this source</div>
-        <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+        <div className="rounded-lg border border-border/60 bg-card p-3">
           <div className="flex items-center gap-2">
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.accent }} />
             <span className="font-display text-sm font-semibold">{meta.short}</span>
@@ -638,7 +638,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
       </div>
       <div>
         <div className="citation-tag mb-1.5 text-muted-foreground">how to browse</div>
-        <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-3 text-xs leading-relaxed text-foreground/65">
+        <div className="rounded-lg border border-dashed border-border/70 bg-card p-3 text-xs leading-relaxed text-foreground/65">
           {source === "register"
             ? "Pick a year, then an issue date, to read that day's rules, proposed rules, and notices."
             : "Pick a Congress, then a bill — or type a bill number or keywords to filter."}
@@ -748,7 +748,7 @@ function LeafDocs({ source, docs }: { source: string; docs: DocLite[] }) {
   return (
     <div className="mt-8">
       {docs.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
           Nothing here.
         </div>
       ) : (
@@ -816,7 +816,7 @@ function BillList({
       </form>
 
       {bills.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
           {q ? `No bills in the ${ordinal(congress)} Congress match "${q}".` : "No bills found."}
         </div>
       ) : (
