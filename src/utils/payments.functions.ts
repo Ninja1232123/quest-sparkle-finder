@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { CREDIT_PACKS } from "@/lib/juri-credits";
+import { isAdminEmail } from "@/lib/admin";
 
 function pickEnvironment(): StripeEnv {
   return process.env.NODE_ENV === "production" && process.env.STRIPE_LIVE_API_KEY
@@ -147,6 +149,88 @@ export const createDonationCheckout = createServerFn({ method: "POST" })
       mode: "payment",
       ui_mode: "embedded_page",
       return_url: returnUrl,
+      ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
+    } as Parameters<typeof stripe.checkout.sessions.create>[0]);
+
+    return session.client_secret;
+  });
+
+// Buy a Juri credit top-up pack. One-time payment (mode=payment), priced inline
+// via price_data so no Stripe dashboard prices are needed. The pack's credit
+// count rides in metadata; the webhook reads it and calls add_topup_credits on
+// `checkout.session.completed`. Requires an active Pro subscription — Juri (and
+// therefore its credits) is a Pro-gated tool.
+export const createJuriCreditCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { packId: string; returnPath?: string }) => {
+    if (!CREDIT_PACKS.some((p) => p.lookupKey === data.packId)) {
+      throw new Error("Unknown credit pack");
+    }
+    if (data.returnPath && !/^\/[A-Za-z0-9/_\-?=&{}.]*$/.test(data.returnPath)) {
+      throw new Error("Invalid returnPath");
+    }
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const claims = context.claims as { email?: string } | undefined;
+    const email = typeof claims?.email === "string" ? claims.email : undefined;
+    const environment = pickEnvironment();
+
+    const pack = CREDIT_PACKS.find((p) => p.lookupKey === data.packId)!;
+
+    // Gate: must be Pro (or admin) to buy credits, so we never sell credits a
+    // user can't spend. Mirrors use-subscription.tsx's isActive logic.
+    if (!isAdminEmail(email)) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("status, current_period_end")
+        .eq("user_id", userId)
+        .eq("environment", environment)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const endMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
+      const now = Date.now();
+      const active =
+        !!sub &&
+        ((["active", "trialing", "past_due"].includes(sub.status) && (!endMs || endMs > now)) ||
+          (sub.status === "canceled" && endMs !== null && endMs > now));
+      if (!active) throw new Error("Juri credits require an active Pro subscription.");
+    }
+
+    const origin = originFromRequest();
+    const returnUrl = `${origin}${data.returnPath ?? "/account"}?session_id={CHECKOUT_SESSION_ID}`;
+    const stripe = createStripeClient(environment);
+    const customerId = await resolveOrCreateCustomer(stripe, { email, userId });
+
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: `Juri credits — ${pack.credits} questions (${pack.label})` },
+            unit_amount: pack.priceCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      ui_mode: "embedded_page",
+      return_url: returnUrl,
+      customer: customerId,
+      // The webhook grants credits from this metadata. kind tags it as a credit
+      // purchase (vs a donation, which carries no kind).
+      metadata: {
+        userId,
+        kind: "juri_credits",
+        packId: pack.lookupKey,
+        credits: String(pack.credits),
+        price_cents: String(pack.priceCents),
+      },
+      payment_intent_data: {
+        metadata: { userId, kind: "juri_credits", credits: String(pack.credits) },
+      },
       ...({ managed_payments: { enabled: true } } as Record<string, unknown>),
     } as Parameters<typeof stripe.checkout.sessions.create>[0]);
 

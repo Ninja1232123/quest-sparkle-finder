@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
+import { type StripeEnv, verifyWebhook, createStripeClient } from "@/lib/stripe.server";
+import { PRO_MONTHLY_CREDITS } from "@/lib/juri-credits";
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
@@ -82,6 +83,84 @@ async function markCanceled(sub: any, env: StripeEnv) {
     .eq("environment", env);
 }
 
+// ── Juri credits ────────────────────────────────────────────────────────────
+// One-time credit-pack purchase → grant top-up credits. Idempotent: the
+// purchase row's unique index on stripe_payment_intent stops a double grant
+// if Stripe redelivers the event.
+async function grantCreditPurchase(session: any, env: StripeEnv) {
+  const userId = session.metadata?.userId;
+  const credits = parseInt(session.metadata?.credits ?? "0", 10);
+  const priceCents = parseInt(session.metadata?.price_cents ?? "0", 10);
+  const pi =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+  if (!userId || !credits) {
+    console.error("juri credit purchase missing userId/credits", session.id);
+    return;
+  }
+  const sb: any = getSupabase();
+  const { error: insErr } = await sb.from("juri_credit_purchases").insert({
+    user_id: userId,
+    amount: credits,
+    price_cents: priceCents,
+    stripe_payment_intent: pi,
+    environment: env,
+  });
+  if (insErr) {
+    // 23505 = unique_violation → this payment was already processed. Don't grant again.
+    if (insErr.code === "23505") return;
+    console.error("juri purchase insert failed; skipping grant:", insErr);
+    return;
+  }
+  await sb.rpc("add_topup_credits", { p_user_id: userId, p_amount: credits });
+}
+
+// Pro renewal (and the initial subscription invoice) → reset the monthly Juri
+// allowance. Idempotent per (user, billing period) via set_pro_monthly_credits.
+async function grantProMonthly(invoice: any, env: StripeEnv) {
+  const reason = invoice.billing_reason;
+  if (reason && !["subscription_create", "subscription_cycle"].includes(reason)) return;
+
+  const line = invoice.lines?.data?.[0];
+  const periodStart = line?.period?.start ?? invoice.period_start ?? invoice.created;
+  const periodKey = String(periodStart);
+
+  const sb: any = getSupabase();
+  let userId: string | null = null;
+  const subId =
+    typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+  if (subId) {
+    const { data } = await sb
+      .from("subscriptions")
+      .select("user_id")
+      .eq("stripe_subscription_id", subId)
+      .maybeSingle();
+    userId = data?.user_id ?? null;
+  }
+  // Fallback: the subscription row may not exist yet on the very first invoice —
+  // read userId off the Stripe customer's metadata.
+  if (!userId && invoice.customer) {
+    try {
+      const stripe = createStripeClient(env);
+      const custId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer.id;
+      const cust = await stripe.customers.retrieve(custId);
+      if (cust && !(cust as any).deleted) userId = (cust as any).metadata?.userId ?? null;
+    } catch (e) {
+      console.error("invoice.paid: customer fetch failed", e);
+    }
+  }
+  if (!userId) {
+    console.error("invoice.paid: could not resolve userId", invoice.id);
+    return;
+  }
+  await sb.rpc("set_pro_monthly_credits", {
+    p_user_id: userId,
+    p_period_key: periodKey,
+    p_amount: PRO_MONTHLY_CREDITS,
+  });
+}
+
 async function handle(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
   switch (event.type) {
@@ -91,6 +170,16 @@ async function handle(req: Request, env: StripeEnv) {
       break;
     case "customer.subscription.deleted":
       await markCanceled(event.data.object, env);
+      break;
+    case "checkout.session.completed": {
+      const s = event.data.object as any;
+      if (s.mode === "payment" && s.metadata?.kind === "juri_credits") {
+        await grantCreditPurchase(s, env);
+      }
+      break;
+    }
+    case "invoice.paid":
+      await grantProMonthly(event.data.object, env);
       break;
     default:
       console.log("Unhandled stripe event:", event.type);

@@ -13,8 +13,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
-import { X, Send, Coins, ArrowUpRight, Loader2 } from "lucide-react";
+import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, type CreditPack } from "@/lib/juri-credits";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check } from "lucide-react";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
 function EagleSvg({ className = "", size = 40 }: { className?: string; size?: number }) {
@@ -53,6 +56,8 @@ type Message = {
   text: string;
   citations?: JuriCitation[];
   error?: boolean;
+  /** A call-to-action to render under an error: upsell Pro, or buy credits. */
+  cta?: "pro" | "buy";
 };
 
 const SOURCE_SHORT: Record<string, string> = {
@@ -64,6 +69,8 @@ const SOURCE_SHORT: Record<string, string> = {
 
 export function Juri() {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"chat" | "buy">("chat");
+  const [checkoutPack, setCheckoutPack] = useState<CreditPack | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
@@ -71,7 +78,9 @@ export function Juri() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, session } = useAuth();
+  const { isPro } = useSubscription();
   const router = useRouter();
+  const currentPath = router.state.location.pathname;
 
   // Current section identifier from the URL (if viewing a document)
   const contextId = (() => {
@@ -127,7 +136,8 @@ export function Juri() {
       });
 
       if (res.error) {
-        setMessages((prev) => [...prev, { role: "juri", text: res.error!, error: true }]);
+        const cta = res.pro_required ? "pro" : res.out_of_credits ? "buy" : undefined;
+        setMessages((prev) => [...prev, { role: "juri", text: res.error!, error: true, cta }]);
       } else {
         setMessages((prev) => [...prev, {
           role: "juri",
@@ -181,22 +191,42 @@ export function Juri() {
           {/* Header */}
           <div className="juri-header">
             <div className="juri-header-left">
-              <EagleSvg size={28} className="juri-header-eagle" />
+              {view === "buy" ? (
+                <button
+                  type="button"
+                  onClick={() => { setView("chat"); setCheckoutPack(null); }}
+                  className="juri-close-btn"
+                  aria-label="Back to chat"
+                  title="Back"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              ) : (
+                <EagleSvg size={28} className="juri-header-eagle" />
+              )}
               <div>
-                <div className="juri-wordmark">JURI</div>
-                <div className="juri-subtitle">reads the statute · cites the source</div>
+                <div className="juri-wordmark">{view === "buy" ? "GET CREDITS" : "JURI"}</div>
+                <div className="juri-subtitle">
+                  {view === "buy" ? "1 credit = 1 question · never expire" : "reads the statute · cites the source"}
+                </div>
               </div>
             </div>
             <div className="juri-header-right">
-              {user && credits !== null && (
-                <div className="juri-credit-pill" title="Juri credits remaining">
+              {user && credits !== null && view === "chat" && (
+                <button
+                  type="button"
+                  onClick={() => setView("buy")}
+                  className="juri-credit-pill"
+                  title="Credits remaining — tap to get more"
+                  style={{ cursor: "pointer" }}
+                >
                   <Coins className="h-3 w-3" />
                   <span>{credits >= 9999 ? "∞" : credits}</span>
-                </div>
+                </button>
               )}
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); setView("chat"); setCheckoutPack(null); }}
                 className="juri-close-btn"
                 aria-label="Close Juri"
                 title="Close"
@@ -206,6 +236,72 @@ export function Juri() {
             </div>
           </div>
 
+          {/* Buy-credits view — replaces the chat body */}
+          {view === "buy" ? (
+            <div className="juri-messages">
+              {checkoutPack ? (
+                <div>
+                  <div className="mb-3 text-center font-display text-sm font-semibold text-foreground/80">
+                    {checkoutPack.credits} credits · ${(checkoutPack.priceCents / 100).toFixed(0)}
+                  </div>
+                  <StripeEmbeddedCheckout creditPackId={checkoutPack.lookupKey} returnPath={currentPath} />
+                </div>
+              ) : !isPro ? (
+                <div className="juri-empty">
+                  <Sparkles className="h-10 w-10 text-ochre" />
+                  <div className="juri-empty-title">Juri is a Pro tool</div>
+                  <div className="juri-empty-hint">
+                    Pro is $5/mo and includes {PRO_MONTHLY_CREDITS} Juri questions every month — top up
+                    anytime if you need more. Unlock Juri and the rest of the research desk.
+                  </div>
+                  <Link
+                    to="/subscribe"
+                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-accent-foreground shadow-[var(--shadow-warm)] hover:-translate-y-0.5 transition-transform"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> Go Pro — $5/mo →
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3 px-1 py-1">
+                  <p className="text-center text-xs leading-relaxed text-foreground/60">
+                    You get {PRO_MONTHLY_CREDITS} questions a month with Pro. Out of those?
+                    Top up here — <span className="font-semibold">1 credit = 1 question, never expires.</span>
+                  </p>
+                  {CREDIT_PACKS.map((pack) => (
+                    <button
+                      key={pack.lookupKey}
+                      type="button"
+                      onClick={() => setCheckoutPack(pack)}
+                      className="group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3.5 text-left transition hover:-translate-y-0.5 hover:border-accent hover:shadow-[var(--shadow-warm)]"
+                    >
+                      <Coins className="h-5 w-5 shrink-0 text-ochre" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-display text-sm font-semibold">{pack.label}</span>
+                          {pack.badge && (
+                            <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+                              {pack.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-foreground/55">
+                          {pack.credits.toLocaleString()} questions · {centsPerCredit(pack).toFixed(1)}¢ each
+                        </div>
+                      </div>
+                      <div className="font-display text-base font-bold">
+                        ${(pack.priceCents / 100).toFixed(0)}
+                      </div>
+                    </button>
+                  ))}
+                  <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-foreground/45">
+                    <Check className="h-3 w-3" /> Secure checkout by Stripe
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+          <>
           {/* Messages */}
           <div className="juri-messages" ref={scrollRef}>
             {messages.length === 0 && !loading && (
@@ -238,6 +334,24 @@ export function Juri() {
                 )}
                 <div className="juri-msg-body">
                   <div className="juri-msg-text">{msg.text}</div>
+                  {msg.cta === "pro" && (
+                    <Link
+                      to="/subscribe"
+                      onClick={() => setOpen(false)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground hover:-translate-y-0.5 transition-transform"
+                    >
+                      <Sparkles className="h-3 w-3" /> Unlock Juri — Go Pro $5/mo →
+                    </Link>
+                  )}
+                  {msg.cta === "buy" && (
+                    <button
+                      type="button"
+                      onClick={() => setView("buy")}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground hover:-translate-y-0.5 transition-transform"
+                    >
+                      <Coins className="h-3 w-3" /> Get more credits →
+                    </button>
+                  )}
                   {msg.citations && msg.citations.length > 0 && (
                     <div className="juri-sources">
                       <div className="juri-sources-label">Sources consulted</div>
@@ -314,6 +428,8 @@ export function Juri() {
               Not legal advice. Every claim cites the source — read it yourself.
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
     </>

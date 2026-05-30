@@ -14,6 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { isAdminEmail } from "@/lib/admin";
+import { JURI_REQUIRES_PRO, JURI_FREE_TASTE } from "@/lib/juri-credits";
 
 // ---------------------------------------------------------------------------
 // Supabase clients — cloud for credits/auth, local for corpus.
@@ -96,6 +97,56 @@ async function deductCredit(userId: string): Promise<boolean> {
   }
 }
 
+// Active-Pro check, server-side. Mirrors use-subscription.tsx's isActive logic
+// against the cloud `subscriptions` table. Juri is a Pro-gated tool.
+function proEnvironment(): "live" | "sandbox" {
+  return process.env.NODE_ENV === "production" && process.env.STRIPE_LIVE_API_KEY
+    ? "live"
+    : "sandbox";
+}
+
+async function hasActivePro(userId: string): Promise<boolean> {
+  try {
+    const cloud = await getCloudClient();
+    const { data } = await cloud
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("user_id", userId)
+      .eq("environment", proEnvironment())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return false;
+    const periodEndMs = data.current_period_end
+      ? new Date(data.current_period_end as string).getTime()
+      : null;
+    const now = Date.now();
+    const status = data.status as string;
+    return (
+      (["active", "trialing", "past_due"].includes(status) && (!periodEndMs || periodEndMs > now)) ||
+      (status === "canceled" && periodEndMs !== null && periodEndMs > now)
+    );
+  } catch {
+    return false;
+  }
+}
+
+// Lifetime count of credited Juri queries — used only to enforce the optional
+// non-Pro "free taste" cap (JURI_FREE_TASTE). 0 cap → this is never called.
+async function countCreditedQueries(userId: string): Promise<number> {
+  try {
+    const cloud = await getCloudClient();
+    const { count } = await cloud
+      .from("juri_queries")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("credited", true);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function logQuery(
   userId: string | null,
   query: string,
@@ -172,6 +223,10 @@ type JuriResponse = {
   citations: JuriCitation[];
   credits_remaining: number;
   error: string | null;
+  /** Set when the block is "you must be Pro" — UI shows a Go-Pro CTA. */
+  pro_required?: boolean;
+  /** Set when the block is "you're out of credits" — UI shows a buy CTA. */
+  out_of_credits?: boolean;
 };
 
 export const askJuri = createServerFn({ method: "POST" })
@@ -214,12 +269,34 @@ export const askJuri = createServerFn({ method: "POST" })
       return { ...EMPTY, error: "Sign in to talk to Juri." };
     }
 
-    // 3. Check credits (admin = unlimited)
+    // 3. Gate: Juri is a Pro tool. Then check credits. (admin = unlimited)
     const isAdmin = isAdminEmail(userEmail);
     if (!isAdmin) {
+      // 3a. Pro gate. Non-Pro users are blocked unless a free taste is allowed.
+      if (JURI_REQUIRES_PRO) {
+        const pro = await hasActivePro(userId);
+        if (!pro) {
+          if (JURI_FREE_TASTE > 0 && (await countCreditedQueries(userId)) < JURI_FREE_TASTE) {
+            // within the free-taste allowance — fall through to the credit check
+          } else {
+            return {
+              ...EMPTY,
+              pro_required: true,
+              error: "Juri is a Pro tool. Unlock it with Pro — $5/mo.",
+            };
+          }
+        }
+      }
+
+      // 3b. Credit gate (monthly allowance first, then top-ups — see SQL).
       const balance = await getUserCredits(userId);
       if (balance <= 0) {
-        return { ...EMPTY, credits_remaining: 0, error: "No credits. Pick some up to keep talking." };
+        return {
+          ...EMPTY,
+          credits_remaining: 0,
+          out_of_credits: true,
+          error: "You're out of credits. Grab a top-up pack to keep asking.",
+        };
       }
     }
 
