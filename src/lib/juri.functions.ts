@@ -39,6 +39,11 @@ async function getCorpusClient() {
 // System prompt — neutral, factual, grounded.
 // ---------------------------------------------------------------------------
 
+// NOTE: at ~600 tokens this prompt is below Sonnet 4.6's 2048-token cache floor,
+// so the cache_control marker on it (see askJuri) is a no-op until the prompt
+// grows past that floor — it just won't error. The real per-call cost in Juri is
+// the retrieved document context in the user message, which varies per query and
+// isn't cacheable. Left wired so caching activates automatically if this grows.
 const SYSTEM_PROMPT = `You are Juri, the eagle of Marginalia — a citizen's law index.
 
 You are neutral, factual, and direct. You read statute and regulation text and explain what it says in plain English.
@@ -316,9 +321,15 @@ Read the documents above and answer the user's query. Cite every claim by its id
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 1200,
-          system: SYSTEM_PROMPT,
+          // System prompt is static across every call — mark it cacheable so we
+          // stop re-billing it at full input price. cache_control is GA (no beta
+          // header). Caching only activates once the cached prefix clears Sonnet
+          // 4.6's 2048-token floor; see note where SYSTEM_PROMPT is defined.
+          system: [
+            { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+          ],
           messages: [{ role: "user", content: userMessage }],
         }),
       });
@@ -334,7 +345,12 @@ Read the documents above and answer the user's query. Cite every claim by its id
         .filter((b: { type: string }) => b.type === "text")
         .map((b: { text: string }) => b.text)
         .join("\n");
-      tokensUsed = (result.usage?.input_tokens ?? 0) + (result.usage?.output_tokens ?? 0);
+      const u = result.usage ?? {};
+      tokensUsed =
+        (u.input_tokens ?? 0) +
+        (u.output_tokens ?? 0) +
+        (u.cache_read_input_tokens ?? 0) +
+        (u.cache_creation_input_tokens ?? 0);
     } catch (e) {
       console.error("Juri API call failed:", e);
       return { ...EMPTY, error: "Couldn't reach the API. Try again in a moment." };
