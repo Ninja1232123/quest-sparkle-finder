@@ -25,8 +25,14 @@ export const JURI_REQUIRES_PRO = true;
  */
 export const JURI_FREE_TASTE = 0;
 
-/** Credits granted to a brand-new account on signup (a Pro welcome bonus). */
-export const JURI_STARTER_CREDITS = 3;
+/**
+ * Credits granted to a brand-new account on signup. Kept at 0: Juri is Pro-gated,
+ * so signup credits would be unspendable anyway (and a free-account farming
+ * vector if JURI_FREE_TASTE were ever raised). New Pro users get the full
+ * PRO_MONTHLY_CREDITS the moment their first invoice clears, so there's no
+ * welcome gap to fill. The signup trigger is dropped in cloud-juri-credits-v2.sql.
+ */
+export const JURI_STARTER_CREDITS = 0;
 
 /**
  * Credits granted at the start of each Pro billing cycle. Reset, not rollover —
