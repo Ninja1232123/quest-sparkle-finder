@@ -265,8 +265,12 @@ const JURI_DOC_COLS = "id, identifier, source_code, section_label, heading, body
 
 // full-text search across all (or one) source
 async function jSearchLaw(corpus: any, query: string, source: string | null, limit: number) {
+  // p_scope:"all" is essential — the function DEFAULTS to scope 'codified'
+  // (const/usc/cfr/ucc/tfm/irm), which silently excludes Bills, the Federal
+  // Register, Statutes, Public Laws, etc. We want Juri searching everything.
+  // (When source is set, _scope_sources ignores scope and uses that source.)
   const { data } = await corpus.rpc("search_documents_fts", {
-    p_query: query, p_source: source || null, p_limit: Math.min(Math.max(limit, 1), 20),
+    p_query: query, p_source: source || null, p_limit: Math.min(Math.max(limit, 1), 20), p_scope: "all",
   });
   return (data ?? []).map((r: any) => ({
     identifier: r.identifier, source: r.source_code,
