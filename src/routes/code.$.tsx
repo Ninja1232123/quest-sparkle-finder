@@ -4,7 +4,7 @@ import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
-import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 
@@ -13,27 +13,6 @@ import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib
 // body_text offsets so citation_edges spans stay valid. See CITATION_GAMEPLAN.md.
 
 const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
-
-// Citation byte spans, used both to place inline chips and to keep the
-// soft-paragraph splitter from cutting through a cite.
-function citationSpans(citations: DocCitationRow[]): { s: number; e: number }[] {
-  const out: { s: number; e: number }[] = [];
-  for (const c of citations) {
-    if (c.span_start != null && c.span_end != null) out.push({ s: c.span_start, e: c.span_end });
-  }
-  return out;
-}
-
-// The operative paragraphs, flattened across every operative segment, in order.
-// The flat index is the anchor id used by both the body and the outline, so
-// they must derive it from the same inputs (segments + spans).
-function operativeParagraphs(body: string, segments: BodySegment[], spans: { s: number; e: number }[]): LegalPara[] {
-  const out: LegalPara[] = [];
-  for (const seg of segments) {
-    if (seg.kind === "operative") out.push(...splitParagraphs(body, seg.start, seg.end, spans));
-  }
-  return out;
-}
 
 // ── Defined-terms extractor ──────────────────────────────────────────────────
 // Scans body_text for "term" means / is defined as / refers to patterns common
