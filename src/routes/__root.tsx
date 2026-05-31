@@ -66,7 +66,7 @@ export const Route = createRootRoute({
               "@type": "Organization",
               name: "Marginalia",
               url: "https://self-law.org",
-              description: "A citizen's law index — federal codebooks read together.",
+              description: "A citizen's law index — Federal and State codebooks read together.",
             },
             {
               "@type": "WebSite",
@@ -134,9 +134,11 @@ function RootComponent() {
       <AuthProvider>
         <PaymentTestModeBanner />
         <AuthGate />
-        <main id="main">
-          <Outlet />
-        </main>
+        <div className="app-shell">
+          <main id="main">
+            <Outlet />
+          </main>
+        </div>
         <CmdPalette />
         <Juri />
       </AuthProvider>
