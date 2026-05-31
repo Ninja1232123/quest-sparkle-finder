@@ -310,9 +310,10 @@ function Para({ id, body, p, citations, markRe, noteText, noteCases, cases, hydr
 }
 
 // Rough rendered height of a note card, used for first-paint stacking before we
-// measure the real DOM heights. ~22 chars/line in the hand font at rail width.
+// measure the real DOM heights. The Desk rail is now wide (fills text→wall), so
+// ~44 chars/line; real heights are measured after paint anyway.
 function estimateNoteH(text: string) {
-  const lines = Math.max(2, Math.ceil(text.length / 22));
+  const lines = Math.max(2, Math.ceil(text.length / 44));
   return 26 + lines * 28;
 }
 
@@ -571,7 +572,7 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
         </div>
       )}
 
-      <div ref={wrapRef} className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-10">
+      <div ref={wrapRef} className="lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
         <div className="min-w-0 space-y-2.5">
           {opParas.map((p, i) => (
             <Para
@@ -968,7 +969,7 @@ function DocumentPage() {
   );
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-6xl">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-[1700px]">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -1029,21 +1030,28 @@ function DocumentPage() {
         </div>
       </div>
 
-      <article>
-        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-          {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
-          <span className="ink-underline italic">{document.heading}</span>
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
-          {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
-          <span className="text-foreground/30">·</span>
-          <code className="font-mono text-[11px]">{document.identifier}</code>
+      {/* Reading block nudged right of the left edge; title + apparatus held to
+          the same reading measure as the body's text column, while the body grid
+          lets the marginalia "Desk" fill everything from the text to the wall. */}
+      <article className="lg:pl-[5vw]">
+        <div className="lg:max-w-[46rem]">
+          <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
+            <span className="ink-underline italic">{document.heading}</span>
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
+            {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
+            <span className="text-foreground/30">·</span>
+            <code className="font-mono text-[11px]">{document.identifier}</code>
+          </div>
         </div>
 
         <div className="mt-8">
-          <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
-          <DefinitionsPanel text={body} />
+          <div className="lg:max-w-[46rem]">
+            <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
+            <DefinitionsPanel text={body} />
+          </div>
           <div className={`font-serif leading-relaxed text-foreground ${fontClass}`}>
             <LegalBody
               body={body}
