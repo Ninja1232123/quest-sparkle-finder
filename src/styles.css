@@ -252,7 +252,7 @@
   --shadow-card-lift: 0 2px 0 oklch(0 0 0 / 0.30), 0 6px 18px -4px oklch(0 0 0 / 0.50);
 
   /* ===== v2 prototype tokens (dark). Only the absolute-valued vars need an
-     override; --ink-card/--bg*/--fg* are var()-aliases that auto-flip. ===== */
+     override; --ink-card, --bg, --fg are var()-aliases that auto-flip. ===== */
   --ink-2: oklch(0.82 0.014 80);
   --ink-3: oklch(0.72 0.013 75);
   --ink-4: oklch(0.58 0.012 75);
