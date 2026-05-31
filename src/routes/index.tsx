@@ -69,11 +69,11 @@ function Index() {
 
           {/* Flanking law quotes — fill the navy on either side of the eagle */}
           <blockquote className="hero-quote hero-quote-l">
-            <p>Not legal advice, A legal tool.</p>
+            <p>Not legal advice, A legal tool. Research the law, argue for your own justice. That's your right.</p>
             <cite></cite>
           </blockquote>
           <blockquote className="hero-quote hero-quote-r">
-            <p>An attorney is a privilege. Defending yourself is a right.</p>
+            <p>An attorney is a privilege. Defending yourself is a right. Search across codebooks. Justice is a position you make. Not a position that just occurs. </p>
             <cite>You can't exercise a right you can't read.</cite>
           </blockquote>
 
