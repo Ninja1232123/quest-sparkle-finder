@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { listSources } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useCases, loadNote, type CaseRecord } from "@/lib/casebook";
+import { useCases, loadNote, isInline, type CaseRecord } from "@/lib/casebook";
 import { Scale, Plus, ChevronRight, PenLine } from "lucide-react";
 import { useState } from "react";
 
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/cases/")({
 
 function lastTouched(c: CaseRecord): number {
   let t = c.createdAt;
-  for (const ref of c.items) {
-    const n = loadNote(ref);
-    if (n && n.updatedAt > t) t = n.updatedAt;
+  for (const item of c.items) {
+    const u = isInline(item) ? item.updatedAt : loadNote(item)?.updatedAt ?? 0;
+    if (u > t) t = u;
   }
   return t;
 }
@@ -101,7 +101,7 @@ function CasesIndex() {
       ) : (
         <ul className="space-y-3">
           {cases.map((c) => {
-            const cites = new Set(c.items.map((i) => i.identifier)).size;
+            const cites = new Set(c.items.flatMap((it) => (isInline(it) ? it.cites.map((x) => x.identifier) : [it.identifier]))).size;
             const touched = lastTouched(c);
             return (
               <li key={c.id}>

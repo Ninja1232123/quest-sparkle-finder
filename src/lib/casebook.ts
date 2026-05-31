@@ -37,14 +37,34 @@ export type NoteRecord = {
   updatedAt: number;
 };
 
-/** A reference from a case to one note. (identifier + paraIndex is stable.) */
+/** A reference from a case to one margin note. (identifier + paraIndex is stable.) */
 export type CaseItemRef = { identifier: string; paraIndex: number };
+
+/** A note authored directly into a case (e.g. on the Compare shelf) that
+ *  synthesizes SEVERAL laws at once — carries its own text + citations rather
+ *  than hanging off a single paragraph. */
+export type InlineNote = {
+  kind: "note";
+  id: string;
+  text: string;
+  cites: NoteCite[];
+  createdAt: number;
+  updatedAt: number;
+};
+
+/** A case item is either a reference to a margin note or an inline note.
+ *  (Legacy items have no `kind` and are treated as margin refs.) */
+export type CaseItem = CaseItemRef | InlineNote;
+
+export function isInline(i: CaseItem): i is InlineNote {
+  return (i as InlineNote).kind === "note";
+}
 
 export type CaseRecord = {
   id: string;
   name: string;
   createdAt: number;
-  items: CaseItemRef[]; // user-ordered
+  items: CaseItem[]; // user-ordered, mixed margin refs + inline notes
 };
 
 // ── Keys ──────────────────────────────────────────────────────────────────--
@@ -56,6 +76,9 @@ const CASES_KEY = "casebook.cases.v1";
 export const refId = (r: CaseItemRef) => `${r.identifier}#${r.paraIndex}`;
 export const sameRef = (a: CaseItemRef, b: CaseItemRef) =>
   a.identifier === b.identifier && a.paraIndex === b.paraIndex;
+/** True iff `item` is a margin ref matching `ref` (inline notes never match). */
+const matchesRef = (item: CaseItem, ref: CaseItemRef) =>
+  !isInline(item) && item.identifier === ref.identifier && item.paraIndex === ref.paraIndex;
 
 function now() {
   return typeof performance !== "undefined" ? Date.now() : Date.now();
@@ -246,7 +269,7 @@ export function useCases() {
     (id: string, ref: CaseItemRef) =>
       setCases((prev) => {
         const c = prev[id];
-        if (!c || c.items.some((i) => sameRef(i, ref))) return prev;
+        if (!c || c.items.some((i) => matchesRef(i, ref))) return prev;
         return { ...prev, [id]: { ...c, items: [...c.items, ref] } };
       }),
     [],
@@ -257,33 +280,75 @@ export function useCases() {
       setCases((prev) => {
         const c = prev[id];
         if (!c) return prev;
-        return { ...prev, [id]: { ...c, items: c.items.filter((i) => !sameRef(i, ref)) } };
+        return { ...prev, [id]: { ...c, items: c.items.filter((i) => !matchesRef(i, ref)) } };
+      }),
+    [],
+  );
+
+  /** Append a multi-citation inline note (e.g. authored on the Compare shelf). */
+  const addNote = useCallback((id: string, text: string, cites: NoteCite[]): boolean => {
+    let ok = false;
+    setCases((prev) => {
+      const c = prev[id];
+      if (!c) return prev;
+      ok = true;
+      const t = now();
+      const note: InlineNote = { kind: "note", id: newId(), text: text.trim(), cites, createdAt: t, updatedAt: t };
+      return { ...prev, [id]: { ...c, items: [...c.items, note] } };
+    });
+    return ok;
+  }, []);
+
+  const updateNote = useCallback(
+    (id: string, noteId: string, text: string) =>
+      setCases((prev) => {
+        const c = prev[id];
+        if (!c) return prev;
+        return {
+          ...prev,
+          [id]: {
+            ...c,
+            items: c.items.map((i) =>
+              isInline(i) && i.id === noteId ? { ...i, text: text.trim(), updatedAt: now() } : i,
+            ),
+          },
+        };
+      }),
+    [],
+  );
+
+  const removeNote = useCallback(
+    (id: string, noteId: string) =>
+      setCases((prev) => {
+        const c = prev[id];
+        if (!c) return prev;
+        return { ...prev, [id]: { ...c, items: c.items.filter((i) => !(isInline(i) && i.id === noteId)) } };
       }),
     [],
   );
 
   const reorder = useCallback(
-    (id: string, items: CaseItemRef[]) =>
+    (id: string, items: CaseItem[]) =>
       setCases((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], items } } : prev)),
     [],
   );
 
-  /** Which cases contain this note. */
+  /** Which cases contain this margin note. */
   const casesForRef = useCallback(
-    (ref: CaseItemRef): CaseRecord[] => Object.values(cases).filter((c) => c.items.some((i) => sameRef(i, ref))),
+    (ref: CaseItemRef): CaseRecord[] => Object.values(cases).filter((c) => c.items.some((i) => matchesRef(i, ref))),
     [cases],
   );
 
-  /** Tag/untag a note against a set of case ids (used on note save). */
+  /** Tag/untag a margin note against a set of case ids (used on note save). */
   const syncNote = useCallback(
     (ref: CaseItemRef, caseIds: string[]) =>
       setCases((prev) => {
         const next: Record<string, CaseRecord> = {};
         const want = new Set(caseIds);
         for (const [id, c] of Object.entries(prev)) {
-          const has = c.items.some((i) => sameRef(i, ref));
+          const has = c.items.some((i) => matchesRef(i, ref));
           if (want.has(id) && !has) next[id] = { ...c, items: [...c.items, ref] };
-          else if (!want.has(id) && has) next[id] = { ...c, items: c.items.filter((i) => !sameRef(i, ref)) };
+          else if (!want.has(id) && has) next[id] = { ...c, items: c.items.filter((i) => !matchesRef(i, ref)) };
           else next[id] = c;
         }
         return next;
@@ -300,6 +365,9 @@ export function useCases() {
     remove,
     addItem,
     removeItem,
+    addNote,
+    updateNote,
+    removeNote,
     reorder,
     casesForRef,
     syncNote,

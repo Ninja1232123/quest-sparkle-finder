@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { listSources, getDocument } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useCases, loadNote, type CaseItemRef, type NoteRecord } from "@/lib/casebook";
+import { useCases, loadNote, isInline, type CaseItem, type CaseItemRef, type NoteCite } from "@/lib/casebook";
 import { segmentBody, citationSpans, operativeParagraphs, type LegalPara } from "@/lib/legal-structure";
-import { ArrowLeft, Scale, GripVertical, Trash2, Download, Printer, ExternalLink, PenLine, BookOpen, X } from "lucide-react";
+import { ArrowLeft, Scale, GripVertical, Trash2, Download, Printer, ExternalLink, PenLine, BookOpen, X, Layers } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export const Route = createFileRoute("/cases/$id")({
@@ -15,7 +15,9 @@ export const Route = createFileRoute("/cases/$id")({
   head: () => ({ meta: [{ title: "Case file · Marginalia" }] }),
 });
 
-type Block = { ref: CaseItemRef; note: NoteRecord };
+// A point on the page: either a margin note (one citation) or an inline
+// synthesis note authored on the Compare shelf (several citations).
+type ResolvedBlock = { key: string; item: CaseItem; text: string; cites: NoteCite[]; editable: boolean };
 
 function slug(s: string) {
   return (s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "case").slice(0, 60);
@@ -109,14 +111,21 @@ function CaseFile() {
   useEffect(() => { if (c) setNameDraft(c.name); }, [c?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [pinned, setPinned] = useState<CaseItemRef | null>(null);
+  const [editing, setEditing] = useState<string | null>(null); // inline-note id being edited
+  const [editDraft, setEditDraft] = useState("");
 
-  // Resolve each ref to its note; drop refs whose note was deleted in the reader.
-  const blocks: Block[] = useMemo(() => {
+  // Resolve each item to a renderable point; drop margin refs whose note was
+  // deleted in the reader. Inline (Compare) notes carry their own text + cites.
+  const blocks: ResolvedBlock[] = useMemo(() => {
     if (!c) return [];
-    const out: Block[] = [];
-    for (const ref of c.items) {
-      const note = loadNote(ref);
-      if (note) out.push({ ref, note });
+    const out: ResolvedBlock[] = [];
+    for (const item of c.items) {
+      if (isInline(item)) {
+        out.push({ key: `n:${item.id}`, item, text: item.text, cites: item.cites, editable: true });
+      } else {
+        const note = loadNote(item);
+        if (note) out.push({ key: `m:${item.identifier}#${item.paraIndex}`, item, text: note.text, cites: [note.cite], editable: false });
+      }
     }
     return out;
   }, [c]);
@@ -125,21 +134,27 @@ function CaseFile() {
   const [overIdx, setOverIdx] = useState<number | null>(null);
 
   function drop(target: number) {
-    if (dragIdx == null || !c || dragIdx === target) { setDragIdx(null); setOverIdx(null); return; }
-    const items = [...c.items];
-    const [moved] = items.splice(dragIdx, 1);
-    items.splice(target, 0, moved);
-    cb.reorder(id, items);
+    if (dragIdx == null || dragIdx === target) { setDragIdx(null); setOverIdx(null); return; }
+    const arr = [...blocks];
+    const [moved] = arr.splice(dragIdx, 1);
+    arr.splice(target, 0, moved);
+    cb.reorder(id, arr.map((b) => b.item)); // rebuild items in the new order (prunes dead refs)
     setDragIdx(null);
     setOverIdx(null);
   }
+
+  function removeBlock(b: ResolvedBlock) {
+    if (isInline(b.item)) cb.removeNote(id, b.item.id);
+    else cb.removeItem(id, b.item);
+  }
+  const pinnedHit = (cite: NoteCite) => pinned && pinned.identifier === cite.identifier && pinned.paraIndex === cite.paraIndex;
 
   function exportMd() {
     if (!c) return;
     const lines = [`# ${c.name}`, "", "_My own notes, with the law I cited. Not legal advice._", ""];
     blocks.forEach((b, i) => {
-      lines.push(`${i + 1}. ${b.note.text}`);
-      lines.push(`   — ${b.note.cite.sectionLabel} ${b.note.cite.heading} (${b.note.cite.identifier})`);
+      lines.push(`${i + 1}. ${b.text}`);
+      for (const cite of b.cites) lines.push(`   — ${cite.sectionLabel} ${cite.heading} (${cite.identifier})`);
       lines.push("");
     });
     const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
@@ -170,7 +185,9 @@ function CaseFile() {
     );
   }
 
-  const totalCites = c ? new Set(c.items.map((i) => i.identifier)).size : 0;
+  const totalCites = c
+    ? new Set(c.items.flatMap((it) => (isInline(it) ? it.cites.map((x) => x.identifier) : [it.identifier]))).size
+    : 0;
 
   const rightRail = pinned ? (
     <CitationPanel pinned={pinned} onClose={() => setPinned(null)} />
@@ -231,61 +248,85 @@ function CaseFile() {
           </div>
         ) : (
           <ol className="mt-7 space-y-6">
-            {blocks.map((b, i) => {
-              const isPinned = pinned && pinned.identifier === b.ref.identifier && pinned.paraIndex === b.ref.paraIndex;
-              return (
-                <li
-                  key={`${b.ref.identifier}#${b.ref.paraIndex}`}
-                  draggable
-                  onDragStart={() => setDragIdx(i)}
-                  onDragOver={(e) => { e.preventDefault(); setOverIdx(i); }}
-                  onDrop={() => drop(i)}
-                  onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
-                  className={`group relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-3 rounded-lg px-1 py-1 transition ${
-                    dragIdx === i ? "opacity-50" : ""
-                  } ${overIdx === i && dragIdx !== null && dragIdx !== i ? "ring-1 ring-ochre/50" : ""}`}
-                >
-                  {/* gutter: paragraph number + drag handle */}
-                  <div className="select-none pt-1 text-right">
-                    <span className="font-mono text-[12px] text-foreground/40 group-hover:hidden">¶{i + 1}</span>
-                    <span className="hidden cursor-grab text-muted-foreground/60 active:cursor-grabbing group-hover:inline-flex" title="Drag to reorder">
-                      <GripVertical className="h-4 w-4" />
-                    </span>
+            {blocks.map((b, i) => (
+              <li
+                key={b.key}
+                draggable={editing !== (isInline(b.item) ? b.item.id : null)}
+                onDragStart={() => setDragIdx(i)}
+                onDragOver={(e) => { e.preventDefault(); setOverIdx(i); }}
+                onDrop={() => drop(i)}
+                onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+                className={`group relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-3 rounded-lg px-1 py-1 transition ${
+                  dragIdx === i ? "opacity-50" : ""
+                } ${overIdx === i && dragIdx !== null && dragIdx !== i ? "ring-1 ring-ochre/50" : ""}`}
+              >
+                {/* gutter: paragraph number + drag handle */}
+                <div className="select-none pt-1 text-right">
+                  <span className="font-mono text-[12px] text-foreground/40 group-hover:hidden">¶{i + 1}</span>
+                  <span className="hidden cursor-grab text-muted-foreground/60 active:cursor-grabbing group-hover:inline-flex" title="Drag to reorder">
+                    <GripVertical className="h-4 w-4" />
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  {b.editable && editing === (b.item as { id: string }).id ? (
+                    <textarea
+                      autoFocus
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      onBlur={() => { cb.updateNote(id, (b.item as { id: string }).id, editDraft); setEditing(null); }}
+                      onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setEditing(null); } }}
+                      rows={3}
+                      className="w-full resize-y rounded-md border border-ochre bg-background px-2 py-1.5 font-serif text-[1.05rem] leading-relaxed outline-none"
+                    />
+                  ) : (
+                    <p
+                      className={`whitespace-pre-wrap font-serif text-[1.05rem] leading-relaxed text-foreground ${b.editable ? "cursor-text rounded hover:bg-muted/40" : ""}`}
+                      onClick={() => { if (b.editable) { setEditing((b.item as { id: string }).id); setEditDraft(b.text); } }}
+                      title={b.editable ? "Click to edit" : undefined}
+                    >
+                      {b.text || (b.editable ? "（empty — click to write）" : "")}
+                    </p>
+                  )}
+
+                  {/* authority line(s): one per citation */}
+                  <div className="mt-1.5 space-y-1">
+                    {b.cites.length > 1 && (
+                      <div className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                        <Layers className="h-3 w-3 text-terracotta" /> synthesis · {b.cites.length} authorities
+                      </div>
+                    )}
+                    {b.cites.map((cite, ci) => (
+                      <div key={ci} className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <span className="min-w-0 font-mono text-[11px] text-terracotta">— {cite.sectionLabel} {cite.heading}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPinned(pinnedHit(cite) ? null : { identifier: cite.identifier, paraIndex: cite.paraIndex })}
+                          className={`hidden items-center gap-1 font-mono text-[10px] uppercase tracking-wider xl:inline-flex ${pinnedHit(cite) ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          <BookOpen className="h-3 w-3" /> {pinnedHit(cite) ? "reading" : "read"}
+                        </button>
+                        <Link
+                          to="/code/$"
+                          params={{ _splat: cite.identifier.replace(/^\//, "") }}
+                          search={{ q: undefined }}
+                          hash={`para-${cite.paraIndex}`}
+                          className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                        >
+                          open <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => { removeBlock(b); setPinned(null); }}
+                      className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+                    >
+                      remove
+                    </button>
                   </div>
-                  <div className="min-w-0">
-                    <p className="whitespace-pre-wrap font-serif text-[1.05rem] leading-relaxed text-foreground">{b.note.text}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="font-mono text-[11px] text-terracotta">
-                        — {b.note.cite.sectionLabel} {b.note.cite.heading}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPinned(isPinned ? null : { identifier: b.ref.identifier, paraIndex: b.ref.paraIndex })}
-                        className={`hidden items-center gap-1 font-mono text-[10px] uppercase tracking-wider xl:inline-flex ${isPinned ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        <BookOpen className="h-3 w-3" /> {isPinned ? "reading" : "read"}
-                      </button>
-                      <Link
-                        to="/code/$"
-                        params={{ _splat: b.ref.identifier.replace(/^\//, "") }}
-                        search={{ q: undefined }}
-                        hash={`para-${b.ref.paraIndex}`}
-                        className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                      >
-                        open <ExternalLink className="h-3 w-3" />
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => { cb.removeItem(id, b.ref); if (isPinned) setPinned(null); }}
-                        className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
-                      >
-                        remove
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
+                </div>
+              </li>
+            ))}
           </ol>
         )}
 

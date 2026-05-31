@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { searchDocuments, getSectionPreview } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
+import { useCases, type NoteCite } from "@/lib/casebook";
 import {
   GitCompare,
   Bookmark,
@@ -16,6 +17,9 @@ import {
   Layers,
   Trash2,
   Loader2,
+  Scale,
+  Plus,
+  Check,
 } from "lucide-react";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -620,8 +624,97 @@ function ShelfPanel({
                 );
               })}
             </ul>
+            <FileToCase items={shelf.items} />
           </>
         ))}
+    </div>
+  );
+}
+
+// Turn the shelf into a case: write how these laws relate to your situation,
+// and the whole pinned set rides along as citations on one synthesis note.
+function FileToCase({ items }: { items: ShelfItem[] }) {
+  const cb = useCases();
+  const cases = cb.list();
+  const [text, setText] = useState("");
+  const [sel, setSel] = useState<string[]>([]);
+  const [newName, setNewName] = useState("");
+  const [savedTo, setSavedTo] = useState<string | null>(null);
+
+  const cites: NoteCite[] = items.map((it) => ({
+    identifier: it.identifier,
+    sourceCode: it.source_code,
+    sectionLabel: it.section_label ?? "",
+    heading: it.heading ?? "",
+    paraIndex: 0,
+  }));
+
+  const toggle = (id: string) => { setSavedTo(null); setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])); };
+  const addNew = () => { const n = newName.trim(); if (!n) return; const id = cb.create(n); setSel((s) => [...s, id]); setNewName(""); };
+  const file = () => {
+    if (!sel.length) return;
+    let last: string | null = null;
+    for (const cid of sel) { cb.addNote(cid, text, cites); last = cid; }
+    setSavedTo(last);
+    setText("");
+    setSel([]);
+  };
+
+  return (
+    <div className="border-t border-border/60 bg-ochre/[0.04] px-4 py-3">
+      <div className="citation-tag inline-flex items-center gap-1.5 text-terracotta">
+        <Scale className="h-3.5 w-3.5" /> File these into a case
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => { setText(e.target.value); setSavedTo(null); }}
+        rows={3}
+        placeholder="In your own words — how do these laws bear on your situation? (all pinned sections cite automatically)"
+        className="mt-2 w-full resize-y rounded-lg border border-border bg-card px-2.5 py-2 font-hand text-[17px] leading-snug outline-none placeholder:text-foreground/30 focus:border-ochre"
+      />
+      {cb.hydrated && cases.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {cases.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => toggle(c.id)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide transition ${
+                sel.includes(c.id)
+                  ? "border-ochre bg-ochre/25 text-foreground/85"
+                  : "border-border text-muted-foreground hover:border-foreground/40"
+              }`}
+            >
+              {sel.includes(c.id) ? <Check className="h-3 w-3" /> : <Scale className="h-3 w-3" />} {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="mt-2 flex items-center gap-1.5">
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNew(); } }}
+          placeholder="new case…"
+          className="min-w-0 flex-1 rounded-md border border-border bg-card px-2 py-1 font-display text-[12px] outline-none focus:border-ochre"
+        />
+        <button type="button" onClick={addNew} disabled={!newName.trim()} className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground hover:border-foreground/40 disabled:opacity-40">
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={file}
+        disabled={!sel.length}
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-foreground px-3 py-2 font-display text-xs font-semibold text-background hover:opacity-90 disabled:opacity-40"
+      >
+        File {items.length} law{items.length === 1 ? "" : "s"} {sel.length ? `→ ${sel.length} case${sel.length === 1 ? "" : "s"}` : "→ pick a case"}
+      </button>
+      {savedTo && (
+        <Link to="/cases/$id" params={{ id: savedTo }} className="mt-2 flex items-center justify-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta hover:underline">
+          <Check className="h-3 w-3" /> Filed — open the case →
+        </Link>
+      )}
     </div>
   );
 }
