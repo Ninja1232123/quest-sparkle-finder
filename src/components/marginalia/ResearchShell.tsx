@@ -13,6 +13,10 @@ type Props = {
   rightLabel?: string;
   /** Constrain the center reading column. Defaults to `max-w-3xl`. */
   centerMaxWidth?: string;
+  /** Reading layout: content fills the width and reserves a left lane for the
+   *  Juri drawer at wide widths, so the marginalia column pins to the right wall
+   *  and the drawer overlays the reserved lane (no reflow). */
+  readingLane?: boolean;
 };
 
 function usePersistedBool(key: string, fallback: boolean): [boolean, () => void] {
@@ -35,6 +39,7 @@ export function ResearchShell({
   right,
   rightLabel = "Connections",
   centerMaxWidth = "max-w-5xl",
+  readingLane = false,
 }: Props) {
   const [rightOpen, toggleRight] = usePersistedBool("shell-right-open", true);
 
@@ -47,7 +52,13 @@ export function ResearchShell({
       <div className="mx-auto flex w-full max-w-[1900px] gap-0 px-0 lg:px-4">
         {/* Center pane */}
         <main className="min-w-0 flex-1">
-          <div className={`mx-auto w-full ${centerMaxWidth} px-8 py-10`}>
+          <div
+            className={
+              readingLane
+                ? "w-full px-8 py-10 xl:pl-[400px]"
+                : `mx-auto w-full ${centerMaxWidth} px-8 py-10`
+            }
+          >
             {children}
           </div>
         </main>

@@ -227,7 +227,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
   return (
     <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-10">
       {/* statute text */}
-      <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
+      <div className={`flex gap-3 xl:max-w-[46rem] ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
           <span className="ci-pill">{p.label}</span>
         )}
@@ -731,7 +731,7 @@ function DocumentPage() {
   );
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-6xl">
+    <ResearchShell sources={sources} readingLane>
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
