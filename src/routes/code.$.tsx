@@ -225,7 +225,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
 }) {
   const hasNote = hydrated && typeof note === "string" && note.length > 0;
   return (
-    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-10">
+    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,40rem)_1fr] lg:items-start lg:gap-10">
       {/* statute text */}
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
@@ -251,7 +251,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
           (hover-to-add, edit/delete) so there's no SSR/hydration mismatch. */}
       {hydrated && (
         <div className={`mt-2 ${LEVEL_INDENT[p.level]} lg:relative lg:mt-0 lg:pl-0`}>
-          <div className="lg:absolute lg:inset-x-0 lg:top-0">
+          <div className="lg:absolute lg:left-0 lg:top-0 lg:w-full lg:max-w-[22rem]">
             {composing ? (
               <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
             ) : hasNote ? (
@@ -713,7 +713,7 @@ function DocumentPage() {
   );
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-6xl">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-7xl">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
