@@ -83,6 +83,7 @@ export function Juri() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
+  const [headerOffset, setHeaderOffset] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, session } = useAuth();
@@ -116,6 +117,27 @@ export function Juri() {
     if (open && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+  }, [open]);
+
+  // Dock the panel beneath the sticky site header so it never covers the nav.
+  // Measured live (the header height changes with the dev banner / breakpoints).
+  useEffect(() => {
+    if (!open) return;
+    const header = document.querySelector(".am-header");
+    const measure = () => {
+      const b = header?.getBoundingClientRect().bottom ?? 0;
+      setHeaderOffset(Math.max(0, Math.round(b)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    const ro = typeof ResizeObserver !== "undefined" && header ? new ResizeObserver(measure) : null;
+    if (ro && header) ro.observe(header);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+      ro?.disconnect();
+    };
   }, [open]);
 
   // Tell the layout when the drawer is open so it can push content right
@@ -224,7 +246,7 @@ export function Juri() {
 
       {/* Chat panel */}
       {open && (
-        <div className="juri-panel" role="dialog" aria-label="Juri — AI assistant">
+        <div className="juri-panel" role="dialog" aria-label="Juri — AI assistant" style={{ top: headerOffset }}>
           {/* Header */}
           <div className="juri-header">
             <div className="juri-header-left">

@@ -486,7 +486,7 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   const paras = useMemo(() => splitParagraphs(body, seg.start, seg.end, spans), [body, seg.start, seg.end, spans]);
   if (paras.length === 0) return null;
   return (
-    <div className="mt-4 rounded-2xl border border-border/60 bg-card">
+    <div className="mt-4 rounded-2xl border border-border/60 bg-card lg:mr-[21.5rem]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -741,6 +741,7 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
     [body, opParas],
   );
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (items.length < 3) return;
@@ -765,28 +766,45 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
   if (items.length < 3) return null;
 
   return (
-    <div>
-      <div className="citation-tag mb-2 px-1 text-muted-foreground">in this section</div>
-      <nav className="max-h-[60vh] space-y-0.5 overflow-y-auto pr-1">
-        {items.map((p) => {
-          const isActive = p.idx === activeIdx;
-          return (
-            <a
-              key={p.idx}
-              href={`#para-${p.idx}`}
-              className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[11px] leading-snug transition-colors ${
-                isActive
-                  ? "bg-foreground/10 text-foreground"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
-            >
-              <span className="ci-pill">{p.label}</span>
-              <span className="line-clamp-2">{p.preview.length > 55 ? p.preview.slice(0, 55) + "…" : p.preview}</span>
-            </a>
-          );
-        })}
-      </nav>
-    </div>
+    <section className="rounded-2xl border border-border/60 bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left"
+        aria-expanded={open}
+      >
+        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <List className="h-4 w-4 shrink-0 text-accent" />
+          <span className="font-display text-sm font-semibold text-foreground">In this section</span>
+          <span className="citation-tag text-muted-foreground">{items.length} parts</span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <nav className="max-h-[60vh] space-y-0.5 overflow-y-auto border-t border-border/40 px-3 pb-3 pr-1 pt-2">
+          {items.map((p) => {
+            const isActive = p.idx === activeIdx;
+            return (
+              <a
+                key={p.idx}
+                href={`#para-${p.idx}`}
+                onClick={() => setOpen(false)}
+                className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[11px] leading-snug transition-colors ${
+                  isActive
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                }`}
+              >
+                <span className="ci-pill">{p.label}</span>
+                <span className="line-clamp-2">{p.preview.length > 55 ? p.preview.slice(0, 55) + "…" : p.preview}</span>
+              </a>
+            );
+          })}
+        </nav>
+      )}
+    </section>
   );
 }
 
@@ -1125,7 +1143,7 @@ function DocumentPage() {
         </ConnectionsDisclosure>
 
         {(prev || next) && (
-          <nav className="mt-12 grid grid-cols-1 gap-3 border-t border-border/60 pt-6 sm:grid-cols-2">
+          <nav className="mt-12 grid grid-cols-1 gap-3 border-t border-border/60 pt-6 sm:grid-cols-2 lg:mr-[21.5rem]">
             {prev ? (
               <Link
                 to="/code/$"
