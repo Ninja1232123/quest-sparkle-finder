@@ -394,19 +394,36 @@ function MarginaliaRail({ anchors, height, notes, cases, casesForIdx, composing,
   const marks: number[] = [];
   for (let y = MARK_STEP; y < height; y += MARK_STEP) marks.push(y);
 
+  const empty = items.length === 0;
+
   return (
     <div
-      className="relative hidden lg:block"
+      className="relative hidden border-l border-border/60 bg-muted/20 lg:block"
       style={{ minHeight: height }}
       onMouseMove={(e) => setHoverY(railY(e))}
       onMouseLeave={() => setHoverY(null)}
       onClick={(e) => { if (e.target === e.currentTarget) onCompose(nearest(railY(e))); }}
     >
-      {/* the ruled margin line + faint ruling ticks */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-border/50" />
+      {/* faint ruling ticks down the desk's binding edge */}
       {marks.map((y) => (
         <div key={`m-${y}`} className="pointer-events-none absolute left-0 h-px w-3 bg-border/70" style={{ top: y }} />
       ))}
+
+      {/* empty desk → a quiet prompt card so the column reads as "the desk,"
+          not dead space. pointer-events-none so a click still starts a note. */}
+      {empty && (
+        <div className="pointer-events-none absolute left-5 right-2 top-3">
+          <div className="desk-card border-dashed">
+            <div className="desk-card-title flex items-center gap-1.5">
+              <PenLine className="h-3.5 w-3.5 text-ochre" /> Your desk
+            </div>
+            <p className="desk-card-body">
+              Click anywhere down this margin to pin a note beside the line it belongs to.
+              Type <span className="font-mono text-ochre">@</span> to file it under a case — the citation rides along.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* click-to-add hint following the cursor */}
       {hoverY != null && composing == null && (
@@ -553,22 +570,35 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
 
   return (
     <div className="space-y-2.5">
-      {/* Marginalia intro / count — client-only, so no hydration mismatch. */}
+      {/* Marginalia header — client-only, so no hydration mismatch. Mirrors the
+          two-column body grid below so the left cell labels the reading column
+          and the right cell becomes the "THE DESK" column header, sitting
+          exactly over the marginalia rail. */}
       {mg.hydrated && (
-        <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2">
-          <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
-            <PenLine className="h-3 w-3 text-ochre" />
-            {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
-          </span>
-          {cb.hydrated && caseList.length > 0 ? (
-            <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
-              <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
-            </Link>
-          ) : (
-            <span className="shrink-0 font-mono text-[10px] text-foreground/40">
-              {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"} · this device`}
+        <div className="mb-3 lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:gap-12">
+          {/* over the text column */}
+          <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-2">
+            <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
+              <PenLine className="h-3 w-3 text-ochre" />
+              {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
             </span>
-          )}
+            <span className="shrink-0 font-mono text-[10px] text-foreground/40 lg:hidden">
+              {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
+            </span>
+          </div>
+          {/* over the marginalia rail — the Desk's own column header */}
+          <div className="hidden items-center justify-between gap-2 border-b border-border/40 pb-2 lg:flex">
+            <span className="desk-eyebrow mb-0 border-b-0 pb-0">the desk</span>
+            {cb.hydrated && caseList.length > 0 ? (
+              <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
+                <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
+              </Link>
+            ) : (
+              <span className="shrink-0 font-mono text-[10px] text-foreground/40">
+                {mg.count === 0 ? "this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
