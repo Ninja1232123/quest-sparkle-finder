@@ -203,7 +203,7 @@ function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: L
   // No chapter structure (CFR/IRM/statutes/etc.): a flat two-column bubble grid.
   if (!groups) {
     return (
-      <div className="grid grid-cols-1 items-stretch gap-3 border-t border-border/60 p-4 sm:grid-cols-2">
+      <div className="toc-grid grid grid-cols-1 items-stretch gap-5 border-t border-border/60 p-4 sm:grid-cols-2 lg:grid-cols-3">
         {parts.map((p, i) => (
           <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
             <CatalogueBubble kind={bubbleKind(p.label)} token={pullToken(p.label)} title={cleanBubbleTitle(p.label)} count={p.count} accent={accent} index={i} />
@@ -434,9 +434,9 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
 
         {/* Title list — each title is a direct-link bubble (no accordion) */}
         {!group && !tg && (
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="toc-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredToc.length === 0 && (
-              <div className="col-span-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+              <div className="col-span-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground lg:col-span-3">
                 Nothing in the table of contents matches "{filter}".
               </div>
             )}

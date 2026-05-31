@@ -5,7 +5,7 @@ import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
 import { ChevronDown, LogOut, Sun, Moon, Sparkles } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
-import { CODEBOOKS, TOOLS, type Codebook } from "@/lib/codebooks";
+import { NAV_GROUPS, TOOLS, type NavGroup } from "@/lib/codebooks";
 
 /* -----------------------------------------------------------
    § Brand mark — ink square with ochre section sign in Fraunces
@@ -40,7 +40,7 @@ function BrandMark() {
   );
 }
 
-function CodebookTab({ cb }: { cb: Codebook }) {
+function NavGroupTab({ group }: { group: NavGroup }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -52,8 +52,6 @@ function CodebookTab({ cb }: { cb: Codebook }) {
     closeTimer.current = setTimeout(() => setOpen(false), 120);
   };
 
-  const isSoon = cb.status === "soon";
-
   return (
     <div
       className="relative"
@@ -62,20 +60,22 @@ function CodebookTab({ cb }: { cb: Codebook }) {
       onFocus={onEnter}
       onBlur={onLeave}
     >
-      <Link
-        to={`/${cb.slug}` as never}
-        className={`cb-tab ${isSoon ? "soon" : ""}`}
-        style={{ ["--c" as never]: cb.accent }}
-        activeProps={{ className: "cb-tab active", style: { ["--c" as never]: cb.accent } }}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`cb-tab ${open ? "active" : ""}`}
+        style={{ ["--c" as never]: group.accent }}
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
         <span
           className="mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: cb.accent, opacity: isSoon ? 0.45 : 0.95 }}
+          style={{ backgroundColor: group.accent, opacity: 0.95 }}
           aria-hidden
         />
-        {cb.tab}
-        {isSoon && <Sparkles className="ml-0.5 h-2.5 w-2.5 text-ochre/70" aria-label="coming soon" />}
-      </Link>
+        {group.label}
+        <ChevronDown className={`ml-0.5 h-3 w-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
 
       {open && (
         <div
@@ -84,35 +84,39 @@ function CodebookTab({ cb }: { cb: Codebook }) {
         >
           <div
             className="rounded-t-xl px-4 pt-3 pb-2"
-            style={{ backgroundImage: `linear-gradient(135deg, ${cb.accent}18 0%, transparent 65%)` }}
+            style={{ backgroundImage: `linear-gradient(135deg, ${group.accent}18 0%, transparent 65%)` }}
           >
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cb.accent }} />
-              <span className="font-display text-sm font-semibold">{cb.name}</span>
-              {isSoon && (
-                <span className="ml-auto rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-ochre">
-                  soon
-                </span>
-              )}
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: group.accent }} />
+              <span className="font-display text-sm font-semibold">{group.label}</span>
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-foreground/65">{cb.tagline}</p>
+            <p className="mt-1 text-xs leading-relaxed text-foreground/65">{group.tagline}</p>
           </div>
           <div className="border-t border-border/40 px-2 py-2">
-            <Link
-              to={`/${cb.slug}` as never}
-              className="block rounded-md px-3 py-2 text-xs text-foreground/80 hover:bg-muted hover:text-foreground"
-            >
-              {isSoon ? "See what's planned →" : `Browse the ${cb.name} →`}
-            </Link>
-            {cb.quickLinks?.map((ql) => (
-              <Link
-                key={ql.href}
-                to={ql.href as never}
-                className="block rounded-md px-3 py-1.5 text-xs text-foreground/65 hover:bg-muted hover:text-foreground"
-              >
-                {ql.label}
-              </Link>
-            ))}
+            {group.items.map((it) => {
+              const isSoon = it.status === "soon";
+              return (
+                <Link
+                  key={it.href + it.label}
+                  to={it.href as never}
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-xs hover:bg-muted ${
+                    isSoon ? "text-foreground/50" : "text-foreground/80 hover:text-foreground"
+                  }`}
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: it.accent, opacity: isSoon ? 0.4 : 0.95 }}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 truncate">{it.label}</span>
+                  {isSoon && (
+                    <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-ochre">
+                      soon
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
@@ -261,8 +265,8 @@ export function SiteHeader() {
       >
         <span className="am-codebooks-label hidden xl:inline-flex">★&nbsp;The&nbsp;Library</span>
         <div className="flex flex-1 flex-wrap items-center gap-1">
-          {CODEBOOKS.map((cb) => (
-            <CodebookTab key={cb.slug} cb={cb} />
+          {NAV_GROUPS.map((group) => (
+            <NavGroupTab key={group.key} group={group} />
           ))}
         </div>
         <div className="shrink-0 border-l border-[rgba(200,162,75,0.25)] pl-2">

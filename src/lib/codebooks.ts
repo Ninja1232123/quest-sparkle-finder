@@ -192,6 +192,96 @@ export const CODEBOOKS: Codebook[] = [
   },
 ];
 
+/* -----------------------------------------------------------
+   Header nav grouping — a presentation layer ON TOP of CODEBOOKS.
+   The Library strip shows 6 category dropdowns ("what you're
+   looking for"), each fanning out to existing codebook/source
+   routes. This does NOT change the codebook registry above, so
+   landing pages, the sitemap, and source mapping are untouched.
+   ----------------------------------------------------------- */
+export type NavItem = {
+  label: string;
+  href: string;
+  accent: string;
+  status: CodebookStatus;
+};
+export type NavGroup = {
+  key: string;
+  /** Dropdown button text */
+  label: string;
+  /** Shown in the open panel header */
+  tagline: string;
+  /** Group accent (button dot + panel wash) */
+  accent: string;
+  items: NavItem[];
+};
+
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    key: "constitution",
+    label: "Constitution",
+    tagline: "The founding charter — articles and amendments.",
+    accent: "#b22234",
+    items: [
+      { label: "U.S. Constitution", href: "/const", accent: "#b22234", status: "live" },
+    ],
+  },
+  {
+    key: "federal",
+    label: "Federal Code",
+    tagline: "Federal statutes, regulations, and agency manuals.",
+    accent: "#0a1f44",
+    items: [
+      { label: "United States Code", href: "/usc", accent: "#0a1f44", status: "live" },
+      { label: "Code of Federal Regulations", href: "/cfr", accent: "#1a4a2e", status: "live" },
+      { label: "Internal Revenue Manual", href: "/code/source/irm", accent: "#1a4a6e", status: "live" },
+      { label: "Treasury Financial Manual", href: "/code/source/tfm", accent: "#1a4a6e", status: "live" },
+      { label: "U.S. Government Manual", href: "/code/source/usgm", accent: "#1a4a6e", status: "live" },
+    ],
+  },
+  {
+    key: "state",
+    label: "State Code",
+    tagline: "State constitutions, statutes, and regulations — by jurisdiction.",
+    accent: "#4a6741",
+    items: [
+      { label: "State Law", href: "/states", accent: "#4a6741", status: "soon" },
+    ],
+  },
+  {
+    key: "commercial",
+    label: "Commercial Code",
+    tagline: "The Uniform Commercial Code and the states' enactments of it.",
+    accent: "#c9a84c",
+    items: [
+      { label: "Uniform Commercial Code", href: "/model", accent: "#c9a84c", status: "live" },
+      { label: "State UCC enactments", href: "/states", accent: "#4a6741", status: "soon" },
+    ],
+  },
+  {
+    key: "court",
+    label: "Court Record",
+    tagline: "Opinions and decisions of the courts.",
+    accent: "#3d3d5c",
+    items: [
+      { label: "Supreme Court Decisions", href: "/scotus", accent: "#3d3d5c", status: "soon" },
+    ],
+  },
+  {
+    key: "publications",
+    label: "Publications",
+    tagline: "Daily federal documents — rules, bills, laws, and presidential papers.",
+    accent: "#c45a2c",
+    items: [
+      { label: "Federal Register", href: "/register", accent: "#c45a2c", status: "live" },
+      { label: "Congressional Bills", href: "/bills", accent: "#5b3a8a", status: "live" },
+      { label: "Public & Private Laws", href: "/laws", accent: "#0a1f44", status: "live" },
+      { label: "Statutes at Large", href: "/statutes", accent: "#6b3a2a", status: "live" },
+      { label: "Presidential Documents", href: "/presidential", accent: "#8b4513", status: "live" },
+    ],
+  },
+];
+
 export function getCodebook(slug: string): Codebook | undefined {
   return CODEBOOKS.find((c) => c.slug === slug);
 }

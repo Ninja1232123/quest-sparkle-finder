@@ -80,7 +80,7 @@ export const listSources = createServerFn({ method: "GET" }).handler(async () =>
 export const listDocumentsBySource = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     source: z.string().min(2).max(40),
-    parent_label: z.string().min(1).max(200).optional(),
+    parent_label: z.string().min(1).max(1000).optional(),
     limit: z.number().int().min(1).max(5000).optional(),
   }))
   .handler(async ({ data }) => {
@@ -267,7 +267,7 @@ export const getBillList = createServerFn({ method: "GET" })
 // (source_code, sort_key) index, so it's an index range scan, not a table scan.
 export const listDocsBySortRange = createServerFn({ method: "GET" })
   .inputValidator(z.object({
-    source: z.string().min(2).max(30),
+    source: z.string().min(2).max(40),
     lo: z.string().min(1).max(60),
     hi: z.string().min(1).max(60),
     limit: z.number().int().min(1).max(2000).optional(),

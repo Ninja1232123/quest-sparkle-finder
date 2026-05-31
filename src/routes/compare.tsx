@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { searchDocuments, getSectionPreview } from "@/lib/documents.functions";
+import { codebookForSource } from "@/lib/codebooks";
 import {
   GitCompare,
   Bookmark,
@@ -33,6 +34,12 @@ const SOURCE_SHORT: Record<string, string> = {
   tfm: "TFM",
   irm: "IRM",
 };
+
+// Per-source accent, pulled from the codebooks registry so compare columns
+// color-match the header nav and home catalogue cards.
+function accentForSource(code: string): string {
+  return codebookForSource(code)?.accent ?? "#0a1f44";
+}
 
 const compareSchema = z.object({
   q: fallback(z.string(), "").default(""),
@@ -119,7 +126,7 @@ function renderMarked(snippet: string): ReactNode[] {
     const text = decodeEntities(p);
     out.push(
       inMark ? (
-        <mark key={key++} className="rounded-[2px] bg-terracotta/15 px-0.5 text-foreground">
+        <mark key={key++} className="rounded-[2px] bg-[#f3d27a]/60 px-0.5 font-medium text-[#1c140a] shadow-[0_1px_0_rgba(180,140,40,0.4)]">
           {text}
         </mark>
       ) : (
@@ -145,7 +152,7 @@ function highlightQuery(text: string, q: string): ReactNode[] {
   const re = new RegExp(`(${terms.join("|")})`, "ig");
   return text.split(re).map((p, i) =>
     i % 2 === 1 ? (
-      <mark key={i} className="rounded-[2px] bg-terracotta/15 px-0.5 text-foreground">
+      <mark key={i} className="rounded-[2px] bg-[#f3d27a]/60 px-0.5 font-medium text-[#1c140a] shadow-[0_1px_0_rgba(180,140,40,0.4)]">
         {p}
       </mark>
     ) : (
@@ -226,7 +233,7 @@ function ComparePage() {
       <SiteHeader />
       <section className="mx-auto max-w-[88rem] px-6 py-12">
         <div className="citation-tag text-muted-foreground flex items-center gap-1.5">
-          <GitCompare className="h-3.5 w-3.5" /> side-by-side compare
+          <GitCompare className="h-3.5 w-3.5" /> settle it side by side
         </div>
         <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           {q ? (
@@ -252,34 +259,40 @@ function ComparePage() {
           <input type="hidden" name="sources" value={sources} />
           <button
             type="submit"
-            className="rounded-lg bg-terracotta px-5 py-2.5 text-sm font-semibold text-paper hover:opacity-90"
+            className="rounded-lg border-2 border-[#c8a24b] bg-[#b22234] px-6 py-2.5 text-sm font-semibold text-[#fbf6e8] transition hover:-translate-y-0.5 hover:bg-[#9d1d2e]"
           >
             Compare
           </button>
         </form>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           {(["const", "usc", "cfr", "ucc", "tfm", "irm"] as const).map((c) => {
             const parts = sources.split(",").map((s: string) => s.trim());
             const active = parts.includes(c);
             const next = active ? parts.filter((s: string) => s !== c) : [...parts.filter(Boolean), c];
             const nextSources = next.slice(0, 4).join(",") || "usc";
+            const accent = accentForSource(c);
             return (
               <Link
                 key={c}
                 to="/compare"
                 search={{ q, sources: nextSources }}
-                className={`rounded-full border px-3 py-1 transition ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-medium transition ${
                   active
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                    ? "border-[1.5px] border-[#c8a24b] bg-[#0a1f44] text-[#f6e6ad]"
+                    : "border border-[#cbb88a]/70 text-foreground/70 hover:border-[#c8a24b] hover:text-foreground"
                 }`}
               >
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: accent, opacity: active ? 1 : 0.6 }}
+                  aria-hidden
+                />
                 {SOURCE_LABELS[c] ?? c}
               </Link>
             );
           })}
-          <span className="text-muted-foreground/60 self-center">· up to 4 columns</span>
+          <span className="self-center font-mono text-[10px] uppercase tracking-wider text-foreground/45">· up to 4 columns</span>
         </div>
 
         {error && (
@@ -337,16 +350,34 @@ function Column({
   q: string;
   shelf: Shelf;
 }) {
+  const accent = accentForSource(code);
   return (
-    <div className="flex w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card lg:w-auto lg:min-w-[16rem] lg:flex-1">
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
-        <div className="font-display text-sm font-semibold leading-tight">{SOURCE_LABELS[code] ?? code}</div>
-        <div className="citation-tag shrink-0 text-muted-foreground">{hits.length}</div>
+    <div
+      className="flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-[#b49a62] bg-[#fdf9ef] shadow-[0_10px_22px_-12px_rgba(40,25,5,0.45)] lg:w-auto lg:min-w-[16rem] lg:flex-1"
+      style={{ ["--c" as never]: accent }}
+    >
+      <div className="h-1.5 w-full" style={{ backgroundColor: accent }} aria-hidden />
+      <div
+        className="flex items-center justify-between gap-2 border-b-2 px-4 py-3"
+        style={{ borderColor: `${accent}55`, backgroundImage: `linear-gradient(180deg, ${accent}12, transparent)` }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
+          <span className="font-display text-sm font-bold leading-tight text-[#1c140a]">{SOURCE_LABELS[code] ?? code}</span>
+        </div>
+        <span
+          className="shrink-0 rounded-full border border-[#cbb88a] bg-white/60 px-2 py-0.5 font-mono text-[11px] font-bold"
+          style={{ color: accent }}
+        >
+          {hits.length}
+        </span>
       </div>
       {hits.length === 0 ? (
-        <div className="px-4 py-10 text-center text-xs text-muted-foreground">no matches</div>
+        <div className="px-4 py-12 text-center font-mono text-[11px] uppercase tracking-wider text-foreground/40">
+          no matches
+        </div>
       ) : (
-        <ul className="divide-y divide-border/40">
+        <ul className="divide-y divide-[#e7d9b6]">
           {hits.map((h) => (
             <HitCard key={h.identifier} hit={h} q={q} shelf={shelf} />
           ))}

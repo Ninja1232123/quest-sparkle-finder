@@ -192,17 +192,16 @@ function MarginComposer({ initial, onSave, onCancel }: {
 
 function MarginNote({ text, onEdit, onDelete }: { text: string; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="group/note relative pl-3">
-      <span className="absolute left-0 top-1 h-[calc(100%-0.75rem)] w-[2px] rounded bg-ochre" />
+    <div className="group/note relative rounded-lg border-l-[3px] border-ochre bg-ochre/[0.07] px-3.5 py-3 shadow-[var(--shadow-card)]">
       <button
         type="button"
         onClick={onEdit}
         title="Click to edit"
-        className="block cursor-text text-left font-hand text-[19px] leading-snug text-foreground/80 hover:text-foreground"
+        className="block cursor-text text-left font-hand text-[23px] leading-snug text-foreground hover:text-foreground"
       >
         {text}
       </button>
-      <div className="mt-1 flex gap-3 opacity-0 transition group-hover/note:opacity-100">
+      <div className="mt-1.5 flex gap-3 opacity-0 transition group-hover/note:opacity-100">
         <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
         <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
       </div>
@@ -226,7 +225,7 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
 }) {
   const hasNote = hydrated && typeof note === "string" && note.length > 0;
   return (
-    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start lg:gap-8">
+    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-10">
       {/* statute text */}
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && (
@@ -261,9 +260,9 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
               <button
                 type="button"
                 onClick={onStartCompose}
-                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-1 font-hand text-[15px] leading-tight text-foreground/40 opacity-0 transition hover:border-ochre/60 hover:text-foreground/70 focus-visible:opacity-100 group-hover/para:opacity-100"
+                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-ochre/40 px-2.5 py-1.5 font-hand text-[17px] leading-tight text-foreground/45 opacity-60 transition hover:border-ochre/70 hover:bg-ochre/5 hover:text-foreground/80 hover:opacity-100 focus-visible:opacity-100 group-hover/para:opacity-100"
               >
-                <PenLine className="h-3 w-3 shrink-0 text-ochre" /> note
+                <PenLine className="h-3.5 w-3.5 shrink-0 text-ochre" /> note in the margin
               </button>
             )}
           </div>
@@ -604,7 +603,7 @@ function DocumentPage() {
     traceBySource.set(k, arr);
   }
 
-  const fontClass = ["text-[0.95rem]", "text-[1rem]", "text-[1.05rem]", "text-[1.15rem]", "text-[1.25rem]"][fontSize];
+  const fontClass = ["text-[1.05rem]", "text-[1.15rem]", "text-[1.25rem]", "text-[1.4rem]", "text-[1.55rem]"][fontSize];
   const readingMin = document.word_count ? Math.max(1, Math.round(document.word_count / 220)) : null;
 
 
@@ -714,7 +713,7 @@ function DocumentPage() {
   );
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-5xl">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-6xl">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -790,7 +789,7 @@ function DocumentPage() {
         <div className="mt-8">
           <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
           <DefinitionsPanel text={body} />
-          <div className={`font-serif leading-relaxed text-foreground/90 ${fontClass}`}>
+          <div className={`font-serif leading-relaxed text-foreground ${fontClass}`}>
             <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} />
           </div>
         </div>

@@ -73,8 +73,8 @@ function Index() {
             <cite></cite>
           </blockquote>
           <blockquote className="hero-quote hero-quote-r">
-            <p>"Freedom's Favorite Legal tool"</p>
-            <cite>Search and see ALL the laws in one place.</cite>
+            <p>An attorney is a privilege. Defending yourself is a right.</p>
+            <cite>You can't exercise a right you can't read.</cite>
           </blockquote>
 
           <img
@@ -94,19 +94,20 @@ function Index() {
 
         {/* CONSTITUTION CARTOUCHE — overlaps eagle from below */}
         <div className="home-const-wrap">
-          <Link to="/const" className="home-const-cartouche">
-            <div className="hcc-wtp">We the People</div>
-            <div className="hcc-kicker">Of the United States of America</div>
-            <h2>The Constitution</h2>
+          <Link to="/features" className="home-const-cartouche">
+            <div className="hcc-wtp">Read the law yourself.</div>
+            <div className="hcc-kicker">What this tool actually does</div>
+            <h2>Search every U.S. law at once</h2>
             <div className="hcc-sub">
-              Seven articles. Twenty-seven amendments. One stubborn experiment in self-rule — the law all other law answers to.
+              Marginalia indexes U.S. primary law — the Constitution, the U.S. Code, federal regulations, the Federal Register, bills, public laws, statutes, and presidential and agency documents — pulled straight from the official source. Search all of it by keyword or citation, browse any source by its own structure, set the same phrase against several sources at once, and read the real text instead of a summary.
             </div>
             <div className="hcc-pills">
-              <span className="hcc-pill">7 Articles</span>
-              <span className="hcc-pill red">27 Amendments</span>
-              <span className="hcc-pill">founding charter</span>
+              <span className="hcc-pill">Search every source</span>
+              <span className="hcc-pill">Browse by structure</span>
+              <span className="hcc-pill">Compare side-by-side</span>
+              <span className="hcc-pill">Real source text</span>
             </div>
-            <div className="hcc-cta">★ Read the Whole Thing →</div>
+            <div className="hcc-cta">See everything it does →</div>
           </Link>
         </div>
 
