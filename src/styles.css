@@ -620,14 +620,11 @@ main {
   position: relative;
 }
 
-/* When Juri's drawer is open, push the page content right (lg+ only) so the
-   drawer never sits on top of the text the user is asking about. Closed =
-   full width. Juri.tsx toggles `.juri-open` on <html>. The 380px matches the
-   drawer width; both live in the same zoom space so they line up. */
+/* Juri's drawer overlays from the left and docks below the header (Juri.tsx sets
+   the panel's `top` to the live header height). It no longer pushes #main, so
+   opening/closing the drawer never reflows or shoves the page content — the
+   drawer simply floats over the left margin beside the centered reading column. */
 #main { transition: padding-left 220ms ease; }
-@media (min-width: 1024px) {
-  html.juri-open #main { padding-left: 380px; }
-}
 
 /* ============================================================
    v2.1 ADDITIONS — codebook landing (hero strip, sub-volume
