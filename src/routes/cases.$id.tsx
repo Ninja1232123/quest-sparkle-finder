@@ -114,6 +114,19 @@ function CaseFile() {
   const [editing, setEditing] = useState<string | null>(null); // inline-note id being edited
   const [editDraft, setEditDraft] = useState("");
 
+  // The reading room is a side rail at xl+, where there's room beside the sheet;
+  // below that it opens as a drawer over the page. Track which so we mount the
+  // CitationPanel in exactly one place (no double fetch).
+  const [isWide, setIsWide] = useState(true);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1280px)");
+    const on = () => setIsWide(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+
   // Resolve each item to a renderable point; drop margin refs whose note was
   // deleted in the reader. Inline (Compare) notes carry their own text + cites.
   const blocks: ResolvedBlock[] = useMemo(() => {
@@ -189,7 +202,7 @@ function CaseFile() {
     ? new Set(c.items.flatMap((it) => (isInline(it) ? it.cites.map((x) => x.identifier) : [it.identifier]))).size
     : 0;
 
-  const rightRail = pinned ? (
+  const rightRail = pinned && isWide ? (
     <CitationPanel pinned={pinned} onClose={() => setPinned(null)} />
   ) : (
     <div className="text-sm text-muted-foreground">
@@ -301,7 +314,7 @@ function CaseFile() {
                         <button
                           type="button"
                           onClick={() => setPinned(pinnedHit(cite) ? null : { identifier: cite.identifier, paraIndex: cite.paraIndex })}
-                          className={`hidden items-center gap-1 font-mono text-[10px] uppercase tracking-wider xl:inline-flex ${pinnedHit(cite) ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
+                          className={`inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider ${pinnedHit(cite) ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
                         >
                           <BookOpen className="h-3 w-3" /> {pinnedHit(cite) ? "reading" : "read"}
                         </button>
@@ -344,6 +357,22 @@ function CaseFile() {
         <span className="font-semibold">not legal advice and not an interpretation</span> by Marginalia. Whether an
         argument has merit is for a court to decide. Saved only on this device.
       </div>
+
+      {/* Reading room as a drawer below xl, where there's no room for the side
+          rail — same "read" affordance, just over the page instead of beside it. */}
+      {pinned && !isWide && (
+        <div className="fixed inset-0 z-50 flex xl:hidden" role="dialog" aria-label="Reading room">
+          <button
+            type="button"
+            aria-label="Close reading room"
+            onClick={() => setPinned(null)}
+            className="flex-1 bg-foreground/30 backdrop-blur-[1px]"
+          />
+          <div className="ml-auto h-full w-full max-w-md overflow-y-auto border-l border-border bg-card px-5 py-5 shadow-[var(--shadow-warm)]">
+            <CitationPanel pinned={pinned} onClose={() => setPinned(null)} />
+          </div>
+        </div>
+      )}
     </ResearchShell>
   );
 }
