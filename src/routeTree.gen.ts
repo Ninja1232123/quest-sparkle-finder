@@ -15,6 +15,8 @@ import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StatutesRouteImport } from './routes/statutes'
 import { Route as StatesRouteImport } from './routes/states'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
+import { Route as SitemapDocsDotxmlRouteImport } from './routes/sitemap-docs[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ScotusRouteImport } from './routes/scotus'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -83,6 +85,16 @@ const StatesRoute = StatesRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapPagesDotxmlRoute = SitemapPagesDotxmlRouteImport.update({
+  id: '/sitemap-pages.xml',
+  path: '/sitemap-pages.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDocsDotxmlRoute = SitemapDocsDotxmlRouteImport.update({
+  id: '/sitemap-docs.xml',
+  path: '/sitemap-docs.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -305,6 +317,8 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
+  '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
@@ -352,6 +366,8 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
+  '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
@@ -400,6 +416,8 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
+  '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
@@ -449,6 +467,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/scotus'
     | '/search'
+    | '/sitemap-docs.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
     | '/statutes'
@@ -496,6 +516,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/scotus'
     | '/search'
+    | '/sitemap-docs.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
     | '/statutes'
@@ -543,6 +565,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/scotus'
     | '/search'
+    | '/sitemap-docs.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
     | '/statutes'
@@ -591,6 +615,8 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ScotusRoute: typeof ScotusRoute
   SearchRoute: typeof SearchRoute
+  SitemapDocsDotxmlRoute: typeof SitemapDocsDotxmlRoute
+  SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatesRoute: typeof StatesRoute
   StatutesRoute: typeof StatutesRoute
@@ -661,6 +687,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-pages.xml': {
+      id: '/sitemap-pages.xml'
+      path: '/sitemap-pages.xml'
+      fullPath: '/sitemap-pages.xml'
+      preLoaderRoute: typeof SitemapPagesDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-docs.xml': {
+      id: '/sitemap-docs.xml'
+      path: '/sitemap-docs.xml'
+      fullPath: '/sitemap-docs.xml'
+      preLoaderRoute: typeof SitemapDocsDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -959,6 +999,8 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ScotusRoute: ScotusRoute,
   SearchRoute: SearchRoute,
+  SitemapDocsDotxmlRoute: SitemapDocsDotxmlRoute,
+  SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatesRoute: StatesRoute,
   StatutesRoute: StatutesRoute,

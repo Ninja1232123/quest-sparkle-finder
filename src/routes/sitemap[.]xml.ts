@@ -1,71 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { TOPICS } from "@/data/topics";
-import { CODEBOOKS } from "@/lib/codebooks";
+import { listSources, FIREHOSE_SOURCES } from "@/lib/documents.functions";
 
 const BASE_URL = "https://self-law.org";
+// MUST match PAGE_SIZE in sitemap-docs.xml.ts — used here to compute how many
+// document pages each source needs.
+const PAGE_SIZE = 5000;
 
-interface SitemapEntry {
-  path: string;
-  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-  priority?: string;
+function xmlEscape(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// The sitemap INDEX. A single sitemap is capped at 50k URLs, and the corpus is
+// far larger, so /sitemap.xml is a <sitemapindex> pointing at child sitemaps:
+//   /sitemap-pages.xml                       — static + codebook + topic pages
+//   /sitemap-docs.xml?source=<s>&page=<n>    — one page of documents per source
+// Firehose sources (bill, register) are excluded for now: they each carry
+// hundreds of thousands of time-series rows that would swamp the crawl budget;
+// they can be added as their own children later if we want them indexed.
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const staticPaths: SitemapEntry[] = [
-          { path: "/", changefreq: "weekly", priority: "1.0" },
-          { path: "/about", changefreq: "monthly", priority: "0.6" },
-          { path: "/code", changefreq: "weekly", priority: "0.9" },
-          { path: "/search", changefreq: "weekly", priority: "0.7" },
-          { path: "/compare", changefreq: "weekly", priority: "0.7" },
-          { path: "/library", changefreq: "monthly", priority: "0.7" },
-          { path: "/whitepaper", changefreq: "monthly", priority: "0.6" },
-          { path: "/forum", changefreq: "daily", priority: "0.6" },
-          { path: "/subscribe", changefreq: "monthly", priority: "0.5" },
-        ];
+        const { sources } = await listSources();
 
-        const sources = ["const", "usc", "cfr", "ucc", "tfm", "irm"];
-        const sourcePaths: SitemapEntry[] = sources.map((s) => ({
-          path: `/code/source/${s}`,
-          changefreq: "weekly",
-          priority: "0.7",
-        }));
+        const children: string[] = [`${BASE_URL}/sitemap-pages.xml`];
+        for (const s of sources) {
+          if (FIREHOSE_SOURCES.has(s.code)) continue;
+          const pages = Math.max(1, Math.ceil(s.count / PAGE_SIZE));
+          for (let p = 0; p < pages; p++) {
+            children.push(`${BASE_URL}/sitemap-docs.xml?source=${encodeURIComponent(s.code)}&page=${p}`);
+          }
+        }
 
-        const codebookPaths: SitemapEntry[] = CODEBOOKS.map((cb) => ({
-          path: `/${cb.slug}`,
-          changefreq: "weekly",
-          priority: cb.status === "live" ? "0.8" : "0.5",
-        }));
-
-        const topicPaths: SitemapEntry[] = TOPICS.map((t) => ({
-          path: `/topic/${t.slug}`,
-          changefreq: "monthly",
-          priority: "0.7",
-        }));
-
-        const entries = [...staticPaths, ...codebookPaths, ...sourcePaths, ...topicPaths];
-
-        const urls = entries
-          .map((e) =>
-            [
-              `  <url>`,
-              `    <loc>${BASE_URL}${e.path}</loc>`,
-              e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
-              e.priority ? `    <priority>${e.priority}</priority>` : null,
-              `  </url>`,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          )
+        const body = children
+          .map((loc) => `  <sitemap>\n    <loc>${xmlEscape(loc)}</loc>\n  </sitemap>`)
           .join("\n");
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
-</urlset>`;
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</sitemapindex>`;
 
         return new Response(xml, {
           headers: {
