@@ -1441,6 +1441,107 @@ def parse_sd(state, url, text):
     return [make_record(state, url, path, heading, body, section_num=sec)]
 
 
+# Connecticut: one chapter per file, many sections. Each section opens with a
+# <span class="catchln" id="sec_X-Y"> nested in a <p>; the body is that <p> (minus
+# the catchline) plus following <p> siblings until the next catchln or a metadata
+# paragraph (source/history/annotation/cross-ref/front-note).
+CT_META = ("source", "history", "annotation", "cross-ref", "front-note")
+
+def _ct_meta(p):
+    cls = " ".join(p.get("class") or [])
+    return any(c in cls for c in CT_META)
+
+def parse_ct(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    cn = soup.select_one("h2.chap-no"); cnm = soup.select_one("h2.chap-name")
+    chapter = None
+    if cn:
+        chapter = norm(cn.get_text(" "))
+        if cnm:
+            chapter += f" — {norm(cnm.get_text(' ')).title()}"
+    recs = []
+    for span in soup.select("span.catchln"):
+        sid = span.get("id", "")
+        sec = sid[4:] if sid.startswith("sec_") else None
+        heading = norm(span.get_text(" "))
+        parent = span.parent
+        parts = []
+        first = norm(parent.get_text(" ").replace(span.get_text(" "), "", 1))
+        if first and not _ct_meta(parent):
+            parts.append(first)
+        for sib in parent.next_siblings:
+            if getattr(sib, "name", None) != "p":
+                continue
+            if sib.find("span", class_="catchln") or _ct_meta(sib):
+                break
+            t = block_text(sib)
+            if t:
+                parts.append(t)
+        path = ["Connecticut General Statutes"]
+        if sec:
+            path.append(f"Title {sec.split('-')[0]}")
+        if chapter:
+            path.append(chapter)
+        recs.append(make_record(state, url, path, heading, "\n\n".join(parts), section_num=sec))
+    return recs
+
+
+# Indiana: one title per file (text present — not the empty SPA the deferral
+# claimed). Structural <div class="title|article|chapter"> set the hierarchy;
+# each <div class="section" id="T-A-C-S"> has span#ic_number (the IC cite) and
+# span#shortdescription (catchline); the body is the following <p> up to the next
+# structural div. Drop p.derivation.
+def parse_in(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    title = article = chapter = None
+    recs = []
+    for el in soup.select("div.title, div.article, div.chapter, div.section"):
+        cls = el.get("class") or []
+        sd = el.find(id="shortdescription")
+        name = norm(sd.get_text(" ")) if sd else None
+        if "title" in cls:
+            title = name; article = chapter = None; continue
+        if "article" in cls:
+            article = name; chapter = None; continue
+        if "chapter" in cls:
+            chapter = name; continue
+        icn = el.find(id="ic_number")
+        cite = norm(icn.get_text(" ")) if icn else None
+        heading = " ".join(x for x in (cite, name) if x)
+        parts = []
+        for sib in el.next_siblings:
+            nm = getattr(sib, "name", None)
+            if nm == "div":
+                break
+            if nm == "p" and "derivation" not in " ".join(sib.get("class") or []):
+                t = block_text(sib)
+                if t:
+                    parts.append(t)
+        path = [p for p in ("Indiana Code", title, article, chapter) if p]
+        recs.append(make_record(state, url, path, heading, "\n\n".join(parts), section_num=el.get("id")))
+    return recs
+
+
+# New Hampshire: one section per file. The hierarchy + section title live in an
+# HTML comment (<titlename>/<chapter>/<sectiontitle>); the law body is in a
+# non-standard <codesect> tag. Section number is the "Section X:Y" in sectiontitle.
+def _nh_meta(raw, tag):
+    m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.S)
+    return norm(re.sub(r"<[^>]+>", " ", m.group(1))) if m else None
+
+def parse_nh(state, url, raw_text):
+    titlename = _nh_meta(raw_text, "titlename")
+    chapter = _nh_meta(raw_text, "chapter")
+    sectiontitle = _nh_meta(raw_text, "sectiontitle")
+    soup = BeautifulSoup(raw_text, "lxml")
+    cs = soup.find("codesect")
+    body = block_text(cs) if cs else ""
+    sm = re.match(r"Section\s+(\S+)", sectiontitle or "")
+    sec = sm.group(1) if sm else None
+    path = [p for p in ("New Hampshire Revised Statutes", titlename, chapter) if p]
+    return [make_record(state, url, path, sectiontitle, body, section_num=sec)]
+
+
 # the registry: domain -> adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1562,6 +1663,9 @@ SOURCES = {
     "lis.njleg.state.nj.us": ("raw", parse_nj),
     "nebraskalegislature.gov": ("raw", parse_ne),
     "sdlegislature.gov": ("raw", parse_sd),          # JSON API records
+    "www.cga.ct.gov": ("raw", parse_ct),
+    "iga.in.gov": ("raw", parse_in),
+    "gc.nh.gov": ("raw", parse_nh),
 }
 
 # states whose first build is deferred, with the reason logged rather than failing.
@@ -1569,7 +1673,6 @@ DEFERRED = {
     "Oklahoma": "PDF corpus (phase 2)",
     "New Mexico": "chapter PDFs (phase 2)",
     "Colorado": "docx/zip bulk download (phase 2)",
-    "Indiana": "React SPA — page HTML is an empty mount point (needs headless)",
     "Pennsylvania": "JS shell — statute text lives in <iframe id=IFrame_StatuteText "
                     "src=about:blank> filled client-side from the un-scraped ?iFrame=true "
                     "URL; all 15,430 captured pages are the identical nav wrapper (zero § "
