@@ -1367,6 +1367,80 @@ def parse_wy(state, url, text):
     return _emit_pdf_chunks(state, url, chunks)
 
 
+# New Jersey: one section per file, text present despite the nxt-gateway URL.
+# div.Headnotes = "<sec>  Catchline"; div.Normal-Level = the body.
+NJ_SEC = re.compile(r"^([A-Za-z0-9.]+):(\d+[A-Za-z]?)-")
+
+def parse_nj(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    nl = soup.select_one("div.Normal-Level")
+    if nl is None:
+        return []
+    hn = soup.select_one("div.Headnotes")
+    heading = norm(hn.get_text(" ")) if hn else None
+    m = re.match(r"^\s*([A-Za-z0-9.]+:\d+[A-Za-z]?-[\w.\-]+)", heading or "")
+    sec = m.group(1) if m else None
+    body = block_text(nl)
+    if sec:                                          # body repeats "<sec>. " — drop it
+        body = re.sub(r"^\s*" + re.escape(sec) + r"\.?\s+", "", body)
+    path = ["New Jersey Statutes"]
+    sm = NJ_SEC.match(sec or "")
+    if sm:
+        path += [f"Title {sm.group(1)}", f"Chapter {sm.group(2)}"]
+    return [make_record(state, url, path, heading, body, section_num=sec)]
+
+
+# Nebraska: one section per file. div.statute holds h2 (number), h3 (catchline),
+# and p.text-justify body paragraphs; the chapter is in the breadcrumb.
+def parse_ne(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    d = soup.select_one("div.statute")
+    if d is None:
+        return []
+    h2 = d.select_one("h2"); h3 = d.select_one("h3")
+    num = norm(h2.get_text(" ")) if h2 else None
+    catch = norm(h3.get_text(" ")) if h3 else None
+    heading = " ".join(x for x in (num, catch) if x)
+    body = "\n\n".join(t for t in (block_text(p) for p in d.select("p.text-justify")) if t)
+    sec = (num or "").rstrip(".") or None
+    chap = next((norm(li.get_text(" ")) for li in soup.select("ul.list-inline li")
+                 if norm(li.get_text(" ")).lower().startswith("chapter")), None)
+    path = ["Nebraska Revised Statutes"] + ([chap] if chap else [])
+    return [make_record(state, url, path, heading, body, section_num=sec)]
+
+
+# South Dakota: each file is a JSON API record (full text in the Html key), not an
+# empty SPA shell. Keep only Type=="Section"; pull number/catchline/body from the
+# embedded HTML (classes carry a per-statute numeric prefix, so match by suffix).
+def parse_sd(state, url, text):
+    import json
+    try:
+        d = json.loads(text)
+    except Exception:
+        return []
+    if (d.get("Type") or "").lower() != "section":
+        return []
+    sec = d.get("Statute")
+    soup = BeautifulSoup(d.get("Html") or "", "lxml")
+    paras = []
+    for p in soup.find_all("p"):
+        cls = " ".join(p.get("class") or [])
+        if not re.search(r"Normal-\d", cls):         # content paras carry Normal-NNNNNN
+            continue
+        t = block_text(p)
+        if t and not re.match(r"^\s*(Source:|Credits?:)", t):
+            paras.append(t)
+    body = "\n\n".join(paras)
+    catch = norm(d.get("CatchLine") or "")
+    heading = f"{sec}. {catch}".strip() if catch else sec
+    path = ["South Dakota Codified Laws"]
+    if d.get("Title") is not None:
+        path.append(f"Title {d['Title']}")
+        if d.get("Chapter") is not None:
+            path.append(f"Chapter {d['Title']}-{d['Chapter']}")
+    return [make_record(state, url, path, heading, body, section_num=sec)]
+
+
 # the registry: domain -> adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1485,6 +1559,9 @@ SOURCES = {
     "unicourt.github.io": ("raw", parse_unicourt),   # AR, GA, MS — shared cic-code DOM
     "www.ndlegis.gov": ("pdf", parse_nd),
     "wyoleg.gov": ("pdf", parse_wy),
+    "lis.njleg.state.nj.us": ("raw", parse_nj),
+    "nebraskalegislature.gov": ("raw", parse_ne),
+    "sdlegislature.gov": ("raw", parse_sd),          # JSON API records
 }
 
 # states whose first build is deferred, with the reason logged rather than failing.
@@ -1492,9 +1569,7 @@ DEFERRED = {
     "Oklahoma": "PDF corpus (phase 2)",
     "New Mexico": "chapter PDFs (phase 2)",
     "Colorado": "docx/zip bulk download (phase 2)",
-    "New Jersey": "nxt gateway frames/JS (phase 2)",
     "Indiana": "React SPA — page HTML is an empty mount point (needs headless)",
-    "South Dakota": "React/Vue SPA — empty shell HTML (needs headless)",
     "Pennsylvania": "JS shell — statute text lives in <iframe id=IFrame_StatuteText "
                     "src=about:blank> filled client-side from the un-scraped ?iFrame=true "
                     "URL; all 15,430 captured pages are the identical nav wrapper (zero § "
