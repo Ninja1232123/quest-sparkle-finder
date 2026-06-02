@@ -33,6 +33,7 @@ import {
   Library,
   type LucideIcon,
 } from "lucide-react";
+import { STATE_CODES } from "./source-groups";
 
 export type CodebookStatus = "live" | "soon" | "vision";
 export type CodebookKind = "small-toc" | "hierarchy" | "time" | "cases" | "agency";
@@ -184,9 +185,12 @@ export const CODEBOOKS: Codebook[] = [
     tab: "States",
     name: "State Law",
     tagline: "State constitutions, statutes, and regulations — by jurisdiction.",
-    status: "soon",
+    status: "live",
     kind: "small-toc",
-    sources: [],
+    // One source per state (lowercased state code), projected into
+    // document_sections from state_sections. DC has no data yet but is harmless
+    // in the list — the landing only cards sources that actually return rows.
+    sources: STATE_CODES,
     accent: "#4a6741",
     icon: MapPin,
   },

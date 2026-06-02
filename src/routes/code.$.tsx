@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as R
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { STATE_NAMES, sourceMeta, sourceName } from "@/lib/source-groups";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 
@@ -813,15 +814,57 @@ export const Route = createFileRoute("/code/$")({
   head: ({ loaderData, params }) => {
     const d = loaderData?.document;
     if (!d) return { meta: [{ title: "Not found · Marginalia" }] };
+    // Lead the title with the jurisdiction tag (e.g. "Pennsylvania", "U.S.C.")
+    // so a section ranks for "<jurisdiction> <topic>" searches, not just a bare
+    // "§ 2501". For states, sourceMeta(code).short is the full state name.
+    const isState = d.source_code in STATE_NAMES;
+    const tag = sourceMeta(d.source_code).short;
     const label = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim();
     const parent = d.parent_label ? formatGroupCrumb(d.source_code, d.parent_label) : "";
-    const fullTitle = `${label}${parent ? ` — ${parent}` : ""} · Marginalia`;
-    const ogTitle = `${label}${parent ? ` — ${parent}` : ""}`;
+    const core = `${tag} ${label}`.trim();
+    const fullTitle = `${core}${parent ? ` — ${parent}` : ""} · Marginalia`;
+    const ogTitle = `${core}${parent ? ` — ${parent}` : ""}`;
     const body = (d.body_text ?? "").replace(/\s+/g, " ").trim();
     const description = body
       ? body.slice(0, 155) + (body.length > 155 ? "…" : "")
-      : `${label} on Marginalia — read the source text with cross-references to related statutes and regulations.`;
+      : `${core} on Marginalia — read the source text with cross-references to related statutes and regulations.`;
     const url = `https://self-law.org/code/${params._splat}`;
+
+    // Structured data: a Legislation node (the statute/section itself) plus a
+    // BreadcrumbList mirroring the jurisdiction → parent → section hierarchy, so
+    // Google can render the trail and understand the page as primary law.
+    const sourceLabel = sourceName(d.source_code);
+    const crumbs: { name: string; item: string }[] = [
+      { name: "Marginalia", item: "https://self-law.org" },
+      { name: sourceLabel, item: `https://self-law.org/code/source/${encodeURIComponent(d.source_code)}` },
+    ];
+    if (parent) crumbs.push({ name: parent, item: url });
+    crumbs.push({ name: label || sourceLabel, item: url });
+    const ld = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Legislation",
+          name: label || sourceLabel,
+          legislationIdentifier: d.identifier,
+          isPartOf: { "@type": "Legislation", name: sourceLabel },
+          legislationJurisdiction: isState ? STATE_NAMES[d.source_code] : "United States",
+          inLanguage: "en",
+          url,
+          ...(body ? { text: body.slice(0, 500) + (body.length > 500 ? "…" : "") } : {}),
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: crumbs.map((c, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: c.name,
+            item: c.item,
+          })),
+        },
+      ],
+    };
+
     return {
       meta: [
         { title: fullTitle },
@@ -834,6 +877,9 @@ export const Route = createFileRoute("/code/$")({
         { name: "twitter:description", content: description },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(ld) },
+      ],
     };
   },
   notFoundComponent: () => (
@@ -862,6 +908,7 @@ const SOURCE_NAMES: Record<string, string> = {
   ucc: "UCC",
   tfm: "TFM",
   irm: "IRM",
+  ...STATE_NAMES, // state sources (pa → "Pennsylvania", …) for the source badge + trace panels
 };
 
 function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {

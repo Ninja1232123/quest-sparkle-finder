@@ -194,13 +194,47 @@ export const SOURCE_NAMES: Record<string, string> = {
   "public-papers-president": "Public Papers of the Presidents",
 };
 
+/**
+ * The 50 states (plus DC), keyed by the lowercased `source_code` used when
+ * state_sections is projected into document_sections (see
+ * scripts/project_states_to_documents.py). One source per state; this single
+ * map drives both the display name and the `state`-group metadata so the
+ * CorpusTree, the /states landing, and search all label them consistently.
+ */
+export const STATE_NAMES: Record<string, string> = {
+  al: "Alabama", ak: "Alaska", az: "Arizona", ar: "Arkansas", ca: "California",
+  co: "Colorado", ct: "Connecticut", de: "Delaware", fl: "Florida", ga: "Georgia",
+  hi: "Hawaii", id: "Idaho", il: "Illinois", in: "Indiana", ia: "Iowa",
+  ks: "Kansas", ky: "Kentucky", la: "Louisiana", me: "Maine", md: "Maryland",
+  ma: "Massachusetts", mi: "Michigan", mn: "Minnesota", ms: "Mississippi",
+  mo: "Missouri", mt: "Montana", ne: "Nebraska", nv: "Nevada", nh: "New Hampshire",
+  nj: "New Jersey", nm: "New Mexico", ny: "New York", nc: "North Carolina",
+  nd: "North Dakota", oh: "Ohio", ok: "Oklahoma", or: "Oregon", pa: "Pennsylvania",
+  ri: "Rhode Island", sc: "South Carolina", sd: "South Dakota", tn: "Tennessee",
+  tx: "Texas", ut: "Utah", vt: "Vermont", va: "Virginia", wa: "Washington",
+  wv: "West Virginia", wi: "Wisconsin", wy: "Wyoming", dc: "District of Columbia",
+};
+
+export const STATE_CODES = Object.keys(STATE_NAMES);
+
 export function sourceName(code: string): string {
-  return SOURCE_NAMES[code] ?? code.toUpperCase();
+  return SOURCE_NAMES[code] ?? STATE_NAMES[code] ?? code.toUpperCase();
 }
 
 export function sourceMeta(code: string): SourceMeta {
+  if (SOURCE_META[code]) return SOURCE_META[code];
+  if (STATE_NAMES[code]) {
+    return {
+      code,
+      short: STATE_NAMES[code],
+      group: "state",
+      accent: "#4a6741",
+      icon: MapPin,
+      tagline: `${STATE_NAMES[code]} statutes and constitution.`,
+    };
+  }
   return (
-    SOURCE_META[code] ?? {
+    {
       code,
       short: code.toUpperCase(),
       group: "other",

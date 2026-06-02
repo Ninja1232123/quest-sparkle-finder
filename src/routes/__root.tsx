@@ -147,16 +147,43 @@ function RootComponent() {
 }
 
 // Public, crawlable, or auth-flow routes. Everything else requires sign-in.
+// The law-reading surface (the reader, search, compare, and every codebook
+// landing) is public so Google can index it — crawlability is the moat. Premium
+// tooling (the Desk, casefiles, AI, export) gates itself at the component level
+// via useAuth, so the page can render publicly while the actions prompt sign-in.
+// Still gated: /account, /cases, /checkout return — user-specific or in robots
+// Disallow.
 const PUBLIC_PREFIXES = [
   "/auth",
   "/about",
   "/whitepaper",
+  "/features",
   "/chambers",
   "/subscribe",
   "/checkout",
   "/sitemap.xml",
   "/api/",
   "/lovable/",
+  // reading surface
+  "/code",
+  "/states",
+  "/search",
+  "/compare",
+  "/library",
+  "/topic",
+  "/forum",
+  // codebook landings (slugs from src/lib/codebooks.ts)
+  "/const",
+  "/usc",
+  "/cfr",
+  "/register",
+  "/bills",
+  "/laws",
+  "/statutes",
+  "/presidential",
+  "/scotus",
+  "/agency",
+  "/model",
 ];
 
 function AuthGate() {
