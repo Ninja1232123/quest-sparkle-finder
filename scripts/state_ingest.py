@@ -1542,6 +1542,189 @@ def parse_nh(state, url, raw_text):
     return [make_record(state, url, path, sectiontitle, body, section_num=sec)]
 
 
+# Oklahoma: one title per PDF, prefixed by a multi-page dotted-leader TOC we skip.
+# Real section headers are "§<sec>. Catchline" lines with NO dot leaders; the TOC
+# lines all carry "....<page>". Title name comes from the running header.
+OK_HDR = re.compile(r"Oklahoma Statutes\s*-\s*Title\s+([0-9A-Za-z]+)\.?\s*(.*)$", re.I)
+OK_SEC = re.compile(r"^§\s*([0-9A-Za-z][\w.\-]*?)\.\s+(.+)$")
+OK_URLTITLE = re.compile(r"/os([0-9A-Za-z]+)\.pdf", re.I)
+
+def parse_ok(state, url, text):
+    m = OK_URLTITLE.search(url)
+    title_num = m.group(1) if m else None
+    title_name = None
+    chunks, cur, seen = [], None, set()
+    for raw in text.split("\n"):
+        ln = raw.rstrip(); s = ln.strip()
+        hm = OK_HDR.search(s)
+        if hm:
+            title_num = title_num or hm.group(1)
+            name = re.sub(r"\s+Page\s+\d+\s*$", "", hm.group(2)).strip()  # drop right-aligned footer
+            if not title_name and name:
+                title_name = name
+            continue
+        if re.match(r"^Page\s+\d+$", s) or s.isdigit():
+            continue
+        if "...." in s:                                # TOC dot-leader line
+            continue
+        sm = OK_SEC.match(s)
+        if sm:
+            sec = sm.group(1)
+            if sec in seen:                            # TOC lists every § once, then the
+                chunks, seen = [], set()               # body repeats them → drop the TOC pass
+            seen.add(sec)
+            cur = {"sec": sec, "heading": f"§{sec}. {sm.group(2)}", "lines": []}
+            chunks.append(cur)
+            continue
+        if cur is not None:
+            cur["lines"].append(ln)
+    title = None
+    if title_num:
+        title = f"Title {title_num}" + (f" — {title_name.title()}" if title_name else "")
+    base = [p for p in ("Oklahoma Statutes", title) if p]
+    recs = []
+    for c in chunks:
+        recs.append(make_record(state, url, base, c["heading"],
+                                "\n\n".join(pdf_paragraphs(c["lines"])), section_num=c["sec"]))
+    return recs
+
+
+# New Mexico: one chapter per PDF (.html URL, %PDF bytes). CHAPTER/ARTICLE headers
+# (number then name on the next line); sections are "<sec>. Catchline"; the
+# ANNOTATIONS block (case law) is dropped, History is kept as provenance.
+NM_CHAP = re.compile(r"^CHAPTER\s+([0-9]{1,2}[A-Z]?)\s*$")
+NM_ART = re.compile(r"^ARTICLE\s+([0-9]{1,2}[A-Z]?)\s*$")
+NM_SEC = re.compile(r"^([0-9]{1,2}[A-Z]?-\d+-\d+(?:\.\d+)?)\.\s+(.+)$")
+
+def parse_nm(state, url, text):
+    chap_num = chap_name = art_num = art_name = None
+    want_chap = want_art = False
+    chunks, cur, drop = [], None, False
+    for raw in text.split("\n"):
+        ln = raw.rstrip(); s = ln.strip()
+        if not s:
+            if cur and not drop:
+                cur["lines"].append("")
+            continue
+        if s.upper() == "ANNOTATIONS":                 # case-law block → drop to next section
+            drop = True; cur = None; continue
+        cm = NM_CHAP.match(s)
+        if cm:
+            chap_num = cm.group(1); want_chap = True; art_num = None; cur = None; drop = False; continue
+        am = NM_ART.match(s)
+        if am:
+            art_num = am.group(1); want_art = True; cur = None; drop = False; continue
+        sm = NM_SEC.match(s)
+        if sm:
+            drop = False
+            path = ["New Mexico Statutes Annotated"]
+            if chap_num:
+                path.append(f"Chapter {chap_num}" + (f" — {chap_name.title()}" if chap_name else ""))
+            if art_num:
+                path.append(f"Article {art_num}" + (f" — {art_name.title()}" if art_name else ""))
+            cur = {"sec": sm.group(1), "heading": f"{sm.group(1)}. {sm.group(2)}",
+                   "path": path, "lines": []}
+            chunks.append(cur); continue
+        if want_chap:
+            chap_name = s; want_chap = False; continue
+        if want_art:
+            art_name = s; want_art = False; continue
+        if cur and not drop:
+            cur["lines"].append(ln)
+    return _emit_pdf_chunks(state, url, chunks)
+
+
+# Idaho: one section per file; the statute lives in static HTML (div.pgbrk) — the
+# "JS-rendered" deferral was wrong. pgbrk text is TITLE/name/CHAPTER/name, then a
+# "<sec>." line, the catchline, then body paragraphs (one per block); History drops.
+ID_SECT = re.compile(r"/sect([0-9A-Za-z.\-]+?)/?$", re.I)
+
+def parse_id(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    pg = soup.select_one("div.pgbrk")
+    if pg is None:
+        return []
+    lines = [norm(x) for x in pg.get_text("\n").split("\n") if norm(x)]
+    title = chapter = None
+    sidx = None
+    for i, l in enumerate(lines):
+        tm = re.match(r"^TITLE\s+(\S+)", l)
+        cm = re.match(r"^CHAPTER\s+(\S+)", l)
+        if tm and i + 1 < len(lines):
+            title = f"Title {tm.group(1)} — {lines[i+1].title()}"
+        elif cm and i + 1 < len(lines):
+            chapter = f"Chapter {cm.group(1)} — {lines[i+1].title()}"
+        elif re.match(r"^\d[\w.\-]*\.\s*$", l):        # the "10-1106." section line
+            sidx = i; break
+    m = ID_SECT.search(url)
+    sec = m.group(1) if m else (lines[sidx].rstrip(".") if sidx is not None else None)
+    heading = body_lines = None
+    if sidx is not None:
+        catch = lines[sidx + 1] if sidx + 1 < len(lines) else ""
+        heading = f"{lines[sidx].rstrip('.')}. {catch}".strip()
+        body_lines = []
+        for l in lines[sidx + 2:]:
+            if re.match(r"^History:", l):
+                break
+            body_lines.append(l)
+    path = [p for p in ("Idaho Statutes", title, chapter) if p]
+    body = "\n\n".join(body_lines) if body_lines else ""
+    return [make_record(state, url, path, heading or (f"§{sec}" if sec else None), body, section_num=sec)]
+
+
+# Colorado: one title per PDF (the .htm/.docx mirrors on disk are skipped — only
+# %PDF bytes reach a pdf adapter). TITLE/ARTICLE headers (number then name line);
+# sections are "<sec>. Catchline. body…" inline (peel the catchline like KY); the
+# Source:/Editor's note:/Cross references:/Law reviews:/ANNOTATION blocks drop.
+CO_TITLE = re.compile(r"^TITLE\s+([0-9A-Za-z.]+)\s*$")
+CO_ART = re.compile(r"^ARTICLE\s+([0-9A-Za-z.]+)\s*$")
+CO_SEC = re.compile(r"^\s+(\d+-\d+-\d+(?:\.\d+)?)\.\s+(.+)$")
+CO_META = re.compile(r"^(Source:|Editor'?s note:|Cross references?:|Law reviews?:|ANNOTATION|Annotations?:)")
+
+def parse_co(state, url, text):
+    title = title_name = art = art_name = None
+    want_tn = want_an = False
+    chunks, cur, drop = [], None, False
+    for raw in text.split("\n"):
+        ln = raw.rstrip(); s = ln.strip()
+        if not s:
+            if cur and not drop:
+                cur["lines"].append("")
+            continue
+        if s.startswith("Colorado Revised Statutes") or re.match(r"^Page\s+\d+\s+of\s+\d+", s):
+            continue
+        tm = CO_TITLE.match(s)
+        if tm:
+            title = tm.group(1); want_tn = True; art = None; cur = None; drop = False; continue
+        am = CO_ART.match(s)
+        if am:
+            art = am.group(1); want_an = True; cur = None; drop = False; continue
+        sm = CO_SEC.match(ln)
+        if sm:
+            drop = False
+            sec, rest = sm.group(1), sm.group(2)
+            hm = re.match(r"^(.+?\.)(\s+.*)?$", rest)   # peel the catchline sentence
+            catch = hm.group(1) if hm else rest
+            body0 = (hm.group(2).strip() if hm and hm.group(2) else "")
+            path = ["Colorado Revised Statutes"]
+            if title:
+                path.append(f"Title {title}" + (f" — {title_name.title()}" if title_name else ""))
+            if art:
+                path.append(f"Article {art}" + (f" — {art_name.title()}" if art_name else ""))
+            cur = {"sec": sec, "heading": f"{sec}. {catch}", "path": path,
+                   "lines": ([body0] if body0 else [])}
+            chunks.append(cur); continue
+        if CO_META.match(s):
+            drop = True; continue
+        if want_tn:
+            title_name = s; want_tn = False; continue
+        if want_an:
+            art_name = s; want_an = False; continue
+        if cur and not drop:
+            cur["lines"].append(ln)
+    return _emit_pdf_chunks(state, url, chunks)
+
+
 # the registry: domain -> adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1666,19 +1849,19 @@ SOURCES = {
     "www.cga.ct.gov": ("raw", parse_ct),
     "iga.in.gov": ("raw", parse_in),
     "gc.nh.gov": ("raw", parse_nh),
+    "www.oklegislature.gov": ("pdf", parse_ok),
+    "nmonesource.com": ("pdf", parse_nm),            # .html URLs, %PDF bytes
+    "legislature.idaho.gov": ("raw", parse_id),
+    "olls.info": ("pdf", parse_co),                  # title PDFs (docx/zip mirrors skipped)
 }
 
 # states whose first build is deferred, with the reason logged rather than failing.
 DEFERRED = {
-    "Oklahoma": "PDF corpus (phase 2)",
-    "New Mexico": "chapter PDFs (phase 2)",
-    "Colorado": "docx/zip bulk download (phase 2)",
     "Pennsylvania": "JS shell — statute text lives in <iframe id=IFrame_StatuteText "
                     "src=about:blank> filled client-side from the un-scraped ?iFrame=true "
                     "URL; all 15,430 captured pages are the identical nav wrapper (zero § "
                     "content). parse_pa is wired and ready — re-scrape the iframe URLs, then "
                     "delete this line (needs headless)",
-    "Idaho": "statute text is JS-rendered — static HTML has only the breadcrumb (phase 2)",
 }
 
 
