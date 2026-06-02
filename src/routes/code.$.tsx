@@ -774,7 +774,7 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
         aria-expanded={open}
       >
         <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <List className="h-4 w-4 shrink-0 text-accent" />
+          <Network className="h-4 w-4 shrink-0 text-accent" />
           <span className="font-display text-sm font-semibold text-foreground">In this section</span>
           <span className="citation-tag text-muted-foreground">{items.length} parts</span>
         </span>
