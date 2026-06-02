@@ -5,11 +5,15 @@ Generated from a 17-agent swarm that read the actual on-disk bytes under
 a concrete recipe a developer can write the `state_ingest.py` adapter straight
 from.
 
-**STATUS: DONE.** All 17 adapters below were written and the states loaded —
-the DB now holds **49 of 50 states, 2,016,810 sections**. The only state NOT
-loaded is **Pennsylvania** (empty iframe shells on disk — needs a re-scrape of
-the `?…&iFrame=true` URLs, then the wired `parse_pa` runs). The table below is
-kept as the as-built reference for each adapter.
+**STATUS: DONE — 50/50.** All 17 adapters below were written and the states
+loaded; **Pennsylvania is now in too** (re-scraped via the `?…&iFrame=true`
+chapter frames with `scripts/pa_fetch_iframe.py` — 1045 chapter pages, then the
+wired `parse_pa`, = 14,248 sections). The DB now holds **all 50 states,
+2,031,058 sections**. Remaining gaps are not whole states: **New Mexico** is
+partial (52 of 84 chapters; the other 32 sit behind nmonesource.com's
+`/robocop/captcha` anti-bot gate — needs a headless/captcha re-fetch), and
+**DC** was never scraped (no disk data; not one of the 50 states). The table
+below is kept as the as-built reference for each adapter.
 
 **Headline:** 5 states previously marked DEFERRED are actually recoverable from
 the data already on disk — **Idaho, Indiana, New Jersey, South Dakota, Kentucky**.

@@ -1857,11 +1857,9 @@ SOURCES = {
 
 # states whose first build is deferred, with the reason logged rather than failing.
 DEFERRED = {
-    "Pennsylvania": "JS shell — statute text lives in <iframe id=IFrame_StatuteText "
-                    "src=about:blank> filled client-side from the un-scraped ?iFrame=true "
-                    "URL; all 15,430 captured pages are the identical nav wrapper (zero § "
-                    "content). parse_pa is wired and ready — re-scrape the iframe URLs, then "
-                    "delete this line (needs headless)",
+    # Pennsylvania re-scraped via the ?...&iFrame=true content frame
+    # (scripts/pa_fetch_iframe.py) — chapter pages now hold real § text, parse_pa
+    # runs. No longer deferred.
 }
 
 
