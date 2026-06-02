@@ -287,10 +287,10 @@ function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, onC
 }
 
 // Rough rendered height of a note card, used for first-paint stacking before we
-// measure the real DOM heights. The Desk rail is now wide (fills text→wall), so
-// ~44 chars/line; real heights are measured after paint anyway.
+// measure the real DOM heights. The Desk rail is a ~20rem strip pinned to the
+// right margin (~36 chars/line); real heights are measured after paint anyway.
 function estimateNoteH(text: string) {
-  const lines = Math.max(2, Math.ceil(text.length / 44));
+  const lines = Math.max(2, Math.ceil(text.length / 36));
   return 26 + lines * 28;
 }
 
@@ -375,8 +375,8 @@ function MarginaliaRail({ anchors, height, notes, cases, casesForIdx, composing,
 
   return (
     <div
-      className="relative hidden border-l border-border/60 bg-muted/20 lg:block"
-      style={{ minHeight: height }}
+      className="absolute top-0 hidden border-l border-border/60 bg-muted/20 lg:block"
+      style={{ left: "100%", marginLeft: "2rem", width: "20rem", minHeight: height }}
       onMouseMove={(e) => setHoverY(railY(e))}
       onMouseLeave={() => setHoverY(null)}
       onClick={(e) => { if (e.target === e.currentTarget) onCompose(nearest(railY(e))); }}
@@ -670,39 +670,31 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
 
   return (
     <div className="space-y-2.5">
-      {/* Marginalia header — client-only, so no hydration mismatch. Mirrors the
-          two-column body grid below so the left cell labels the reading column
-          and the right cell becomes the "THE DESK" column header, sitting
-          exactly over the marginalia rail. */}
+      {/* Marginalia header — client-only, so no hydration mismatch. A single row
+          over the reading column; the Desk now lives in the screen's right margin
+          (pinned to the wall by MarginaliaRail), so it needs no column header. */}
       {mg.hydrated && (
-        <div className="mb-3 lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:gap-12">
-          {/* over the text column */}
-          <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-2">
-            <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
-              <PenLine className="h-3 w-3 text-ochre" />
-              {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
-            </span>
-            <span className="shrink-0 font-mono text-[10px] text-foreground/40 lg:hidden">
+        <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2">
+          <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
+            <PenLine className="h-3 w-3 text-ochre" />
+            {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
+          </span>
+          {cb.hydrated && caseList.length > 0 ? (
+            <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
+              <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
+            </Link>
+          ) : (
+            <span className="shrink-0 font-mono text-[10px] text-foreground/40">
               {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
             </span>
-          </div>
-          {/* over the marginalia rail — the Desk's own column header */}
-          <div className="hidden items-center justify-between gap-2 border-b border-border/40 pb-2 lg:flex">
-            <span className="desk-eyebrow mb-0 border-b-0 pb-0">the desk</span>
-            {cb.hydrated && caseList.length > 0 ? (
-              <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
-                <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
-              </Link>
-            ) : (
-              <span className="shrink-0 font-mono text-[10px] text-foreground/40">
-                {mg.count === 0 ? "this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      <div ref={wrapRef} className="lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
+      {/* Reading column fills the width; the Desk rail is absolutely pinned to the
+          right margin (relative anchor = this wrapper, so notes still line up with
+          their paragraphs and scroll with the text). */}
+      <div ref={wrapRef} className="relative">
         <div className="min-w-0 space-y-2.5">
           {(() => {
             const renderPara = (p: LegalPara, i: number) => (
@@ -1200,11 +1192,12 @@ function DocumentPage() {
         </div>
       </div>
 
-      {/* Reading block nudged right of the left edge; title + apparatus held to
-          the same reading measure as the body's text column, while the body grid
-          lets the marginalia "Desk" fill everything from the text to the wall. */}
-      <article className="lg:pl-[5vw]">
-        <div className="lg:max-w-[46rem]">
+      {/* The whole reading block reserves a right lane (lg:pr) for the Desk, which
+          MarginaliaRail pins to the screen's right margin. Title, body, connections
+          and prev/next all share that one reading width — "everything same width" —
+          while the notes sit against the wall instead of fighting for the center. */}
+      <article className="lg:pr-[22rem]">
+        <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
             {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
             <span className="ink-underline italic">{document.heading}</span>
@@ -1218,7 +1211,7 @@ function DocumentPage() {
         </div>
 
         <div className="mt-8">
-          <div className="lg:max-w-[46rem]">
+          <div>
             <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
             <DefinitionsPanel text={body} />
           </div>
