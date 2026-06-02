@@ -1214,6 +1214,65 @@ def parse_ky(state, url, text):
     return [make_record(state, url, path, heading, body, section_num=sec)]
 
 
+# Arkansas, Georgia, Mississippi: the UniCourt cic-code public-domain mirrors,
+# one HTML file per title with the SAME DOM. Sections are a flat sibling stream
+# inside <main>: an <h3 id="t<T>c<C>s<SEC>"> heading ("1-1-1. Enactment of Code.")
+# followed by the statute text (<ol>/<p>), then metadata paragraphs (History.,
+# Cross references., …) and <h4>/<div> annotation blocks we drop. Hierarchy comes
+# from the heading stream: <h1> title (in nav), <h2> chapter (or h2.subtitleh2
+# subtitle), h3.subchapterh3 subchapter dividers (no body).
+UNICOURT_SEC = re.compile(
+    r"^\s*§*\s*(\d+[A-Za-z]?-\d+[A-Za-z]?-\d+(?:\.\d+)*[A-Za-z]?)\.?(?:\s|$)")
+UNICOURT_META = re.compile(
+    r"^\s*(History|Cross references?|Editor'?s notes?|Law reviews?|Amendments?|"
+    r"Administrative rules?|Code Commission notes?|Repealed|Delegation|JUDICIAL DECISIONS|"
+    r"RESEARCH REFERENCES|OPINIONS OF THE ATTORNEY GENERAL|U\.S\. Code|ALR|Am\.? Jur)",
+    re.I)
+
+def parse_unicourt(state, url, raw_text):
+    soup = BeautifulSoup(raw_text, "lxml")
+    main = soup.find("main")
+    if main is None:
+        return []
+    code_name = f"{state} Code"
+    h1 = soup.find("h1")
+    title = norm(h1.get_text(" ")) if h1 else None
+    subtitle = chapter = subchap = None
+    recs = []
+    for el in main.find_all(["h1", "h2", "h3"]):
+        cls = el.get("class") or []
+        txt = norm(el.get_text(" "))
+        if el.name == "h1":
+            title = txt; subtitle = chapter = subchap = None; continue
+        if el.name == "h2":
+            if "subtitleh2" in cls:
+                subtitle = txt; chapter = None
+            else:
+                chapter = txt
+            subchap = None
+            continue
+        if "subchapterh3" in cls:                      # subchapter divider, no body
+            subchap = txt; continue
+        m = UNICOURT_SEC.match(txt)
+        if not m:
+            continue
+        sec = m.group(1)
+        parts = []
+        for sib in el.next_siblings:                   # statute text up to the metadata
+            nm = getattr(sib, "name", None)
+            if nm in ("h2", "h3", "h4", "div"):
+                break
+            if nm == "p" and UNICOURT_META.match(sib.get_text(" ")):
+                break
+            if nm in ("p", "ol", "ul", "blockquote", "table"):
+                t = block_text(sib)
+                if t:
+                    parts.append(t)
+        path = [p for p in (code_name, title, subtitle, chapter, subchap) if p]
+        recs.append(make_record(state, url, path, txt, "\n\n".join(parts), section_num=sec))
+    return recs
+
+
 # the registry: domain -> adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1329,6 +1388,7 @@ SOURCES = {
     "www.nysenate.gov": ("raw", parse_ny),
     "www.legis.iowa.gov": ("pdf", parse_ia),
     "apps.legislature.ky.gov": ("pdf", parse_ky),
+    "unicourt.github.io": ("raw", parse_unicourt),   # AR, GA, MS — shared cic-code DOM
 }
 
 # states whose first build is deferred, with the reason logged rather than failing.
@@ -1345,7 +1405,6 @@ DEFERRED = {
                     "URL; all 15,430 captured pages are the identical nav wrapper (zero § "
                     "content). parse_pa is wired and ready — re-scrape the iframe URLs, then "
                     "delete this line (needs headless)",
-    "Mississippi": "LexisNexis-locked, only 10 pages scraped (phase 2)",
     "Idaho": "statute text is JS-rendered — static HTML has only the breadcrumb (phase 2)",
 }
 
