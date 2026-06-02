@@ -1,38 +1,18 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
 import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, List, Minus, Network, PenLine, Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
-import { segmentBody, splitParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
+import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 
 // Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
 // and @/lib/auto-link-citations (renderDecorated). Both work in original
 // body_text offsets so citation_edges spans stay valid. See CITATION_GAMEPLAN.md.
 
 const LEVEL_INDENT = ["", "pl-5", "pl-10", "pl-16"] as const;
-
-// Citation byte spans, used both to place inline chips and to keep the
-// soft-paragraph splitter from cutting through a cite.
-function citationSpans(citations: DocCitationRow[]): { s: number; e: number }[] {
-  const out: { s: number; e: number }[] = [];
-  for (const c of citations) {
-    if (c.span_start != null && c.span_end != null) out.push({ s: c.span_start, e: c.span_end });
-  }
-  return out;
-}
-
-// The operative paragraphs, flattened across every operative segment, in order.
-// The flat index is the anchor id used by both the body and the outline, so
-// they must derive it from the same inputs (segments + spans).
-function operativeParagraphs(body: string, segments: BodySegment[], spans: { s: number; e: number }[]): LegalPara[] {
-  const out: LegalPara[] = [];
-  for (const seg of segments) {
-    if (seg.kind === "operative") out.push(...splitParagraphs(body, seg.start, seg.end, spans));
-  }
-  return out;
-}
 
 // ── Defined-terms extractor ──────────────────────────────────────────────────
 // Scans body_text for "term" means / is defined as / refers to patterns common
@@ -97,140 +77,193 @@ function buildMarkRe(q?: string): RegExp | null {
   return terms.length ? new RegExp(`(${terms.join("|")})`, "ig") : null;
 }
 
-// ── Reader marginalia ─────────────────────────────────────────────────────
-// Handwritten notes pinned to a paragraph, persisted in localStorage keyed by
-// section identifier + paragraph index. Device-local by design — nothing
-// leaves the browser. Hydration-safe (loads after mount) so SSR renders the
-// statute clean with no client/server mismatch; mirrors useShelf in compare.tsx.
-const NOTES_KEY_VERSION = "v1";
-function marginaliaKey(identifier: string) {
-  return `marginalia.notes.${NOTES_KEY_VERSION}:${identifier}`;
-}
+// ── Reader marginalia → cases ───────────────────────────────────────────────
+// The note store + cases live in @/lib/casebook (device-local localStorage,
+// nothing leaves the browser). A margin note can tag itself to a named CASE by
+// typing "@" in the composer; the citation it was written beside rides along
+// automatically. Those notes assemble into a drag-orderable draft on /cases.
+// Hydration-safe (loads after mount) so SSR renders the statute clean.
 
-function useMarginalia(identifier: string) {
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    let loaded: Record<string, string> = {};
-    try {
-      const raw = localStorage.getItem(marginaliaKey(identifier));
-      if (raw) loaded = JSON.parse(raw) as Record<string, string>;
-    } catch {
-      /* ignore corrupt or blocked storage */
-    }
-    setNotes(loaded);
-    setHydrated(true);
-  }, [identifier]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      const key = marginaliaKey(identifier);
-      if (Object.keys(notes).length > 0) localStorage.setItem(key, JSON.stringify(notes));
-      else localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
-  }, [notes, hydrated, identifier]);
-
-  const setNote = (idx: number, text: string) =>
-    setNotes((prev) => {
-      const next = { ...prev };
-      const t = text.trim();
-      if (t) next[idx] = t;
-      else delete next[idx];
-      return next;
-    });
-  const removeNote = (idx: number) =>
-    setNotes((prev) => {
-      const next = { ...prev };
-      delete next[idx];
-      return next;
-    });
-
-  return { notes, hydrated, setNote, removeNote, count: Object.keys(notes).length };
-}
-
-function MarginComposer({ initial, onSave, onCancel }: {
+// The composer: jot a note, and type "@" to tag it to a case (or start one).
+// `selected` is the set of case ids this note belongs to.
+function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, onCancel }: {
   initial: string;
-  onSave: (text: string) => void;
+  initialCases: string[];
+  cases: CaseRecord[];
+  onSave: (text: string, caseIds: string[]) => void;
+  onCreateCase: (name: string) => string;
   onCancel: () => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(initial);
+  const [selected, setSelected] = useState<string[]>(initialCases);
+  const [menu, setMenu] = useState(false);
+  const [newName, setNewName] = useState("");
   useEffect(() => {
     const el = ref.current;
     if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
   }, []);
+
+  const byId = (id: string) => cases.find((c) => c.id === id);
+  const tag = (id: string) => {
+    setSelected((s) => (s.includes(id) ? s : [...s, id]));
+    setMenu(false);
+    setNewName("");
+    ref.current?.focus();
+  };
+  const untag = (id: string) => setSelected((s) => s.filter((x) => x !== id));
+  const createAndTag = () => {
+    const n = newName.trim();
+    if (!n) return;
+    tag(onCreateCase(n));
+  };
+
   return (
-    <div className="rounded-xl border-[1.5px] border-ochre bg-card/80 px-3 py-2.5 shadow-[var(--shadow-card)]">
+    <div className="relative rounded-xl border-[1.5px] border-ochre bg-card/95 px-3 py-2.5 shadow-[var(--shadow-card)]">
+      {selected.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {selected.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => untag(id)}
+              title="Remove from this case"
+              className="inline-flex items-center gap-1 rounded-full border border-ochre/55 bg-ochre/20 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-foreground/80 hover:bg-ochre/30"
+            >
+              <Scale className="h-3 w-3" /> {byId(id)?.name ?? "case"} <X className="h-2.5 w-2.5 opacity-60" />
+            </button>
+          ))}
+        </div>
+      )}
       <textarea
         ref={ref}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSave(draft); }
-          if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+          if (e.key === "@") { setMenu(true); }
+          else if (e.key === "Enter" && !e.shiftKey && !menu) { e.preventDefault(); onSave(draft, selected); }
+          else if (e.key === "Escape") { e.preventDefault(); if (menu) setMenu(false); else onCancel(); }
         }}
         rows={3}
-        placeholder="in your own words…"
-        title="Enter to save · Esc to cancel"
+        placeholder="in your own words…  type @ to file it under a case"
+        title="Enter to save · @ to tag a case · Esc to cancel"
         className="w-full resize-y border-0 bg-transparent font-hand text-[18px] leading-snug text-foreground outline-none placeholder:text-foreground/30"
       />
-      <div className="mt-1 flex items-center justify-end gap-1.5">
-        <button type="button" onClick={onCancel} className="rounded-full px-2 py-0.5 font-display text-[11px] font-semibold text-foreground/45 hover:text-foreground">
-          Cancel
-        </button>
-        <button type="button" onClick={() => onSave(draft)} className="rounded-full bg-foreground px-2.5 py-0.5 font-display text-[11px] font-semibold text-background hover:opacity-90">
-          Save
-        </button>
+
+      {menu && (
+        <div className="absolute inset-x-2 top-[3.2rem] z-10 overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+          <div className="px-3 pb-1 pt-2 font-mono text-[9px] uppercase tracking-[0.09em] text-muted-foreground">File under a case</div>
+          <div className="max-h-44 overflow-y-auto">
+            {cases.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => tag(c.id)}
+                disabled={selected.includes(c.id)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-muted/60 disabled:opacity-40"
+              >
+                <Scale className="h-3.5 w-3.5 text-ochre" />
+                <span className="font-display text-[13px] text-foreground">{c.name}</span>
+                <span className="ml-auto font-mono text-[9px] uppercase text-muted-foreground">{c.items.length} notes</span>
+              </button>
+            ))}
+            {cases.length === 0 && (
+              <div className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground">No cases yet — name one below.</div>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 border-t border-border/60 px-2 py-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createAndTag(); } if (e.key === "Escape") { e.preventDefault(); setMenu(false); } }}
+              placeholder="new case name…"
+              className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 font-display text-[13px] outline-none focus:border-ochre"
+            />
+            <button type="button" onClick={createAndTag} className="shrink-0 rounded-md bg-foreground px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-background hover:opacity-90">
+              + Case
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">@ files a case · ⏎ saves</span>
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={onCancel} className="rounded-full px-2 py-0.5 font-display text-[11px] font-semibold text-foreground/45 hover:text-foreground">
+            Cancel
+          </button>
+          <button type="button" onClick={() => onSave(draft, selected)} className="rounded-full bg-foreground px-2.5 py-0.5 font-display text-[11px] font-semibold text-background hover:opacity-90">
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function MarginNote({ text, onEdit, onDelete }: { text: string; onEdit: () => void; onDelete: () => void }) {
+function MarginNote({ text, noteCases, onEdit, onDelete }: { text: string; noteCases: CaseRecord[]; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="group/note relative rounded-lg border-l-[3px] border-ochre bg-ochre/[0.07] px-3.5 py-3 shadow-[var(--shadow-card)]">
+    <div className="group/note relative rounded-lg border-l-[3px] border-ochre bg-ochre/[0.07] px-3 py-2.5 shadow-[var(--shadow-card)]">
+      {noteCases.length > 0 && (
+        <div className="mb-1.5 flex flex-wrap gap-1">
+          {noteCases.map((c) => (
+            <Link
+              key={c.id}
+              to="/cases/$id"
+              params={{ id: c.id }}
+              className="inline-flex items-center gap-1 rounded-full border border-ochre/55 bg-ochre/20 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide text-foreground/75 hover:bg-ochre/30"
+            >
+              <Scale className="h-2.5 w-2.5" /> {c.name}
+            </Link>
+          ))}
+        </div>
+      )}
       <button
         type="button"
         onClick={onEdit}
         title="Click to edit"
-        className="block w-full min-w-0 max-w-full cursor-text whitespace-normal break-words [overflow-wrap:anywhere] text-left font-hand text-[23px] leading-snug text-foreground hover:text-foreground"
+        className="block cursor-text text-left font-hand text-[20px] leading-snug text-foreground hover:text-foreground"
       >
         {text}
       </button>
-      <div className="mt-1.5 flex gap-3 opacity-0 transition group-hover/note:opacity-100">
-        <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
-        <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
+      <div className="mt-1.5 flex items-center gap-3">
+        {noteCases.length > 0 && (
+          <span className="font-mono text-[9px] uppercase tracking-wide text-terracotta/80">filed · citation attached</span>
+        )}
+        <div className="ml-auto flex gap-3 opacity-0 transition group-hover/note:opacity-100">
+          <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
+          <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
+        </div>
       </div>
     </div>
   );
 }
 
-function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, onStartCompose, onSave, onCancel, onDelete }: {
+// One operative paragraph, read at full column width. Its marginalia is drawn
+// by MarginaliaRail beside the text at lg+; on narrow screens the note (or a
+// single small pencil to add one) lives inline right here.
+function Para({ id, body, p, citations, markRe, noteText, noteCases, cases, hydrated, composing, onStartCompose, onSave, onCreateCase, onCancel, onDelete }: {
   id: string;
   body: string;
   p: LegalPara;
   citations: DocCitationRow[];
   markRe: RegExp | null;
-  note: string | undefined;
+  noteText: string | undefined;
+  noteCases: CaseRecord[];
+  cases: CaseRecord[];
   hydrated: boolean;
   composing: boolean;
   onStartCompose: () => void;
-  onSave: (text: string) => void;
+  onSave: (text: string, caseIds: string[]) => void;
+  onCreateCase: (name: string) => string;
   onCancel: () => void;
   onDelete: () => void;
 }) {
-  const hasNote = hydrated && typeof note === "string" && note.length > 0;
+  const hasNote = hydrated && typeof noteText === "string" && noteText.length > 0;
   return (
-    <div id={id} className="group/para lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-10">
-      {/* statute text */}
+    <div id={id} className="group/para scroll-mt-24">
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
-        {p.label && (
-          <span className="ci-pill">{p.label}</span>
-        )}
+        {p.label && <span className="ci-pill">{p.label}</span>}
         <span
           className={
             hasNote
@@ -242,32 +275,199 @@ function ParaRow({ id, body, p, citations, markRe, note, hydrated, composing, on
         >
           {renderDecorated(body, p.start, p.end, citations, markRe)}
         </span>
+        {/* mobile add affordance — a single quiet pencil, never a box per line */}
+        {hydrated && !composing && (
+          <button
+            type="button"
+            onClick={onStartCompose}
+            aria-label={hasNote ? "Edit margin note" : "Add a margin note"}
+            className="shrink-0 self-start rounded-md p-1 text-ochre/50 opacity-50 transition hover:bg-ochre/10 hover:text-ochre group-hover/para:opacity-80 lg:hidden"
+          >
+            <PenLine className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
-      {/* Margin — beside the text at lg+, stacked below on narrow screens.
-          The note floats (absolute) inside its reserved 16rem column at lg+, so
-          a growing note expands DOWN over the gutter without stretching this
-          paragraph's grid row — the statute column never reflows. Client-only
-          (hover-to-add, edit/delete) so there's no SSR/hydration mismatch. */}
-      {hydrated && (
-        <div className={`mt-2 ${LEVEL_INDENT[p.level]} lg:relative lg:mt-0 lg:pl-0`}>
-          <div className="lg:absolute lg:inset-x-0 lg:top-0">
-            {composing ? (
-              <MarginComposer initial={note ?? ""} onSave={onSave} onCancel={onCancel} />
-            ) : hasNote ? (
-              <MarginNote text={note as string} onEdit={onStartCompose} onDelete={onDelete} />
-            ) : (
-              <button
-                type="button"
-                onClick={onStartCompose}
-                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-ochre/40 px-2.5 py-1.5 font-hand text-[17px] leading-tight text-foreground/45 opacity-60 transition hover:border-ochre/70 hover:bg-ochre/5 hover:text-foreground/80 hover:opacity-100 focus-visible:opacity-100 group-hover/para:opacity-100"
-              >
-                <PenLine className="h-3.5 w-3.5 shrink-0 text-ochre" /> note in the margin
-              </button>
-            )}
+      {/* mobile-only inline note / composer (the rail handles lg+) */}
+      {hydrated && (composing || hasNote) && (
+        <div className="mt-2 pl-3 lg:hidden">
+          {composing ? (
+            <MarginComposer
+              initial={noteText ?? ""}
+              initialCases={noteCases.map((c) => c.id)}
+              cases={cases}
+              onSave={onSave}
+              onCreateCase={onCreateCase}
+              onCancel={onCancel}
+            />
+          ) : (
+            <MarginNote text={noteText as string} noteCases={noteCases} onEdit={onStartCompose} onDelete={onDelete} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Rough rendered height of a note card, used for first-paint stacking before we
+// measure the real DOM heights. The Desk rail is now wide (fills text→wall), so
+// ~44 chars/line; real heights are measured after paint anyway.
+function estimateNoteH(text: string) {
+  const lines = Math.max(2, Math.ceil(text.length / 44));
+  return 26 + lines * 28;
+}
+
+const MARK_STEP = 640; // px between faint ruling marks down the margin
+
+// The dedicated marginalia margin (lg+). A ruled notebook gutter: click anywhere
+// to start a note anchored to the nearest paragraph; saved notes float at their
+// paragraph's height and stack downward so they never overlap, with a hairline
+// connector back to the anchor when a note gets pushed down. `anchors[i]` is the
+// measured Y (px, relative to the body wrapper) of paragraph i.
+function MarginaliaRail({ anchors, height, notes, cases, casesForIdx, composing, onCompose, onSave, onCreateCase, onCancel, onDelete }: {
+  anchors: number[];
+  height: number;
+  notes: Record<string, NoteRecord>;
+  cases: CaseRecord[];
+  casesForIdx: (idx: number) => CaseRecord[];
+  composing: number | null;
+  onCompose: (idx: number) => void;
+  onSave: (idx: number, text: string, caseIds: string[]) => void;
+  onCreateCase: (name: string) => string;
+  onCancel: () => void;
+  onDelete: (idx: number) => void;
+}) {
+  const [hoverY, setHoverY] = useState<number | null>(null);
+  const [heights, setHeights] = useState<Record<number, number>>({});
+  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Cards to lay out: every saved note plus the one being composed.
+  const items = useMemo(() => {
+    const set = new Set<number>();
+    for (const k of Object.keys(notes)) set.add(Number(k));
+    if (composing != null) set.add(composing);
+    return [...set]
+      .filter((i) => i < anchors.length)
+      .map((i) => ({ idx: i, y: anchors[i] ?? 0 }))
+      .sort((a, b) => a.y - b.y);
+  }, [notes, composing, anchors]);
+
+  const itemsKey = items.map((it) => it.idx).join(",");
+
+  // Measure real card heights after render so stacking is exact. Only commits on
+  // change, so it settles in one extra frame instead of looping.
+  useEffect(() => {
+    const next: Record<number, number> = {};
+    let changed = false;
+    for (const { idx } of items) {
+      const el = cardRefs.current[idx];
+      const h = el ? el.offsetHeight : 0;
+      next[idx] = h;
+      if (h !== heights[idx]) changed = true;
+    }
+    if (changed) setHeights(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey, composing, notes]);
+
+  // Stack: a card sits at its anchor unless that would overlap the one above it.
+  const GAP = 14;
+  const placed: { idx: number; y: number; top: number }[] = [];
+  let cursor = -Infinity;
+  for (const it of items) {
+    const h = heights[it.idx] ?? estimateNoteH(notes[it.idx]?.text ?? "");
+    const top = Math.max(it.y, cursor + GAP);
+    placed.push({ idx: it.idx, y: it.y, top });
+    cursor = top + h;
+  }
+
+  const nearest = (y: number) => {
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < anchors.length; i++) {
+      const d = Math.abs((anchors[i] ?? 0) - y);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  };
+  const railY = (e: ReactMouseEvent) => e.clientY - e.currentTarget.getBoundingClientRect().top;
+
+  const marks: number[] = [];
+  for (let y = MARK_STEP; y < height; y += MARK_STEP) marks.push(y);
+
+  const empty = items.length === 0;
+
+  return (
+    <div
+      className="relative hidden border-l border-border/60 bg-muted/20 lg:block"
+      style={{ minHeight: height }}
+      onMouseMove={(e) => setHoverY(railY(e))}
+      onMouseLeave={() => setHoverY(null)}
+      onClick={(e) => { if (e.target === e.currentTarget) onCompose(nearest(railY(e))); }}
+    >
+      {/* faint ruling ticks down the desk's binding edge */}
+      {marks.map((y) => (
+        <div key={`m-${y}`} className="pointer-events-none absolute left-0 h-px w-3 bg-border/70" style={{ top: y }} />
+      ))}
+
+      {/* empty desk → a quiet prompt card so the column reads as "the desk,"
+          not dead space. pointer-events-none so a click still starts a note. */}
+      {empty && (
+        <div className="pointer-events-none absolute left-5 right-2 top-3">
+          <div className="desk-card border-dashed">
+            <div className="desk-card-title flex items-center gap-1.5">
+              <PenLine className="h-3.5 w-3.5 text-ochre" /> Your desk
+            </div>
+            <p className="desk-card-body">
+              Click anywhere down this margin to pin a note beside the line it belongs to.
+              Type <span className="font-mono text-ochre">@</span> to file it under a case — the citation rides along.
+            </p>
           </div>
         </div>
       )}
+
+      {/* click-to-add hint following the cursor */}
+      {hoverY != null && composing == null && (
+        <div
+          className="pointer-events-none absolute left-0 flex -translate-y-1/2 items-center gap-1.5 pl-3 font-hand text-[16px] text-ochre/70"
+          style={{ top: hoverY }}
+        >
+          <PenLine className="h-3.5 w-3.5" /> note in the margin
+        </div>
+      )}
+
+      {/* connector hairline + anchor dot for each note */}
+      {placed.map(({ idx, y, top }) => (
+        <div key={`a-${idx}`} className="pointer-events-none">
+          {top > y + 1 && (
+            <div className="absolute left-0 w-px bg-ochre/40" style={{ top: y, height: top - y }} />
+          )}
+          <div className="absolute left-0 h-1.5 w-1.5 -translate-x-[3px] -translate-y-1/2 rounded-full bg-ochre" style={{ top: y }} />
+        </div>
+      ))}
+
+      {/* the note cards / active composer */}
+      {placed.map(({ idx, top }) => (
+        <div
+          key={`n-${idx}`}
+          ref={(el) => { cardRefs.current[idx] = el; }}
+          className="absolute left-3 right-0 transition-[top] duration-150 ease-out"
+          style={{ top }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {composing === idx ? (
+            <MarginComposer
+              initial={notes[idx]?.text ?? ""}
+              initialCases={casesForIdx(idx).map((c) => c.id)}
+              cases={cases}
+              onSave={(t, ids) => onSave(idx, t, ids)}
+              onCreateCase={onCreateCase}
+              onCancel={onCancel}
+            />
+          ) : (
+            <MarginNote text={notes[idx]?.text ?? ""} noteCases={casesForIdx(idx)} onEdit={() => onCompose(idx)} onDelete={() => onDelete(idx)} />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -312,52 +512,138 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   );
 }
 
-function LegalBody({ body, segments, opParas, citations, q, identifier }: {
+function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta }: {
   body: string;
   segments: BodySegment[];
   opParas: LegalPara[];
   citations: DocCitationRow[];
   q?: string;
   identifier: string;
+  docMeta: { sourceCode: string; sectionLabel: string; heading: string };
 }) {
   const markRe = useMemo(() => buildMarkRe(q), [q]);
   const spans = useMemo(() => citationSpans(citations), [citations]);
-  const notes = useMemo(() => segments.filter((s) => s.kind === "note"), [segments]);
-  const mg = useMarginalia(identifier);
+  const notePanels = useMemo(() => segments.filter((s) => s.kind === "note"), [segments]);
+  const mg = useMarginalia({ identifier, ...docMeta });
+  const cb = useCases();
+  const caseList = cb.list();
   const [composing, setComposing] = useState<number | null>(null);
+
+  const refOf = useCallback((i: number) => ({ identifier, paraIndex: i }), [identifier]);
+  const casesForIdx = useCallback((i: number) => cb.casesForRef(refOf(i)), [cb, refOf]);
+
+  // Measure each paragraph's vertical offset within the body wrapper so the rail
+  // can float notes at their anchor's height. Re-measures on reflow (window
+  // resize, font-size change, web-font load) via a ResizeObserver on the wrapper.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [anchors, setAnchors] = useState<number[]>([]);
+  const [wrapH, setWrapH] = useState(0);
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const measure = () => {
+      const top = wrap.getBoundingClientRect().top;
+      setAnchors(
+        opParas.map((_, i) => {
+          const el = wrap.querySelector<HTMLElement>(`#para-${i}`);
+          return el ? el.getBoundingClientRect().top - top : 0;
+        }),
+      );
+      setWrapH(wrap.offsetHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    window.addEventListener("resize", measure);
+    const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
+    if (fonts?.ready) fonts.ready.then(measure).catch(() => {});
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
+  }, [opParas.length, body]);
+
+  const saveAt = (idx: number, text: string, caseIds: string[]) => {
+    if (text.trim()) cb.syncNote(refOf(idx), caseIds);
+    else cb.syncNote(refOf(idx), []); // emptied note → drop from every case
+    mg.setNote(idx, text);
+    setComposing(null);
+  };
+  const deleteAt = (idx: number) => { cb.syncNote(refOf(idx), []); mg.removeNote(idx); };
 
   return (
     <div className="space-y-2.5">
-      {/* Marginalia intro / count — client-only, so no hydration mismatch. */}
+      {/* Marginalia header — client-only, so no hydration mismatch. Mirrors the
+          two-column body grid below so the left cell labels the reading column
+          and the right cell becomes the "THE DESK" column header, sitting
+          exactly over the marginalia rail. */}
       {mg.hydrated && (
-        <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2 lg:mr-[21.5rem]">
-          <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
-            <PenLine className="h-3 w-3 text-ochre" />
-            {mg.count === 0 ? "marginalia · hover a line to jot a private note" : "your marginalia"}
-          </span>
-          <span className="shrink-0 font-mono text-[10px] text-foreground/40">
-            {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"} · this device`}
-          </span>
+        <div className="mb-3 lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:gap-12">
+          {/* over the text column */}
+          <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-2">
+            <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
+              <PenLine className="h-3 w-3 text-ochre" />
+              {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
+            </span>
+            <span className="shrink-0 font-mono text-[10px] text-foreground/40 lg:hidden">
+              {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
+            </span>
+          </div>
+          {/* over the marginalia rail — the Desk's own column header */}
+          <div className="hidden items-center justify-between gap-2 border-b border-border/40 pb-2 lg:flex">
+            <span className="desk-eyebrow mb-0 border-b-0 pb-0">the desk</span>
+            {cb.hydrated && caseList.length > 0 ? (
+              <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
+                <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
+              </Link>
+            ) : (
+              <span className="shrink-0 font-mono text-[10px] text-foreground/40">
+                {mg.count === 0 ? "this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
+              </span>
+            )}
+          </div>
         </div>
       )}
-      {opParas.map((p, i) => (
-        <ParaRow
-          key={`op-${i}`}
-          id={`para-${i}`}
-          body={body}
-          p={p}
-          citations={citations}
-          markRe={markRe}
-          note={mg.notes[i]}
-          hydrated={mg.hydrated}
-          composing={composing === i}
-          onStartCompose={() => setComposing(i)}
-          onSave={(text) => { mg.setNote(i, text); setComposing(null); }}
-          onCancel={() => setComposing(null)}
-          onDelete={() => mg.removeNote(i)}
-        />
-      ))}
-      {notes.map((seg, i) => (
+
+      <div ref={wrapRef} className="lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
+        <div className="min-w-0 space-y-2.5">
+          {opParas.map((p, i) => (
+            <Para
+              key={`op-${i}`}
+              id={`para-${i}`}
+              body={body}
+              p={p}
+              citations={citations}
+              markRe={markRe}
+              noteText={mg.notes[i]?.text}
+              noteCases={mg.hydrated ? casesForIdx(i) : []}
+              cases={caseList}
+              hydrated={mg.hydrated}
+              composing={composing === i}
+              onStartCompose={() => setComposing(i)}
+              onSave={(text, ids) => saveAt(i, text, ids)}
+              onCreateCase={cb.create}
+              onCancel={() => setComposing(null)}
+              onDelete={() => deleteAt(i)}
+            />
+          ))}
+        </div>
+
+        {mg.hydrated && (
+          <MarginaliaRail
+            anchors={anchors}
+            height={wrapH}
+            notes={mg.notes}
+            cases={caseList}
+            casesForIdx={casesForIdx}
+            composing={composing}
+            onCompose={(idx) => setComposing(idx)}
+            onSave={saveAt}
+            onCreateCase={cb.create}
+            onCancel={() => setComposing(null)}
+            onDelete={deleteAt}
+          />
+        )}
+      </div>
+
+      {notePanels.map((seg, i) => (
         <NotePanel key={`note-${i}`} body={body} seg={seg} citations={citations} markRe={markRe} spans={spans} />
       ))}
     </div>
@@ -731,7 +1017,7 @@ function DocumentPage() {
   );
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-6xl">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-[1700px]">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -792,23 +1078,38 @@ function DocumentPage() {
         </div>
       </div>
 
-      <article>
-        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-          {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
-          <span className="ink-underline italic">{document.heading}</span>
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
-          {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
-          <span className="text-foreground/30">·</span>
-          <code className="font-mono text-[11px]">{document.identifier}</code>
+      {/* Reading block nudged right of the left edge; title + apparatus held to
+          the same reading measure as the body's text column, while the body grid
+          lets the marginalia "Desk" fill everything from the text to the wall. */}
+      <article className="lg:pl-[5vw]">
+        <div className="lg:max-w-[46rem]">
+          <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
+            <span className="ink-underline italic">{document.heading}</span>
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
+            {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
+            <span className="text-foreground/30">·</span>
+            <code className="font-mono text-[11px]">{document.identifier}</code>
+          </div>
         </div>
 
         <div className="mt-8">
-          <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
-          <DefinitionsPanel text={body} />
+          <div className="lg:max-w-[46rem]">
+            <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
+            <DefinitionsPanel text={body} />
+          </div>
           <div className={`font-serif leading-relaxed text-foreground ${fontClass}`}>
-            <LegalBody body={body} segments={segments} opParas={opParas} citations={citations} q={search.q} identifier={document.identifier} />
+            <LegalBody
+              body={body}
+              segments={segments}
+              opParas={opParas}
+              citations={citations}
+              q={search.q}
+              identifier={document.identifier}
+              docMeta={{ sourceCode: document.source_code, sectionLabel: document.section_label ?? "", heading: document.heading ?? "" }}
+            />
           </div>
         </div>
 

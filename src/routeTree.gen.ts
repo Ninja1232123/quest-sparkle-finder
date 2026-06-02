@@ -35,10 +35,12 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
+import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as CompareDiffRouteImport } from './routes/compare_.diff'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as CasesIdRouteImport } from './routes/cases.$id'
 import { Route as ForumSlugIdRouteImport } from './routes/forum_.$slug.$id'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -183,6 +185,11 @@ const CodeIndexRoute = CodeIndexRouteImport.update({
   path: '/code/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CasesIndexRoute = CasesIndexRouteImport.update({
+  id: '/cases/',
+  path: '/cases/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
@@ -201,6 +208,11 @@ const CodeSplatRoute = CodeSplatRouteImport.update({
 const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   id: '/checkout/return',
   path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CasesIdRoute = CasesIdRouteImport.update({
+  id: '/cases/$id',
+  path: '/cases/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForumSlugIdRoute = ForumSlugIdRouteImport.update({
@@ -299,10 +311,12 @@ export interface FileRoutesByFullPath {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare/diff': typeof CompareDiffRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
@@ -344,10 +358,12 @@ export interface FileRoutesByTo {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare/diff': typeof CompareDiffRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
@@ -390,10 +406,12 @@ export interface FileRoutesById {
   '/subscribe': typeof SubscribeRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare_/diff': typeof CompareDiffRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum_/$slug/$id': typeof ForumSlugIdRoute
@@ -437,10 +455,12 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
+    | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
     | '/compare/diff'
     | '/topic/$slug'
+    | '/cases/'
     | '/code/'
     | '/code/source/$source'
     | '/forum/$slug/$id'
@@ -482,10 +502,12 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
+    | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
     | '/compare/diff'
     | '/topic/$slug'
+    | '/cases'
     | '/code'
     | '/code/source/$source'
     | '/forum/$slug/$id'
@@ -527,10 +549,12 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/usc'
     | '/whitepaper'
+    | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
     | '/compare_/diff'
     | '/topic/$slug'
+    | '/cases/'
     | '/code/'
     | '/code/source/$source'
     | '/forum_/$slug/$id'
@@ -573,10 +597,12 @@ export interface RootRouteChildren {
   SubscribeRoute: typeof SubscribeRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
+  CasesIdRoute: typeof CasesIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   CompareDiffRoute: typeof CompareDiffRoute
   TopicSlugRoute: typeof TopicSlugRoute
+  CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   ForumSlugIdRoute: typeof ForumSlugIdRoute
@@ -777,6 +803,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cases/': {
+      id: '/cases/'
+      path: '/cases'
+      fullPath: '/cases/'
+      preLoaderRoute: typeof CasesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topic/$slug': {
       id: '/topic/$slug'
       path: '/topic/$slug'
@@ -803,6 +836,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout/return'
       fullPath: '/checkout/return'
       preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cases/$id': {
+      id: '/cases/$id'
+      path: '/cases/$id'
+      fullPath: '/cases/$id'
+      preLoaderRoute: typeof CasesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forum_/$slug/$id': {
@@ -925,10 +965,12 @@ const rootRouteChildren: RootRouteChildren = {
   SubscribeRoute: SubscribeRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
+  CasesIdRoute: CasesIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   CompareDiffRoute: CompareDiffRoute,
   TopicSlugRoute: TopicSlugRoute,
+  CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   ForumSlugIdRoute: ForumSlugIdRoute,

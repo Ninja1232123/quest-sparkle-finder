@@ -620,14 +620,15 @@ main {
   position: relative;
 }
 
-/* When Juri's drawer is open, push the page content right (lg+ only) so the
-   drawer never sits on top of the text the user is asking about. Closed =
-   full width. Juri.tsx toggles `.juri-open` on <html>. The 380px matches the
-   drawer width; both live in the same zoom space so they line up. */
-#main { transition: padding-left 220ms ease; }
-@media (min-width: 1024px) {
-  html.juri-open #main { padding-left: 380px; }
-}
+/* Juri floats OVER the page — it's a fixed overlay drawer (.juri-panel, z-189)
+   that slides in on top of the content and never touches layout. The page stays
+   full width and perfectly still: opening or closing Juri can't move, squish, or
+   gutter anything, ever. (Earlier tries — a padding-left push, then a reserved
+   grid lane — both disturbed the page; this one doesn't.) Trade-off: while open,
+   Juri covers the left edge of the page — mostly margin on the reader, which now
+   sits nudged-right. Close it to reclaim full width. The .app-shell wrapper is a
+   plain full-width passthrough; Juri's own fixed positioning does all the work. */
+.app-shell { width: 100%; }
 
 /* ============================================================
    v2.1 ADDITIONS — codebook landing (hero strip, sub-volume

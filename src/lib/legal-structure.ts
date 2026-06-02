@@ -189,3 +189,26 @@ export function splitParagraphs(
   }
   return out;
 }
+
+// ── Shared anchor derivation ────────────────────────────────────────────────
+// Used by the reader body, the outline, AND the casebook citation panel so the
+// per-paragraph anchor index (`para-N`) means the same thing everywhere.
+
+/** Citation byte spans — keep the soft splitter from cutting through a cite. */
+export function citationSpans(citations: { span_start: number | null; span_end: number | null }[]): { s: number; e: number }[] {
+  const out: { s: number; e: number }[] = [];
+  for (const c of citations) {
+    if (c.span_start != null && c.span_end != null) out.push({ s: c.span_start, e: c.span_end });
+  }
+  return out;
+}
+
+/** Operative paragraphs flattened across operative segments, in order. The flat
+ *  index is the anchor id (`para-N`) shared by the body, outline, and casebook. */
+export function operativeParagraphs(body: string, segments: BodySegment[], spans: { s: number; e: number }[]): LegalPara[] {
+  const out: LegalPara[] = [];
+  for (const seg of segments) {
+    if (seg.kind === "operative") out.push(...splitParagraphs(body, seg.start, seg.end, spans));
+  }
+  return out;
+}
