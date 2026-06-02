@@ -212,3 +212,72 @@ export function operativeParagraphs(body: string, segments: BodySegment[], spans
   }
   return out;
 }
+
+// ── IRM-style subsection headings ───────────────────────────────────────────
+// An IRS manual section's body inlines its subsections as a heading line, the
+// title on the next line, then the body, repeating down the section:
+//   "9.7.10.3 (08-28-2025)"                       ← heading: dotted number + date
+//   "Types of International Assistance Agreements" ← title (next paragraph)
+//   "1. Formal requests …"                         ← body, until the next heading
+// The (MM-DD-YYYY) parenthetical is what marks a *heading* — an inline
+// cross-reference like "IRM 9.4.2" carries no date — so we key on number+date.
+// This lets the reader fold each subsection into its own accordion. We map onto
+// the already-flattened operative paragraphs (NOT raw offsets), so every block
+// references the same `para-N` indices the body, outline, and marginalia use.
+
+export type SubsectionBlock = {
+  num: string; // "9.7.10.3"
+  depth: number; // dotted-segment count, for indenting the hierarchy
+  date: string; // "08-28-2025"
+  title: string; // "Types of International Assistance Agreements" ("" if none)
+  headIdx: number; // opParas index of the "<num> (<date>)" heading line
+  titleIdx: number | null; // opParas index of the title line (folded into the header)
+  bodyStart: number; // first body paragraph index (inclusive)
+  bodyEnd: number; // exclusive — the next heading's headIdx, or opParas.length
+};
+
+// Sources whose section bodies carry this inline-heading shape.
+const SUBSECTION_SOURCES = new Set(["irm"]);
+const SUBSEC_HEAD_RE = /^(\d+(?:\.\d+)+)\s*\((\d{2}-\d{2}-\d{4})\)$/;
+
+export function subsectionBlocks(source: string, body: string, opParas: LegalPara[]): SubsectionBlock[] {
+  if (!SUBSECTION_SOURCES.has(source)) return [];
+  const heads: { i: number; num: string; date: string }[] = [];
+  for (let i = 0; i < opParas.length; i++) {
+    if (opParas[i].label) continue; // headings are bare lines, never enumerated
+    const m = SUBSEC_HEAD_RE.exec(body.slice(opParas[i].start, opParas[i].end).trim());
+    if (m) heads.push({ i, num: m[1], date: m[2] });
+  }
+  if (heads.length === 0) return [];
+
+  const blocks: SubsectionBlock[] = [];
+  for (let h = 0; h < heads.length; h++) {
+    const cur = heads[h];
+    const end = h + 1 < heads.length ? heads[h + 1].i : opParas.length;
+    let titleIdx: number | null = null;
+    let title = "";
+    let bodyStart = cur.i + 1;
+    // The paragraph right after a heading is its title — unless it's already the
+    // next heading or looks like body text (guard so a missing title can't
+    // swallow a real paragraph).
+    if (bodyStart < end) {
+      const t = body.slice(opParas[bodyStart].start, opParas[bodyStart].end).trim();
+      if (t && !opParas[bodyStart].label && !SUBSEC_HEAD_RE.test(t) && t.length <= 200) {
+        title = t;
+        titleIdx = bodyStart;
+        bodyStart += 1;
+      }
+    }
+    blocks.push({
+      num: cur.num,
+      depth: cur.num.split(".").length,
+      date: cur.date,
+      title,
+      headIdx: cur.i,
+      titleIdx,
+      bodyStart,
+      bodyEnd: end,
+    });
+  }
+  return blocks;
+}
