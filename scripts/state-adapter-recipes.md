@@ -3,7 +3,13 @@
 Generated from a 17-agent swarm that read the actual on-disk bytes under
 `/mnt/sdb1/States/<State>/` (not the file extensions — those lie). Each entry is
 a concrete recipe a developer can write the `state_ingest.py` adapter straight
-from. Status as of the Illinois+Iowa round (32 → working toward 49 states).
+from.
+
+**STATUS: DONE.** All 17 adapters below were written and the states loaded —
+the DB now holds **49 of 50 states, 2,016,810 sections**. The only state NOT
+loaded is **Pennsylvania** (empty iframe shells on disk — needs a re-scrape of
+the `?…&iFrame=true` URLs, then the wired `parse_pa` runs). The table below is
+kept as the as-built reference for each adapter.
 
 **Headline:** 5 states previously marked DEFERRED are actually recoverable from
 the data already on disk — **Idaho, Indiana, New Jersey, South Dakota, Kentucky**.
