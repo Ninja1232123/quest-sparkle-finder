@@ -1273,6 +1273,100 @@ def parse_unicourt(state, url, raw_text):
     return recs
 
 
+# North Dakota & Wyoming: multi-section PDFs (one chapter/title per file). The
+# section marker is an indented "<T>-<C>-<S>. Catchline." line; the statute body
+# is the lines beneath it up to the next marker. Hierarchy headers ("TITLE n",
+# "CHAPTER n", "ARTICLE n") are uppercase structural lines.
+PDF_SEC = re.compile(r"^\s+(\d+(?:\.\d+)?-\d+(?:\.\d+)?-\d+(?:\.\d+)?)\.\s+(.+?)\s*$")
+
+def _emit_pdf_chunks(state, url, chunks):
+    """chunks: list of {sec, heading, path, lines}. Each carries the folder path
+    that was active when its section marker was read (set per-chunk, not globally —
+    a one-title-per-file PDF spans many chapters)."""
+    recs = []
+    for c in chunks:
+        body = "\n\n".join(pdf_paragraphs(c["lines"]))
+        recs.append(make_record(state, url, c["path"], c["heading"], body, section_num=c["sec"]))
+    return recs
+
+
+ND_CHAP = re.compile(r"^CHAPTER\s+([\d.\-]+)\s*$")
+ND_DROP = re.compile(r"^\s*Page No\.\s+\d+\s*$")
+ND_URL = re.compile(r"/t(\d+(?:-\d+)?(?:\.\d+)?)c(\d+(?:-\d+)?(?:\.\d+)?)\.pdf", re.I)
+
+def parse_nd(state, url, text):
+    m = ND_URL.search(url)
+    title = f"Title {m.group(1)}" if m else None
+    chap_num, chap_name, want_name = None, None, False
+    chunks, cur = [], None
+    for raw in text.split("\n"):
+        ln = raw.rstrip(); s = ln.strip()
+        if ND_DROP.match(s):
+            continue
+        if not s:
+            if cur:
+                cur["lines"].append("")
+            continue
+        if s.startswith("TITLE ") and not PDF_SEC.match(ln):
+            continue                                  # title comes from the URL
+        cm = ND_CHAP.match(s)
+        if cm:
+            chap_num = cm.group(1); want_name = True; cur = None
+            continue
+        sm = PDF_SEC.match(ln)
+        if sm:
+            chapter = (f"Chapter {chap_num}" + (f" — {chap_name.title()}" if chap_name else "")
+                       if chap_num else None)
+            path = [p for p in ("North Dakota Century Code", title, chapter) if p]
+            cur = {"sec": sm.group(1), "heading": f"{sm.group(1)}. {sm.group(2)}",
+                   "path": path, "lines": []}
+            chunks.append(cur); want_name = False
+            continue
+        if want_name:                                 # line right after CHAPTER = its name
+            chap_name = s; want_name = False
+            continue
+        if cur:
+            cur["lines"].append(ln)
+    return _emit_pdf_chunks(state, url, chunks)
+
+
+WY_TITLE = re.compile(r"^TITLE\s+(\d+(?:\.\d+)?)\s*-\s*(.+?)\s*$")
+WY_CHAP = re.compile(r"^CHAPTER\s+(\d+[A-Za-z]?)\s*-\s*(.+?)\s*$")
+WY_ART = re.compile(r"^ARTICLE\s+(\d+[A-Za-z]?)\s*-\s*(.+?)\s*$")
+
+def parse_wy(state, url, text):
+    title = chapter = article = None
+    chunks, cur = [], None
+    for raw in text.split("\n"):
+        ln = raw.rstrip(); s = ln.strip()
+        if not s:
+            if cur:
+                cur["lines"].append("")
+            continue
+        tm = WY_TITLE.match(s)
+        if tm:
+            title = f"Title {tm.group(1)} — {tm.group(2).title()}"; chapter = article = None; cur = None
+            continue
+        cm = WY_CHAP.match(s)
+        if cm:
+            chapter = f"Chapter {cm.group(1)} — {cm.group(2).title()}"; article = None; cur = None
+            continue
+        am = WY_ART.match(s)
+        if am:
+            article = f"Article {am.group(1)} — {am.group(2).title()}"; cur = None
+            continue
+        sm = PDF_SEC.match(ln)
+        if sm:
+            path = [p for p in ("Wyoming Statutes", title, chapter, article) if p]
+            cur = {"sec": sm.group(1), "heading": f"{sm.group(1)}. {sm.group(2)}",
+                   "path": path, "lines": []}
+            chunks.append(cur)
+            continue
+        if cur:
+            cur["lines"].append(ln)
+    return _emit_pdf_chunks(state, url, chunks)
+
+
 # the registry: domain -> adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1389,13 +1483,14 @@ SOURCES = {
     "www.legis.iowa.gov": ("pdf", parse_ia),
     "apps.legislature.ky.gov": ("pdf", parse_ky),
     "unicourt.github.io": ("raw", parse_unicourt),   # AR, GA, MS — shared cic-code DOM
+    "www.ndlegis.gov": ("pdf", parse_nd),
+    "wyoleg.gov": ("pdf", parse_wy),
 }
 
 # states whose first build is deferred, with the reason logged rather than failing.
 DEFERRED = {
-    "North Dakota": "PDF corpus (phase 2)",
     "Oklahoma": "PDF corpus (phase 2)",
-    "New Mexico": "chapter PDFs (phase 2)", "Wyoming": "title PDFs (phase 2)",
+    "New Mexico": "chapter PDFs (phase 2)",
     "Colorado": "docx/zip bulk download (phase 2)",
     "New Jersey": "nxt gateway frames/JS (phase 2)",
     "Indiana": "React SPA — page HTML is an empty mount point (needs headless)",
