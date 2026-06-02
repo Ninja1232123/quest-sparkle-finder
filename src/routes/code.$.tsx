@@ -4,7 +4,7 @@ import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
-import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 
@@ -239,81 +239,58 @@ function MarginNote({ text, noteCases, onEdit, onDelete }: { text: string; noteC
   );
 }
 
-// One operative paragraph, read at full column width. Its marginalia is drawn
-// by MarginaliaRail beside the text at lg+; on narrow screens the note (or a
-// single small pencil to add one) lives inline right here.
-function Para({ id, body, p, citations, markRe, noteText, noteCases, cases, hydrated, composing, onStartCompose, onSave, onCreateCase, onCancel, onDelete }: {
+// One operative paragraph, read at the full reading measure. The prose NEVER
+// moves when you write: a note never renders inline in the column — it lives in
+// the Desk (the margin rail at lg+, or the stacked Desk below the article on
+// narrow widths). Click a paragraph to start/continue its margin note; citations
+// inside still navigate, and selecting text still works. The left rule is always
+// present (transparent) so toggling a note tints it without shifting the words.
+function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, onCompose }: {
   id: string;
   body: string;
   p: LegalPara;
   citations: DocCitationRow[];
   markRe: RegExp | null;
-  noteText: string | undefined;
-  noteCases: CaseRecord[];
-  cases: CaseRecord[];
+  hasNote: boolean;
+  selected: boolean;
   hydrated: boolean;
-  composing: boolean;
-  onStartCompose: () => void;
-  onSave: (text: string, caseIds: string[]) => void;
-  onCreateCase: (name: string) => string;
-  onCancel: () => void;
-  onDelete: () => void;
+  onCompose: () => void;
 }) {
-  const hasNote = hydrated && typeof noteText === "string" && noteText.length > 0;
+  const handleClick = (e: ReactMouseEvent) => {
+    if (!hydrated) return;
+    if ((e.target as HTMLElement).closest("a")) return; // let citations navigate
+    const sel = typeof window !== "undefined" ? window.getSelection() : null;
+    if (sel && !sel.isCollapsed) return; // don't hijack a text selection
+    onCompose();
+  };
+  const tone = hasNote
+    ? "border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent"
+    : selected
+      ? "border-ochre/45"
+      : "border-transparent";
   return (
     <div id={id} className="group/para scroll-mt-24">
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && <span className="ci-pill">{p.label}</span>}
         <span
-          className={
-            hasNote
-              ? `${p.label ? "flex-1" : "block"} -ml-3 border-l-2 border-ochre/70 bg-gradient-to-r from-ochre/10 to-transparent pl-3`
-              : p.label
-                ? "flex-1"
-                : ""
-          }
+          onClick={handleClick}
+          title={hydrated ? "Click to write in the margin" : undefined}
+          className={`${p.label ? "flex-1" : "block"} -ml-3 border-l-2 pl-3 transition-colors ${tone} ${
+            hydrated && !hasNote && !selected ? "hover:border-ochre/25" : ""
+          }`}
         >
           {renderDecorated(body, p.start, p.end, citations, markRe)}
         </span>
-        {/* mobile add affordance — a single quiet pencil, never a box per line */}
-        {hydrated && !composing && (
-          <button
-            type="button"
-            onClick={onStartCompose}
-            aria-label={hasNote ? "Edit margin note" : "Add a margin note"}
-            className="shrink-0 self-start rounded-md p-1 text-ochre/50 opacity-50 transition hover:bg-ochre/10 hover:text-ochre group-hover/para:opacity-80 lg:hidden"
-          >
-            <PenLine className="h-3.5 w-3.5" />
-          </button>
-        )}
       </div>
-
-      {/* mobile-only inline note / composer (the rail handles lg+) */}
-      {hydrated && (composing || hasNote) && (
-        <div className="mt-2 pl-3 lg:hidden">
-          {composing ? (
-            <MarginComposer
-              initial={noteText ?? ""}
-              initialCases={noteCases.map((c) => c.id)}
-              cases={cases}
-              onSave={onSave}
-              onCreateCase={onCreateCase}
-              onCancel={onCancel}
-            />
-          ) : (
-            <MarginNote text={noteText as string} noteCases={noteCases} onEdit={onStartCompose} onDelete={onDelete} />
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
 // Rough rendered height of a note card, used for first-paint stacking before we
-// measure the real DOM heights. The Desk rail is now wide (fills text→wall), so
-// ~44 chars/line; real heights are measured after paint anyway.
+// measure the real DOM heights. The Desk rail is a ~20rem strip pinned to the
+// right margin (~36 chars/line); real heights are measured after paint anyway.
 function estimateNoteH(text: string) {
-  const lines = Math.max(2, Math.ceil(text.length / 44));
+  const lines = Math.max(2, Math.ceil(text.length / 36));
   return 26 + lines * 28;
 }
 
@@ -398,8 +375,8 @@ function MarginaliaRail({ anchors, height, notes, cases, casesForIdx, composing,
 
   return (
     <div
-      className="relative hidden border-l border-border/60 bg-muted/20 lg:block"
-      style={{ minHeight: height }}
+      className="absolute top-0 hidden border-l border-border/60 bg-muted/20 lg:block"
+      style={{ left: "100%", marginLeft: "2rem", width: "20rem", minHeight: height }}
       onMouseMove={(e) => setHoverY(railY(e))}
       onMouseLeave={() => setHoverY(null)}
       onClick={(e) => { if (e.target === e.currentTarget) onCompose(nearest(railY(e))); }}
@@ -472,6 +449,67 @@ function MarginaliaRail({ anchors, height, notes, cases, casesForIdx, composing,
   );
 }
 
+// The Desk on narrow widths (< lg, where a side rail would crush the reading
+// measure): the same notes, stacked in a clean column BELOW the article rather
+// than floating beside the text. The reading flow above is never disturbed —
+// composing happens here, not inline in the prose. Clicking a paragraph up top
+// opens its composer here and scrolls it into view.
+function DeskStacked({ notes, composing, cases, casesForIdx, onCompose, onSave, onCreateCase, onCancel, onDelete }: {
+  notes: Record<string, NoteRecord>;
+  composing: number | null;
+  cases: CaseRecord[];
+  casesForIdx: (idx: number) => CaseRecord[];
+  onCompose: (idx: number) => void;
+  onSave: (idx: number, text: string, caseIds: string[]) => void;
+  onCreateCase: (name: string) => string;
+  onCancel: () => void;
+  onDelete: (idx: number) => void;
+}) {
+  const indices = useMemo(() => {
+    const set = new Set<number>();
+    for (const k of Object.keys(notes)) set.add(Number(k));
+    if (composing != null) set.add(composing);
+    return [...set].sort((a, b) => a - b);
+  }, [notes, composing]);
+
+  // When a paragraph is tapped on a narrow screen, bring its composer into view.
+  useEffect(() => {
+    if (composing == null || typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return; // rail handles lg+
+    document.getElementById(`desk-note-${composing}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [composing]);
+
+  return (
+    <div className="mt-10 border-t border-border/50 pt-5 lg:hidden">
+      <div className="desk-eyebrow">the desk</div>
+      {indices.length === 0 ? (
+        <p className="font-hand text-[17px] leading-snug text-foreground/45">
+          Click any paragraph above to write a note beside it. Type <span className="font-mono text-ochre">@</span> to file it under a case — the citation rides along.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {indices.map((i) => (
+            <div key={i} id={`desk-note-${i}`} className="scroll-mt-24">
+              {composing === i ? (
+                <MarginComposer
+                  initial={notes[i]?.text ?? ""}
+                  initialCases={casesForIdx(i).map((c) => c.id)}
+                  cases={cases}
+                  onSave={(t, ids) => onSave(i, t, ids)}
+                  onCreateCase={onCreateCase}
+                  onCancel={onCancel}
+                />
+              ) : (
+                <MarginNote text={notes[i]?.text ?? ""} noteCases={casesForIdx(i)} onEdit={() => onCompose(i)} onDelete={() => onDelete(i)} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Apparatus (Editorial/Statutory notes, Executive Documents) collapses into a
 // disclosure panel so the operative law reads on its own. Citations inside the
 // notes still link.
@@ -512,6 +550,52 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
   );
 }
 
+// An IRM subsection, folded into its own accordion: the dotted number + title
+// read as the header (always visible, so the section scans top-to-bottom like a
+// table of contents), and everything up to the next heading collapses beneath.
+// Indented by its depth in the dotted hierarchy so nested subsections step in.
+// The operative paragraphs inside keep their original `para-N` ids, so the
+// marginalia rail and citation anchors still line up.
+function IrmSection({ num, title, indent, count, open, onToggle, headId, children }: {
+  num: string;
+  title: string;
+  indent: number;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  headId: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-xl border border-border/60 bg-card/50"
+      style={indent ? { marginLeft: `${Math.min(indent, 4) * 1.1}rem` } : undefined}
+    >
+      <button
+        type="button"
+        id={headId}
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left scroll-mt-24"
+      >
+        <span className="min-w-0">
+          <span className="citation-tag text-muted-foreground">{num}</span>
+          {title && (
+            <span className="mt-0.5 block font-display text-[0.95rem] font-semibold leading-snug">{title}</span>
+          )}
+        </span>
+        <span className="flex shrink-0 items-center gap-2 pt-0.5">
+          {count > 0 && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{count}</span>
+          )}
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {open && <div className="space-y-2.5 border-t border-border/40 px-4 pb-4 pt-3">{children}</div>}
+    </div>
+  );
+}
+
 function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta }: {
   body: string;
   segments: BodySegment[];
@@ -531,6 +615,22 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
 
   const refOf = useCallback((i: number) => ({ identifier, paraIndex: i }), [identifier]);
   const casesForIdx = useCallback((i: number) => cb.casesForRef(refOf(i)), [cb, refOf]);
+
+  // IRM-style sections break each subsection (number + title) into its own
+  // labelled block so the wall of text reads as a structured document; empty for
+  // every other source / shape, so the flat render below is the default and
+  // nothing else changes. Blocks are OPEN by default — the section reads
+  // top-to-bottom — and each header can be collapsed to fold that part away.
+  const blocks = useMemo(() => subsectionBlocks(docMeta.sourceCode, body, opParas), [docMeta.sourceCode, body, opParas]);
+  const minDepth = useMemo(() => (blocks.length ? Math.min(...blocks.map((b) => b.depth)) : 0), [blocks]);
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set());
+  const toggleBlock = useCallback((bi: number) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(bi)) next.delete(bi); else next.add(bi);
+      return next;
+    });
+  }, []);
 
   // Measure each paragraph's vertical offset within the body wrapper so the rail
   // can float notes at their anchor's height. Re-measures on reflow (window
@@ -570,60 +670,76 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
 
   return (
     <div className="space-y-2.5">
-      {/* Marginalia header — client-only, so no hydration mismatch. Mirrors the
-          two-column body grid below so the left cell labels the reading column
-          and the right cell becomes the "THE DESK" column header, sitting
-          exactly over the marginalia rail. */}
+      {/* Marginalia header — client-only, so no hydration mismatch. A single row
+          over the reading column; the Desk now lives in the screen's right margin
+          (pinned to the wall by MarginaliaRail), so it needs no column header. */}
       {mg.hydrated && (
-        <div className="mb-3 lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:gap-12">
-          {/* over the text column */}
-          <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-2">
-            <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
-              <PenLine className="h-3 w-3 text-ochre" />
-              {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
-            </span>
-            <span className="shrink-0 font-mono text-[10px] text-foreground/40 lg:hidden">
+        <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-2">
+          <span className="citation-tag inline-flex items-center gap-1.5 text-muted-foreground">
+            <PenLine className="h-3 w-3 text-ochre" />
+            {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
+          </span>
+          {cb.hydrated && caseList.length > 0 ? (
+            <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
+              <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
+            </Link>
+          ) : (
+            <span className="shrink-0 font-mono text-[10px] text-foreground/40">
               {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
             </span>
-          </div>
-          {/* over the marginalia rail — the Desk's own column header */}
-          <div className="hidden items-center justify-between gap-2 border-b border-border/40 pb-2 lg:flex">
-            <span className="desk-eyebrow mb-0 border-b-0 pb-0">the desk</span>
-            {cb.hydrated && caseList.length > 0 ? (
-              <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
-                <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
-              </Link>
-            ) : (
-              <span className="shrink-0 font-mono text-[10px] text-foreground/40">
-                {mg.count === 0 ? "this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      <div ref={wrapRef} className="lg:grid lg:grid-cols-[minmax(0,46rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
+      {/* Reading column fills the width; the Desk rail is absolutely pinned to the
+          right margin (relative anchor = this wrapper, so notes still line up with
+          their paragraphs and scroll with the text). */}
+      <div ref={wrapRef} className="relative">
         <div className="min-w-0 space-y-2.5">
-          {opParas.map((p, i) => (
-            <Para
-              key={`op-${i}`}
-              id={`para-${i}`}
-              body={body}
-              p={p}
-              citations={citations}
-              markRe={markRe}
-              noteText={mg.notes[i]?.text}
-              noteCases={mg.hydrated ? casesForIdx(i) : []}
-              cases={caseList}
-              hydrated={mg.hydrated}
-              composing={composing === i}
-              onStartCompose={() => setComposing(i)}
-              onSave={(text, ids) => saveAt(i, text, ids)}
-              onCreateCase={cb.create}
-              onCancel={() => setComposing(null)}
-              onDelete={() => deleteAt(i)}
-            />
-          ))}
+          {(() => {
+            const renderPara = (p: LegalPara, i: number) => (
+              <Para
+                key={`op-${i}`}
+                id={`para-${i}`}
+                body={body}
+                p={p}
+                citations={citations}
+                markRe={markRe}
+                hasNote={mg.hydrated && (mg.notes[i]?.text?.length ?? 0) > 0}
+                selected={composing === i}
+                hydrated={mg.hydrated}
+                onCompose={() => setComposing(i)}
+              />
+            );
+            // No inline headings (every non-IRM source, and IRM sections without
+            // them): the plain flat paragraph list, exactly as before.
+            if (blocks.length === 0) return opParas.map((p, i) => renderPara(p, i));
+            // Otherwise: any preamble above the first heading reads flat, then
+            // each subsection folds into its accordion.
+            return (
+              <>
+                {opParas.slice(0, blocks[0].headIdx).map((p, i) => renderPara(p, i))}
+                {blocks.map((b, bi) => {
+                  const inner: ReactNode[] = [];
+                  for (let i = b.bodyStart; i < b.bodyEnd; i++) inner.push(renderPara(opParas[i], i));
+                  return (
+                    <IrmSection
+                      key={`sub-${bi}`}
+                      num={b.num}
+                      title={b.title}
+                      indent={b.depth - minDepth}
+                      count={inner.length}
+                      open={!collapsed.has(bi)}
+                      onToggle={() => toggleBlock(bi)}
+                      headId={`para-${b.headIdx}`}
+                    >
+                      {inner}
+                    </IrmSection>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
 
         {mg.hydrated && (
@@ -642,6 +758,22 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
           />
         )}
       </div>
+
+      {/* The Desk on narrow widths — notes stacked below the article, never
+          inline in the prose, so the reading column above never reflows. */}
+      {mg.hydrated && (
+        <DeskStacked
+          notes={mg.notes}
+          composing={composing}
+          cases={caseList}
+          casesForIdx={casesForIdx}
+          onCompose={setComposing}
+          onSave={saveAt}
+          onCreateCase={cb.create}
+          onCancel={() => setComposing(null)}
+          onDelete={deleteAt}
+        />
+      )}
 
       {notePanels.map((seg, i) => (
         <NotePanel key={`note-${i}`} body={body} seg={seg} citations={citations} markRe={markRe} spans={spans} />
@@ -1078,11 +1210,12 @@ function DocumentPage() {
         </div>
       </div>
 
-      {/* Reading block nudged right of the left edge; title + apparatus held to
-          the same reading measure as the body's text column, while the body grid
-          lets the marginalia "Desk" fill everything from the text to the wall. */}
-      <article className="lg:pl-[5vw]">
-        <div className="lg:max-w-[46rem]">
+      {/* The whole reading block reserves a right lane (lg:pr) for the Desk, which
+          MarginaliaRail pins to the screen's right margin. Title, body, connections
+          and prev/next all share that one reading width — "everything same width" —
+          while the notes sit against the wall instead of fighting for the center. */}
+      <article className="lg:pr-[22rem]">
+        <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
             {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
             <span className="ink-underline italic">{document.heading}</span>
@@ -1096,7 +1229,7 @@ function DocumentPage() {
         </div>
 
         <div className="mt-8">
-          <div className="lg:max-w-[46rem]">
+          <div>
             <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
             <DefinitionsPanel text={body} />
           </div>
