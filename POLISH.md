@@ -14,7 +14,9 @@ week 4 is maintenance. Tiered by impact/risk. Check items off as they land.
 - [x] **Reader: line highlighter** — "Ruler" toggle in the reader toolbar; a translucent ochre band tracks the cursor's line (fixed, pointer-events-none, persists in localStorage). `code.$.tsx`.
 - [x] **Search: top 3–5 per source (federated results)** — `search_documents_fts` rewritten to return top-K **per source** (display 6), order source groups by their best hit, cap at 14 groups for broad scopes. Verified: "contracts" now surfaces UCC (2nd) + IRM (4th); "due process" keeps the Constitution. Cache flushed + re-warmed (`search-rerank.sql`, `search-prewarm.sql`, `p_limit` 40→120 in `documents.functions.ts`).
 - [x] **Nav dropdowns feel thin** — "State Code" dropdown now lists California / Texas / New York / Florida marquee states under "All 50 States". `codebooks.ts`.
-- [ ] **Header is busy** — 2 rows + a secondary link row (Browse / My Cases / What it does / Whitepaper / The Floor / About). Audit what needs to be top-level. *Deferred — product judgment call, left for review rather than cutting links unilaterally.*
+- [x] **Header is busy** — dropped **Whitepaper** from the top nav (still linked in-context from About/Features/Subscribe). Kept: Browse (the one-page index of everything), My Cases (central feature), The Floor, About. Roadmap notes:
+  - **What it does** → revamp into a **"Start Here" walkthrough** (annotated screenshots of the read → notes → casefile → filing flow). Rename the nav label when that page ships.
+  - **The Floor** → keep if users engage; otherwise repurpose the slot as an **SEO blog** (posts that rank + funnel to the corpus).
 
 ## P2 — Professional credibility (matters most for legal)
 - [ ] **Kill fake stats** — `fakeThisWeek()` invents "new sections / amended / queries vs last week" (`CodebookLanding`, also placeholder bits in `code.index`, `compare`, `cases`). Make real (we have `search_events`, doc counts) or remove — fabricated numbers read as untrustworthy on a legal site.
