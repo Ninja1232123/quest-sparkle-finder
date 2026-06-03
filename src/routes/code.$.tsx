@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-rout
 import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
 import { STATE_NAMES, sourceMeta, sourceName } from "@/lib/source-groups";
@@ -1035,6 +1035,10 @@ function DocumentPage() {
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Reading ruler — a horizontal highlight band that tracks the cursor so the
+  // eye doesn't lose its line in long statutory text. Toggle persists.
+  const [ruler, setRuler] = useState(false);
+  const [rulerY, setRulerY] = useState(-9999);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? window.localStorage.getItem("doc-font-size") : null;
@@ -1042,10 +1046,22 @@ function DocumentPage() {
       const n = Number(stored);
       if (!Number.isNaN(n) && n >= 0 && n <= 4) setFontSize(n);
     }
+    if (typeof window !== "undefined" && window.localStorage.getItem("doc-ruler") === "1") setRuler(true);
   }, []);
   useEffect(() => {
     if (typeof window !== "undefined") window.localStorage.setItem("doc-font-size", String(fontSize));
   }, [fontSize]);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("doc-ruler", ruler ? "1" : "0");
+  }, [ruler]);
+  // Track the cursor's Y while the ruler is on (window-level so it follows even
+  // over margin notes); pointer-events stay off the band itself.
+  useEffect(() => {
+    if (!ruler) { setRulerY(-9999); return; }
+    const onMove = (e: globalThis.MouseEvent) => setRulerY(e.clientY);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [ruler]);
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 600);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -1246,6 +1262,21 @@ function DocumentPage() {
             </div>
             <button
               type="button"
+              onClick={() => setRuler((v) => !v)}
+              aria-pressed={ruler}
+              className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors sm:flex ${
+                ruler
+                  ? "border-ochre/60 bg-ochre/15 text-foreground"
+                  : "border-border/70 bg-card text-foreground/80 hover:border-foreground/40 hover:text-foreground"
+              }`}
+              aria-label="Toggle reading ruler"
+              title="Reading ruler — highlights the line under your cursor"
+            >
+              <Highlighter className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Ruler</span>
+            </button>
+            <button
+              type="button"
               onClick={copyLink}
               className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs text-foreground/80 hover:border-foreground/40 hover:text-foreground"
               aria-label="Copy link to this section"
@@ -1261,7 +1292,10 @@ function DocumentPage() {
           MarginaliaRail pins to the screen's right margin. Title, body, connections
           and prev/next all share that one reading width — "everything same width" —
           while the notes sit against the wall instead of fighting for the center. */}
-      <article className="lg:pr-[22rem]">
+      {/* Left gutter (lg:pl-16) pulls the reading column toward center so the
+          fixed Juri launcher in the bottom-left corner never overlays the text;
+          the faint rule sits in that gutter like a ruled legal-pad margin. */}
+      <article className="relative lg:pr-[22rem] lg:pl-16 lg:before:absolute lg:before:bottom-0 lg:before:left-7 lg:before:top-1 lg:before:w-px lg:before:bg-border/50 lg:before:content-['']">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
             {document.section_label ? <span className="text-foreground/60">{document.section_label}. </span> : null}
@@ -1371,6 +1405,16 @@ function DocumentPage() {
         >
           <ArrowUp className="h-4 w-4" />
         </button>
+      )}
+
+      {/* Reading ruler — a translucent band locked to the cursor's line. Fixed,
+          pointer-events-none so it never blocks clicks/selection. */}
+      {ruler && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 z-30 h-8 -translate-y-1/2 bg-ochre/10 ring-1 ring-inset ring-ochre/25 mix-blend-multiply"
+          style={{ top: rulerY }}
+        />
       )}
     </ResearchShell>
   );

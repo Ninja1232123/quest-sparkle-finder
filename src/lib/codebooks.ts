@@ -250,6 +250,10 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: "#4a6741",
     items: [
       { label: "All 50 States", href: "/states", accent: "#4a6741", status: "live" },
+      { label: "California", href: "/code/source/ca", accent: "#4a6741", status: "live" },
+      { label: "Texas", href: "/code/source/tx", accent: "#4a6741", status: "live" },
+      { label: "New York", href: "/code/source/ny", accent: "#4a6741", status: "live" },
+      { label: "Florida", href: "/code/source/fl", accent: "#4a6741", status: "live" },
     ],
   },
   {

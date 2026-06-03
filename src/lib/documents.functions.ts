@@ -852,7 +852,9 @@ export const searchDocuments = createServerFn({ method: "GET" })
       const { data: ftsRows, error: ftsError } = await scopedSearch("search_documents_fts", {
         p_query: raw,
         p_source: data.source ?? null,
-        p_limit: 40,
+        // High cap: the RPC federates the output (top-K per source, capped # of
+        // source groups), so this is a ceiling on the union, not a global top-N.
+        p_limit: 120,
       });
       if (ftsError) return { hits: [], error: ftsError.message };
       rows = ftsRows ?? [];

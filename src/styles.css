@@ -476,9 +476,9 @@
     gap: 6px;
     white-space: nowrap;
     border-radius: var(--radius-md);
-    padding: 8px 12px;
+    padding: 8px 13px;
     font-family: var(--font-display);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--ink);
     background: color-mix(in oklch, var(--c) 6%, transparent);
@@ -1966,7 +1966,7 @@ main {
   /* compact section links in the primary row's right cluster */
   .am-navlink {
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #9fabcb;
     padding: 6px 11px;
@@ -1991,7 +1991,7 @@ main {
     background: #c8a24b;
     padding: 6px 14px;
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: #0a1a47;
     box-shadow: 0 1px 0 rgba(0,0,0,0.15);
@@ -2011,7 +2011,7 @@ main {
   .am-codebooks-label {
     align-items: center;
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: 10.5px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #c8a24b;

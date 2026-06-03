@@ -34,7 +34,7 @@ export function SiteFooter() {
         </div>
 
         {/* disclaimer (verbatim — legally load-bearing) */}
-        <div className="mt-6 rounded-md border border-white/15 bg-white/5 px-4 py-3 text-[11px] leading-relaxed text-[#aeb9d6]">
+        <div className="mt-6 rounded-md border border-white/15 bg-white/5 px-4 py-3 text-xs leading-relaxed text-[#aeb9d6]">
           <span className="citation-tag mr-2 text-[#e7cd7e]">disclaimer</span>
           Marginalia is a research index, not a law firm. Nothing on this site is legal,
           tax, or financial advice and no attorney–client relationship is formed by using

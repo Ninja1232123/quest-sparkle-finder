@@ -99,7 +99,7 @@ function NavGroupTab({ group }: { group: NavGroup }) {
                 <Link
                   key={it.href + it.label}
                   to={it.href as never}
-                  className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-xs hover:bg-muted ${
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] hover:bg-muted ${
                     isSoon ? "text-foreground/50" : "text-foreground/80 hover:text-foreground"
                   }`}
                 >
@@ -110,7 +110,7 @@ function NavGroupTab({ group }: { group: NavGroup }) {
                   />
                   <span className="min-w-0 truncate">{it.label}</span>
                   {isSoon && (
-                    <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-ochre">
+                    <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ochre">
                       soon
                     </span>
                   )}
@@ -135,7 +135,7 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 font-display text-[13px] text-foreground/70 hover:bg-muted hover:text-foreground"
+        className="flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 font-display text-sm text-foreground/70 hover:bg-muted hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -152,8 +152,8 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
             >
               <t.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/60" />
               <div className="min-w-0">
-                <div className="font-display text-xs font-semibold text-foreground">{t.label}</div>
-                <div className="text-[11px] leading-snug text-foreground/55">{t.description}</div>
+                <div className="font-display text-[13px] font-semibold text-foreground">{t.label}</div>
+                <div className="text-xs leading-snug text-foreground/55">{t.description}</div>
               </div>
             </Link>
           ))}
@@ -208,7 +208,7 @@ export function SiteHeader() {
           <BrandMark />
           <div className="leading-none">
             <div className="font-display text-lg font-semibold tracking-tight text-[#fbf6e8]">Marginalia</div>
-            <div className="hidden font-display text-[10px] uppercase tracking-[0.18em] text-[#c8a24b]/80 sm:block">
+            <div className="hidden font-display text-[11px] uppercase tracking-[0.18em] text-[#c8a24b]/80 sm:block">
               a citizen's law index
             </div>
           </div>

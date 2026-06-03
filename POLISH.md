@@ -3,18 +3,18 @@
 Goal: from "damn good for 3 weeks" to a clean, professional legal product, so
 week 4 is maintenance. Tiered by impact/risk. Check items off as they land.
 
-## P0 — Wrong/stale, visible now (fast, low risk)
-- [ ] **States nav still says "SOON"** — `src/lib/codebooks.ts` NAV_GROUPS: `State Law` (`:252`) and `State UCC enactments` (`:262`) `status:"soon"` → `"live"`.
-- [ ] **Browse landing flattens 50 states** — `src/routes/code.index.tsx:176` maps *all* sources into one flat grid. Collapse state sources into the single "All 50 States →" card (already at `:212`) and filter states out of the flat federal grid.
-- [ ] **Corpus sidebar States group** — `CorpusTree` accordions by group already; ensure the States group starts **collapsed** (50 items shouldn't auto-dump).
+## P0 — Wrong/stale, visible now (fast, low risk) ✅ DONE (de4cb7d)
+- [x] **States nav still says "SOON"** — NAV_GROUPS State Law + State UCC enactments → "live".
+- [x] **Browse landing flattens 50 states** — states filtered out of the federal grid + collapsed into one "All 50 States" card; stale coming-soon card removed.
+- [x] **Corpus sidebar States group** — already defaults collapsed (only `federal` open). No change needed.
 
-## P1 — Readability, reader & navigation (the core complaints)
-- [ ] **Font scale too small** — nav/dropdowns/footers/badges lean on `text-xs`/`text-[11px]`/`text-[10px]`/`text-[9px]` (`SiteHeader`, `SiteFooter`, `CodebookLanding`). Bump base reading + nav one step, nudge line-height. Highest-impact visual fix.
-- [ ] **Reader: Juri overlaps the body text** — inset the citation reading column / add a left gutter so the Juri launcher never overlays the text (pull the text column toward center). `src/routes/code.$.tsx` + `Juri` positioning.
-- [ ] **Reader: line highlighter** — a reading ruler / current-line highlight in the reader for focus while reading long sections.
-- [ ] **Search: top 3–5 per source (federated results)** — currently the candidate pool is balanced per-source but the *displayed* top-40 still re-ranks globally, so a big source can crowd out a small one (search "due process" → the Constitution, the smallest corpus, gets passed over). Change `search_documents_fts` to return top ~5 **per source**, grouped (UI already groups `bySource`); user explores a source deeper from there. Safer cross-corpus default. Cap # of source-groups shown on broad scopes so it doesn't explode.
-- [ ] **Nav dropdowns feel thin** — "State Code" is a one-item dropdown; surface marquee states or a mini state picker. Tighten hover timing, width, soon-badge styling in `NavGroupTab`.
-- [ ] **Header is busy** — 2 rows + a secondary link row (Browse / My Cases / What it does / Whitepaper / The Floor / About). Audit what needs to be top-level.
+## P1 — Readability, reader & navigation (the core complaints) ✅ mostly DONE
+- [x] **Font scale too small** — bumped nav links (13→14px), codebook tabs (14→15px), Pro CTA (13→14px), Tools button (13→14px), dropdown items (xs→13px), Tools item label/desc, soon-badges (9→10px), brand sublabel (10→11px), codebook-strip label (9.5→10.5px), footer disclaimer (11→12px). `styles.css` + `SiteHeader` + `SiteFooter`.
+- [x] **Reader: Juri overlaps the body text** — article now has a `lg:pl-16` left gutter (pulls the column toward center, clearing the fixed bottom-left Juri launcher) with a faint ruled-margin line in the gutter. `code.$.tsx`.
+- [x] **Reader: line highlighter** — "Ruler" toggle in the reader toolbar; a translucent ochre band tracks the cursor's line (fixed, pointer-events-none, persists in localStorage). `code.$.tsx`.
+- [x] **Search: top 3–5 per source (federated results)** — `search_documents_fts` rewritten to return top-K **per source** (display 6), order source groups by their best hit, cap at 14 groups for broad scopes. Verified: "contracts" now surfaces UCC (2nd) + IRM (4th); "due process" keeps the Constitution. Cache flushed + re-warmed (`search-rerank.sql`, `search-prewarm.sql`, `p_limit` 40→120 in `documents.functions.ts`).
+- [x] **Nav dropdowns feel thin** — "State Code" dropdown now lists California / Texas / New York / Florida marquee states under "All 50 States". `codebooks.ts`.
+- [ ] **Header is busy** — 2 rows + a secondary link row (Browse / My Cases / What it does / Whitepaper / The Floor / About). Audit what needs to be top-level. *Deferred — product judgment call, left for review rather than cutting links unilaterally.*
 
 ## P2 — Professional credibility (matters most for legal)
 - [ ] **Kill fake stats** — `fakeThisWeek()` invents "new sections / amended / queries vs last week" (`CodebookLanding`, also placeholder bits in `code.index`, `compare`, `cases`). Make real (we have `search_events`, doc counts) or remove — fabricated numbers read as untrustworthy on a legal site.
