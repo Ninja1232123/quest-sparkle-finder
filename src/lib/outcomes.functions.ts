@@ -30,10 +30,18 @@ export type StatPage = {
   settled: number;
   dismissed: number;
   plaintiff_win_pct: number | null;
+  // state-appellate (layer='state'); NULL on federal rows
+  layer: string;
+  state: string | null;
+  state_slug: string | null;
+  court_level: string | null;
+  decided_cases: number | null;
+  reversal_pct: number | null;
+  remand_pct: number | null;
 };
 
 const SUMMARY =
-  "slug,scope,court_id,court_name,family,nos_code,nos_label,total_cases,merits_cases,plaintiff_win,defendant_win,settled,dismissed,plaintiff_win_pct";
+  "slug,scope,layer,court_id,court_name,family,nos_code,nos_label,total_cases,merits_cases,plaintiff_win,defendant_win,settled,dismissed,plaintiff_win_pct,state,state_slug,court_level,decided_cases,reversal_pct,remand_pct";
 
 // All families, for the hub + family navigation.
 export const getFamilyList = createServerFn({ method: "GET" }).handler(async () => {
@@ -88,6 +96,33 @@ export const getCourtsForCaseType = createServerFn({ method: "GET" })
       .eq("nos_code", data.nos_code)
       .order("total_cases", { ascending: false })
       .limit(30);
+    if (error) throw new Error(error.message);
+    return { courts: (rows ?? []) as StatPage[] };
+  });
+
+// All state-court rows, for the /outcomes/states index (route groups by state).
+export const getStatesIndex = createServerFn({ method: "GET" }).handler(async () => {
+  const c = await sb();
+  const { data, error } = await c
+    .from("stat_page")
+    .select("slug,court_name,state,state_slug,court_level,total_cases,decided_cases,reversal_pct")
+    .eq("layer", "state")
+    .order("state", { ascending: true });
+  if (error) throw new Error(error.message);
+  return { courts: (data ?? []) as StatPage[] };
+});
+
+// The courts within one state (supreme first, then appellate by volume).
+export const getStateCourts = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ state_slug: z.string() }))
+  .handler(async ({ data }) => {
+    const c = await sb();
+    const { data: rows, error } = await c
+      .from("stat_page")
+      .select(SUMMARY)
+      .eq("layer", "state")
+      .eq("state_slug", data.state_slug)
+      .order("decided_cases", { ascending: false });
     if (error) throw new Error(error.message);
     return { courts: (rows ?? []) as StatPage[] };
   });

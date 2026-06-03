@@ -129,6 +129,19 @@ export function Crumbs({ items }: { items: { to: string; label: string }[] }) {
   );
 }
 
+/** State-appellate methodology + UPL footer — carries the appellate asterisk. */
+export function StateDataNote() {
+  return (
+    <p className="mt-10 border-t border-border/50 pt-4 text-[12px] leading-relaxed text-muted-foreground">
+      Source: <span className="text-foreground/70">CourtListener opinion clusters</span>, dispositions classified into
+      outcomes (rules-based, ~95% coverage). This is <span className="text-foreground/70">appellate data</span> — it
+      describes whether lower-court rulings were affirmed or reversed, not who wins at trial. Coverage varies by state,
+      and a single court's practice shifts over time. Figures are descriptive statistics about the historical record —
+      not a prediction about any specific appeal. Check your local rules. Not legal advice.
+    </p>
+  );
+}
+
 /** Methodology + UPL footer — stamped on every outcomes page. */
 export function DataNote() {
   return (

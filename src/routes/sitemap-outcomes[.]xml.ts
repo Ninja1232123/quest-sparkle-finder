@@ -27,13 +27,28 @@ export const Route = createFileRoute("/sitemap-outcomes.xml")({
       GET: async () => {
         const { slugs } = await getOutcomeSitemapSlugs();
 
-        const urls = slugs
-          .map(({ slug, scope }) =>
+        // Leaf pages live in stat_page. The aggregate landings (/outcomes/states
+        // and each /outcomes/states/<state>) are route-only, so derive them here.
+        const entries: { loc: string; priority: string }[] = slugs.map(({ slug, scope }) => ({
+          loc: slug,
+          priority: priorityFor(scope),
+        }));
+        const stateLandings = new Set<string>();
+        for (const { slug, scope } of slugs) {
+          if (scope !== "state_court") continue;
+          const parts = slug.split("/"); // ["", "outcomes", "states", <state>, <court>]
+          if (parts.length >= 4) stateLandings.add(`/outcomes/states/${parts[3]}`);
+        }
+        entries.push({ loc: "/outcomes/states", priority: "0.8" });
+        for (const loc of stateLandings) entries.push({ loc, priority: "0.7" });
+
+        const urls = entries
+          .map(({ loc, priority }) =>
             [
               `  <url>`,
-              `    <loc>${xmlEscape(BASE_URL + slug)}</loc>`,
+              `    <loc>${xmlEscape(BASE_URL + loc)}</loc>`,
               `    <changefreq>monthly</changefreq>`,
-              `    <priority>${priorityFor(scope)}</priority>`,
+              `    <priority>${priority}</priority>`,
               `  </url>`,
             ].join("\n"),
           )

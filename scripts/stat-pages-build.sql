@@ -100,7 +100,15 @@ SELECT
   CASE WHEN sum(n) FILTER (WHERE outcome IN ('plaintiff_win','defendant_win','mixed','decided_other')) >= 30
        THEN round(100.0 * sum(n) FILTER (WHERE outcome='plaintiff_win')
             / NULLIF(sum(n) FILTER (WHERE outcome IN ('plaintiff_win','defendant_win','mixed','decided_other')),0), 1)
-  END AS plaintiff_win_pct
+  END AS plaintiff_win_pct,
+  -- generic state-appellate columns (NULL for federal rows; populated by
+  -- state-stat-pages-build.sql, whose metric is reversal rate, not who-won)
+  NULL::text    AS state,
+  NULL::text    AS state_slug,
+  NULL::text    AS court_level,
+  NULL::bigint  AS decided_cases,
+  NULL::numeric AS reversal_pct,
+  NULL::numeric AS remand_pct
 FROM stat_outcome
 GROUP BY slug;
 
@@ -113,6 +121,7 @@ CREATE INDEX stat_page_scope_idx  ON stat_page (scope);
 CREATE INDEX stat_page_family_idx ON stat_page (family);
 CREATE INDEX stat_page_court_idx  ON stat_page (court_id);
 CREATE INDEX stat_page_nos_idx    ON stat_page (nos_code);
+CREATE INDEX stat_page_state_idx  ON stat_page (layer, state_slug);
 CREATE INDEX stat_outcome_slug_idx ON stat_outcome (slug);
 ANALYZE stat_page;
 ANALYZE stat_outcome;

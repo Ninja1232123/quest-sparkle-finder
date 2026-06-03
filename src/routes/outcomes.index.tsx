@@ -3,7 +3,7 @@ import { listSources } from "@/lib/documents.functions";
 import { getFamilyList } from "@/lib/outcomes.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { FAMILY_META, fmt } from "@/components/outcomes/ui";
-import { BarChart3, ChevronRight, Scale } from "lucide-react";
+import { BarChart3, ChevronRight, Gavel, Scale } from "lucide-react";
 
 export const Route = createFileRoute("/outcomes/")({
   loader: async () => {
@@ -50,6 +50,24 @@ function OutcomesHub() {
         </p>
       </header>
 
+      {/* State appeals — the other layer */}
+      <Link
+        to="/outcomes/states"
+        className="group mb-8 flex items-center gap-4 rounded-2xl border border-terracotta/30 bg-terracotta/5 px-5 py-4 transition-colors hover:bg-terracotta/10"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-terracotta/15 text-terracotta">
+          <Gavel className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-lg font-semibold leading-tight">State appeals — do they succeed?</div>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
+            Reversal rates for state supreme &amp; appellate courts. How often the court below gets overturned — by state.
+          </p>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+
+      <h2 className="mb-3 font-display text-lg font-semibold">Federal — civil cases by claim type</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {families.map((f) => {
           const slug = f.slug;
