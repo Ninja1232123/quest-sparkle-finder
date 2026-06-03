@@ -141,16 +141,25 @@ begin
 end;
 $$;
 
--- 6c. NO free signup credits. Juri is Pro-gated, so signup credits are
---     unspendable and would be a multi-account farming vector. Drop the v1
---     starter-grant trigger + function if they exist. New Pro users get the
---     full monthly allowance on their first invoice (see set_pro_monthly_credits).
+-- 6c. Starter credits: 3 per signup. Harmless to leave on — Juri is Pro-gated,
+--     so a free user can't spend them until they subscribe (no farming value).
+--     The v1 grant_starter inserted into `balance`, which §4 above just turned
+--     into a GENERATED column — inserting it raises "cannot insert a non-DEFAULT
+--     value into column balance", and because the function runs in an AFTER
+--     INSERT trigger on auth.users, EVERY signup fails with "Database error
+--     saving new user". Redefine it to write the topup_credits bucket instead
+--     (balance then computes as monthly + topup). Keep the trigger.
+create or replace function public.grant_starter_juri_credits()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.juri_credits (user_id, topup_credits)
+  values (new.id, 3)
+  on conflict (user_id) do nothing;
+  return new;
+end; $$;
 drop trigger if exists on_auth_user_juri_credits on auth.users;
-drop function if exists public.grant_starter_juri_credits();
--- OPTIONAL — if v1 already handed out 3 starter credits and you want to claw
--- them back (safe only while NO real pack purchases exist yet, since topup_credits
--- can't distinguish starter from bought), uncomment:
---   update public.juri_credits set topup_credits = 0 where topup_credits > 0;
+create trigger on_auth_user_juri_credits
+  after insert on auth.users for each row execute function public.grant_starter_juri_credits();
 
 -- 7. Pro monthly grant ledger — one grant per (user, billing period). ----------
 create table if not exists public.juri_pro_grants (
