@@ -27,6 +27,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const children: string[] = [
           `${BASE_URL}/sitemap-pages.xml`,
           `${BASE_URL}/sitemap-outcomes.xml`,
+          `${BASE_URL}/sitemap-opinions.xml`,
         ];
         for (const s of sources) {
           if (FIREHOSE_SOURCES.has(s.code)) continue;

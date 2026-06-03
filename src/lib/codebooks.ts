@@ -269,10 +269,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: "court",
     label: "Court Record",
-    tagline: "Opinions and decisions of the courts.",
+    tagline: "Opinions, decisions, and outcome statistics of the courts.",
     accent: "#3d3d5c",
     items: [
-      { label: "Supreme Court Decisions", href: "/scotus", accent: "#3d3d5c", status: "soon" },
+      { label: "Court Outcomes", href: "/outcomes", accent: "#8b2e1f", status: "live" },
+      { label: "Supreme Court Opinions", href: "/record", accent: "#3d3d5c", status: "live" },
     ],
   },
   {

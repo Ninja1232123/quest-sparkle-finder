@@ -176,7 +176,6 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
    codebook strip below.) */
 const SECONDARY_LINKS = [
   { to: "/code",        label: "Browse" },
-  { to: "/outcomes",    label: "Outcomes" },
   { to: "/cases",       label: "My Cases" },
   { to: "/how-it-works", label: "How it works" },
   { to: "/forum",       label: "The Floor" },

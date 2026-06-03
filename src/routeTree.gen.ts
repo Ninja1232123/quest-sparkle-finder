@@ -17,6 +17,7 @@ import { Route as StatesRouteImport } from './routes/states'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
 import { Route as SitemapOutcomesDotxmlRouteImport } from './routes/sitemap-outcomes[.]xml'
+import { Route as SitemapOpinionsDotxmlRouteImport } from './routes/sitemap-opinions[.]xml'
 import { Route as SitemapDocsDotxmlRouteImport } from './routes/sitemap-docs[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ScotusRouteImport } from './routes/scotus'
@@ -38,10 +39,12 @@ import { Route as AgencyRouteImport } from './routes/agency'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RecordIndexRouteImport } from './routes/record.index'
 import { Route as OutcomesIndexRouteImport } from './routes/outcomes.index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
+import { Route as RecordSlugRouteImport } from './routes/record.$slug'
 import { Route as CompareDiffRouteImport } from './routes/compare_.diff'
 import { Route as CodeSplatRouteImport } from './routes/code.$'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
@@ -105,6 +108,11 @@ const SitemapPagesDotxmlRoute = SitemapPagesDotxmlRouteImport.update({
 const SitemapOutcomesDotxmlRoute = SitemapOutcomesDotxmlRouteImport.update({
   id: '/sitemap-outcomes.xml',
   path: '/sitemap-outcomes.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapOpinionsDotxmlRoute = SitemapOpinionsDotxmlRouteImport.update({
+  id: '/sitemap-opinions.xml',
+  path: '/sitemap-opinions.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDocsDotxmlRoute = SitemapDocsDotxmlRouteImport.update({
@@ -212,6 +220,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecordIndexRoute = RecordIndexRouteImport.update({
+  id: '/record/',
+  path: '/record/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OutcomesIndexRoute = OutcomesIndexRouteImport.update({
   id: '/outcomes/',
   path: '/outcomes/',
@@ -230,6 +243,11 @@ const CasesIndexRoute = CasesIndexRouteImport.update({
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
   path: '/topic/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecordSlugRoute = RecordSlugRouteImport.update({
+  id: '/record/$slug',
+  path: '/record/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareDiffRoute = CompareDiffRouteImport.update({
@@ -385,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-opinions.xml': typeof SitemapOpinionsDotxmlRoute
   '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -397,10 +416,12 @@ export interface FileRoutesByFullPath {
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare/diff': typeof CompareDiffRoute
+  '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
+  '/record/': typeof RecordIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
@@ -444,6 +465,7 @@ export interface FileRoutesByTo {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-opinions.xml': typeof SitemapOpinionsDotxmlRoute
   '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -456,10 +478,12 @@ export interface FileRoutesByTo {
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare/diff': typeof CompareDiffRoute
+  '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/outcomes': typeof OutcomesIndexRoute
+  '/record': typeof RecordIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states': typeof OutcomesStatesIndexRoute
@@ -504,6 +528,7 @@ export interface FileRoutesById {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-opinions.xml': typeof SitemapOpinionsDotxmlRoute
   '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -516,10 +541,12 @@ export interface FileRoutesById {
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
   '/compare_/diff': typeof CompareDiffRoute
+  '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
+  '/record/': typeof RecordIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum_/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
@@ -565,6 +592,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-opinions.xml'
     | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -577,10 +605,12 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/code/$'
     | '/compare/diff'
+    | '/record/$slug'
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
     | '/outcomes/'
+    | '/record/'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/outcomes/states/'
@@ -624,6 +654,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-opinions.xml'
     | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -636,10 +667,12 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/code/$'
     | '/compare/diff'
+    | '/record/$slug'
     | '/topic/$slug'
     | '/cases'
     | '/code'
     | '/outcomes'
+    | '/record'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/outcomes/states'
@@ -683,6 +716,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-opinions.xml'
     | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -695,10 +729,12 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/code/$'
     | '/compare_/diff'
+    | '/record/$slug'
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
     | '/outcomes/'
+    | '/record/'
     | '/code/source/$source'
     | '/forum_/$slug/$id'
     | '/outcomes/states/'
@@ -743,6 +779,7 @@ export interface RootRouteChildren {
   ScotusRoute: typeof ScotusRoute
   SearchRoute: typeof SearchRoute
   SitemapDocsDotxmlRoute: typeof SitemapDocsDotxmlRoute
+  SitemapOpinionsDotxmlRoute: typeof SitemapOpinionsDotxmlRoute
   SitemapOutcomesDotxmlRoute: typeof SitemapOutcomesDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -755,10 +792,12 @@ export interface RootRouteChildren {
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
   CompareDiffRoute: typeof CompareDiffRoute
+  RecordSlugRoute: typeof RecordSlugRoute
   TopicSlugRoute: typeof TopicSlugRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
   OutcomesIndexRoute: typeof OutcomesIndexRoute
+  RecordIndexRoute: typeof RecordIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   ForumSlugIdRoute: typeof ForumSlugIdRoute
   OutcomesStatesIndexRoute: typeof OutcomesStatesIndexRoute
@@ -837,6 +876,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap-outcomes.xml'
       fullPath: '/sitemap-outcomes.xml'
       preLoaderRoute: typeof SitemapOutcomesDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-opinions.xml': {
+      id: '/sitemap-opinions.xml'
+      path: '/sitemap-opinions.xml'
+      fullPath: '/sitemap-opinions.xml'
+      preLoaderRoute: typeof SitemapOpinionsDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap-docs.xml': {
@@ -986,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/record/': {
+      id: '/record/'
+      path: '/record'
+      fullPath: '/record/'
+      preLoaderRoute: typeof RecordIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/outcomes/': {
       id: '/outcomes/'
       path: '/outcomes'
@@ -1012,6 +1065,13 @@ declare module '@tanstack/react-router' {
       path: '/topic/$slug'
       fullPath: '/topic/$slug'
       preLoaderRoute: typeof TopicSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/record/$slug': {
+      id: '/record/$slug'
+      path: '/record/$slug'
+      fullPath: '/record/$slug'
+      preLoaderRoute: typeof RecordSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare_/diff': {
@@ -1207,6 +1267,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScotusRoute: ScotusRoute,
   SearchRoute: SearchRoute,
   SitemapDocsDotxmlRoute: SitemapDocsDotxmlRoute,
+  SitemapOpinionsDotxmlRoute: SitemapOpinionsDotxmlRoute,
   SitemapOutcomesDotxmlRoute: SitemapOutcomesDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -1219,10 +1280,12 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
   CompareDiffRoute: CompareDiffRoute,
+  RecordSlugRoute: RecordSlugRoute,
   TopicSlugRoute: TopicSlugRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
   OutcomesIndexRoute: OutcomesIndexRoute,
+  RecordIndexRoute: RecordIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   ForumSlugIdRoute: ForumSlugIdRoute,
   OutcomesStatesIndexRoute: OutcomesStatesIndexRoute,

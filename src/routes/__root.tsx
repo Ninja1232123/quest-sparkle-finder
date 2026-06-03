@@ -169,6 +169,7 @@ const PUBLIC_PREFIXES = [
   "/code",
   "/states",
   "/outcomes",
+  "/record",
   "/search",
   "/compare",
   "/library",
