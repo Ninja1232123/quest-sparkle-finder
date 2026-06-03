@@ -168,6 +168,16 @@ function HowItWorks() {
           <Link to="/outcomes" className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-terracotta/40 bg-card px-4 py-2 text-sm font-medium hover:bg-terracotta/10">
             Explore Court Outcomes <ArrowRight className="h-3.5 w-3.5 text-terracotta" />
           </Link>
+          <div className="mt-6 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_18px_50px_-20px_rgba(26,24,20,0.5)]">
+            <img
+              src="/howitworks/outcomes.webp"
+              alt="The Court Outcomes index of federal claim types with a case-type data page layered in — base rates in one view"
+              width={1200}
+              height={732}
+              loading="lazy"
+              className="block w-full"
+            />
+          </div>
         </section>
 
         {/* Closing */}
