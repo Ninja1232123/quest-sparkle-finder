@@ -715,9 +715,10 @@ export const searchDocuments = createServerFn({ method: "GET" })
     q: z.string().min(2).max(200),
     source: z.string().min(2).max(40).optional(),
     // Search bucket. 'codified' (default) = the codebooks/manuals; 'primary' =
-    // Federal Register + Statutes at Large; 'cases' = caselaw (not in this
-    // corpus yet); 'all' = no restriction. An explicit `source` pins one code.
-    scope: z.enum(["codified", "primary", "cases", "all"]).optional(),
+    // Federal Register + Statutes at Large; 'states' = the 50-state corpus;
+    // 'cases' = caselaw (not in this corpus yet); 'all' = no restriction. An
+    // explicit `source` pins one code (e.g. a single state).
+    scope: z.enum(["codified", "primary", "states", "cases", "all"]).optional(),
     // Keyword↔meaning blend, 0-100 (parked). 0 = pure keyword FTS;
     // >0 would run search_hybrid with p_semantic_weight = semantic/100.
     semantic: z.number().min(0).max(100).optional(),
@@ -770,6 +771,41 @@ export const searchDocuments = createServerFn({ method: "GET" })
     const rpc: RpcCall = (fn, args) => sb.rpc(fn, args);
 
     const scope = data.scope ?? "codified";
+
+    // Result cache. The corpus is static between ingests, so (query, scope,
+    // source, semantic) -> hits is deterministic; broad-scope rankings are
+    // expensive (a common term matches ~350k rows), so compute once and serve
+    // from cache after. Keyed on the normalized query. TRUNCATE search_cache to
+    // invalidate when the corpus changes.
+    const qNorm = raw.toLowerCase().replace(/\s+/g, " ").trim();
+    const cacheKey = { q_normalized: qNorm, scope, source: data.source ?? "", semantic: data.semantic ?? 0 };
+    // search_cache isn't in the generated Database types; use a loosely-typed
+    // handle, the same way citation_edges/doc_authority are accessed above.
+    const cacheDb = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (c: string) => { match: (k: Record<string, unknown>) => { maybeSingle: () => Promise<{ data: { hits: unknown } | null }> } };
+        upsert: (row: Record<string, unknown>) => Promise<unknown>;
+      };
+    };
+    {
+      const { data: cached } = await cacheDb
+        .from("search_cache").select("hits").match(cacheKey).maybeSingle();
+      if (cached?.hits) {
+        // bump usage stats, fire-and-forget
+        (supabaseAdmin.rpc as unknown as (fn: string, a: Record<string, unknown>) => Promise<unknown>)(
+          "bump_search_cache", cacheKey,
+        ).then(() => {}, () => {});
+        return {
+          hits: cached.hits as Array<{
+            identifier: string; source_code: string; parent_label: string | null;
+            section_label: string | null; heading: string | null; snippet: string;
+            exact: boolean; semantic: boolean; trgm: boolean;
+          }>,
+          error: null,
+        };
+      }
+    }
+
     // Call an FTS-family RPC scope-aware. If the box hasn't run
     // citation-authority.sql yet (function still has the 3-arg, no-p_scope
     // signature), PostgREST can't resolve the call — retry without p_scope so
@@ -850,5 +886,16 @@ export const searchDocuments = createServerFn({ method: "GET" })
       q: raw, q_normalized: raw.toLowerCase().replace(/\s+/g, " ").trim(),
       source_filter: data.source ?? null, hit_count: hits.length, exact_hit: false,
     }).then(() => {}, () => {});
+    // Populate the result cache so the next identical search is instant. Skip
+    // empty results (cheap to recompute, and a later ingest might fill them) and
+    // trigram fallbacks (typo-recovery, not a canonical ranking worth pinning).
+    if (hits.length > 0 && !usedTrgm) {
+      Promise.resolve(
+        cacheDb.from("search_cache").upsert({
+          ...cacheKey, hits: hits as unknown as Record<string, unknown>,
+          hit_count: hits.length, last_used: new Date().toISOString(),
+        }),
+      ).then(() => {}, () => {});
+    }
     return { hits, error: null };
   });

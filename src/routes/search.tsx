@@ -7,6 +7,7 @@ import { SearchBar } from "@/components/marginalia/SearchBar";
 import { SearchSyntax } from "@/components/marginalia/SearchSyntax";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
 import { formatGroupCrumb } from "@/lib/label-format";
+import { STATE_NAMES } from "@/lib/source-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { useSearchQuota, FREE_DAILY_LIMIT } from "@/hooks/use-search-quota";
 import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Lock } from "lucide-react";
@@ -19,7 +20,7 @@ const searchSchema = z.object({
   exact: fallback(z.boolean(), false).default(false),
   words: fallback(z.string(), "").default(""),   // comma-separated must-have words
   exclude: fallback(z.string(), "").default(""), // comma-separated excluded words
-  scope: fallback(z.enum(["codified", "primary", "cases"]), "codified").default("codified"),
+  scope: fallback(z.enum(["codified", "primary", "states", "cases"]), "codified").default("codified"),
 });
 
 // The three search buckets. Default lands on the codified law; the bulky
@@ -29,8 +30,16 @@ const searchSchema = z.object({
 const SCOPES = [
   { key: "codified", label: "Codified law", blurb: "Constitution, U.S. Code, CFR, UCC, Treasury & IRS manuals", sources: ["const", "usc", "cfr", "ucc", "tfm", "irm"] },
   { key: "primary", label: "Primary sources", blurb: "Federal Register, Statutes at Large, bills & presidential papers", sources: ["register", "statutes-at-large", "bill", "public-papers-president", "statute-compilations", "public-private-law"] },
+  { key: "states", label: "State law", blurb: "All 50 states' statutes & constitutions — or pick one", sources: [] },
   { key: "cases", label: "Court cases", blurb: "Supreme Court opinions — coming soon", sources: [] },
 ] as const;
+
+// State-law jurisdiction picker: people want either all states or their one
+// state, so this is a single toggle (the <select>), not 50 scope tabs. Value ""
+// = all states; a state code pins that one. DC has no corpus yet, so it's out.
+const STATE_OPTIONS = Object.entries(STATE_NAMES)
+  .filter(([code]) => code !== "dc")
+  .sort((a, b) => a[1].localeCompare(b[1]));
 
 const SOURCE_LABELS: Record<string, string> = {
   const: "U.S. Constitution",
@@ -361,6 +370,28 @@ function SearchPage() {
             {SCOPES.find((s) => s.key === scope)?.blurb}
           </span>
         </div>
+
+        {/* State-law jurisdiction toggle: all states, or pin one. */}
+        {scope === "states" && (
+          <div className="mt-3 flex items-center gap-2">
+            <label htmlFor="state-pick" className="citation-tag text-muted-foreground">
+              jurisdiction
+            </label>
+            <select
+              id="state-pick"
+              value={source}
+              onChange={(e) =>
+                navigate({ to: "/search", search: { q, source: e.target.value, exact, words, exclude, scope } })
+              }
+              className="rounded-md border border-border/60 bg-background px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-foreground/40 focus:border-accent focus:outline-none"
+            >
+              <option value="">All states</option>
+              {STATE_OPTIONS.map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Court cases: no search wired yet — show the coming-soon panel. */}
         {isCases && (
