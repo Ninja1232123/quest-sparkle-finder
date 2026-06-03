@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { listSources } from "@/lib/documents.functions";
 import { codebookForSource } from "@/lib/codebooks";
+import { sourceMeta } from "@/lib/source-groups";
 import { Analytics } from "@vercel/analytics/next"
 
 // Full names (cards) and short codes (hero chips), keyed by source code.
@@ -150,7 +151,12 @@ function Index() {
         <section className="home-codebook-shelf">
           <div className="mx-auto max-w-7xl">
             <div className="home-am-grid">
-              {sources.filter((s: SourceRow) => s.code !== "const").map((s: SourceRow) => {
+              {/* Federal / non-state sources as individual cards. The 50 states
+                  collapse into one aggregate card (below) so they don't flood
+                  the shelf — same treatment as the Browse landing. */}
+              {sources
+                .filter((s: SourceRow) => s.code !== "const" && sourceMeta(s.code).group !== "state")
+                .map((s: SourceRow) => {
                 const accent = accentForSource(s.code);
                 return (
                   <Link
@@ -169,6 +175,23 @@ function Index() {
                   </Link>
                 );
               })}
+
+              {/* All 50 states, collapsed into one card → /states */}
+              {(() => {
+                const stateSources = sources.filter((s: SourceRow) => sourceMeta(s.code).group === "state");
+                if (stateSources.length === 0) return null;
+                const total = stateSources.reduce((n: number, s: SourceRow) => n + s.count, 0);
+                return (
+                  <Link to="/states" className="am-card" style={{ ["--c" as never]: "#4a6741" }}>
+                    <div className="am-num">50</div>
+                    <div className="am-title">All 50 States</div>
+                    <div className="am-meta">
+                      <span className="am-count">{total.toLocaleString()} sections</span>
+                      <span className="am-go">Browse →</span>
+                    </div>
+                  </Link>
+                );
+              })()}
             </div>
           </div>
         </section>
