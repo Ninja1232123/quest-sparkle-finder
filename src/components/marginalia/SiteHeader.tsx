@@ -178,7 +178,7 @@ const SECONDARY_LINKS = [
   { to: "/code",        label: "Browse" },
   { to: "/outcomes",    label: "Outcomes" },
   { to: "/cases",       label: "My Cases" },
-  { to: "/features",    label: "What it does" },
+  { to: "/how-it-works", label: "How it works" },
   { to: "/forum",       label: "The Floor" },
   { to: "/about",       label: "About" },
 ] as const;

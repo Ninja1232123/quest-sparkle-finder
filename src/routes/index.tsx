@@ -95,9 +95,9 @@ function Index() {
 
         {/* CONSTITUTION CARTOUCHE — overlaps eagle from below */}
         <div className="home-const-wrap">
-          <Link to="/features" className="home-const-cartouche">
+          <Link to="/how-it-works" className="home-const-cartouche">
             <div className="hcc-wtp">Read the law yourself.</div>
-            <div className="hcc-kicker">What this tool actually does</div>
+            <div className="hcc-kicker">How this tool works</div>
             <h2>Search every U.S. law at once</h2>
             <div className="hcc-sub">
               Marginalia indexes U.S. primary law — the Constitution, the U.S. Code, federal regulations, the Federal Register, bills, public laws, statutes, and presidential and agency documents — pulled straight from the official source. Search all of it by keyword or citation, browse any source by its own structure, set the same phrase against several sources at once, and read the real text instead of a summary.
