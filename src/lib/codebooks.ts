@@ -249,7 +249,7 @@ export const NAV_GROUPS: NavGroup[] = [
     tagline: "State constitutions, statutes, and regulations — by jurisdiction.",
     accent: "#4a6741",
     items: [
-      { label: "State Law", href: "/states", accent: "#4a6741", status: "soon" },
+      { label: "All 50 States", href: "/states", accent: "#4a6741", status: "live" },
     ],
   },
   {
@@ -259,7 +259,7 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: "#c9a84c",
     items: [
       { label: "Uniform Commercial Code", href: "/model", accent: "#c9a84c", status: "live" },
-      { label: "State UCC enactments", href: "/states", accent: "#4a6741", status: "soon" },
+      { label: "State UCC enactments", href: "/states", accent: "#4a6741", status: "live" },
     ],
   },
   {

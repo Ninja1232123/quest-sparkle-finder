@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { listSources, searchDocuments } from "@/lib/documents.functions";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useState } from "react";
-import { Map, Network, History, Scale } from "lucide-react";
+import { Network, History, Scale } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 import { sourceMeta } from "@/lib/source-groups";
 
@@ -173,7 +173,12 @@ function CodeHub() {
         )}
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {sources.map((s: { code: string; name: string; count: number }) => {
+          {/* Federal / non-state sources as individual cards. The 50 states are
+              collapsed into one aggregate card below so they don't flood the
+              grid — browse them separately on /states. */}
+          {sources
+            .filter((s: { code: string }) => sourceMeta(s.code).group !== "state")
+            .map((s: { code: string; name: string; count: number }) => {
             const meta = sourceMeta(s.code);
             const accent = meta.accent;
             return (
@@ -200,6 +205,32 @@ function CodeHub() {
               </Link>
             );
           })}
+
+          {/* All 50 states, collapsed into one card → /states */}
+          {(() => {
+            const stateSources = sources.filter((s: { code: string }) => sourceMeta(s.code).group === "state");
+            if (stateSources.length === 0) return null;
+            const total = stateSources.reduce((n: number, s: { count: number }) => n + s.count, 0);
+            const accent = "#4a6741";
+            return (
+              <Link
+                to="/states"
+                className="group relative overflow-hidden rounded-2xl border bg-card p-6 pl-7 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-warm)]"
+                style={{ borderLeft: `6px solid ${accent}`, backgroundImage: `linear-gradient(135deg, ${accent}14 0%, transparent 55%)` }}
+              >
+                <div className="relative">
+                  <div className="citation-tag" style={{ color: accent }}>
+                    {stateSources.length} states · {total.toLocaleString()} sections
+                  </div>
+                  <div className="mt-1 font-display text-xl font-semibold">All 50 States</div>
+                  <p className="mt-2 text-sm text-foreground/70">Statutes and constitutions from every state — pick a jurisdiction to browse.</p>
+                  <div className="mt-4 font-mono text-xs text-muted-foreground group-hover:text-foreground/70">
+                    Browse by state →
+                  </div>
+                </div>
+              </Link>
+            );
+          })()}
         </div>
 
         {/* Vision strip — shelves we haven't filled yet */}
@@ -210,12 +241,6 @@ function CodeHub() {
             subtitle="The federal floor is open. These wings are framed but not yet stocked."
           />
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <ComingSoonCard
-              icon={Map}
-              status="building"
-              title="All 50 state codes"
-              pitch="Statutes, constitutions, and agency regs from every state — searchable in the same bar as the federal codebooks."
-            />
             <ComingSoonCard
               icon={Scale}
               status="soon"
