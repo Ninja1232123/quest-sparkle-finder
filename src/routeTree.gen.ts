@@ -25,6 +25,7 @@ import { Route as PresidentialRouteImport } from './routes/presidential'
 import { Route as ModelRouteImport } from './routes/model'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as LawsRouteImport } from './routes/laws'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as ForumRouteImport } from './routes/forum'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ConstRouteImport } from './routes/const'
@@ -144,6 +145,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const LawsRoute = LawsRouteImport.update({
   id: '/laws',
   path: '/laws',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForumRoute = ForumRouteImport.update({
@@ -370,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/const': typeof ConstRoute
   '/features': typeof FeaturesRoute
   '/forum': typeof ForumRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/const': typeof ConstRoute
   '/features': typeof FeaturesRoute
   '/forum': typeof ForumRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/const': typeof ConstRoute
   '/features': typeof FeaturesRoute
   '/forum': typeof ForumRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/laws': typeof LawsRoute
   '/library': typeof LibraryRoute
   '/model': typeof ModelRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/const'
     | '/features'
     | '/forum'
+    | '/how-it-works'
     | '/laws'
     | '/library'
     | '/model'
@@ -605,6 +615,7 @@ export interface FileRouteTypes {
     | '/const'
     | '/features'
     | '/forum'
+    | '/how-it-works'
     | '/laws'
     | '/library'
     | '/model'
@@ -663,6 +674,7 @@ export interface FileRouteTypes {
     | '/const'
     | '/features'
     | '/forum'
+    | '/how-it-works'
     | '/laws'
     | '/library'
     | '/model'
@@ -722,6 +734,7 @@ export interface RootRouteChildren {
   ConstRoute: typeof ConstRoute
   FeaturesRoute: typeof FeaturesRoute
   ForumRoute: typeof ForumRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   LawsRoute: typeof LawsRoute
   LibraryRoute: typeof LibraryRoute
   ModelRoute: typeof ModelRoute
@@ -880,6 +893,13 @@ declare module '@tanstack/react-router' {
       path: '/laws'
       fullPath: '/laws'
       preLoaderRoute: typeof LawsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forum': {
@@ -1178,6 +1198,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConstRoute: ConstRoute,
   FeaturesRoute: FeaturesRoute,
   ForumRoute: ForumRoute,
+  HowItWorksRoute: HowItWorksRoute,
   LawsRoute: LawsRoute,
   LibraryRoute: LibraryRoute,
   ModelRoute: ModelRoute,

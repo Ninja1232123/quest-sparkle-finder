@@ -130,6 +130,7 @@ function Features() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/" className="btn-ink">Start at the index →</Link>
+            <Link to="/how-it-works" className="btn-paper">See how it works →</Link>
             <Link to="/whitepaper" className="btn-paper">Read the whitepaper →</Link>
           </div>
         </section>

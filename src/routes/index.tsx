@@ -144,6 +144,11 @@ function Index() {
               </span>
               <span className="cite-tag">{totalDocs.toLocaleString()} documents indexed</span>
             </div>
+            <div className="text-center mt-4">
+              <Link to="/how-it-works" className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+                New here? See how it works →
+              </Link>
+            </div>
           </div>
         </section>
 
