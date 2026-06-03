@@ -130,7 +130,12 @@ function CatalogueBubble({ kind, token, title, sub, count, accent, expandable, e
   expandable?: boolean;
   expanded?: boolean;
 }) {
-  const numLabel = kind ? `${kind} ${token}` : token;
+  // When the title is a bare numbered locator with no descriptive name (e.g.
+  // "Chapter 88", "Title XXIII" — common in states whose scrape never captured
+  // chapter names), the kind-prefixed badge ("CH 88") just repeats the title.
+  // Drop the kind so the badge is the number alone: "88" · "Chapter 88".
+  const bareNumbered = /^(?:chapter|title|article|division|part|subchapter|subpart)\s+[0-9IVXLCDM]+[A-Za-z]?\.?$/i.test(title.trim());
+  const numLabel = bareNumbered ? token : (kind ? `${kind} ${token}` : token);
   return (
     <div className="am-card h-full" style={{ ["--c" as never]: accent }}>
       <div className="am-num">{numLabel}</div>
