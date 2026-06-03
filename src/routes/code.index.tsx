@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Network, History, Scale } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 import { sourceMeta } from "@/lib/source-groups";
+import { formatGroupCrumb } from "@/lib/label-format";
 
 export const Route = createFileRoute("/code/")({
   loader: async () => {
@@ -160,7 +161,7 @@ function CodeHub() {
                     className="block rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
                   >
                     <div className="citation-tag text-muted-foreground">
-                      {h.parent_label ?? h.source_code.toUpperCase()}
+                      {h.parent_label ? formatGroupCrumb(h.source_code, h.parent_label) : h.source_code.toUpperCase()}
                       {h.section_label ? ` · ${h.section_label}` : ""}
                     </div>
                     <div className="mt-1 font-display text-base font-semibold">{h.heading}</div>

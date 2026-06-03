@@ -23,10 +23,10 @@ week 4 is maintenance. Tiered by impact/risk. Check items off as they land.
 - [x] **Dev banner** — removed (`DevNoticeBanner` deleted) for a clean launch.
 - [x] **Trust signals, NO currency claims** — per the rule "no claims of most-up-to-date data unless we actually maintain it": stripped every "updated/indexed May 2026" stamp (home, code index, search, codebook hero+landing) and added "research copy — check the official state/federal source · not legal advice" lines on the reader, search results, and codebook landing. (We deliberately do NOT show a "last synced" date.)
 
-## P3 — Data polish
-- [ ] **State section labels** — PA Constitution shows "Title 0"; some crumbs read "Chapter 1. Delaware Code" (corpus name doubled). Per-state label cleanup in the projection.
-- [ ] **Empty/partial states** — NM 52/84 chapters (captcha), DC none; finish or label honestly so they don't look broken.
+## P3 — Data polish ✅ DONE
+- [x] **State section labels** — fixed cosmetically in `label-format.ts` (display layer, no data mutation): PA's "Title 0" Constitution bucket now reads "Constitution"; the "Chapter 1. Delaware Code" corpus-name artifact is stripped (only when `<State> <CorpusWord>` is the *whole* chapter name, so real names like "Iowa Trust Code" stay). `code.index` search hits now route through `formatGroupCrumb` too. Investigation showed most states were already clean — ND's "Title 01" is a real title, not a defect.
+- [x] **Empty/partial states** — already honest, no change needed: the states landing only cards sources that return rows, so **DC** (0 rows) is silently absent and **NM** (14,044 rows, 52/84 chapters) cards with its real count. No false completeness claim anywhere.
 
 ## P4 — Next features (horizon, not polish)
 - [ ] **Caselaw** — SCOTUS/cases scope wired but empty; mostly ingest + citation-graph tie-in.
-- [ ] **Semantic search** — hybrid/fastText path exists but parked; turning it on nails conceptual queries ("UCC for contracts").
+- [x] **Semantic search — DECIDED: lives in Juri, not main search.** Main search stays pure keyword/phrase retrieval: federated per-source coverage ("here's everywhere it's mentioned"), relevance + filtering left to the user. Conceptual/plain-English questions are Juri's job (grounded + cited). The dormant `search_hybrid`/fastText path stays parked behind Juri; the search "vision" copy now points plain-English asks to Juri instead of promising semantic in the main box.

@@ -584,16 +584,16 @@ function SearchPage() {
         {/* Vision: what search will become */}
         <div className="mt-20">
           <ComingSoonHeader
-            eyebrow="search, but smarter"
-            title="The kind of search the law actually deserves."
-            subtitle="Right now you get fast keyword + phrase matching across six federal codebooks. Here's where this is going — every tile below is on the build list."
+            eyebrow="how search works here"
+            title="Where it's written — everywhere it's written."
+            subtitle="Search is straight keyword + phrase retrieval across the whole corpus — every federal codebook and all 50 states — grouped by source so you see every place a term appears, then filter to the codebook you want. No black-box ranking; relevance is yours to drive. Here's what's still on the bench."
           />
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <ComingSoonCard
               icon={Brain}
-              status="building"
-              title="Ask in plain English"
-              pitch="Type a full question and semantic search finds the statutes that answer it — even when the exact words don't appear. We're rebuilding this on the citation graph so it cites by authority, not just word overlap."
+              status="live"
+              title="Ask Juri in plain English"
+              pitch="Keyword search shows you where a term appears. When you'd rather ask a real question — 'can they do this?' — Juri reads the statutes and answers with citations. Conceptual, plain-English search lives there, grounded in the same corpus."
             />
             <ComingSoonCard
               icon={Network}

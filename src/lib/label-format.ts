@@ -14,6 +14,19 @@
 // reshaping (their hierarchy got split awkwardly on ingest); every other source
 // already reads fine, so the default branch reproduces the prior behaviour.
 
+import { STATE_NAMES } from "./source-groups";
+
+// Corpus words a few state scrapers appended as a chapter's *whole* name when it
+// had none — e.g. DE "Chapter 1. Delaware Code". We strip "<StateName> <word>"
+// only when the state name sits immediately before the corpus word (no topic in
+// between), so real names like "Chapter 633A — Iowa Trust Code" are untouched.
+const CORPUS_WORD = "(?:Code|Revised Statutes|General Statutes|Compiled Laws|General Laws|Statutes Annotated|Statutes|Constitution|Annotated)";
+
+function stripCorpusTail(seg: string, stateName: string): string {
+  const esc = stateName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return seg.replace(new RegExp(`\\s*[.\\u2014\\-]\\s*${esc}\\s+${CORPUS_WORD}\\s*$`, "i"), "").trim();
+}
+
 export type TocLabels = {
   /** Stable grouping key — one TOC node per title. */
   titleKey: string;
@@ -70,6 +83,24 @@ export function formatTocLabels(source: string, parentLabel: string): TocLabels 
       };
     }
     return { titleKey: parentLabel, titleDisplay: parentLabel, partDisplay: "—" };
+  }
+
+  // State codes: mostly already clean, but two scrape artifacts need cosmetic
+  // repair — (a) PA buckets its Constitution under a synthetic "Title 0", and
+  // (b) a few chapters got the corpus name as their whole label.
+  const stateName = STATE_NAMES[source];
+  if (stateName) {
+    const cleaned = segs.map((s) => stripCorpusTail(s, stateName));
+    if (segs[0] === "Title 0") {
+      // PA Constitution — drop the fake title, keep the subdivision as scraped.
+      const rest = cleaned.slice(1).filter(Boolean).join(" · ");
+      return { titleKey: segs[0], titleDisplay: "Constitution", partDisplay: rest || "—" };
+    }
+    return {
+      titleKey: segs[0] ?? parentLabel,
+      titleDisplay: cleaned[0] || (segs[0] ?? parentLabel),
+      partDisplay: cleaned.length > 1 ? cleaned.slice(1).filter(Boolean).join(" · ") || "—" : "—",
+    };
   }
 
   // Default — USC/UCC/Constitution/Statutes/etc. already read correctly. The
