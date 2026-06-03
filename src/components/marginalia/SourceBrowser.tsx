@@ -113,17 +113,46 @@ function bubbleKind(label: string): string | undefined {
   return k === "chapter" ? "CH." : k === "subchapter" ? "SUBCH" : k.toUpperCase().slice(0, 6);
 }
 function cleanBubbleTitle(label: string): string {
+  // Strip a leading "TYPE NUM<sep>" locator, leaving the descriptive name.
+  // Handles all the separators in the corpus: " — "/" - " (USC, our renames),
+  // ". " (Texas/Delaware), and numbers like 12A, 4.2, A, XXIII.
   const stripped = label
-    .replace(/^\s*(?:PART|CHAPTER|SUBCHAPTER|SUBPART|ARTICLE|TITLE)\s*[0-9IVXLCDM.\-A-Za-z]*\s*[—–-]\s*/i, "")
+    .replace(/^\s*(?:PART|CHAPTER|SUBCHAPTER|SUBPART|ARTICLE|TITLE|SUBTITLE|DIVISION)\s+(?:[0-9]+(?:\.[0-9]+)?[A-Za-z]?|[IVXLCDM]+[A-Za-z]?|[A-Z])(?:\s*[—–-]\s*|\.\s+)/i, "")
     .trim();
   return stripped || label;
 }
 
-function CatalogueBubble({ kind, token, title, sub, count, accent, expandable, expanded }: {
+// Reduce one hierarchy segment to its locator for a breadcrumb, e.g.
+// "TITLE 2. DEPARTMENT OF AGRICULTURE" -> "Title 2". Falls back to the cleaned
+// name when it isn't a numbered level.
+function shortLevel(seg: string): string {
+  const m = seg.match(/^\s*(part|chapter|subchapter|subpart|article|title|subtitle|division)\s+([0-9IVXLCDM]+[A-Za-z]?)/i);
+  if (m) return `${m[1][0].toUpperCase()}${m[1].slice(1).toLowerCase()} ${m[2].toUpperCase()}`;
+  return cleanBubbleTitle(seg);
+}
+
+// Split a multi-level part label (e.g. Texas "TITLE 1. GENERAL PROVISIONS ·
+// CHAPTER 1. GENERAL PROVISIONS · SUBCHAPTER A. …") into a readable bubble: the
+// DEEPEST segment becomes the title/badge, the rest a small breadcrumb. Single-
+// level labels behave exactly as before.
+function leveledLabel(raw: string): { kind?: string; token: string; title: string; crumb?: string } {
+  const segs = raw.split(" · ");
+  const last = segs[segs.length - 1];
+  return {
+    kind: bubbleKind(last),
+    token: pullToken(last),
+    title: cleanBubbleTitle(last),
+    crumb: segs.length > 1 ? segs.slice(0, -1).map(shortLevel).join(" › ") : undefined,
+  };
+}
+
+function CatalogueBubble({ kind, token, title, sub, crumb, count, accent, expandable, expanded }: {
   kind?: string;
   token: string;
   title: string;
   sub?: string;
+  /** Small breadcrumb of the parent levels, shown above the title. */
+  crumb?: string;
   count?: number;
   accent: string;
   index: number;
@@ -139,6 +168,7 @@ function CatalogueBubble({ kind, token, title, sub, count, accent, expandable, e
   return (
     <div className="am-card h-full" style={{ ["--c" as never]: accent }}>
       <div className="am-num">{numLabel}</div>
+      {crumb && <div className="am-crumb">{crumb}</div>}
       <div className="am-title">{title}</div>
       {sub && <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
       <div className="am-meta">
@@ -209,11 +239,14 @@ function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: L
   if (!groups) {
     return (
       <div className="toc-grid grid grid-cols-1 items-stretch gap-5 border-t border-border/60 p-4 sm:grid-cols-2 lg:grid-cols-3">
-        {parts.map((p, i) => (
-          <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
-            <CatalogueBubble kind={bubbleKind(p.label)} token={pullToken(p.label)} title={cleanBubbleTitle(p.label)} count={p.count} accent={accent} index={i} />
-          </Link>
-        ))}
+        {parts.map((p, i) => {
+          const L = leveledLabel(p.label);
+          return (
+            <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
+              <CatalogueBubble kind={L.kind} token={L.token} title={L.title} crumb={L.crumb} count={p.count} accent={accent} index={i} />
+            </Link>
+          );
+        })}
       </div>
     );
   }

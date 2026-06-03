@@ -1901,9 +1901,23 @@ main {
   .home-am-grid:hover > * { opacity: 0.44; }
   .toc-grid > *:hover,
   .home-am-grid > *:hover { opacity: 1; }
-  /* slimmer catalog pills in the dense source TOC */
-  .toc-grid .am-card { padding: 13px 14px 12px 16px; }
-  .toc-grid .am-card .am-title { font-size: 16px; }
+  /* Source-TOC pills — roomier + more legible than the dense default, since
+     state labels (esp. Texas) carry long names. */
+  .toc-grid .am-card { padding: 17px 18px 15px 20px; }
+  .toc-grid .am-card .am-num { font-size: 14px; }
+  .toc-grid .am-card .am-title { font-size: 18.5px; line-height: 1.22; }
+  .toc-grid .am-card .am-count { font-size: 12px; }
+  .toc-grid .am-card .am-go { font-size: 15px; }
+  /* Breadcrumb of parent levels (e.g. "Title 2 › Chapter 12A") above the title,
+     so a deep label reads as a path + name instead of one long run-on. */
+  .am-card .am-crumb {
+    margin-top: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+  }
 
   /* ===========================================================================
      CI / clause-number pill — milk-white, used in the reader body and outline.
