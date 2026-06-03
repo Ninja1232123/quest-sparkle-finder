@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "./SearchBar";
-import { DevNoticeBanner } from "./DevNoticeBanner";
 import { useAuth } from "@/hooks/use-auth";
 import { ChevronDown, LogOut, Sun, Moon, Sparkles } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
@@ -199,7 +198,6 @@ export function SiteHeader() {
   return (
     <header className="am-header sticky top-0 z-40">
       <div className="am-flagstripe" />
-      <DevNoticeBanner />
 
       {/* Row 1 — brand · search · actions */}
       <div className="mx-auto flex max-w-[1900px] items-center gap-4 px-4 py-2.5 lg:px-6">

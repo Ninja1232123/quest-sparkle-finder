@@ -31,14 +31,6 @@ type Props = {
   sources: SourceSummary[];
 };
 
-// Cheap stable "this week" decorator — deterministic by string hash so the
-// number doesn't dance between renders. Not real data; clearly visual only.
-function fakeThisWeek(seed: string): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  return Math.abs(h) % 28 + 2;
-}
-
 export function CodebookLanding({ codebook, sources }: Props) {
   const isLive = codebook.status === "live";
   const ownSources = sources.filter((s) => codebook.sources.includes(s.code));
@@ -51,7 +43,7 @@ export function CodebookLanding({ codebook, sources }: Props) {
         <div className="desk-mini" style={{ ["--c" as string]: codebook.accent } as React.CSSProperties}>
           <div className="desk-mini-num">{isLive ? totalDocs.toLocaleString() : "—"}</div>
           <div className="desk-mini-sub">
-            {isLive ? "documents indexed · updated May 2026" : "coming soon — queued for ingest"}
+            {isLive ? "documents indexed" : "coming soon — queued for ingest"}
           </div>
         </div>
       </div>
@@ -77,18 +69,10 @@ export function CodebookLanding({ codebook, sources }: Props) {
           </div>
 
           <div>
-            <div className="desk-eyebrow">this week</div>
-            <div className="space-y-2">
-              {[
-                { lab: "new sections", n: fakeThisWeek(codebook.slug + "new") },
-                { lab: "amended", n: fakeThisWeek(codebook.slug + "amd") },
-                { lab: "queries vs last week", n: `+${fakeThisWeek(codebook.slug + "q")}%` },
-              ].map((m) => (
-                <div key={m.lab} className="desk-stat">
-                  <span className="desk-stat-lab">{m.lab}</span>
-                  <span className="desk-stat-num">{m.n}</span>
-                </div>
-              ))}
+            <div className="desk-eyebrow">before you rely on it</div>
+            <div className="rounded-lg border border-dashed border-border/70 bg-card/40 p-3 text-xs leading-relaxed text-foreground/70">
+              This is a research index. For the controlling text, always check the
+              official state or federal source — the law changes and our copy can lag.
             </div>
           </div>
 

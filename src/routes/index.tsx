@@ -139,7 +139,7 @@ function Index() {
             </div>
             <div className="flex flex-wrap justify-center items-center gap-3 mt-4">
               <span className="live-pill">
-                <span className="dot" />✓ Updated May 2026 · direct from source
+                <span className="dot" />Direct from official sources
               </span>
               <span className="cite-tag">{totalDocs.toLocaleString()} documents indexed</span>
             </div>

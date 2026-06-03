@@ -37,7 +37,7 @@ export function CodebookHero({
       <div className="min-w-0 flex-1">
         <div className="cb-hero-status">
           <span className="cb-hero-status-dot" />
-          {isLive ? "now browseable · indexed May 2026" : "coming soon"}
+          {isLive ? "now browseable" : "coming soon"}
         </div>
         <h1 className="cb-hero-title">{codebook.name}</h1>
         <p className="cb-hero-tag">{codebook.tagline}</p>

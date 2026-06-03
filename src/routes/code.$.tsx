@@ -1307,6 +1307,11 @@ function DocumentPage() {
             <span className="text-foreground/30">·</span>
             <code className="font-mono text-[11px]">{document.identifier}</code>
           </div>
+          <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground/80">
+            <Scale className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50" />
+            A research copy — for the controlling text, always check the official
+            state or federal source. Not legal advice.
+          </p>
         </div>
 
         <div className="mt-8">

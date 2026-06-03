@@ -68,7 +68,7 @@ function CodeHub() {
         <div className="rounded-lg border border-border/60 bg-card/60 p-3">
           <div className="font-mono text-xs text-muted-foreground">documents indexed</div>
           <div className="mt-0.5 font-display text-2xl font-semibold">{totalDocs.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-muted-foreground">across {sources.length} sources · updated May 2026</div>
+          <div className="mt-1 text-xs text-muted-foreground">across {sources.length} sources</div>
         </div>
       </div>
       <div>

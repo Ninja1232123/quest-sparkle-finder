@@ -495,7 +495,7 @@ function SearchPage() {
                   </span>
                 )}
                 <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
-                  indexed May 2026 · direct from source
+                  direct from source · verify against the official text
                 </span>
               </div>
             )}
