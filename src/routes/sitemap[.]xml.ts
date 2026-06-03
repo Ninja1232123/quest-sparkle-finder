@@ -24,7 +24,10 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         const { sources } = await listSources();
 
-        const children: string[] = [`${BASE_URL}/sitemap-pages.xml`];
+        const children: string[] = [
+          `${BASE_URL}/sitemap-pages.xml`,
+          `${BASE_URL}/sitemap-outcomes.xml`,
+        ];
         for (const s of sources) {
           if (FIREHOSE_SOURCES.has(s.code)) continue;
           const pages = Math.max(1, Math.ceil(s.count / PAGE_SIZE));

@@ -16,6 +16,7 @@ import { Route as StatutesRouteImport } from './routes/statutes'
 import { Route as StatesRouteImport } from './routes/states'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
+import { Route as SitemapOutcomesDotxmlRouteImport } from './routes/sitemap-outcomes[.]xml'
 import { Route as SitemapDocsDotxmlRouteImport } from './routes/sitemap-docs[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ScotusRouteImport } from './routes/scotus'
@@ -36,6 +37,7 @@ import { Route as AgencyRouteImport } from './routes/agency'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OutcomesIndexRouteImport } from './routes/outcomes.index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
@@ -45,6 +47,8 @@ import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesIdRouteImport } from './routes/cases.$id'
 import { Route as ForumSlugIdRouteImport } from './routes/forum_.$slug.$id'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
+import { Route as OutcomesFederalFamilyIndexRouteImport } from './routes/outcomes.federal.$family.index'
+import { Route as OutcomesFederalFamilyCasetypeRouteImport } from './routes/outcomes.federal.$family.$casetype'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -55,6 +59,8 @@ import { Route as ApiPublicV1IngestNdjsonRouteImport } from './routes/api/public
 import { Route as ApiPublicV1IngestBatchRouteImport } from './routes/api/public/v1/ingest-batch'
 import { Route as ApiPublicV1ExportDocumentsRouteImport } from './routes/api/public/v1/export-documents'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as OutcomesFederalCourtCourtIndexRouteImport } from './routes/outcomes.federal.court.$court.index'
+import { Route as OutcomesFederalCourtCourtCasetypeRouteImport } from './routes/outcomes.federal.court.$court.$casetype'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
 
 const WhitepaperRoute = WhitepaperRouteImport.update({
@@ -90,6 +96,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SitemapPagesDotxmlRoute = SitemapPagesDotxmlRouteImport.update({
   id: '/sitemap-pages.xml',
   path: '/sitemap-pages.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapOutcomesDotxmlRoute = SitemapOutcomesDotxmlRouteImport.update({
+  id: '/sitemap-outcomes.xml',
+  path: '/sitemap-outcomes.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDocsDotxmlRoute = SitemapDocsDotxmlRouteImport.update({
@@ -192,6 +203,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutcomesIndexRoute = OutcomesIndexRouteImport.update({
+  id: '/outcomes/',
+  path: '/outcomes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CodeIndexRoute = CodeIndexRouteImport.update({
   id: '/code/',
   path: '/code/',
@@ -237,6 +253,18 @@ const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   path: '/code/source/$source',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutcomesFederalFamilyIndexRoute =
+  OutcomesFederalFamilyIndexRouteImport.update({
+    id: '/outcomes/federal/$family/',
+    path: '/outcomes/federal/$family/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OutcomesFederalFamilyCasetypeRoute =
+  OutcomesFederalFamilyCasetypeRouteImport.update({
+    id: '/outcomes/federal/$family/$casetype',
+    path: '/outcomes/federal/$family/$casetype',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -291,6 +319,18 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const OutcomesFederalCourtCourtIndexRoute =
+  OutcomesFederalCourtCourtIndexRouteImport.update({
+    id: '/outcomes/federal/court/$court/',
+    path: '/outcomes/federal/court/$court/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OutcomesFederalCourtCourtCasetypeRoute =
+  OutcomesFederalCourtCourtCasetypeRouteImport.update({
+    id: '/outcomes/federal/court/$court/$casetype',
+    path: '/outcomes/federal/court/$court/$casetype',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1DocSplatRoute = ApiPublicV1DocSplatRouteImport.update({
   id: '/api/public/v1/doc/$',
   path: '/api/public/v1/doc/$',
@@ -318,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
@@ -332,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/outcomes/': typeof OutcomesIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -344,7 +386,11 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/outcomes/federal/$family/$casetype': typeof OutcomesFederalFamilyCasetypeRoute
+  '/outcomes/federal/$family/': typeof OutcomesFederalFamilyIndexRoute
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
+  '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
+  '/outcomes/federal/court/$court/': typeof OutcomesFederalCourtCourtIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -367,6 +413,7 @@ export interface FileRoutesByTo {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
@@ -381,6 +428,7 @@ export interface FileRoutesByTo {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
+  '/outcomes': typeof OutcomesIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -393,7 +441,11 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/outcomes/federal/$family/$casetype': typeof OutcomesFederalFamilyCasetypeRoute
+  '/outcomes/federal/$family': typeof OutcomesFederalFamilyIndexRoute
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
+  '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
+  '/outcomes/federal/court/$court': typeof OutcomesFederalCourtCourtIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -417,6 +469,7 @@ export interface FileRoutesById {
   '/scotus': typeof ScotusRoute
   '/search': typeof SearchRoute
   '/sitemap-docs.xml': typeof SitemapDocsDotxmlRoute
+  '/sitemap-outcomes.xml': typeof SitemapOutcomesDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/states': typeof StatesRoute
@@ -431,6 +484,7 @@ export interface FileRoutesById {
   '/topic/$slug': typeof TopicSlugRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
+  '/outcomes/': typeof OutcomesIndexRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum_/$slug/$id': typeof ForumSlugIdRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -443,7 +497,11 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/outcomes/federal/$family/$casetype': typeof OutcomesFederalFamilyCasetypeRoute
+  '/outcomes/federal/$family/': typeof OutcomesFederalFamilyIndexRoute
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
+  '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
+  '/outcomes/federal/court/$court/': typeof OutcomesFederalCourtCourtIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -468,6 +526,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
@@ -482,6 +541,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
+    | '/outcomes/'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/api/public/payments/webhook'
@@ -494,7 +554,11 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/outcomes/federal/$family/$casetype'
+    | '/outcomes/federal/$family/'
     | '/api/public/v1/doc/$'
+    | '/outcomes/federal/court/$court/$casetype'
+    | '/outcomes/federal/court/$court/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -517,6 +581,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
@@ -531,6 +596,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases'
     | '/code'
+    | '/outcomes'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/api/public/payments/webhook'
@@ -543,7 +609,11 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/outcomes/federal/$family/$casetype'
+    | '/outcomes/federal/$family'
     | '/api/public/v1/doc/$'
+    | '/outcomes/federal/court/$court/$casetype'
+    | '/outcomes/federal/court/$court'
   id:
     | '__root__'
     | '/'
@@ -566,6 +636,7 @@ export interface FileRouteTypes {
     | '/scotus'
     | '/search'
     | '/sitemap-docs.xml'
+    | '/sitemap-outcomes.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
     | '/states'
@@ -580,6 +651,7 @@ export interface FileRouteTypes {
     | '/topic/$slug'
     | '/cases/'
     | '/code/'
+    | '/outcomes/'
     | '/code/source/$source'
     | '/forum_/$slug/$id'
     | '/api/public/payments/webhook'
@@ -592,7 +664,11 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/outcomes/federal/$family/$casetype'
+    | '/outcomes/federal/$family/'
     | '/api/public/v1/doc/$'
+    | '/outcomes/federal/court/$court/$casetype'
+    | '/outcomes/federal/court/$court/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -616,6 +692,7 @@ export interface RootRouteChildren {
   ScotusRoute: typeof ScotusRoute
   SearchRoute: typeof SearchRoute
   SitemapDocsDotxmlRoute: typeof SitemapDocsDotxmlRoute
+  SitemapOutcomesDotxmlRoute: typeof SitemapOutcomesDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatesRoute: typeof StatesRoute
@@ -630,6 +707,7 @@ export interface RootRouteChildren {
   TopicSlugRoute: typeof TopicSlugRoute
   CasesIndexRoute: typeof CasesIndexRoute
   CodeIndexRoute: typeof CodeIndexRoute
+  OutcomesIndexRoute: typeof OutcomesIndexRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   ForumSlugIdRoute: typeof ForumSlugIdRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -642,7 +720,11 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  OutcomesFederalFamilyCasetypeRoute: typeof OutcomesFederalFamilyCasetypeRoute
+  OutcomesFederalFamilyIndexRoute: typeof OutcomesFederalFamilyIndexRoute
   ApiPublicV1DocSplatRoute: typeof ApiPublicV1DocSplatRoute
+  OutcomesFederalCourtCourtCasetypeRoute: typeof OutcomesFederalCourtCourtCasetypeRoute
+  OutcomesFederalCourtCourtIndexRoute: typeof OutcomesFederalCourtCourtIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -694,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap-pages.xml'
       fullPath: '/sitemap-pages.xml'
       preLoaderRoute: typeof SitemapPagesDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-outcomes.xml': {
+      id: '/sitemap-outcomes.xml'
+      path: '/sitemap-outcomes.xml'
+      fullPath: '/sitemap-outcomes.xml'
+      preLoaderRoute: typeof SitemapOutcomesDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap-docs.xml': {
@@ -836,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outcomes/': {
+      id: '/outcomes/'
+      path: '/outcomes'
+      fullPath: '/outcomes/'
+      preLoaderRoute: typeof OutcomesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/code/': {
       id: '/code/'
       path: '/code'
@@ -897,6 +993,20 @@ declare module '@tanstack/react-router' {
       path: '/code/source/$source'
       fullPath: '/code/source/$source'
       preLoaderRoute: typeof CodeSourceSourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outcomes/federal/$family/': {
+      id: '/outcomes/federal/$family/'
+      path: '/outcomes/federal/$family'
+      fullPath: '/outcomes/federal/$family/'
+      preLoaderRoute: typeof OutcomesFederalFamilyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outcomes/federal/$family/$casetype': {
+      id: '/outcomes/federal/$family/$casetype'
+      path: '/outcomes/federal/$family/$casetype'
+      fullPath: '/outcomes/federal/$family/$casetype'
+      preLoaderRoute: typeof OutcomesFederalFamilyCasetypeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
@@ -969,6 +1079,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outcomes/federal/court/$court/': {
+      id: '/outcomes/federal/court/$court/'
+      path: '/outcomes/federal/court/$court'
+      fullPath: '/outcomes/federal/court/$court/'
+      preLoaderRoute: typeof OutcomesFederalCourtCourtIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outcomes/federal/court/$court/$casetype': {
+      id: '/outcomes/federal/court/$court/$casetype'
+      path: '/outcomes/federal/court/$court/$casetype'
+      fullPath: '/outcomes/federal/court/$court/$casetype'
+      preLoaderRoute: typeof OutcomesFederalCourtCourtCasetypeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/doc/$': {
       id: '/api/public/v1/doc/$'
       path: '/api/public/v1/doc/$'
@@ -1000,6 +1124,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScotusRoute: ScotusRoute,
   SearchRoute: SearchRoute,
   SitemapDocsDotxmlRoute: SitemapDocsDotxmlRoute,
+  SitemapOutcomesDotxmlRoute: SitemapOutcomesDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatesRoute: StatesRoute,
@@ -1014,6 +1139,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicSlugRoute: TopicSlugRoute,
   CasesIndexRoute: CasesIndexRoute,
   CodeIndexRoute: CodeIndexRoute,
+  OutcomesIndexRoute: OutcomesIndexRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   ForumSlugIdRoute: ForumSlugIdRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
@@ -1026,7 +1152,12 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  OutcomesFederalFamilyCasetypeRoute: OutcomesFederalFamilyCasetypeRoute,
+  OutcomesFederalFamilyIndexRoute: OutcomesFederalFamilyIndexRoute,
   ApiPublicV1DocSplatRoute: ApiPublicV1DocSplatRoute,
+  OutcomesFederalCourtCourtCasetypeRoute:
+    OutcomesFederalCourtCourtCasetypeRoute,
+  OutcomesFederalCourtCourtIndexRoute: OutcomesFederalCourtCourtIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

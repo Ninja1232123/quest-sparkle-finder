@@ -192,6 +192,16 @@ function Index() {
                   </Link>
                 );
               })()}
+
+              {/* Court outcomes — the analytics layer: how cases actually end */}
+              <Link to="/outcomes" className="am-card" style={{ ["--c" as never]: "#9b3722" }}>
+                <div className="am-num">%</div>
+                <div className="am-title">Court Outcomes</div>
+                <div className="am-meta">
+                  <span className="am-count">Federal base rates</span>
+                  <span className="am-go">Explore →</span>
+                </div>
+              </Link>
             </div>
           </div>
         </section>
