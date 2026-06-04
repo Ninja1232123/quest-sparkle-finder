@@ -30,7 +30,7 @@ export const Route = createFileRoute("/compare_/diff")({
   component: DiffPage,
   head: () => ({
     meta: [
-      { title: "Section diff · Compare · Marginalia" },
+      { title: "Section diff · Compare · Self-Law" },
       { name: "description", content: "Word-for-word diff between two sections of the law." },
     ],
   }),

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhitepaperRouteImport } from './routes/whitepaper'
 import { Route as UscRouteImport } from './routes/usc'
+import { Route as UccRouteImport } from './routes/ucc'
 import { Route as SubscribeRouteImport } from './routes/subscribe'
 import { Route as StatutesRouteImport } from './routes/statutes'
 import { Route as StatesRouteImport } from './routes/states'
@@ -78,6 +79,11 @@ const WhitepaperRoute = WhitepaperRouteImport.update({
 const UscRoute = UscRouteImport.update({
   id: '/usc',
   path: '/usc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UccRoute = UccRouteImport.update({
+  id: '/ucc',
+  path: '/ucc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubscribeRoute = SubscribeRouteImport.update({
@@ -410,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$id': typeof CasesIdRoute
@@ -472,6 +479,7 @@ export interface FileRoutesByTo {
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$id': typeof CasesIdRoute
@@ -535,6 +543,7 @@ export interface FileRoutesById {
   '/states': typeof StatesRoute
   '/statutes': typeof StatutesRoute
   '/subscribe': typeof SubscribeRoute
+  '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
   '/cases/$id': typeof CasesIdRoute
@@ -599,6 +608,7 @@ export interface FileRouteTypes {
     | '/states'
     | '/statutes'
     | '/subscribe'
+    | '/ucc'
     | '/usc'
     | '/whitepaper'
     | '/cases/$id'
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/states'
     | '/statutes'
     | '/subscribe'
+    | '/ucc'
     | '/usc'
     | '/whitepaper'
     | '/cases/$id'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/states'
     | '/statutes'
     | '/subscribe'
+    | '/ucc'
     | '/usc'
     | '/whitepaper'
     | '/cases/$id'
@@ -786,6 +798,7 @@ export interface RootRouteChildren {
   StatesRoute: typeof StatesRoute
   StatutesRoute: typeof StatutesRoute
   SubscribeRoute: typeof SubscribeRoute
+  UccRoute: typeof UccRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
   CasesIdRoute: typeof CasesIdRoute
@@ -834,6 +847,13 @@ declare module '@tanstack/react-router' {
       path: '/usc'
       fullPath: '/usc'
       preLoaderRoute: typeof UscRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ucc': {
+      id: '/ucc'
+      path: '/ucc'
+      fullPath: '/ucc'
+      preLoaderRoute: typeof UccRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe': {
@@ -1274,6 +1294,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatesRoute: StatesRoute,
   StatutesRoute: StatutesRoute,
   SubscribeRoute: SubscribeRoute,
+  UccRoute: UccRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
   CasesIdRoute: CasesIdRoute,

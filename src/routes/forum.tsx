@@ -62,13 +62,13 @@ export const Route = createFileRoute("/forum")({
   component: ForumPage,
   head: () => ({
     meta: [
-      { title: "The Floor · Marginalia" },
+      { title: "The Floor · Self-Law" },
       {
         name: "description",
         content:
           "A single page where every post is anchored to a real cited document. No theory, no hearsay — only what's on the record.",
       },
-      { property: "og:title", content: "The Floor · Marginalia" },
+      { property: "og:title", content: "The Floor · Self-Law" },
       { property: "og:description", content: "Citation-only. No claim without a document." },
     ],
   }),

@@ -29,17 +29,17 @@ export const Route = createFileRoute("/whitepaper")({
   component: Whitepaper,
   head: () => ({
     meta: [
-      { title: "The Plan · Marginalia" },
+      { title: "The Plan · Self-Law" },
       {
         name: "description",
         content:
-          "Where Marginalia is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
+          "Where Self-Law is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
       },
-      { property: "og:title", content: "The Plan · Marginalia" },
+      { property: "og:title", content: "The Plan · Self-Law" },
       {
         property: "og:description",
         content:
-          "Where Marginalia is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
+          "Where Self-Law is going: state codebooks, domain packs, citation graphs, alerts, and a structured legal corpus built for actual humans.",
       },
       { property: "og:type", content: "article" },
       { property: "og:url", content: "https://self-law.org/whitepaper" },
@@ -51,11 +51,11 @@ export const Route = createFileRoute("/whitepaper")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Article",
-          headline: "The Plan · Marginalia",
+          headline: "The Plan · Self-Law",
           description:
-            "The roadmap for Marginalia: state codebooks, domain packs, citation graphs, and a structured legal corpus.",
-          author: { "@type": "Organization", name: "Marginalia" },
-          publisher: { "@type": "Organization", name: "Marginalia" },
+            "The roadmap for Self-Law: state codebooks, domain packs, citation graphs, and a structured legal corpus.",
+          author: { "@type": "Organization", name: "Self-Law" },
+          publisher: { "@type": "Organization", name: "Self-Law" },
           mainEntityOfPage: "https://self-law.org/whitepaper",
         }),
       },

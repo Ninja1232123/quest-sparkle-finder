@@ -16,9 +16,9 @@ export const Route = createFileRoute("/scotus")({
   },
   head: () => ({
     meta: [
-      { title: "Supreme Court Decisions · Marginalia" },
+      { title: "Supreme Court Decisions · Self-Law" },
       { name: "description", content: "Opinions of the United States Supreme Court." },
-      { property: "og:title", content: "Supreme Court Decisions · Marginalia" },
+      { property: "og:title", content: "Supreme Court Decisions · Self-Law" },
       { property: "og:description", content: "Opinions of the United States Supreme Court." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/scotus" }],

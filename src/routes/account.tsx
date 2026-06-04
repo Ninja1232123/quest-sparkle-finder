@@ -10,14 +10,14 @@ export const Route = createFileRoute("/account")({
   component: AccountPage,
   head: () => ({
     meta: [
-      { title: "Account · Marginalia" },
+      { title: "Account · Self-Law" },
       {
         name: "description",
         content:
-          "Manage your Marginalia account: subscription, billing portal access, and Pro features for legal research.",
+          "Manage your Self-Law account: subscription, billing portal access, and Pro features for legal research.",
       },
-      { property: "og:title", content: "Account · Marginalia" },
-      { property: "og:description", content: "Manage your Marginalia subscription and Pro access." },
+      { property: "og:title", content: "Account · Self-Law" },
+      { property: "og:description", content: "Manage your Self-Law subscription and Pro access." },
       { property: "og:url", content: "https://self-law.org/account" },
       { name: "robots", content: "noindex" },
     ],

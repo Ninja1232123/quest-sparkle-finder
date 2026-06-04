@@ -18,7 +18,7 @@ export const Route = createFileRoute("/outcomes/federal/court/$court/")({
     const name = loaderData?.page?.court_name ?? "Federal court";
     return {
       meta: [
-        { title: `${name} — civil case outcomes · Marginalia` },
+        { title: `${name} — civil case outcomes · Self-Law` },
         { name: "description", content: `How civil cases close in the ${name}: settlement, dismissal, and plaintiff-win base rates by claim type.` },
       ],
       links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/court/${loaderData?.court ?? ""}` }],

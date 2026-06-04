@@ -20,7 +20,7 @@ export const Route = createFileRoute("/outcomes/federal/$family/$casetype")({
     const fam = FAMILY_META[params.family]?.name ?? "Federal";
     return {
       meta: [
-        { title: `${params.casetype.replace(/^\d+-/, "").replace(/-/g, " ")} — federal outcomes · Marginalia` },
+        { title: `${params.casetype.replace(/^\d+-/, "").replace(/-/g, " ")} — federal outcomes · Self-Law` },
         {
           name: "description",
           content: `How ${fam.toLowerCase()} cases of this type close in federal court: plaintiff-win rate, settlement and dismissal base rates, and how it varies by district.`,

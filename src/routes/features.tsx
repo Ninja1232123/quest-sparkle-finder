@@ -17,13 +17,13 @@ export const Route = createFileRoute("/features")({
   component: Features,
   head: () => ({
     meta: [
-      { title: "What it does · Marginalia" },
+      { title: "What it does · Self-Law" },
       {
         name: "description",
         content:
-          "A plain-English tour of everything Marginalia does: read the actual law, search it, compare sources side by side, take margin notes, and ask Juri.",
+          "A plain-English tour of everything Self-Law does: read the actual law, search it, compare sources side by side, take margin notes, and ask Juri.",
       },
-      { property: "og:title", content: "What it does · Marginalia" },
+      { property: "og:title", content: "What it does · Self-Law" },
       {
         property: "og:description",
         content: "Read the law, search it, compare it, annotate it, and ask questions about it — in one place, for $5.",

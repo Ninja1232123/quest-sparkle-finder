@@ -13,7 +13,7 @@ export const Route = createFileRoute("/cases/")({
   component: CasesIndex,
   head: () => ({
     meta: [
-      { title: "Your cases · Marginalia" },
+      { title: "Your cases · Self-Law" },
       {
         name: "description",
         content:

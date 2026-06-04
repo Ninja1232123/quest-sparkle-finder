@@ -9,12 +9,12 @@ export const Route = createFileRoute("/library")({
   component: Library,
   head: () => ({
     meta: [
-      { title: "Sources · Marginalia" },
+      { title: "Sources · Self-Law" },
       {
         name: "description",
-        content: "The agencies and codes Marginalia connects — IRS, eCFR, UCC, FTC, and Treasury.",
+        content: "The agencies and codes Self-Law connects — IRS, eCFR, UCC, FTC, and Treasury.",
       },
-      { property: "og:title", content: "Sources · Marginalia" },
+      { property: "og:title", content: "Sources · Self-Law" },
       { property: "og:description", content: "Meet the rulebooks behind the explainers." },
       { property: "og:url", content: "https://self-law.org/library" },
     ],
@@ -25,8 +25,8 @@ export const Route = createFileRoute("/library")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: "Sources · Marginalia",
-          description: "Federal agencies and codebooks indexed by Marginalia.",
+          name: "Sources · Self-Law",
+          description: "Federal agencies and codebooks indexed by Self-Law.",
           url: "https://self-law.org/library",
         }),
       },

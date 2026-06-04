@@ -35,13 +35,13 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Marginalia — A citizen's law index" },
+      { title: "Self-Law - A Legal Research Tool For Pro Se Litigants" },
       {
         name: "description",
         content:
           "Cross-reference the Constitution, U.S. Code, CFR, UCC, TFM, and IRM in one place. Real law, no theories.",
       },
-      { property: "og:title", content: "Marginalia — A citizen's law index" },
+      { property: "og:title", content: "Self-Law — A citizen's law index" },
       {
         property: "og:description",
         content: "If you don't know your rights, you don't have any. Read the law as one connected record.",

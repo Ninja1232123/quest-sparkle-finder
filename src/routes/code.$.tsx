@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as R
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
-import { STATE_NAMES, sourceMeta, sourceName } from "@/lib/source-groups";
+import { STATE_NAMES, sourceName } from "@/lib/source-groups";
 import { formatGroupCrumb } from "@/lib/label-format";
+import { docSeo, SITE_BRAND } from "@/lib/doc-seo";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 
 // Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
@@ -814,21 +815,17 @@ export const Route = createFileRoute("/code/$")({
   ),
   head: ({ loaderData, params }) => {
     const d = loaderData?.document;
-    if (!d) return { meta: [{ title: "Not found · Marginalia" }] };
-    // Lead the title with the jurisdiction tag (e.g. "Pennsylvania", "U.S.C.")
-    // so a section ranks for "<jurisdiction> <topic>" searches, not just a bare
-    // "§ 2501". For states, sourceMeta(code).short is the full state name.
+    if (!d) return { meta: [{ title: `Not found · ${SITE_BRAND}` }] };
+    // The <title> is the whole game on these pages: lead with the citation in
+    // the form people actually search/type — "26 U.S.C. § 1", the title number
+    // fused up front — then the plain section name, then the brand. The hierarchy
+    // chain moves into the description and on-page, never the title where it'd
+    // push the searchable part past Google's ~60-char cut. See docSeo().
     const isState = d.source_code in STATE_NAMES;
-    const tag = sourceMeta(d.source_code).short;
+    const { title: fullTitle, ogTitle, description } = docSeo(d);
     const label = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim();
     const parent = d.parent_label ? formatGroupCrumb(d.source_code, d.parent_label) : "";
-    const core = `${tag} ${label}`.trim();
-    const fullTitle = `${core}${parent ? ` — ${parent}` : ""} · Marginalia`;
-    const ogTitle = `${core}${parent ? ` — ${parent}` : ""}`;
     const body = (d.body_text ?? "").replace(/\s+/g, " ").trim();
-    const description = body
-      ? body.slice(0, 155) + (body.length > 155 ? "…" : "")
-      : `${core} on Marginalia — read the source text with cross-references to related statutes and regulations.`;
     const url = `https://self-law.org/code/${params._splat}`;
 
     // Structured data: a Legislation node (the statute/section itself) plus a
@@ -836,7 +833,7 @@ export const Route = createFileRoute("/code/$")({
     // Google can render the trail and understand the page as primary law.
     const sourceLabel = sourceName(d.source_code);
     const crumbs: { name: string; item: string }[] = [
-      { name: "Marginalia", item: "https://self-law.org" },
+      { name: SITE_BRAND, item: "https://self-law.org" },
       { name: sourceLabel, item: `https://self-law.org/code/source/${encodeURIComponent(d.source_code)}` },
     ];
     if (parent) crumbs.push({ name: parent, item: url });

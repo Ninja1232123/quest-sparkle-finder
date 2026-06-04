@@ -7,9 +7,9 @@ export const Route = createFileRoute("/const")({
   component: ConstPage,
   head: () => ({
     meta: [
-      { title: "The U.S. Constitution — We the People · Marginalia" },
+      { title: "The U.S. Constitution — We the People · Self-Law" },
       { name: "description", content: "Read the U.S. Constitution whole — all seven articles and twenty-seven amendments, in plain text, exactly as written. The founding charter, indexed." },
-      { property: "og:title", content: "The U.S. Constitution — We the People · Marginalia" },
+      { property: "og:title", content: "The U.S. Constitution — We the People · Self-Law" },
       { property: "og:description", content: "Seven articles. Twenty-seven amendments. One stubborn experiment in self-rule — read it whole." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/const" }],

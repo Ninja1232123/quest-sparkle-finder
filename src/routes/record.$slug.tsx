@@ -16,7 +16,7 @@ export const Route = createFileRoute("/record/$slug")({
     const cite = o?.us_cite ? `${o.us_cite}${o.year ? ` (${o.year})` : ""}` : "";
     return {
       meta: [
-        { title: `${o?.case_title ?? "Opinion"}${cite ? ` — ${cite}` : ""} · Marginalia` },
+        { title: `${o?.case_title ?? "Opinion"}${cite ? ` — ${cite}` : ""} · Self-Law` },
         { name: "description", content: `Full text of the U.S. Supreme Court opinion in ${o?.case_title ?? "this case"}${cite ? `, ${cite}` : ""}. Public-domain court record.` },
       ],
       links: [{ rel: "canonical", href: `https://self-law.org/record/${loaderData?.opinion?.slug ?? ""}` }],

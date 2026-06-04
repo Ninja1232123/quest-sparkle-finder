@@ -13,7 +13,7 @@ export const Route = createFileRoute("/chambers")({
   component: ChambersPage,
   head: () => ({
     meta: [
-      { title: "Multiverse Explorer · Marginalia" },
+      { title: "Multiverse Explorer · Self-Law" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "description", content: "Every choice creates a new branch." },
     ],

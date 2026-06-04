@@ -40,14 +40,14 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "google-site-verification", content: "MrUA-5AhYOA7ltMplk_EcKzRwYSJaa0-J_mhiXnsqI4" },
       { title: "Self-Law · Read the law for yourself" },
-      { name: "description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
+      { name: "description", content: "A legal research tool designed for pro se litigants. All of the law in one place." },
       { property: "og:title", content: "Self-Law · Read the law for yourself" },
-      { property: "og:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
+      { property: "og:description", content: "A legal research tool designed for pro se litigants. All of the law in one place." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Self-Law" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Self-Law · Read the law for yourself" },
-      { name: "twitter:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
+      { name: "twitter:description", content: "A legal research tool designed for pro se litigants. All of the law in one place." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
     ],
@@ -188,7 +188,8 @@ const PUBLIC_PREFIXES = [
   "/presidential",
   "/scotus",
   "/agency",
-  "/model",
+  "/ucc",
+  "/model", // legacy → 301s to /ucc; keep public so crawlers reach the redirect
 ];
 
 function AuthGate() {

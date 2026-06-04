@@ -8,13 +8,13 @@ export const Route = createFileRoute("/how-it-works")({
   component: HowItWorks,
   head: () => ({
     meta: [
-      { title: "How it works · Marginalia" },
+      { title: "How it works · Self-Law" },
       {
         name: "description",
         content:
           "A five-step visual walkthrough: search every U.S. law at once, read the real text, jot margin notes that assemble into a citation-backed draft, and compare sources side by side.",
       },
-      { property: "og:title", content: "How Marginalia works" },
+      { property: "og:title", content: "How Self-Law works" },
       { property: "og:description", content: "Read the law, make it yours — in five steps." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/how-it-works" }],
@@ -64,7 +64,7 @@ const STEPS: Step[] = [
     eyebrow: "Read & annotate",
     title: "Read it — and write in the margin",
     body:
-      "Open any section and read the real words. When something matters to you, jot a note beside it. Type “@” and your note files itself into a case, with the citation attached automatically.",
+      "Read the law. Consider how it applies to your situation. Write earnestly and factually. Don't try to conform the law to meet your needs. Just keep it simple. This is what it says... This is why it applies... Use @YourCaseName to save your note to that case file,",
     img: "/howitworks/margin.webp",
     alt: "A law section open for reading with the margin-note panel spotlighted",
     to: "/code",
@@ -76,7 +76,7 @@ const STEPS: Step[] = [
     eyebrow: "My Cases",
     title: "Your notes become a draft",
     body:
-      "Every margin note collects in My Cases. Drag them into the order that reads right and you've got a citation-backed rough draft — in your own words. Your argument, with the law to back it.",
+      "Every margin note collects in My Cases. Drag them into the order that reads right and you've got a citation-backed rough draft pleading — in your own words. Your argument, with the law to back it.",
     img: "/howitworks/cases.webp",
     alt: "The My Cases page assembling margin notes into a document",
     to: "/cases",

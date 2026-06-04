@@ -11,9 +11,9 @@ export const Route = createFileRoute("/usc")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: "U.S. Code · Marginalia" },
+      { title: "U.S. Code · Self-Law" },
       { name: "description", content: "Federal statutory law, organized by title." },
-      { property: "og:title", content: "U.S. Code · Marginalia" },
+      { property: "og:title", content: "U.S. Code · Self-Law" },
       { property: "og:description", content: "Federal statutory law, organized by title." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/usc" }],

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/public/v1/openapi.json")({
         const spec = {
           openapi: "3.1.0",
           info: {
-            title: "Marginalia Legal Corpus API",
+            title: "Self-Law Legal Corpus API",
             version: "1.0.0",
             description:
               "Read-only search over US federal legal sources (USC, CFR, UCC, Constitution, etc.). " +

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/outcomes/states/$state/")({
     const name = loaderData?.courts?.[0]?.state ?? "State";
     return {
       meta: [
-        { title: `${name} appeal outcomes — reversal rates by court · Marginalia` },
+        { title: `${name} appeal outcomes — reversal rates by court · Self-Law` },
         { name: "description", content: `How often ${name}'s supreme and appellate courts reverse the courts below: reversal and remand base rates by court.` },
       ],
       links: [{ rel: "canonical", href: `https://self-law.org/outcomes/states/${loaderData?.state ?? ""}` }],

@@ -82,7 +82,7 @@ export const Route = createFileRoute("/compare")({
   component: ComparePage,
   head: ({ match }) => {
     const q = (match.search as { q?: string })?.q ?? "";
-    const title = q ? `Compare "${q}" · Marginalia` : "Compare codebooks · Marginalia";
+    const title = q ? `Compare "${q}" · Self-Law` : "Compare codebooks · Self-Law";
     const description = q
       ? `Side-by-side comparison of "${q}" across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM.`
       : "Side-by-side search across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM. Spot how the same term shows up in each codebook.";

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/outcomes/federal/$family/")({
     const name = meta?.name ?? "Federal";
     return {
       meta: [
-        { title: `${name} — federal case outcomes · Marginalia` },
+        { title: `${name} — federal case outcomes · Self-Law` },
         { name: "description", content: `${meta?.blurb ?? ""} How ${name.toLowerCase()} cases close in federal court: win, settle, dismiss base rates by claim type.` },
       ],
       links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/${params.family}` }],

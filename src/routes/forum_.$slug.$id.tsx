@@ -85,10 +85,10 @@ export const Route = createFileRoute("/forum_/$slug/$id")({
   ),
   head: ({ loaderData }) => {
     const p = loaderData?.post as ForumPostDetail | undefined;
-    if (!p) return { meta: [{ title: "Post not found · The Floor · Marginalia" }] };
+    if (!p) return { meta: [{ title: "Post not found · The Floor · Self-Law" }] };
     const desc = p.body.replace(/\s+/g, " ").trim().slice(0, 155);
     const url = `https://self-law.org/forum/${postSlug(p.title)}/${p.id}`;
-    const title = `${p.title} · The Floor · Marginalia`;
+    const title = `${p.title} · The Floor · Self-Law`;
     return {
       meta: [
         { title },
@@ -125,7 +125,7 @@ function PostPage() {
     datePublished: post.created_at,
     url: canonicalUrl,
     author: { "@type": "Person", name: post.display_name ?? "anon" },
-    publisher: { "@type": "Organization", name: "Marginalia" },
+    publisher: { "@type": "Organization", name: "Self-Law" },
     commentCount: post.replies.length,
     comment: post.replies.map((r) => ({
       "@type": "Comment",

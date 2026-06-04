@@ -12,9 +12,9 @@ export const Route = createFileRoute("/laws")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: "Public & Private Laws · Marginalia" },
+      { title: "Public & Private Laws · Self-Law" },
       { name: "description", content: "Bills enacted into law, by Congress and number." },
-      { property: "og:title", content: "Public & Private Laws · Marginalia" },
+      { property: "og:title", content: "Public & Private Laws · Self-Law" },
       { property: "og:description", content: "Bills enacted into law, by Congress and number." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/laws" }],

@@ -8,15 +8,15 @@ export const Route = createFileRoute("/about")({
   component: About,
   head: () => ({
     meta: [
-      { title: "About · Marginalia" },
+      { title: "About · Self-Law" },
       {
         name: "description",
-        content: "Why Marginalia exists: making the law readable for the people it actually applies to.",
+        content: "Why Self-Law exists: making the law readable for the people it actually applies to.",
       },
-      { property: "og:title", content: "About · Marginalia" },
+      { property: "og:title", content: "About · Self-Law" },
       {
         property: "og:description",
-        content: "Why Marginalia exists: making the law readable for the people it actually applies to.",
+        content: "Why Self-Law exists: making the law readable for the people it actually applies to.",
       },
     ],
   }),

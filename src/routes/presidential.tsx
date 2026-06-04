@@ -12,9 +12,9 @@ export const Route = createFileRoute("/presidential")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: "Presidential Documents · Marginalia" },
+      { title: "Presidential Documents · Self-Law" },
       { name: "description", content: "Executive orders, proclamations, and public papers." },
-      { property: "og:title", content: "Presidential Documents · Marginalia" },
+      { property: "og:title", content: "Presidential Documents · Self-Law" },
       { property: "og:description", content: "Executive orders, proclamations, and public papers." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/presidential" }],

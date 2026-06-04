@@ -16,9 +16,9 @@ export const Route = createFileRoute("/agency")({
   },
   head: () => ({
     meta: [
-      { title: "Agency Manuals · Marginalia" },
+      { title: "Agency Manuals · Self-Law" },
       { name: "description", content: "Internal operating rules and manuals beyond the CFR." },
-      { property: "og:title", content: "Agency Manuals · Marginalia" },
+      { property: "og:title", content: "Agency Manuals · Self-Law" },
       { property: "og:description", content: "Internal operating rules and manuals beyond the CFR." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/agency" }],

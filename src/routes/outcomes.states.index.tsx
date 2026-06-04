@@ -15,13 +15,13 @@ export const Route = createFileRoute("/outcomes/states/")({
   component: StatesIndex,
   head: () => ({
     meta: [
-      { title: "State appeal outcomes — reversal rates by state · Marginalia" },
+      { title: "State appeal outcomes — reversal rates by state · Self-Law" },
       {
         name: "description",
         content:
           "How often state supreme and appellate courts reverse the courts below them — reversal and remand base rates for all 50 states. Descriptive statistics, not legal advice.",
       },
-      { property: "og:title", content: "State appeal outcomes · Marginalia" },
+      { property: "og:title", content: "State appeal outcomes · Self-Law" },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/outcomes/states" }],
   }),

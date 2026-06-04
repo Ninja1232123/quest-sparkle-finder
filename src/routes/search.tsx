@@ -123,7 +123,7 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
   head: ({ match }) => {
     const q = (match.search as { q?: string })?.q ?? "";
-    const title = q ? `"${q}" · Marginalia search` : "Search · Marginalia";
+    const title = q ? `"${q}" · Self-Law search` : "Search · Self-Law";
     const description = q
       ? `Search results for "${q}" across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM.`
       : "Full-text search across the Constitution, United States Code, Code of Federal Regulations, Uniform Commercial Code, and Treasury Financial Manual.";

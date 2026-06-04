@@ -12,7 +12,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "Sign in · Marginalia" },
+      { title: "Sign in · Self-Law" },
       { name: "description", content: "Sign in to save citations to your Cases." },
     ],
   }),

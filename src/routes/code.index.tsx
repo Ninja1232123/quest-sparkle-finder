@@ -15,9 +15,9 @@ export const Route = createFileRoute("/code/")({
   component: CodeHub,
   head: () => ({
     meta: [
-      { title: "The Code · Marginalia" },
+      { title: "The Code · Self-Law" },
       { name: "description", content: "Search the Constitution, U.S. Code, UCC, and Treasury Financial Manual side by side, with cross-references traced between them." },
-      { property: "og:title", content: "The Code · Marginalia" },
+      { property: "og:title", content: "The Code · Self-Law" },
       { property: "og:description", content: "Browse and search six federal codebooks indexed in one place." },
       { property: "og:url", content: "https://self-law.org/code" },
     ],
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/code/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: "The Code · Marginalia",
+          name: "The Code · Self-Law",
           description:
             "Indexed federal codebooks: Constitution, U.S. Code, CFR, UCC, TFM, and IRM.",
           url: "https://self-law.org/code",

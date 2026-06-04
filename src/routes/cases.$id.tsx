@@ -12,7 +12,7 @@ export const Route = createFileRoute("/cases/$id")({
     return { sources };
   },
   component: CaseFile,
-  head: () => ({ meta: [{ title: "Case file · Marginalia" }] }),
+  head: () => ({ meta: [{ title: "Case file · Self-Law" }] }),
 });
 
 // A point on the page: either a margin note (one citation) or an inline

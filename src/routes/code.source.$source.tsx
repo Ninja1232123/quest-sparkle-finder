@@ -5,12 +5,12 @@ import { cleanPathForSource } from "@/lib/codebooks";
 import { sourceName } from "@/lib/source-groups";
 
 const SOURCE_DESCRIPTIONS: Record<string, string> = {
-  const: "Browse the United States Constitution article by article — every clause, amendment, and ratification, indexed and cross-referenced on Marginalia.",
-  usc: "Browse the United States Code on Marginalia — every title and section of federal statutory law, searchable and cross-linked to the regulations that implement it.",
-  cfr: "Browse the Code of Federal Regulations on Marginalia — every title and part of the rules federal agencies enforce, threaded to the statutes that authorize them.",
-  ucc: "Browse the Uniform Commercial Code on Marginalia — the model commercial-law statute behind contracts, sales, leases, and secured transactions across U.S. states.",
-  tfm: "Browse the Treasury Financial Manual on Marginalia — the federal government's accounting and disbursing rulebook for agencies that handle public money.",
-  irm: "Browse the Internal Revenue Manual on Marginalia — the IRS's internal procedures for examinations, collections, appeals, and taxpayer rights.",
+  const: "Browse the United States Constitution article by article — every clause, amendment, and ratification, indexed and cross-referenced on Self-Law.",
+  usc: "Browse the United States Code on Self-Law — every title and section of federal statutory law, searchable and cross-linked to the regulations that implement it.",
+  cfr: "Browse the Code of Federal Regulations on Self-Law — every title and part of the rules federal agencies enforce, threaded to the statutes that authorize them.",
+  ucc: "Browse the Uniform Commercial Code on Self-Law — the model commercial-law statute behind contracts, sales, leases, and secured transactions across U.S. states.",
+  tfm: "Browse the Treasury Financial Manual on Self-Law — the federal government's accounting and disbursing rulebook for agencies that handle public money.",
+  irm: "Browse the Internal Revenue Manual on Self-Law — the IRS's internal procedures for examinations, collections, appeals, and taxpayer rights.",
 };
 
 export const Route = createFileRoute("/code/source/$source")({
@@ -30,10 +30,10 @@ export const Route = createFileRoute("/code/source/$source")({
   pendingComponent: SourceBrowserPending,
   head: ({ params }) => {
     const name = sourceName(params.source);
-    const title = `${name} · Marginalia`;
+    const title = `${name} · Self-Law`;
     const description =
       SOURCE_DESCRIPTIONS[params.source] ??
-      `Browse ${name} on Marginalia — a pro se reading desk indexing federal codebooks together with cross-references and plain-English context.`;
+      `Browse ${name} on Self-Law — A legal research tool designed for pro se litigants. All of the law in one place.`;
     const url = `https://self-law.org/code/source/${params.source}`;
     return {
       meta: [

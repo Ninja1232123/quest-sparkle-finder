@@ -13,13 +13,13 @@ export const Route = createFileRoute("/outcomes/")({
   component: OutcomesHub,
   head: () => ({
     meta: [
-      { title: "Court Outcomes — how federal cases actually end · Marginalia" },
+      { title: "Court Outcomes — how federal cases actually end · Self-Law" },
       {
         name: "description",
         content:
           "Base rates from millions of closed federal civil cases: how often plaintiffs win, how often cases settle or are dismissed, and how it varies by court — by claim type. Descriptive statistics, not legal advice.",
       },
-      { property: "og:title", content: "Court Outcomes · Marginalia" },
+      { property: "og:title", content: "Court Outcomes · Self-Law" },
       { property: "og:description", content: "How federal cases actually end — base rates by claim type and court." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/outcomes" }],

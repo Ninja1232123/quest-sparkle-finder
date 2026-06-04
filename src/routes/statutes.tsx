@@ -16,9 +16,9 @@ export const Route = createFileRoute("/statutes")({
   },
   head: () => ({
     meta: [
-      { title: "Statutes at Large · Marginalia" },
+      { title: "Statutes at Large · Self-Law" },
       { name: "description", content: "Bound annual volumes of every law passed by Congress." },
-      { property: "og:title", content: "Statutes at Large · Marginalia" },
+      { property: "og:title", content: "Statutes at Large · Self-Law" },
       { property: "og:description", content: "Bound annual volumes of every law passed by Congress." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/statutes" }],

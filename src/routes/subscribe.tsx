@@ -10,7 +10,7 @@ export const Route = createFileRoute("/subscribe")({
   component: SubscribePage,
   head: () => ({
     meta: [
-      { title: "Go Pro Se · Marginalia" },
+      { title: "Go Pro Se · Self-Law" },
       {
         name: "description",
         content:

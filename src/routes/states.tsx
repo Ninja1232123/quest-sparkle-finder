@@ -16,9 +16,9 @@ export const Route = createFileRoute("/states")({
   },
   head: () => ({
     meta: [
-      { title: "State Law · Marginalia" },
+      { title: "State Law · Self-Law" },
       { name: "description", content: "State constitutions, statutes, and regulations." },
-      { property: "og:title", content: "State Law · Marginalia" },
+      { property: "og:title", content: "State Law · Self-Law" },
       { property: "og:description", content: "State constitutions, statutes, and regulations." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/states" }],

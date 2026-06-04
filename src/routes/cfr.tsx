@@ -11,9 +11,9 @@ export const Route = createFileRoute("/cfr")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: "Code of Federal Regulations · Marginalia" },
+      { title: "Code of Federal Regulations · Self-Law" },
       { name: "description", content: "The rulebook that implements federal statutes." },
-      { property: "og:title", content: "Code of Federal Regulations · Marginalia" },
+      { property: "og:title", content: "Code of Federal Regulations · Self-Law" },
       { property: "og:description", content: "The rulebook that implements federal statutes." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/cfr" }],

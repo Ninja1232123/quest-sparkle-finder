@@ -170,10 +170,13 @@ export const CODEBOOKS: Codebook[] = [
     icon: Building2,
   },
   {
-    slug: "model",
-    tab: "Model",
-    name: "Model & Uniform Codes",
-    tagline: "Model commercial law and uniform acts adopted by the states.",
+    // UCC is the site's highest-traffic search term, so it gets its own clean,
+    // citation-matching slug (/ucc) rather than living under a generic "model"
+    // path. If more model/uniform acts land later, add sibling codebooks.
+    slug: "ucc",
+    tab: "UCC",
+    name: "Uniform Commercial Code",
+    tagline: "The model commercial-law statute behind sales, leases, and secured transactions.",
     status: "live",
     kind: "small-toc",
     sources: ["ucc"],
@@ -262,7 +265,7 @@ export const NAV_GROUPS: NavGroup[] = [
     tagline: "The Uniform Commercial Code and the states' enactments of it.",
     accent: "#c9a84c",
     items: [
-      { label: "Uniform Commercial Code", href: "/model", accent: "#c9a84c", status: "live" },
+      { label: "Uniform Commercial Code", href: "/ucc", accent: "#c9a84c", status: "live" },
       { label: "State UCC enactments", href: "/states", accent: "#4a6741", status: "live" },
     ],
   },
@@ -303,7 +306,7 @@ export function codebookForSource(source: string): Codebook | undefined {
 /**
  * The clean single-source slug path for a `source_code`, or null if it has none.
  * Only LIVE codebooks that own exactly one source qualify (usc, cfr, const,
- * register, bills→bill, laws→public-private-law, presidential→…, model→ucc).
+ * register, bills→bill, laws→public-private-law, presidential→…, ucc).
  * Multi-source members (irm/tfm/usgm under "agency", statutes-* under
  * "statutes") return null and keep living at /code/source/$source.
  */

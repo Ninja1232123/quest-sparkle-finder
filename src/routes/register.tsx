@@ -11,9 +11,9 @@ export const Route = createFileRoute("/register")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: "Federal Register · Marginalia" },
+      { title: "Federal Register · Self-Law" },
       { name: "description", content: "Daily rules, proposed rules, and notices from federal agencies." },
-      { property: "og:title", content: "Federal Register · Marginalia" },
+      { property: "og:title", content: "Federal Register · Self-Law" },
       { property: "og:description", content: "Daily rules, proposed rules, and notices from federal agencies." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/register" }],

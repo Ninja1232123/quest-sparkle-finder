@@ -25,13 +25,13 @@ export const Route = createFileRoute("/record/")({
   component: RecordIndex,
   head: () => ({
     meta: [
-      { title: "Court Record — Supreme Court opinions · Marginalia" },
+      { title: "Court Record — Supreme Court opinions · Self-Law" },
       {
         name: "description",
         content:
           "Browse and search the full text of U.S. Supreme Court opinions — public-domain decisions organized by era and citation. Read the record itself.",
       },
-      { property: "og:title", content: "Court Record — Supreme Court opinions · Marginalia" },
+      { property: "og:title", content: "Court Record — Supreme Court opinions · Self-Law" },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/record" }],
   }),

@@ -50,9 +50,9 @@ export const Route = createFileRoute("/topic/$slug")({
     const url = t ? `https://self-law.org/topic/${t.slug}` : "https://self-law.org/";
     return {
       meta: [
-        { title: t ? `${t.title} · Marginalia` : "Topic · Marginalia" },
+        { title: t ? `${t.title} · Self-Law` : "Topic · Self-Law" },
         { name: "description", content: t?.oneLiner ?? "" },
-        { property: "og:title", content: t?.title ?? "Marginalia" },
+        { property: "og:title", content: t?.title ?? "Self-Law" },
         { property: "og:description", content: t?.oneLiner ?? "" },
         { property: "og:type", content: "article" },
         { property: "og:url", content: url },
@@ -67,8 +67,8 @@ export const Route = createFileRoute("/topic/$slug")({
                 "@type": "Article",
                 headline: t.title,
                 description: t.oneLiner,
-                author: { "@type": "Organization", name: "Marginalia" },
-                publisher: { "@type": "Organization", name: "Marginalia" },
+                author: { "@type": "Organization", name: "Self-Law" },
+                publisher: { "@type": "Organization", name: "Self-Law" },
                 mainEntityOfPage: url,
               }),
             },
