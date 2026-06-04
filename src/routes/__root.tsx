@@ -48,8 +48,8 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Self-Law · Read the law for yourself" },
       { name: "twitter:description", content: "A legal research tool designed for pro se litigants. All of the law in one place." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
+      { property: "og:image", content: "https://self-law.org/og-image.png" },
+      { name: "twitter:image", content: "https://self-law.org/og-image.png" },
     ],
     links: [
       {
@@ -67,7 +67,7 @@ export const Route = createRootRoute({
               "@type": "Organization",
               name: "Self-Law",
               url: "https://self-law.org",
-              description: "A citizen's law index — Federal and State codebooks read together.",
+              description: "A legal research tool for Pro Se Litigants..",
             },
             {
               "@type": "WebSite",

@@ -236,7 +236,7 @@ export function SiteHeader() {
               className="am-navlink"
               title="Email support — report an issue or ask a question"
             >
-              Contact
+              support@self-law.org
             </a>
           </div>
           <span className="am-actions-sep hidden lg:block" aria-hidden />
