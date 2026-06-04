@@ -10,7 +10,9 @@
  *   ≤1.2k tokens out). That bounds the cost of one question to:
  *     typical    ~1.4¢   (≈2,200 in / ~500 out)
  *     worst case ~3.2¢   (≈4,500 in / 1,200 out)
- *   So 1 credit = 1 question, and a credit is priced ABOVE worst-case cost.
+ *   A simple answer is ~1 credit, but billing is METERED by depth (see below),
+ *   not flat per-question — deeper research spends more. Each credit is priced
+ *   ABOVE the model cost it represents, so every credit sold carries margin.
  *   Credits are pre-paid, so Juri can never run a deficit.
  */
 
@@ -69,7 +71,7 @@ export function packByLookupKey(key: string): CreditPack | undefined {
   return CREDIT_PACKS.find((p) => p.lookupKey === key);
 }
 
-/** Cents per credit, for display ("4.3¢ / question"). */
+/** Cents per credit, for display ("4.3¢ / credit"). */
 export function centsPerCredit(pack: CreditPack): number {
   return pack.priceCents / pack.credits;
 }

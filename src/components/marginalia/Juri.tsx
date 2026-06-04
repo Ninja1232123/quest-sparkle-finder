@@ -269,7 +269,7 @@ export function Juri() {
               <div>
                 <div className="juri-wordmark">{view === "buy" ? "GET CREDITS" : "JURI"}</div>
                 <div className="juri-subtitle">
-                  {view === "buy" ? "1 credit = 1 question · never expire" : "reads the statute · cites the source"}
+                  {view === "buy" ? "credits never expire · spent by an answer's depth" : "reads the statute · cites the source"}
                 </div>
               </div>
             </div>
@@ -313,8 +313,8 @@ export function Juri() {
                   <Sparkles className="h-10 w-10 text-ochre" />
                   <div className="juri-empty-title">Juri is a Pro tool</div>
                   <div className="juri-empty-hint">
-                    Pro is $5/mo and includes {PRO_MONTHLY_CREDITS} Juri questions every month — top up
-                    anytime if you need more. Unlock Juri and the rest of the research desk.
+                    Pro is $5/mo and includes {PRO_MONTHLY_CREDITS} Juri credits every month — most
+                    answers run a credit or two, deeper research more. Unlock Juri and the rest of the research desk.
                   </div>
                   <Link
                     to="/subscribe"
@@ -327,8 +327,8 @@ export function Juri() {
               ) : (
                 <div className="space-y-3 px-1 py-1">
                   <p className="text-center text-xs leading-relaxed text-foreground/60">
-                    You get {PRO_MONTHLY_CREDITS} questions a month with Pro. Out of those?
-                    Top up here — <span className="font-semibold">1 credit = 1 question, never expires.</span>
+                    You get {PRO_MONTHLY_CREDITS} Juri credits a month with Pro. Running low?
+                    Top up here — <span className="font-semibold">credits never expire, and they stretch further here.</span>
                   </p>
                   {CREDIT_PACKS.map((pack) => (
                     <button
@@ -348,7 +348,7 @@ export function Juri() {
                           )}
                         </div>
                         <div className="text-xs text-foreground/55">
-                          {pack.credits.toLocaleString()} questions · {centsPerCredit(pack).toFixed(1)}¢ each
+                          {pack.credits.toLocaleString()} credits · {centsPerCredit(pack).toFixed(1)}¢ each
                         </div>
                       </div>
                       <div className="font-display text-base font-bold">
