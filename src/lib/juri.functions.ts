@@ -78,9 +78,11 @@ HOW YOU THINK
 USING YOUR TOOLS — and how this search actually behaves, so you use it well:
 - search_law ANDs every word and ranks by how densely terms appear. So search a FEW core terms or a citation — never the user's whole sentence (one missing word and the right section is excluded). Try several angles; if a search is thin, drop a term or try synonyms. If the user handed you keywords, start with those.
 - Section TITLES are not boosted in ranking — a section can be named exactly what you want without repeating those words in its body. When a heading looks on-point, READ it even if the snippet seems thin.
-- read_sections to read the real text before relying on it.
+- read_sections to read the real text before relying on it. Each section comes back with the sections IT points to (defined terms, cross-references) already resolved to identifiers — chase the ones the answer turns on.
+- lookup_citation: resolve any citation you encounter ("12 CFR 424", "15 U.S.C. 1681a", "UCC 2-207") to the exact section, then read it. Use it to follow a reference straight to its source the moment you hit one.
 - note_interpretation: when you put a section into plain English — "what this says, in everyday words" — record that reading with note_interpretation(identifier, your reading). Only for a section you've actually read; one call per section. It's saved as an AI interpretation: clearly labeled, never authoritative, never legal advice. Do it in the same turn as your reads when you can. This is how your plain-English readings get remembered — so record them whenever you give one, but never invent one just to have something to record.
 - find_connections: follow the citation graph out from a section — what it cites and what cites it. This is the goldmine: definitions that live elsewhere, cross-references, implementing regulations, chains of authority — the related law a person would never find by hand. Run it on the sections that matter and follow the useful threads.
+- FOLLOW THE THREAD — this is not optional, it's the heart of the job. A section rarely stands alone: its meaning is controlled by defined terms and cross-references ("as defined in section 1681a", "12 CFR 424", "of this title"). You're handed the references each section makes — pull every one the answer depends on, then the ones THOSE depend on, until you actually hold the full chain. You run on a capable model with a fast index; don't be modest about how deep you go. Retrieving the complete picture is the work. A confident interpretation built on a definition you never read is exactly the failure you exist to prevent — so go get the definition.
 - Don't stop at the statutes. Congressional Bills (source "bill") and the Federal Register (source "register") are vast, barely-explored veins — proposed and enacted legislation, agency rulemaking, notices. When a question touches how a rule came to be, a pending change, or an agency's reasoning, mine them too.
 - If the ask is vague, don't burn a search on a guess: say what you think they mean, offer a few terms/angles, and ask them to point you.
 
@@ -340,7 +342,7 @@ function parseCitations(text: string): { source: string; title: string | null; s
   for (const m of text.matchAll(/\b(\d+)\s*C\.?\s?F\.?\s?R\.?\s*(?:§+\s*)?(\d+(?:\.\d+)*)/gi)) push("cfr", m[1], m[2]);
   // UCC § 2-207 (no title number)
   for (const m of text.matchAll(/\bU\.?\s?C\.?\s?C\.?\s*(?:§+\s*)?(\d+[A-Za-z]?-\d+)/gi)) push("ucc", null, m[1]);
-  return out.slice(0, 3);
+  return out; // callers cap (the user query takes a few; a section body takes more)
 }
 
 // Resolve parsed citations to real documents. Identifier shapes differ per
@@ -361,6 +363,57 @@ async function resolveCitations(
     if (data && data[0]) found.push(data[0] as ToolDoc);
   }
   return found;
+}
+
+// Strip a subsection tail so "1681a(f)" resolves as section "1681a".
+function bareSection(raw: string): string {
+  return raw.replace(/\(.*$/, "").trim();
+}
+
+// Pull the sections a piece of text points to, so Juri can follow definitional
+// and cross-reference threads — the related law a person would never find by
+// hand. Absolute citations (USC/CFR/UCC) work anywhere; USC-style relative refs
+// ("section 1681a of this title", "section 1811 of Title 12") resolve against
+// the containing section's title.
+function gatherRefs(body: string, fromIdentifier: string): { source: string; title: string | null; section: string }[] {
+  const refs: { source: string; title: string | null; section: string }[] = [];
+  const seen = new Set<string>();
+  const add = (source: string, title: string | null, sectionRaw: string) => {
+    const section = bareSection(sectionRaw);
+    if (!section) return;
+    const key = `${source}|${title ?? ""}|${section}`.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    refs.push({ source, title, section });
+  };
+  for (const c of parseCitations(body)) add(c.source, c.title, c.section);
+  const usc = fromIdentifier.match(/^\/usc\/title-(\d+[A-Za-z]?)\//i);
+  if (usc) {
+    const ownTitle = usc[1];
+    for (const m of body.matchAll(/\bsections?\s+(\d+[A-Za-z]?)(?:\([^)]*\))?\s+of\s+this\s+title/gi)) add("usc", ownTitle, m[1]);
+    for (const m of body.matchAll(/\bsections?\s+(\d+[A-Za-z]?)(?:\([^)]*\))?\s+of\s+title\s+(\d+[A-Za-z]?)/gi)) add("usc", m[2], m[1]);
+  }
+  // never point a section back at itself
+  return refs.filter((r) => !fromIdentifier.endsWith(`/section-${r.section}`)).slice(0, 8);
+}
+
+// Lightweight resolve (no body text) — turns parsed refs into the identifiers +
+// headings Juri can read next. Sequential, but capped by the caller.
+const REF_COLS = "identifier, source_code, section_label, heading";
+type RefMeta = { identifier: string; source_code: string; section_label: string | null; heading: string | null };
+async function resolveRefs(
+  corpus: any,
+  refs: { source: string; title: string | null; section: string }[],
+): Promise<RefMeta[]> {
+  const out: RefMeta[] = [];
+  for (const c of refs) {
+    let q = corpus.from("documents").select(REF_COLS)
+      .eq("source_code", c.source).eq("section_label", `§ ${c.section}`).limit(1);
+    if (c.title) q = q.ilike("parent_label", `%Title ${c.title}%`);
+    const { data } = await q;
+    if (data && data[0]) out.push(data[0] as RefMeta);
+  }
+  return out;
 }
 
 // citation-graph neighbours of a section, ranked by doc_authority
@@ -544,6 +597,17 @@ export const askJuri = createServerFn({ method: "POST" })
           required: ["identifier", "interpretation"],
         },
       },
+      {
+        name: "lookup_citation",
+        description: "Resolve a citation you encounter — in a section's text or the user's words — to the exact section. Handles \"12 CFR 424\", \"15 U.S.C. 1681a\", \"UCC 2-207\". Returns identifier(s) you then read_sections. Use it to chase a definition or cross-reference straight to its source the moment you hit one.",
+        input_schema: {
+          type: "object",
+          properties: {
+            citations: { type: "array", items: { type: "string" }, description: "Citation strings to resolve (max 6)." },
+          },
+          required: ["citations"],
+        },
+      },
     ];
     if (profile.useGraph) {
       tools.push({
@@ -576,20 +640,48 @@ export const askJuri = createServerFn({ method: "POST" })
         }
         if (name === "read_sections") {
           const idents: string[] = Array.isArray(input?.identifiers) ? input.identifiers.map(String) : [];
-          const sections = (await jReadSections(corpus, idents)).map((d) => {
+          const docs = await jReadSections(corpus, idents);
+          const sections: unknown[] = [];
+          const refsAccum: { source: string; title: string | null; section: string }[] = [];
+          for (const d of docs) {
             readMeta.set(d.identifier, { section_label: d.section_label, heading: d.heading, source_code: d.source_code });
             const take = Math.max(1, Math.min(2600, charBudget));
             const text = (d.body_text ?? "").slice(0, take);
             charBudget -= text.length;
-            return { identifier: d.identifier, source: d.source_code, section_label: d.section_label, heading: d.heading, text };
-          });
-          return { sections, note: charBudget <= 0 ? "context budget reached — synthesize from what you've read" : undefined };
+            for (const r of gatherRefs(d.body_text ?? "", d.identifier)) refsAccum.push(r);
+            sections.push({ identifier: d.identifier, source: d.source_code, section_label: d.section_label, heading: d.heading, text });
+          }
+          // Resolve the sections these point to (deduped, capped) so Juri can
+          // follow the definitional/cross-reference chain — skip ones already read.
+          const seenR = new Set<string>();
+          const dedupRefs = refsAccum.filter((r) => {
+            const k = `${r.source}|${r.title ?? ""}|${r.section}`.toLowerCase();
+            if (seenR.has(k)) return false; seenR.add(k); return true;
+          }).slice(0, 8);
+          const references = (await resolveRefs(corpus, dedupRefs)).filter((r) => !readMeta.has(r.identifier));
+          return {
+            sections,
+            references: references.length ? references : undefined,
+            note: charBudget <= 0 ? "context budget reached — synthesize from what you've read" : undefined,
+          };
         }
         if (name === "note_interpretation") {
           const id = String(input?.identifier ?? "").trim().slice(0, 300);
           const text = String(input?.interpretation ?? "").trim().slice(0, 4000);
           if (id && text) interpretations.set(id, text);
           return { recorded: Boolean(id && text), identifier: id };
+        }
+        if (name === "lookup_citation") {
+          const raw = Array.isArray(input?.citations)
+            ? input.citations.map(String)
+            : input?.citations ? [String(input.citations)] : [];
+          const parsed = raw.slice(0, 6).flatMap((s: string) => parseCitations(s));
+          const seenL = new Set<string>();
+          const dedup = parsed.filter((r: { source: string; title: string | null; section: string }) => {
+            const k = `${r.source}|${r.title ?? ""}|${r.section}`.toLowerCase();
+            if (seenL.has(k)) return false; seenL.add(k); return true;
+          });
+          return { resolved: await resolveRefs(corpus, dedup) };
         }
         if (name === "find_connections") {
           const conn = await jFindConnections(corpus, String(input?.identifier ?? ""), profile.maxConnections);
@@ -605,27 +697,40 @@ export const askJuri = createServerFn({ method: "POST" })
     // Pre-resolve any section the user named (e.g. "explain 15 USC 1692") and
     // hand Juri the real text up front, so a precise lookup answers directly
     // instead of gambling on full-text search. These count as sections read.
-    const cited = await resolveCitations(corpus, parseCitations(data.query));
+    const cited = await resolveCitations(corpus, parseCitations(data.query).slice(0, 4));
     let citedPreamble = "";
     if (cited.length) {
-      const parts = cited.map((d) => {
+      const parts: string[] = [];
+      const refsAccum: { source: string; title: string | null; section: string }[] = [];
+      for (const d of cited) {
         readMeta.set(d.identifier, { section_label: d.section_label, heading: d.heading, source_code: d.source_code });
         const take = Math.max(1, Math.min(3000, charBudget));
         const body = (d.body_text ?? "").slice(0, take);
         charBudget -= body.length;
+        for (const r of gatherRefs(d.body_text ?? "", d.identifier)) refsAccum.push(r);
         const cite = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim() || d.identifier;
-        return `${cite} (${d.identifier}) [${d.source_code}]:\n${body}`;
-      });
+        parts.push(`${cite} (${d.identifier}) [${d.source_code}]:\n${body}`);
+      }
+      const seenR = new Set<string>();
+      const dedupRefs = refsAccum.filter((r) => {
+        const k = `${r.source}|${r.title ?? ""}|${r.section}`.toLowerCase();
+        if (seenR.has(k)) return false; seenR.add(k); return true;
+      }).slice(0, 8);
+      const refs = (await resolveRefs(corpus, dedupRefs)).filter((r) => !readMeta.has(r.identifier));
+      const refLine = refs.length
+        ? `\nThis text cross-references: ${refs.map((r) => `${`${(r.section_label ?? "").trim()} ${(r.heading ?? "").trim()}`.trim()} (${r.identifier})`).join("; ")}.\n` +
+          `Follow every reference the answer genuinely turns on (read_sections them) before interpreting — a definition you didn't read is an interpretation you can't make.\n`
+        : "";
       citedPreamble =
         `The user named ${cited.length === 1 ? "this section" : "these sections"} — here is the actual text. ` +
-        `Read it and answer directly; only search if you need more:\n\n${parts.join("\n\n---\n\n")}\n\n`;
+        `Read it and answer directly; pull any defined terms or cross-references it depends on:\n\n${parts.join("\n\n---\n\n")}\n${refLine}\n`;
     }
 
     // Conversation so far + the current question (with mode + context hints).
     const contextHint = data.context_identifier ? `[The user is currently reading ${data.context_identifier}.]\n` : "";
     const modeHint = mode === "deep"
-      ? "\n\n(Deep dive: research thoroughly — search several angles, read the strongest hits, and use find_connections to surface related law.)"
-      : "\n\n(Quick: a search or two, then a focused answer.)";
+      ? "\n\n(Deep dive: be exhaustive — search several angles, read the strongest hits, and follow every definition and cross-reference that bears on the answer, plus find_connections for related law. Go as deep as the question needs.)"
+      : "\n\n(Quick: focused — but still follow any definition or cross-reference the answer genuinely turns on. Don't answer around a term you haven't read.)";
     const history = (data.history ?? [])
       .filter((m) => m.text && m.text.trim())
       .slice(-8)

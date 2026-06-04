@@ -109,14 +109,16 @@ export const JURI_MODES: Record<JuriMode, {
 }> = {
   quick: {
     label: "Quick",
-    blurb: "A search or two, then a focused answer.",
-    maxRounds: 3, searchLimit: 8, useGraph: false, maxConnections: 0,
-    maxContextChars: 16000, maxTokens: 1100, minCredits: 1, maxCredits: 4,
+    blurb: "Focused — follows the definitions an answer turns on.",
+    // Room to follow a definition or two off the section in question, not just
+    // answer the surface. Cost stays bounded by maxCredits and maxContextChars.
+    maxRounds: 5, searchLimit: 8, useGraph: false, maxConnections: 0,
+    maxContextChars: 24000, maxTokens: 1100, minCredits: 1, maxCredits: 4,
   },
   deep: {
     label: "Deep dive",
-    blurb: "Researches multiple angles + mines the citation graph for connections.",
-    maxRounds: 7, searchLimit: 12, useGraph: true, maxConnections: 18,
+    blurb: "Chases the full chain of definitions, cross-references & authority.",
+    maxRounds: 9, searchLimit: 12, useGraph: true, maxConnections: 18,
     maxContextChars: 70000, maxTokens: 2600, minCredits: 3, maxCredits: 16,
   },
 };
