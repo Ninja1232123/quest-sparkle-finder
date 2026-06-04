@@ -64,7 +64,7 @@ function CourtCaseTypePage() {
 
       <section className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <BigStat value={fmt(total)} label="Cases" />
-        <BigStat value={`${pct(preMerits, total)}%`} label="Settled or dismissed" sub={`${fmt(preMerits)} cases`} />
+        <BigStat value={`${pct(preMerits, total)}%`} label="Ended before merits" sub={`${fmt(preMerits)} of ${fmt(total)} cases`} />
         <BigStat value={here != null ? `${here}%` : "—"} label="Plaintiff win" sub={`of ${fmt(merits)} merits judgments`} accent />
         <BigStat
           value={national.pct != null ? `${national.pct}%` : "—"}

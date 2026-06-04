@@ -64,7 +64,7 @@ function CaseTypePage() {
       {/* Headline numbers */}
       <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <BigStat value={fmt(total)} label="Cases filed" />
-        <BigStat value={`${pct(preMerits, total)}%`} label="Ended before a merits judgment" sub={`${fmt(preMerits)} settled or dismissed`} />
+        <BigStat value={`${pct(preMerits, total)}%`} label="Ended before a merits judgment" sub={`${fmt(preMerits)} of ${fmt(total)} cases`} />
         <BigStat value={page.plaintiff_win_pct != null ? `${page.plaintiff_win_pct}%` : "—"} label="Plaintiff win" sub={`of ${fmt(merits)} merits judgments`} accent />
         <BigStat value={defPct != null ? `${defPct}%` : "—"} label="Defendant win" sub="of merits judgments" />
       </section>
@@ -72,8 +72,9 @@ function CaseTypePage() {
       {/* The honest framing */}
       <section className="mb-8 rounded-2xl border border-ochre/30 bg-ochre/5 px-5 py-4 text-sm leading-relaxed text-foreground/80">
         Most cases never reach a ruling on the merits. Of {fmt(total)} filed,{" "}
-        <span className="font-semibold text-foreground">{pct(preMerits, total)}%</span> closed by settlement or dismissal
-        first. The win rates above describe only the {fmt(merits)} that a judge actually decided.
+        <span className="font-semibold text-foreground">{pct(preMerits, total)}%</span> closed without one —
+        settled, dismissed, transferred, or remanded. The win rates above describe only the {fmt(merits)} that a judge
+        actually decided.
       </section>
 
       {/* Distribution */}
