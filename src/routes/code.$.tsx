@@ -1054,12 +1054,33 @@ function DocumentPage() {
     if (typeof window !== "undefined") window.localStorage.setItem("doc-ruler", ruler ? "1" : "0");
   }, [ruler]);
   // Track the cursor's Y while the ruler is on (window-level so it follows even
-  // over margin notes); pointer-events stay off the band itself.
+  // over margin notes); pointer-events stay off the band itself. On enable, seat
+  // the band mid-viewport so it's visible immediately (before the first move).
   useEffect(() => {
     if (!ruler) { setRulerY(-9999); return; }
+    setRulerY((y) => (y < 0 ? window.innerHeight / 2 : y));
     const onMove = (e: globalThis.MouseEvent) => setRulerY(e.clientY);
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
+  }, [ruler]);
+  // Keyboard control — ↑/↓ nudge the ruler line by a step (and stop the page
+  // from scrolling). Mouse still wins when moved; arrows fine-tune hands-free.
+  useEffect(() => {
+    if (!ruler) return;
+    const STEP = 26;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      e.preventDefault();
+      const max = window.innerHeight - 4;
+      setRulerY((y) => {
+        const cur = y < 0 ? window.innerHeight / 2 : y;
+        return Math.max(4, Math.min(max, cur + (e.key === "ArrowDown" ? STEP : -STEP)));
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [ruler]);
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 600);
@@ -1299,7 +1320,7 @@ function DocumentPage() {
                   : "border-border/70 bg-card text-foreground/80 hover:border-foreground/40 hover:text-foreground"
               }`}
               aria-label="Toggle reading ruler"
-              title="Reading ruler — highlights the line under your cursor"
+              title="Reading ruler — highlights your line; follows the cursor, or use ↑/↓ to move it"
             >
               <Highlighter className="h-3.5 w-3.5" />
               <span className="hidden md:inline">Ruler</span>
@@ -1441,12 +1462,13 @@ function DocumentPage() {
         </button>
       )}
 
-      {/* Reading ruler — a translucent band locked to the cursor's line. Fixed,
-          pointer-events-none so it never blocks clicks/selection. */}
-      {ruler && (
+      {/* Reading ruler — a translucent band locked to the cursor's (or ↑/↓'s)
+          line. Fixed, pointer-events-none so it never blocks clicks/selection.
+          Clear tint + hairline edges so it reads in both light and dark. */}
+      {ruler && rulerY > 0 && (
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 z-30 h-8 -translate-y-1/2 bg-ochre/10 ring-1 ring-inset ring-ochre/25 mix-blend-multiply"
+          className="pointer-events-none fixed inset-x-0 z-30 h-8 -translate-y-1/2 border-y border-ochre/55 bg-ochre/20"
           style={{ top: rulerY }}
         />
       )}
