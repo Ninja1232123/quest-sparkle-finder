@@ -321,6 +321,48 @@ async function jReadSections(corpus: any, identifiers: string[]): Promise<ToolDo
   return (data ?? []) as ToolDoc[];
 }
 
+// Pull recognizable statutory citations out of free text. A precise lookup
+// ("read 15 USC 1692") shouldn't hinge on full-text-search luck — if we can
+// name the exact section the user means, we resolve it and hand Juri the real
+// text up front. Returns {source, title, section}; title is null for the UCC.
+function parseCitations(text: string): { source: string; title: string | null; section: string }[] {
+  const out: { source: string; title: string | null; section: string }[] = [];
+  const seen = new Set<string>();
+  const push = (source: string, title: string | null, section: string) => {
+    const key = `${source}|${title ?? ""}|${section}`.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ source, title, section });
+  };
+  // 15 USC 1692 · 15 U.S.C. § 1692g · 26 U.S.C. §1
+  for (const m of text.matchAll(/\b(\d+)\s*U\.?\s?S\.?\s?C\.?\s*(?:§+\s*)?(\d+[A-Za-z]?(?:-\d+)?)/gi)) push("usc", m[1], m[2]);
+  // 12 CFR 1006.1 · 31 C.F.R. § 535.413
+  for (const m of text.matchAll(/\b(\d+)\s*C\.?\s?F\.?\s?R\.?\s*(?:§+\s*)?(\d+(?:\.\d+)*)/gi)) push("cfr", m[1], m[2]);
+  // UCC § 2-207 (no title number)
+  for (const m of text.matchAll(/\bU\.?\s?C\.?\s?C\.?\s*(?:§+\s*)?(\d+[A-Za-z]?-\d+)/gi)) push("ucc", null, m[1]);
+  return out.slice(0, 3);
+}
+
+// Resolve parsed citations to real documents. Identifier shapes differ per
+// source (and CFR/UCC bake punctuation into the path), so we match on
+// source + section_label (+ title in parent_label) rather than build the path.
+async function resolveCitations(
+  corpus: any,
+  cites: { source: string; title: string | null; section: string }[],
+): Promise<ToolDoc[]> {
+  const found: ToolDoc[] = [];
+  for (const c of cites) {
+    let q = corpus.from("documents").select(JURI_DOC_COLS)
+      .eq("source_code", c.source)
+      .eq("section_label", `§ ${c.section}`)
+      .limit(1);
+    if (c.title) q = q.ilike("parent_label", `%Title ${c.title}%`);
+    const { data } = await q;
+    if (data && data[0]) found.push(data[0] as ToolDoc);
+  }
+  return found;
+}
+
 // citation-graph neighbours of a section, ranked by doc_authority
 async function jFindConnections(corpus: any, identifier: string, maxN: number) {
   const empty = { cites: [] as any[], cited_by: [] as any[] };
@@ -560,6 +602,25 @@ export const askJuri = createServerFn({ method: "POST" })
       }
     };
 
+    // Pre-resolve any section the user named (e.g. "explain 15 USC 1692") and
+    // hand Juri the real text up front, so a precise lookup answers directly
+    // instead of gambling on full-text search. These count as sections read.
+    const cited = await resolveCitations(corpus, parseCitations(data.query));
+    let citedPreamble = "";
+    if (cited.length) {
+      const parts = cited.map((d) => {
+        readMeta.set(d.identifier, { section_label: d.section_label, heading: d.heading, source_code: d.source_code });
+        const take = Math.max(1, Math.min(3000, charBudget));
+        const body = (d.body_text ?? "").slice(0, take);
+        charBudget -= body.length;
+        const cite = `${d.section_label ?? ""} ${d.heading ?? ""}`.trim() || d.identifier;
+        return `${cite} (${d.identifier}) [${d.source_code}]:\n${body}`;
+      });
+      citedPreamble =
+        `The user named ${cited.length === 1 ? "this section" : "these sections"} — here is the actual text. ` +
+        `Read it and answer directly; only search if you need more:\n\n${parts.join("\n\n---\n\n")}\n\n`;
+    }
+
     // Conversation so far + the current question (with mode + context hints).
     const contextHint = data.context_identifier ? `[The user is currently reading ${data.context_identifier}.]\n` : "";
     const modeHint = mode === "deep"
@@ -571,7 +632,7 @@ export const askJuri = createServerFn({ method: "POST" })
       .map((m) => ({ role: m.role === "juri" ? "assistant" : "user", content: m.text.slice(0, 4000) }));
     const messages: { role: string; content: unknown }[] = [
       ...history,
-      { role: "user", content: `${contextHint}${data.query}${modeHint}` },
+      { role: "user", content: `${contextHint}${citedPreamble}${data.query}${modeHint}` },
     ];
 
     // 5. Run the loop. Tools available every round except the last, where we
@@ -628,6 +689,39 @@ export const askJuri = createServerFn({ method: "POST" })
     } catch (e) {
       console.error("Juri research loop failed:", e);
       return { ...EMPTY, error: "Couldn't reach the API. Try again in a moment." };
+    }
+    // If the loop ended without a written answer (it spent its rounds on tools,
+    // or a later round blipped), force one tool-free pass so Juri answers from
+    // what it gathered instead of dead-ending. Resend as-is when the last turn
+    // is pending tool results; otherwise nudge it to answer now.
+    if (!answer) {
+      try {
+        const lastRole = (messages[messages.length - 1] as { role?: string })?.role;
+        const synthMessages = lastRole === "assistant"
+          ? [...messages, { role: "user", content: "Answer now in plain English from what you found above — cite the sections you used. If nothing was usable, say so and suggest a sharper search term." }]
+          : messages;
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({
+            model: JURI_MODEL,
+            max_tokens: profile.maxTokens,
+            system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+            messages: synthMessages,
+          }),
+        });
+        if (res.ok) {
+          const r = await res.json();
+          addUsage(r.usage);
+          answer = (r.content ?? [])
+            .filter((b: { type: string }) => b.type === "text")
+            .map((b: { text: string }) => b.text)
+            .join("\n")
+            .trim();
+        }
+      } catch (e) {
+        console.error("Juri synthesis retry failed:", e);
+      }
     }
     if (!answer) {
       answer = "I couldn't pin that down. Try narrowing it — a specific code, a section number, or the exact terms you're after.";
