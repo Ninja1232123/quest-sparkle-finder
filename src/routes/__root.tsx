@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { CmdPalette } from "@/components/marginalia/CmdPalette";
 import { Juri } from "@/components/marginalia/Juri";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { MobileExperienceNotice } from "@/components/marginalia/MobileExperienceNotice";
 
 const queryClient = new QueryClient();
 
@@ -38,14 +39,14 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "google-site-verification", content: "MrUA-5AhYOA7ltMplk_EcKzRwYSJaa0-J_mhiXnsqI4" },
-      { title: "Marginalia · Read the law for yourself" },
+      { title: "Self-Law · Read the law for yourself" },
       { name: "description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
-      { property: "og:title", content: "Marginalia · Read the law for yourself" },
+      { property: "og:title", content: "Self-Law · Read the law for yourself" },
       { property: "og:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Self-Law" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Marginalia · Read the law for yourself" },
+      { name: "twitter:title", content: "Self-Law · Read the law for yourself" },
       { name: "twitter:description", content: "A pro se reading desk: federal codebooks indexed together, with cross-references and plain-English summaries side-by-side." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3acaabdc-213e-4ba1-8c1a-370626dc5be4/id-preview-9ef085ee--03d3f7f3-0812-4f07-974e-69a3123fcc08.lovable.app-1778774951725.png" },
@@ -64,13 +65,13 @@ export const Route = createRootRoute({
           "@graph": [
             {
               "@type": "Organization",
-              name: "Marginalia",
+              name: "Self-Law",
               url: "https://self-law.org",
               description: "A citizen's law index — Federal and State codebooks read together.",
             },
             {
               "@type": "WebSite",
-              name: "Marginalia",
+              name: "Self-Law",
               url: "https://self-law.org",
               potentialAction: {
                 "@type": "SearchAction",
@@ -133,6 +134,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PaymentTestModeBanner />
+        <MobileExperienceNotice />
         <AuthGate />
         <div className="app-shell">
           <main id="main">
