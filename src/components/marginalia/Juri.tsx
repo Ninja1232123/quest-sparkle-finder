@@ -527,7 +527,7 @@ export function Juri() {
                     </button>
                   ))}
                   <span className="juri-mode-hint">
-                    {mode === "deep" ? "all law + connections · costs more" : "fast · ~1 credit"}
+                    {mode === "deep" ? "follows the full chain · billed by depth" : "focused · billed by what it reads"}
                   </span>
                 </div>
                 <div className="juri-input-row">

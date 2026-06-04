@@ -107,19 +107,22 @@ export const JURI_MODES: Record<JuriMode, {
   minCredits: number;      // balance required to start this mode
   maxCredits: number;      // hard per-answer credit ceiling (cost safety)
 }> = {
+  // maxCredits is a RUNAWAY BACKSTOP, not a price throttle. Billing is metered:
+  // an answer costs ceil(modelCost / CREDIT_COST_CENTS), and credits sell above
+  // that cost basis, so every credit carries margin. Capping LOW just made us
+  // eat the cost of deep work we couldn't bill for — accurate beats cheap, so
+  // the cap now sits well above realistic cost and only catches a true loop.
   quick: {
     label: "Quick",
     blurb: "Focused — follows the definitions an answer turns on.",
-    // Room to follow a definition or two off the section in question, not just
-    // answer the surface. Cost stays bounded by maxCredits and maxContextChars.
     maxRounds: 5, searchLimit: 8, useGraph: false, maxConnections: 0,
-    maxContextChars: 24000, maxTokens: 1100, minCredits: 1, maxCredits: 4,
+    maxContextChars: 24000, maxTokens: 1100, minCredits: 1, maxCredits: 15,
   },
   deep: {
     label: "Deep dive",
     blurb: "Chases the full chain of definitions, cross-references & authority.",
     maxRounds: 9, searchLimit: 12, useGraph: true, maxConnections: 18,
-    maxContextChars: 70000, maxTokens: 2600, minCredits: 3, maxCredits: 16,
+    maxContextChars: 70000, maxTokens: 2600, minCredits: 3, maxCredits: 60,
   },
 };
 
