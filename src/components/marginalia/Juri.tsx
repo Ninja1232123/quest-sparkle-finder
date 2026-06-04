@@ -17,7 +17,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
 import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
-import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check } from "lucide-react";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search } from "lucide-react";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
 function EagleSvg({ className = "", size = 40 }: { className?: string; size?: number }) {
@@ -63,6 +63,8 @@ type Message = {
   sectionsRead?: number;
   connectionsRead?: number;
   searches?: string[];
+  /** How many plain-English readings were saved as labeled AI interpretations. */
+  interpretationsRecorded?: number;
 };
 
 const SOURCE_SHORT: Record<string, string> = {
@@ -186,6 +188,7 @@ export function Juri() {
           sectionsRead: res.sections_read,
           connectionsRead: res.connections_read,
           searches: res.searches,
+          interpretationsRecorded: res.interpretations_recorded,
         }]);
         setCredits(res.credits_remaining);
       }
@@ -435,7 +438,9 @@ export function Juri() {
                           to="/code/$"
                           params={{ _splat: c.identifier.replace(/^\//, "") }}
                           className="juri-source-chip"
-                          onClick={() => setOpen(false)}
+                          /* Stay open: opening a section keeps Juri docked
+                             beside it so we're looking at the same thing and
+                             the conversation can continue. */
                         >
                           <span className="juri-source-code">
                             {SOURCE_SHORT[c.source_code] ?? c.source_code.toUpperCase()}
@@ -453,9 +458,26 @@ export function Juri() {
                       {msg.creditsCharged} credit{msg.creditsCharged === 1 ? "" : "s"}
                       {msg.sectionsRead ? ` · read ${msg.sectionsRead} section${msg.sectionsRead === 1 ? "" : "s"}` : ""}
                       {msg.connectionsRead ? ` · ${msg.connectionsRead} via citations` : ""}
+                      {msg.interpretationsRecorded ? ` · noted ${msg.interpretationsRecorded} AI interpretation${msg.interpretationsRecorded === 1 ? "" : "s"}` : ""}
                       {msg.searches && msg.searches.length > 0 && (
                         <div className="juri-receipt-searches">
-                          searched: {msg.searches.slice(0, 4).map((s) => `"${s}"`).join(", ")}
+                          <span className="juri-receipt-searches-lead">
+                            searches I ran — open the full results on the page:
+                          </span>
+                          <div className="juri-search-links">
+                            {Array.from(new Set(msg.searches)).slice(0, 6).map((s, j) => (
+                              <Link
+                                key={j}
+                                to="/search"
+                                search={{ q: s }}
+                                className="juri-search-link"
+                                title={`Open results for "${s}" on the page — yours to filter and drive`}
+                              >
+                                <Search className="h-2.5 w-2.5 shrink-0 opacity-60" />
+                                <span className="juri-search-link-text">{s}</span>
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

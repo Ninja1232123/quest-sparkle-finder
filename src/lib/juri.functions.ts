@@ -43,6 +43,10 @@ async function getCorpusClient() {
   return supabase;
 }
 
+// The model behind Juri. Single source of truth — used for the API call and
+// stamped onto every recorded AI interpretation.
+const JURI_MODEL = "claude-sonnet-4-6";
+
 // ---------------------------------------------------------------------------
 // System prompt — neutral, factual, grounded.
 // ---------------------------------------------------------------------------
@@ -75,6 +79,7 @@ USING YOUR TOOLS — and how this search actually behaves, so you use it well:
 - search_law ANDs every word and ranks by how densely terms appear. So search a FEW core terms or a citation — never the user's whole sentence (one missing word and the right section is excluded). Try several angles; if a search is thin, drop a term or try synonyms. If the user handed you keywords, start with those.
 - Section TITLES are not boosted in ranking — a section can be named exactly what you want without repeating those words in its body. When a heading looks on-point, READ it even if the snippet seems thin.
 - read_sections to read the real text before relying on it.
+- note_interpretation: when you put a section into plain English — "what this says, in everyday words" — record that reading with note_interpretation(identifier, your reading). Only for a section you've actually read; one call per section. It's saved as an AI interpretation: clearly labeled, never authoritative, never legal advice. Do it in the same turn as your reads when you can. This is how your plain-English readings get remembered — so record them whenever you give one, but never invent one just to have something to record.
 - find_connections: follow the citation graph out from a section — what it cites and what cites it. This is the goldmine: definitions that live elsewhere, cross-references, implementing regulations, chains of authority — the related law a person would never find by hand. Run it on the sections that matter and follow the useful threads.
 - Don't stop at the statutes. Congressional Bills (source "bill") and the Federal Register (source "register") are vast, barely-explored veins — proposed and enacted legislation, agency rulemaking, notices. When a question touches how a rule came to be, a pending change, or an agency's reasoning, mine them too.
 - If the ask is vague, don't burn a search on a guess: say what you think they mean, offer a few terms/angles, and ask them to point you.
@@ -196,6 +201,35 @@ async function logQuery(
     });
   } catch {
     // Non-fatal — don't break the response for a logging failure
+  }
+}
+
+// Persist the plain-English readings Juri chose to record (via note_interpretation)
+// as labeled "AI interpretations" — section-keyed corpus data, never authoritative.
+// Service-role insert (RLS-exempt). Non-fatal: data capture must never break an answer.
+async function recordInterpretations(
+  userId: string | null,
+  query: string,
+  mode: JuriMode,
+  model: string,
+  rows: { identifier: string; source_code: string | null; interpretation: string }[],
+) {
+  if (!rows.length) return;
+  try {
+    const cloud = await getCloudClient();
+    await cloud.from("juri_interpretations").insert(
+      rows.map((r) => ({
+        user_id: userId,
+        identifier: r.identifier,
+        source_code: r.source_code,
+        interpretation: r.interpretation,
+        query,
+        model,
+        mode,
+      })),
+    );
+  } catch {
+    // swallow — never let interpretation capture break the response
   }
 }
 
@@ -337,6 +371,8 @@ type JuriResponse = {
   connections_read?: number;
   /** The searches Juri actually ran (transparency). */
   searches?: string[];
+  /** How many plain-English readings were saved as labeled AI interpretations. */
+  interpretations_recorded?: number;
   /** Which depth this answer ran at. */
   mode?: JuriMode;
 };
@@ -454,6 +490,18 @@ export const askJuri = createServerFn({ method: "POST" })
           required: ["identifiers"],
         },
       },
+      {
+        name: "note_interpretation",
+        description: "Record YOUR plain-English reading of one specific section so it can be saved as an AI interpretation (clearly labeled, never authoritative, not legal advice). Call this when you characterize what a section means in everyday words, after reading its text. The identifier must be one you actually read; one call per section.",
+        input_schema: {
+          type: "object",
+          properties: {
+            identifier: { type: "string", description: "The section identifier you're interpreting (one you've read)." },
+            interpretation: { type: "string", description: "Your plain-English reading — what the section says/requires/permits, in everyday words. Saved as an AI interpretation, not legal advice." },
+          },
+          required: ["identifier", "interpretation"],
+        },
+      },
     ];
     if (profile.useGraph) {
       tools.push({
@@ -471,6 +519,9 @@ export const askJuri = createServerFn({ method: "POST" })
     const searches: string[] = [];
     const readMeta = new Map<string, { section_label: string | null; heading: string | null; source_code: string }>();
     const connectionCandidates = new Set<string>();
+    // Plain-English readings Juri chooses to record, keyed by section id (last
+    // wins). Persisted after the loop as labeled "AI interpretations".
+    const interpretations = new Map<string, string>();
     let charBudget = profile.maxContextChars;
 
     const runTool = async (name: string, input: any): Promise<unknown> => {
@@ -491,6 +542,12 @@ export const askJuri = createServerFn({ method: "POST" })
             return { identifier: d.identifier, source: d.source_code, section_label: d.section_label, heading: d.heading, text };
           });
           return { sections, note: charBudget <= 0 ? "context budget reached — synthesize from what you've read" : undefined };
+        }
+        if (name === "note_interpretation") {
+          const id = String(input?.identifier ?? "").trim().slice(0, 300);
+          const text = String(input?.interpretation ?? "").trim().slice(0, 4000);
+          if (id && text) interpretations.set(id, text);
+          return { recorded: Boolean(id && text), identifier: id };
         }
         if (name === "find_connections") {
           const conn = await jFindConnections(corpus, String(input?.identifier ?? ""), profile.maxConnections);
@@ -533,7 +590,7 @@ export const askJuri = createServerFn({ method: "POST" })
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
           body: JSON.stringify({
-            model: "claude-sonnet-4-6",
+            model: JURI_MODEL,
             max_tokens: profile.maxTokens,
             // Static system prompt → cacheable (GA, no-op below the 2048-tok floor).
             system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
@@ -595,6 +652,15 @@ export const askJuri = createServerFn({ method: "POST" })
       return { identifier: id, section_label: m.section_label, heading: m.heading, source_code: m.source_code };
     });
 
+    // Persist Juri's plain-English readings as labeled AI interpretations
+    // (section-keyed corpus data; never authoritative). Non-fatal.
+    const interpretationRows = Array.from(interpretations.entries()).map(([identifier, interpretation]) => ({
+      identifier,
+      source_code: readMeta.get(identifier)?.source_code ?? null,
+      interpretation,
+    }));
+    await recordInterpretations(userId, data.query, mode, JURI_MODEL, interpretationRows);
+
     const creditsRemaining = isAdmin ? 9999 : await getUserCredits(userId);
     return {
       answer,
@@ -605,6 +671,7 @@ export const askJuri = createServerFn({ method: "POST" })
       sections_read: sectionsRead,
       connections_read: connectionsRead,
       searches,
+      interpretations_recorded: interpretationRows.length,
       mode,
     };
   });

@@ -2940,11 +2940,48 @@ main {
     color: #6a7a9a;
   }
   .juri-receipt-searches {
-    margin-top: 2px;
+    margin-top: 5px;
     text-transform: none;
     letter-spacing: 0;
     color: #5a6a8a;
+  }
+  .juri-receipt-searches-lead {
+    display: block;
     font-style: italic;
+    margin-bottom: 4px;
+  }
+  .juri-search-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  /* Each search Juri ran, as a tappable pill that drives the main page to the
+     full results — so the user can re-filter and take the search from there. */
+  .juri-search-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(120,139,176,0.10);
+    border: 1px solid rgba(120,139,176,0.22);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-style: normal;
+    color: #9aa9c4;
+    text-decoration: none;
+    transition: background 120ms, border-color 120ms, color 120ms;
+  }
+  .juri-search-link:hover {
+    background: rgba(200,162,75,0.14);
+    border-color: rgba(200,162,75,0.4);
+    color: #e7cd7e;
+  }
+  .juri-search-link-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ── Responsive — on narrow screens the drawer goes full-width ── */
