@@ -14,5 +14,11 @@ import { nitro } from "nitro/vite";
 //                         TanStack Start docs recommend.
 export default defineConfig({
   cloudflare: false,
-  plugins: [nitro()],
+  // Nitro's Vercel preset uses the Build Output API, so vercel.json's `functions`
+  // block is ignored — maxDuration must be set here to be written into the
+  // function's .vc-config.json. Juri's deep dives chase long chains of
+  // definitions (many model rounds + corpus lookups), so give them headroom:
+  // 300s is the Vercel Pro ceiling. Applies to all routes; it's only a cap, and
+  // you're billed for actual execution, so fast routes are unaffected.
+  plugins: [nitro({ vercel: { functions: { maxDuration: 300 } } })],
 });
