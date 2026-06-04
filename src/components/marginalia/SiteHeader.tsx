@@ -229,6 +229,15 @@ export function SiteHeader() {
                 {it.label}
               </Link>
             ))}
+            {/* Contact is a mailto, not a route — a real address so anyone can
+                report an issue. Plain <a>, since TanStack Link is route-only. */}
+            <a
+              href="mailto:support@self-law.org"
+              className="am-navlink"
+              title="Email support — report an issue or ask a question"
+            >
+              Contact
+            </a>
           </div>
           <span className="am-actions-sep hidden lg:block" aria-hidden />
           {!user && !loading && (

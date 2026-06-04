@@ -30,6 +30,11 @@ export function SiteFooter() {
           <div className="font-display text-base text-[#fbf6e8]">Marginalia · a citizen's law index</div>
           <div className="max-w-xl text-sm text-[#aeb9d6]">
             A research desk, not legal advice. Always read the cited source before relying on a summary.
+            <br />
+            Questions or an issue?{" "}
+            <a href="mailto:support@self-law.org" className="font-medium text-[#e7cd7e] underline-offset-2 hover:underline">
+              support@self-law.org
+            </a>
           </div>
         </div>
 
