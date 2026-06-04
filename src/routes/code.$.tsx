@@ -991,6 +991,12 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
 // Cross-references collapse into a single disclosure below the statute. The
 // reader sees the law first; "what else points here" waits until they ask for
 // it. Replaces the old always-on right rail. Default closed.
+//
+// Uses a native <details> (not React state) on purpose: the children render
+// into the DOM even while collapsed, so the citation links — traces-out AND
+// cited-by, one per related section — are in the SSR HTML and Googlebot follows
+// them. Across millions of edges that's the internal link graph that makes the
+// corpus crawlable (the moat). A client-only toggle would hide all of it.
 function ConnectionsDisclosure({
   citedByTotal,
   tracesCount,
@@ -1002,31 +1008,23 @@ function ConnectionsDisclosure({
   externalCount: number;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   if (citedByTotal === 0 && tracesCount === 0 && externalCount === 0) return null;
   const bits: string[] = [];
   if (citedByTotal > 0) bits.push(`${citedByTotal.toLocaleString()} cite this`);
   if (tracesCount > 0) bits.push(`traces to ${tracesCount}`);
   if (externalCount > 0 && citedByTotal === 0 && tracesCount === 0) bits.push(`${externalCount} off-index`);
   return (
-    <section className="mt-12 rounded-2xl border border-border/60 bg-card">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
-        aria-expanded={open}
-      >
+    <details className="group mt-12 rounded-2xl border border-border/60 bg-card">
+      <summary className="flex w-full cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-left [&::-webkit-details-marker]:hidden">
         <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <Network className="h-4 w-4 shrink-0 text-accent" />
           <span className="font-display text-sm font-semibold text-foreground">Connections</span>
           <span className="citation-tag text-muted-foreground">{bits.join(" · ")}</span>
         </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && <div className="space-y-8 border-t border-border/40 px-5 pb-7 pt-6">{children}</div>}
-    </section>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-8 border-t border-border/40 px-5 pb-7 pt-6">{children}</div>
+    </details>
   );
 }
 
