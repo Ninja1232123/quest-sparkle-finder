@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound, useSearch } from "@tanstack/react-router";
-import { getDocument, listSources, type DocCitationRow, type IncomingCitation } from "@/lib/documents.functions";
+import { getDocument, listSources, type DocCitationRow, type IncomingCitation, type InboundBySource } from "@/lib/documents.functions";
+import { SectionCitationGraph, type GraphTrace } from "@/components/marginalia/SectionCitationGraph";
 import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link as LinkIcon, Minus, Network, PenLine, Plus, Scale, X } from "lucide-react";
@@ -1030,7 +1031,7 @@ function ConnectionsDisclosure({
 }
 
 function DocumentPage() {
-  const { document, citations, incoming, incoming_total, prev, next, sources } = Route.useLoaderData();
+  const { document, citations, incoming, incoming_total, inbound_by_source, prev, next, sources } = Route.useLoaderData();
   const search = useSearch({ from: "/code/$" }) as { q?: string };
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
@@ -1101,6 +1102,35 @@ function DocumentPage() {
     arr.push(c);
     traceBySource.set(k, arr);
   }
+
+  // Citation-graph nodes: resolved internal targets (clickable) plus a few
+  // case-law / off-corpus cites (labeled, not linked — look them up). Reserve
+  // slots so case cites surface even when a section has many internal targets.
+  const CASE_ORDER = (k: string) =>
+    ["scotus", "sct", "fed_app", "fed_supp", "led"].includes(k) ? 0 : 1;
+  const extForGraph = [...external].sort((a, b) => CASE_ORDER(a.target_type) - CASE_ORDER(b.target_type));
+  const shortId = (id: string) => id.split("/").filter(Boolean).slice(-1)[0] ?? id;
+  const graphTraces: GraphTrace[] = [
+    ...internal.slice(0, 9).map((c): GraphTrace => ({
+      key: `i${c.to_identifier}`,
+      title: c.target_heading || c.to_identifier || c.target_cite,
+      sub: c.target_section_label || shortId(c.to_identifier ?? ""),
+      source: c.target_source ?? "",
+      href: c.to_identifier,
+      kind: c.target_type,
+    })),
+    ...extForGraph.slice(0, 5).map((c): GraphTrace => ({
+      key: `x${c.target_cite}`,
+      title: c.target_cite,
+      sub: c.target_cite,
+      source: "",
+      href: null,
+      kind: c.target_type,
+    })),
+  ];
+  const graphCitedBy = inbound_by_source.filter((r: InboundBySource) => r.source);
+  const centerLabel = document.section_label || document.heading || shortId(document.identifier);
+  const centerSub = document.section_label ? document.heading ?? "" : "";
 
   const fontClass = ["text-[1.05rem]", "text-[1.15rem]", "text-[1.25rem]", "text-[1.4rem]", "text-[1.55rem]"][fontSize];
   const readingMin = document.word_count ? Math.max(1, Math.round(document.word_count / 220)) : null;
@@ -1199,17 +1229,18 @@ function DocumentPage() {
     </div>
   ) : null;
 
-  const graphPlaceholder = (
-    <div className="rounded-lg border border-dashed border-border/70 bg-card p-3 text-xs text-foreground/65">
-      <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-        <Network className="h-3.5 w-3.5" />
-        Citation graph
-      </div>
-      <p className="mt-1 leading-relaxed">
-        A visual map of what this section depends on and what depends on it — rendering here once the graph component ships.
-      </p>
-    </div>
-  );
+  const graphPanel =
+    graphTraces.length > 0 || graphCitedBy.length > 0 ? (
+      <SectionCitationGraph
+        centerLabel={centerLabel}
+        centerSub={centerSub}
+        centerSource={document.source_code}
+        traces={graphTraces}
+        citedBy={graphCitedBy}
+        citedByTotal={incoming_total}
+        tracesTotal={internal.length + external.length}
+      />
+    ) : null;
 
   return (
     <ResearchShell sources={sources} centerMaxWidth="max-w-[1700px]">
@@ -1343,7 +1374,6 @@ function DocumentPage() {
             {citedByPanel}
             {tracesPanel}
           </div>
-          {graphPlaceholder}
           {external.length > 0 && (
             <div>
               <div className="citation-tag text-muted-foreground">
@@ -1359,6 +1389,7 @@ function DocumentPage() {
               )}
             </div>
           )}
+          {graphPanel}
         </ConnectionsDisclosure>
 
         {(prev || next) && (

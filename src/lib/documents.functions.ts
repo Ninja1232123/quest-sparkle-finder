@@ -500,6 +500,11 @@ export type IncomingCitation = {
   authority: number; // doc_authority score of the citing doc, for ranking the rail
 };
 
+// Exact count of inbound citations grouped by the citing doc's source. Powers
+// the honest "who cites this, and how heavily" breakdown in the citation graph:
+// a big n is breadth of references from that corpus, not importance.
+export type InboundBySource = { source: string; n: number };
+
 export type SiblingNav = {
   identifier: string;
   heading: string | null;
@@ -521,6 +526,7 @@ export const getDocument = createServerFn({ method: "GET" })
         citations: [] as DocCitationRow[],
         incoming: [] as IncomingCitation[],
         incoming_total: 0,
+        inbound_by_source: [] as InboundBySource[],
         prev: null as SiblingNav,
         next: null as SiblingNav,
         error: error?.message ?? "Not found",
@@ -618,6 +624,13 @@ export const getDocument = createServerFn({ method: "GET" })
         .slice(0, 60);
     }
 
+    // Exact inbound counts grouped by citing source (for the citation graph's
+    // honest "cited by" side — true totals, not the windowed sample above).
+    const { data: inboundRaw } = await (supabaseAdmin as unknown as {
+      rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: { source: string; n: number }[] | null }>;
+    }).rpc("juri_inbound_by_source", { p_target: doc.id });
+    const inbound_by_source: InboundBySource[] = (inboundRaw ?? []).map((r) => ({ source: r.source, n: Number(r.n) }));
+
     // Prev / next sibling within the same source + parent_label, by sort_key.
     let prev: SiblingNav = null;
     let next: SiblingNav = null;
@@ -651,6 +664,7 @@ export const getDocument = createServerFn({ method: "GET" })
       citations,
       incoming,
       incoming_total,
+      inbound_by_source,
       prev,
       next,
       error: null as string | null,
