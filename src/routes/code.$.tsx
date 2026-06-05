@@ -204,9 +204,15 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
   );
 }
 
-function MarginNote({ text, noteCases, onEdit, onDelete }: { text: string; noteCases: CaseRecord[]; onEdit: () => void; onDelete: () => void }) {
+// `tone` distinguishes where the note lives: "ochre" is the desktop margin rail
+// (the gold reserved for marks); "sage" is the stacked Desk on phones/tablets,
+// a cooler green so the note reads as clearly its own thing away from the gutter.
+function MarginNote({ text, noteCases, onEdit, onDelete, tone = "ochre" }: { text: string; noteCases: CaseRecord[]; onEdit: () => void; onDelete: () => void; tone?: "ochre" | "sage" }) {
+  const accent = tone === "sage"
+    ? { rail: "border-sage", wash: "bg-sage/[0.09]", tagBorder: "border-sage/55", tagBg: "bg-sage/20 hover:bg-sage/30" }
+    : { rail: "border-ochre", wash: "bg-ochre/[0.07]", tagBorder: "border-ochre/55", tagBg: "bg-ochre/20 hover:bg-ochre/30" };
   return (
-    <div className="group/note relative rounded-lg border-l-[3px] border-ochre bg-ochre/[0.07] px-3 py-2.5 shadow-[var(--shadow-card)]">
+    <div className={`group/note relative rounded-lg border-l-[3px] ${accent.rail} ${accent.wash} px-3 py-2.5 shadow-[var(--shadow-card)]`}>
       {noteCases.length > 0 && (
         <div className="mb-1.5 flex flex-wrap gap-1">
           {noteCases.map((c) => (
@@ -214,7 +220,7 @@ function MarginNote({ text, noteCases, onEdit, onDelete }: { text: string; noteC
               key={c.id}
               to="/cases/$id"
               params={{ id: c.id }}
-              className="inline-flex items-center gap-1 rounded-full border border-ochre/55 bg-ochre/20 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide text-foreground/75 hover:bg-ochre/30"
+              className={`inline-flex items-center gap-1 rounded-full border ${accent.tagBorder} ${accent.tagBg} px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide text-foreground/75`}
             >
               <Scale className="h-2.5 w-2.5" /> {c.name}
             </Link>
@@ -233,7 +239,8 @@ function MarginNote({ text, noteCases, onEdit, onDelete }: { text: string; noteC
         {noteCases.length > 0 && (
           <span className="font-mono text-[9px] uppercase tracking-wide text-terracotta/80">filed · citation attached</span>
         )}
-        <div className="ml-auto flex gap-3 opacity-0 transition group-hover/note:opacity-100">
+        {/* Touch has no hover: keep edit/delete visible below lg, hover-reveal on desktop. */}
+        <div className="ml-auto flex gap-3 transition lg:opacity-0 lg:group-hover/note:opacity-100">
           <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
           <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
         </div>
@@ -503,7 +510,7 @@ function DeskStacked({ notes, composing, cases, casesForIdx, onCompose, onSave, 
                   onCancel={onCancel}
                 />
               ) : (
-                <MarginNote text={notes[i]?.text ?? ""} noteCases={casesForIdx(i)} onEdit={() => onCompose(i)} onDelete={() => onDelete(i)} />
+                <MarginNote text={notes[i]?.text ?? ""} noteCases={casesForIdx(i)} onEdit={() => onCompose(i)} onDelete={() => onDelete(i)} tone="sage" />
               )}
             </div>
           ))}
