@@ -94,12 +94,13 @@ export const Route = createRootRoute({
                   "urlTemplate": "https://self-law.org/search?q={search_term_string}"
                 },
                 "query-input": "required name=search_term_string"
+              }
             }
           ]
         })
       }
     ]
-  })
+  }),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

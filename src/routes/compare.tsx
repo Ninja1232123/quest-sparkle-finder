@@ -90,7 +90,7 @@ export const Route = createFileRoute("/compare")({
       meta: [
         { title: "Side-by-Side Legal Source Comparison Tool | Self-Law" },
         { name: "description", content: "Compare state statutes, federal codes, and regulations side by side. Search multiple legal sources simultaneously to spot differences in the law."},
-        { property: "og:title", content: Side-by-Side Legal Source Comparison Tool | Self-Law },
+        { property: "og:title", content: "Side-by-Side Legal Source Comparison Tool | Self-Law" },
         { property: "og:description", content: "Compare state statutes, federal codes, and regulations side by side. Search multiple legal sources simultaneously to spot differences in the law." },
         { property: "og:url", content: "https://self-law.org/compare" },
       ],
