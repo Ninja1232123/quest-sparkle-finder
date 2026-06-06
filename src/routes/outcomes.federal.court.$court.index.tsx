@@ -16,12 +16,18 @@ export const Route = createFileRoute("/outcomes/federal/court/$court/")({
   component: CourtPage,
   head: ({ loaderData }) => {
     const name = loaderData?.page?.court_name ?? "Federal court";
+    const title = `${name} — civil case outcomes · Self-Law`;
+    const description = `How civil cases close in the ${name}: settlement, dismissal, and plaintiff-win base rates by claim type.`;
+    const url = `https://self-law.org/outcomes/federal/court/${loaderData?.court ?? ""}`;
     return {
       meta: [
-        { title: `${name} — civil case outcomes · Self-Law` },
-        { name: "description", content: `How civil cases close in the ${name}: settlement, dismissal, and plaintiff-win base rates by claim type.` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/court/${loaderData?.court ?? ""}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (

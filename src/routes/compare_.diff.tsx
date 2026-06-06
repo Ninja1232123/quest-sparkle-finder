@@ -32,7 +32,11 @@ export const Route = createFileRoute("/compare_/diff")({
     meta: [
       { title: "Section diff · Compare · Self-Law" },
       { name: "description", content: "Word-for-word diff between two sections of the law." },
+      { property: "og:title", content: "Section diff · Compare · Self-Law" },
+      { property: "og:description", content: "Word-for-word diff between two sections of the law." },
+      { property: "og:url", content: "https://self-law.org/compare/diff" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/compare/diff" }],
   }),
 });
 

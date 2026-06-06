@@ -28,7 +28,9 @@ export const Route = createFileRoute("/features")({
         property: "og:description",
         content: "Read the law, search it, compare it, annotate it, and ask questions about it — in one place, for $5.",
       },
+      { property: "og:url", content: "https://self-law.org/features" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/features" }],
   }),
 });
 
@@ -169,7 +171,7 @@ function Features() {
           </div>
         </section>
 
-        {/* ── The Tools ────────────────────────────────────── */}
+        {/* ── The Tools ───────────────────────────────��────── */}
         <section className="mx-auto max-w-5xl px-6 py-12">
           <div className="citation-tag text-accent">② tools on the desk</div>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">

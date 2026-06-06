@@ -14,7 +14,11 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Sign in · Self-Law" },
       { name: "description", content: "Sign in to save citations to your Cases." },
+      { property: "og:title", content: "Sign in · Self-Law" },
+      { property: "og:description", content: "Sign in to save citations to your Cases." },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/auth" }],
   }),
 });
 

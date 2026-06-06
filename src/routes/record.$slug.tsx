@@ -14,12 +14,19 @@ export const Route = createFileRoute("/record/$slug")({
   head: ({ loaderData }) => {
     const o = loaderData?.opinion;
     const cite = o?.us_cite ? `${o.us_cite}${o.year ? ` (${o.year})` : ""}` : "";
+    const title = `${o?.case_title ?? "Opinion"}${cite ? ` — ${cite}` : ""} · Self-Law`;
+    const description = `Full text of the U.S. Supreme Court opinion in ${o?.case_title ?? "this case"}${cite ? `, ${cite}` : ""}. Public-domain court record.`;
+    const url = `https://self-law.org/record/${loaderData?.opinion?.slug ?? ""}`;
     return {
       meta: [
-        { title: `${o?.case_title ?? "Opinion"}${cite ? ` — ${cite}` : ""} · Self-Law` },
-        { name: "description", content: `Full text of the U.S. Supreme Court opinion in ${o?.case_title ?? "this case"}${cite ? `, ${cite}` : ""}. Public-domain court record.` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/record/${loaderData?.opinion?.slug ?? ""}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (
