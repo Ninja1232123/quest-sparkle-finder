@@ -18,15 +18,18 @@ export const Route = createFileRoute("/outcomes/federal/$family/$casetype")({
   component: CaseTypePage,
   head: ({ params }) => {
     const fam = FAMILY_META[params.family]?.name ?? "Federal";
+    const title = `${params.casetype.replace(/^\d+-/, "").replace(/-/g, " ")} — federal outcomes · Self-Law`;
+    const description = `How ${fam.toLowerCase()} cases of this type close in federal court: plaintiff-win rate, settlement and dismissal base rates, and how it varies by district.`;
+    const url = `https://self-law.org/outcomes/federal/${params.family}/${params.casetype}`;
     return {
       meta: [
-        { title: `${params.casetype.replace(/^\d+-/, "").replace(/-/g, " ")} — federal outcomes · Self-Law` },
-        {
-          name: "description",
-          content: `How ${fam.toLowerCase()} cases of this type close in federal court: plaintiff-win rate, settlement and dismissal base rates, and how it varies by district.`,
-        },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/${params.family}/${params.casetype}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (

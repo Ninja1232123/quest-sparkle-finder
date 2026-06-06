@@ -18,7 +18,9 @@ export const Route = createFileRoute("/about")({
         property: "og:description",
         content: "Why Self-Law exists: making the law readable for the people it actually applies to.",
       },
+      { property: "og:url", content: "https://self-law.org/about" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/about" }],
   }),
 });
 

@@ -21,7 +21,13 @@ export const Route = createFileRoute("/builder")({
           "Draft your own court documents. Access our legal template creator to build structured filing documents backed by real state and federal citations.",
       },
       { property: "og:title", content: "Legal Document Builder · Self-Law" },
+      {
+        property: "og:description",
+        content: "Build a court-formatted pleading — caption, line numbers, margins, fonts — and export to PDF.",
+      },
+      { property: "og:url", content: "https://self-law.org/builder" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/builder" }],
   }),
 });
 

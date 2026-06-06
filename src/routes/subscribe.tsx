@@ -16,7 +16,14 @@ export const Route = createFileRoute("/subscribe")({
         content:
           "$5/month. Side-by-side compare, highlight, annotate, export to PDF, and keyword alerts across every codebook.",
       },
+      { property: "og:title", content: "Go Pro Se — $5/month · Self-Law" },
+      {
+        property: "og:description",
+        content: "Compare side by side, highlight, annotate, export to PDF, and set keyword alerts across every codebook.",
+      },
+      { property: "og:url", content: "https://self-law.org/subscribe" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/subscribe" }],
   }),
 });
 
