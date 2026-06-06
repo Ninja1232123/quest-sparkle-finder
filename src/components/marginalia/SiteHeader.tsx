@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SearchBar } from "./SearchBar";
 import { useAuth } from "@/hooks/use-auth";
 import { ChevronDown, LogOut, Sun, Moon, Sparkles, Menu, X, Scale } from "lucide-react";
@@ -309,154 +310,166 @@ function MobileNav({
         <Menu className="h-5 w-5" />
       </button>
 
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            onClick={close}
-            aria-hidden
-          />
-          <div
-            className="fixed inset-y-0 right-0 z-50 flex w-[86%] max-w-sm flex-col overflow-y-auto bg-background shadow-[var(--shadow-warm)]"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Site menu"
-          >
-            <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
-              <span className="font-display text-sm font-semibold text-foreground">Menu</span>
-              <button
-                type="button"
-                onClick={close}
-                className="rounded-full p-1.5 text-foreground/60 hover:text-foreground"
-                aria-label="Close menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="px-4 py-3">
-              {/* Account / conversion actions — the part that was fully invisible on phones */}
-              {!signedIn && !loading && (
-                <div className="flex flex-col gap-2 pb-3">
-                  <Link
-                    to="/subscribe"
-                    onClick={close}
-                    className="flex items-center justify-center gap-1.5 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Go Pro · $5
-                  </Link>
-                  <Link
-                    to="/auth"
-                    search={{ mode: "login", redirect: undefined }}
-                    onClick={close}
-                    className="rounded-full border border-border/60 px-4 py-2.5 text-center text-sm text-foreground/80"
-                  >
-                    Sign in
-                  </Link>
-                </div>
-              )}
-              {signedIn && (
-                <div className="flex flex-col gap-1 pb-2">
-                  {/* My Cases is the primary signed-in destination — promote it
-                      out of the generic section list into the account cluster. */}
-                  <Link
-                    to="/cases"
-                    onClick={close}
-                    className="flex items-center gap-2 rounded-md bg-ochre/10 px-3 py-2.5 text-sm font-semibold text-foreground"
-                  >
-                    <Scale className="h-4 w-4 text-ochre" />
-                    My Cases
-                  </Link>
-                  <Link
-                    to="/account"
-                    onClick={close}
-                    className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground/85"
-                  >
-                    My account
-                  </Link>
-                </div>
-              )}
-
-              {/* Sections — the public SECONDARY_LINKS. When signed in, My Cases
-                  is shown above, so drop it here to avoid a duplicate. */}
-              <div className="border-t border-border/30 py-1">
-                {SECONDARY_LINKS.filter((it) => !(signedIn && it.to === "/cases")).map((it) => (
-                  <Link
-                    key={it.to}
-                    to={it.to as never}
-                    onClick={close}
-                    className="block rounded-md px-3 py-2.5 text-sm font-medium text-foreground/85"
-                  >
-                    {it.label}
-                  </Link>
-                ))}
+      {/* Portaled to <body>: the header has backdrop-filter, which makes it the
+          containing block for position:fixed children — so a drawer rendered in
+          place would size to the header, not the viewport. The portal escapes it. */}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={close}
+              aria-hidden
+            />
+            <div
+              className="fixed inset-y-0 right-0 z-50 flex w-[86%] max-w-sm flex-col overflow-y-auto bg-background shadow-[var(--shadow-warm)]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site menu"
+            >
+              <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+                <span className="font-display text-sm font-semibold text-foreground">Menu</span>
+                <button
+                  type="button"
+                  onClick={close}
+                  className="rounded-full p-1.5 text-foreground/60 hover:text-foreground"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* The Library — codebook groups */}
-              <div className="mt-2 border-t border-border/30 pt-2">
-                <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
-                  The Library
-                </div>
-                {NAV_GROUPS.map((group) => (
-                  <MobileNavGroup key={group.key} group={group} onNavigate={close} />
-                ))}
-              </div>
-
-              {/* Tools */}
-              <div className="mt-2 border-t border-border/30 pt-2">
-                <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
-                  Tools
-                </div>
-                {TOOLS.filter((t) => !t.authRequired || signedIn).map((t) => (
-                  <Link
-                    key={t.href}
-                    to={t.href as never}
-                    onClick={close}
-                    className="flex items-start gap-2.5 rounded-md px-3 py-2.5"
-                  >
-                    <t.icon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/55" />
-                    <div className="min-w-0">
-                      <div className="font-display text-sm font-semibold text-foreground">
-                        {t.label}
-                      </div>
-                      <div className="text-xs leading-snug text-foreground/55">{t.description}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* Footer: theme + support + (sign out) */}
-              <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-3">
-                <a href="mailto:support@self-law.org" className="text-xs text-foreground/60">
-                  support@self-law.org
-                </a>
-                <div className="flex items-center gap-1">
-                  {signedIn && (
-                    <button
-                      onClick={() => {
-                        close();
-                        onSignOut();
-                      }}
-                      className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-foreground/70"
+              <div className="px-4 py-3">
+                {/* Account / conversion actions — the part that was fully invisible on phones */}
+                {!signedIn && !loading && (
+                  <div className="flex flex-col gap-2 pb-3">
+                    <Link
+                      to="/subscribe"
+                      onClick={close}
+                      className="flex items-center justify-center gap-1.5 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
                     >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Sign out
+                      <Sparkles className="h-4 w-4" />
+                      Go Pro · $5
+                    </Link>
+                    <Link
+                      to="/auth"
+                      search={{ mode: "login", redirect: undefined }}
+                      onClick={close}
+                      className="rounded-full border border-border/60 px-4 py-2.5 text-center text-sm text-foreground/80"
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+                )}
+                {signedIn && (
+                  <div className="flex flex-col gap-1 pb-2">
+                    {/* My Cases is the primary signed-in destination — promote it
+                      out of the generic section list into the account cluster. */}
+                    <Link
+                      to="/cases"
+                      onClick={close}
+                      className="flex items-center gap-2 rounded-md bg-ochre/10 px-3 py-2.5 text-sm font-semibold text-foreground"
+                    >
+                      <Scale className="h-4 w-4 text-ochre" />
+                      My Cases
+                    </Link>
+                    <Link
+                      to="/account"
+                      onClick={close}
+                      className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground/85"
+                    >
+                      My account
+                    </Link>
+                  </div>
+                )}
+
+                {/* Sections — the public SECONDARY_LINKS. When signed in, My Cases
+                  is shown above, so drop it here to avoid a duplicate. */}
+                <div className="border-t border-border/30 py-1">
+                  {SECONDARY_LINKS.filter((it) => !(signedIn && it.to === "/cases")).map((it) => (
+                    <Link
+                      key={it.to}
+                      to={it.to as never}
+                      onClick={close}
+                      className="block rounded-md px-3 py-2.5 text-sm font-medium text-foreground/85"
+                    >
+                      {it.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* The Library — codebook groups */}
+                <div className="mt-2 border-t border-border/30 pt-2">
+                  <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
+                    The Library
+                  </div>
+                  {NAV_GROUPS.map((group) => (
+                    <MobileNavGroup key={group.key} group={group} onNavigate={close} />
+                  ))}
+                </div>
+
+                {/* Tools */}
+                <div className="mt-2 border-t border-border/30 pt-2">
+                  <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
+                    Tools
+                  </div>
+                  {TOOLS.filter((t) => !t.authRequired || signedIn).map((t) => (
+                    <Link
+                      key={t.href}
+                      to={t.href as never}
+                      onClick={close}
+                      className="flex items-start gap-2.5 rounded-md px-3 py-2.5"
+                    >
+                      <t.icon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/55" />
+                      <div className="min-w-0">
+                        <div className="font-display text-sm font-semibold text-foreground">
+                          {t.label}
+                        </div>
+                        <div className="text-xs leading-snug text-foreground/55">
+                          {t.description}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Footer: theme + support + (sign out) */}
+                <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-3">
+                  <a href="mailto:support@self-law.org" className="text-xs text-foreground/60">
+                    support@self-law.org
+                  </a>
+                  <div className="flex items-center gap-1">
+                    {signedIn && (
+                      <button
+                        onClick={() => {
+                          close();
+                          onSignOut();
+                        }}
+                        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-foreground/70"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        Sign out
+                      </button>
+                    )}
+                    <button
+                      onClick={onToggleTheme}
+                      className="rounded-full p-1.5 text-foreground/60 hover:text-foreground"
+                      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
                     </button>
-                  )}
-                  <button
-                    onClick={onToggleTheme}
-                    className="rounded-full p-1.5 text-foreground/60 hover:text-foreground"
-                    aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
