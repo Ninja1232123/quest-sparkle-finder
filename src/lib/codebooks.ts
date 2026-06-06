@@ -347,6 +347,7 @@ import {
 export const TOOLS: ToolLink[] = [
   { label: "Search", href: "/search", description: "Keyword + phrase across every codebook.", icon: SearchIcon },
   { label: "Compare", href: "/compare", description: "Set the same phrase against multiple sources side by side.", icon: Columns },
+  { label: "Document Builder", href: "/builder", description: "Format a court-ready pleading — caption, line numbers, margins — and export to PDF or Word.", icon: FileText },
   { label: "Forum", href: "/forum", description: "The Floor — discuss what you're researching.", icon: MessagesSquare },
   { label: "About", href: "/about", description: "What Marginalia is and why it exists.", icon: Info },
 ];

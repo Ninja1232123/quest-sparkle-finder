@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { Printer, FileText, Eye, Pencil } from "lucide-react";
+import { Printer, FileText, Eye, Pencil, Download } from "lucide-react";
 
 // Persistence keys — a refresh shouldn't wipe a half-drafted pleading.
 const STORAGE_SPEC = "doc-builder-spec-v1";
@@ -76,7 +76,31 @@ function Builder() {
   const [hydrated, setHydrated] = useState(false);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [bodyHtml, setBodyHtml] = useState("");
+  const [docxBusy, setDocxBusy] = useState(false);
   const set = <K extends keyof Spec>(k: K, v: Spec[K]) => setSpec((s) => ({ ...s, [k]: v }));
+
+  // The portable, still-editable copy. Always exports the saved body (the editor
+  // persists on input), so it works from either mode. docx is lazy-loaded.
+  const downloadDocx = async () => {
+    if (docxBusy) return;
+    setDocxBusy(true);
+    try {
+      let saved = "";
+      try {
+        saved = localStorage.getItem(STORAGE_BODY) || "";
+      } catch {
+        /* ignore */
+      }
+      const body = saved && saved.trim() ? saved : DEFAULT_BODY_HTML;
+      const { exportDocx } = await import("@/lib/docx-export");
+      const name = (spec.title || "pleading").replace(/[^\w-]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
+      await exportDocx(spec, body, `${name || "pleading"}.docx`);
+    } catch {
+      /* swallow — a failed export shouldn't break the page */
+    } finally {
+      setDocxBusy(false);
+    }
+  };
 
   // Entering preview paginates from the saved body (the editor persists to it on
   // input). Re-pagination happens only here, never on keystroke — so the caret in
@@ -304,13 +328,23 @@ function Builder() {
             </Group>
 
             {mode === "edit" ? (
-              <button
-                onClick={enterPreview}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
-              >
-                <Eye className="h-4 w-4" />
-                Paginate &amp; preview
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={enterPreview}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
+                >
+                  <Eye className="h-4 w-4" />
+                  Paginate &amp; preview
+                </button>
+                <button
+                  onClick={downloadDocx}
+                  disabled={docxBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm text-foreground/80 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {docxBusy ? "Preparing…" : "Download .docx"}
+                </button>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 <button
@@ -319,6 +353,14 @@ function Builder() {
                 >
                   <Printer className="h-4 w-4" />
                   Export PDF
+                </button>
+                <button
+                  onClick={downloadDocx}
+                  disabled={docxBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm text-foreground/80 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {docxBusy ? "Preparing…" : "Download .docx"}
                 </button>
                 <button
                   onClick={() => setMode("edit")}
