@@ -2211,35 +2211,60 @@ main {
     text-shadow: 0 2px 0 #b22234, 0 0 40px rgba(251,246,232,0.45);
   }
 
-  /* ── Flanking law quotes in the navy beside the eagle ── */
-  .hero-quote {
+  /* ── Flanking rails in the navy beside the eagle ──
+     Each rail is an absolutely-positioned vertical column: the law quote on
+     top and a free, editable note slot below it. */
+  .hero-rail {
     position: absolute;
-    top: 30%;
+    top: 24%;
     z-index: 3;
-    width: clamp(180px, 16vw, 250px);
+    width: clamp(240px, 20vw, 340px);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .hero-rail-l { left: 2.6vw; align-items: flex-end; text-align: right; }
+  .hero-rail-r { right: 2.6vw; align-items: flex-start; text-align: left; }
+
+  .hero-quote {
+    width: 100%;
     margin: 0;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: clamp(16px, 1.3vw, 20px);
-    line-height: 1.42;
-    color: #d7deef;
+    font-size: clamp(19px, 1.55vw, 25px);
+    line-height: 1.5;
+    color: #e3e9f6;
     text-shadow: 0 1px 10px rgba(0,0,0,0.7);
   }
   .hero-quote cite {
     display: block;
-    margin-top: 9px;
+    margin-top: 11px;
     font-family: var(--font-mono);
     font-style: normal;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #c8a24b;
   }
-  .hero-quote-l { left: 3.2vw; text-align: right; }
-  .hero-quote-l cite { text-align: right; }
-  .hero-quote-r { right: 3.2vw; text-align: left; }
-  /* below ~1500px there's no room beside the eagle — hide them */
-  @media (max-width: 1500px) { .hero-quote { display: none; } }
+
+  /* Editable note slot — type or paste anything here for updates/announcements.
+     Sits below each quote with a subtle gold divider so it reads as its own
+     block, not a continuation of the quote. */
+  .hero-note {
+    width: 100%;
+    padding-top: 14px;
+    border-top: 1px solid rgba(200,162,75,0.4);
+    font-family: var(--font-serif);
+    font-size: clamp(16px, 1.25vw, 20px);
+    line-height: 1.5;
+    color: #c4cde2;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .hero-note p { margin: 0; }
+  .hero-note p + p { margin-top: 8px; }
+
+  /* below ~1500px there's no room beside the eagle — hide the rails */
+  @media (max-width: 1500px) { .hero-rail { display: none; } }
 
   .home-am-ribbon {
     text-align: center;
