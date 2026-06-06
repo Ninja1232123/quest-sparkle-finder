@@ -78,7 +78,7 @@ function Index() {
             </blockquote>
             {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Check out our newest feature! - a super easy and simple Legal Document Builder for creating motions and pleadings with perfect format, just add your local court's document specs' and you're good to go!</p>
+              <p>Check out our newest feature! A simple legal template Document Builder. Just input your courts required specifications and its done.</p>
             </div>
           </div>
 
@@ -89,7 +89,7 @@ function Index() {
             </blockquote>
             {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Read the law. Find something related to your situation? Write about it in the margins. Use @ to tag specific 'Cases' you create to save them to that case file and build a case using the laws supporting your position, without leaving the page you're citing.</p>
+              <p>Check out our "How it works" page! Our site is perfect for taking notes or building a case backed by law.</p>
             </div>
           </div>
 
