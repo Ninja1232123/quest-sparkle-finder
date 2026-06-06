@@ -22,16 +22,16 @@ export const Route = createFileRoute("/ucc")({
   pendingComponent: SourceBrowserPending,
   head: () => ({
     meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:url", content: URL },
-      { property: "og:type", content: "website" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
+      { title: "Uniform Commercial Code | Self-Law" },
+      { name: "description", content: "Uniform Commercial Code | Search UCC today | Self-Law" },
+      { property: "og:title", content: "Uniform Commercial Code | Self-Law" },
+      { property: "og:description", content: "Uniform Commercial Code | Search UCC today | Self-Law" },
+      { property: "og:url", content: "https://self-law.org/ucc" },
+      { property: "og:type", content: "https://self-law.org/ucc" },
+      { name: "twitter:title", content: "Uniform Commercial Code | Self-Law" },
+      { name: "twitter:description", content: "Uniform Commercial Code | Search UCC today | Self-Law" },
     ],
-    links: [{ rel: "canonical", href: URL }],
+    links: [{ rel: "canonical", href: "https://self-law.org/ucc" }],
     scripts: [
       {
         type: "application/ld+json",

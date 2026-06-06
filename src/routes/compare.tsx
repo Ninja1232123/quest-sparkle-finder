@@ -88,10 +88,10 @@ export const Route = createFileRoute("/compare")({
       : "Side-by-side search across the Constitution, U.S. Code, CFR, UCC, TFM, and IRM. Spot how the same term shows up in each codebook.";
     return {
       meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
+        { title: "Side-by-Side Legal Source Comparison Tool | Self-Law" },
+        { name: "description", content: "Compare state statutes, federal codes, and regulations side by side. Search multiple legal sources simultaneously to spot differences in the law."},
+        { property: "og:title", content: Side-by-Side Legal Source Comparison Tool | Self-Law },
+        { property: "og:description", content: "Compare state statutes, federal codes, and regulations side by side. Search multiple legal sources simultaneously to spot differences in the law." },
         { property: "og:url", content: "https://self-law.org/compare" },
       ],
       links: [{ rel: "canonical", href: "https://self-law.org/compare" }],

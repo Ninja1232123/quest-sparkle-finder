@@ -14,11 +14,11 @@ export const Route = createFileRoute("/builder")({
   component: Builder,
   head: () => ({
     meta: [
-      { title: "Document Builder · Self-Law" },
+      { title: "Legal Filing Template Creator | Pro Se Court Forms | Self-Law" },
       {
         name: "description",
         content:
-          "Build a court-formatted pleading — caption, pleading paper line numbers, margins, fonts, and spacing — and export to PDF. No Word, no buried menus.",
+          "Draft your own court documents. Access our legal template creator to build structured filing documents backed by real state and federal citations.",
       },
       { property: "og:title", content: "Legal Document Builder · Self-Law" },
     ],

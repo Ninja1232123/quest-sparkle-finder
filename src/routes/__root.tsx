@@ -64,26 +64,42 @@ export const Route = createRootRoute({
           "@context": "https://schema.org",
           "@graph": [
             {
-              "@type": "Organization",
-              name: "Self-Law",
-              url: "https://self-law.org",
-              description: "A legal research tool for Pro Se Litigants..",
+              "@type": "WebApplication",
+              "@id": "https://self-law.org",
+              "name": "Self-Law",
+              "url": "https://self-law.org",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "All",
+              "browserRequirements": "Requires HTML5 compatible browser.",
+              "description": "A 50-state legal research and document workspace for Pro Se Litigants. Features side-by-side legal source comparison, marginalia case notes, and a filing template creator.",
+              "featureList": [
+                "50-State Primary Law Search",
+                "Local Browser Marginalia Notes",
+                "Legal Filing Template Creator",
+                "Side-by-Side Source Comparison"
+              ],
+          // This tells crawlers that the app handles data locally/client-side
+              "storageRequirements": "Local browser storage (Privacy-focused, client-side case files)"
             },
             {
               "@type": "WebSite",
-              name: "Self-Law",
-              url: "https://self-law.org",
-              potentialAction: {
+              "@id": "https://self-law.org",
+              "name": "Self-Law",
+              "url": "https://self-law.org",
+              "description": "Primary legal research platform and workspace.",
+              "potentialAction": {
                 "@type": "SearchAction",
-                target: "https://self-law.org/search?q={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://self-law.org/search?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+            }
+          ]
+        })
+      }
+    ]
+  })
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
