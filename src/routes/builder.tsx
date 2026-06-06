@@ -40,7 +40,8 @@ type Spec = {
   sizePt: number;
   spacing: number; // line-height multiplier
   align: "left" | "justify";
-  marginIn: number;
+  marginIn: number; // left / right / bottom
+  marginTopIn: number; // top — usually larger, to leave room for the clerk stamp
   lineNumbers: boolean;
   lineCount: number;
   paragraphNumbers: boolean;
@@ -63,6 +64,7 @@ const DEFAULT_SPEC: Spec = {
   spacing: 2,
   align: "left",
   marginIn: 1,
+  marginTopIn: 1.5, // many courts require a deeper top margin for the filing stamp
   lineNumbers: true,
   lineCount: 28,
   paragraphNumbers: true,
@@ -117,7 +119,7 @@ function Builder() {
       {/* Print rules: hide everything but the page; set the physical page up.
           Paragraph numbering via a CSS counter so the numbers are automatic. */}
       <style>{`
-        @page { size: Letter; margin: ${spec.marginIn}in; }
+        @page { size: Letter; margin: ${spec.marginIn}in; margin-top: ${spec.marginTopIn}in; }
         [data-doc-body] > p { margin: 0 0 var(--lh, 12pt); }
         [data-doc-body]:empty::before { content: "Type your complaint here…"; color: #999; }
         .doc-body-numbered { counter-reset: para; }
@@ -243,13 +245,26 @@ function Builder() {
             </Group>
 
             <Group label="Layout">
-              <Field label="Margins (inches)">
+              <Field label="Side & bottom margins">
                 <select
                   value={spec.marginIn}
                   onChange={(e) => set("marginIn", Number(e.target.value))}
                   className={inputCls}
                 >
                   {[0.5, 1, 1.5].map((n) => (
+                    <option key={n} value={n}>
+                      {n}&quot;
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Top margin (clerk stamp)">
+                <select
+                  value={spec.marginTopIn}
+                  onChange={(e) => set("marginTopIn", Number(e.target.value))}
+                  className={inputCls}
+                >
+                  {[1, 1.5, 2].map((n) => (
                     <option key={n} value={n}>
                       {n}&quot;
                     </option>
@@ -348,7 +363,7 @@ function DocPage({ spec }: { spec: Spec }) {
       style={{
         width: "8.5in",
         minHeight: "11in",
-        paddingTop: `${spec.marginIn}in`,
+        paddingTop: `${spec.marginTopIn}in`,
         paddingBottom: `${spec.marginIn}in`,
         paddingLeft: `${spec.marginIn + (spec.lineNumbers ? 0.4 : 0)}in`,
         paddingRight: `${spec.marginIn}in`,
@@ -365,7 +380,7 @@ function DocPage({ spec }: { spec: Spec }) {
           aria-hidden
           style={{
             position: "absolute",
-            top: `${spec.marginIn}in`,
+            top: `${spec.marginTopIn}in`,
             left: `${spec.marginIn - 0.05}in`,
             bottom: `${spec.marginIn}in`,
             width: "0.35in",
@@ -525,6 +540,7 @@ function buildDocCss(spec: Spec) {
     @page {
       size: Letter;
       margin: ${spec.marginIn}in;
+      margin-top: ${spec.marginTopIn}in;
       margin-left: ${spec.marginIn + (spec.lineNumbers ? 0.4 : 0)}in;
       ${pageNum}
     }
