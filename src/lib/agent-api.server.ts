@@ -8,6 +8,28 @@ export { supabaseAdmin };
 
 const CANONICAL_ORIGIN = "https://self-law.org";
 
+// Origins allowed to call the public agent API from a browser. The API is
+// bearer-token (not cookie) authed, but a wildcard ACAO on an authed data API
+// is broader than necessary — scope it. Extend via AGENT_API_ALLOWED_ORIGINS
+// (comma-separated) without a redeploy of this file.
+const ALLOWED_ORIGINS = new Set(
+  [CANONICAL_ORIGIN, "https://www.self-law.org", ...(process.env.AGENT_API_ALLOWED_ORIGINS?.split(",") ?? [])]
+    .map((o) => o.trim())
+    .filter(Boolean),
+);
+
+function corsHeaders(origin: string | null): Record<string, string> {
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    return {
+      "Access-Control-Allow-Origin": origin,
+      "Vary": "Origin",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    };
+  }
+  return {};
+}
+
 const SOURCE_CITE: Record<string, (id: string) => string> = {
   usc: (id) => {
     // usc/42/1983 -> 42 U.S.C. § 1983
@@ -50,14 +72,28 @@ export function formatCitation(source_code: string, identifier: string, section_
   return section_label ?? identifier;
 }
 
-export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+export function jsonResponse(body: unknown, init: ResponseInit = {}, request?: Request): Response {
   return new Response(JSON.stringify(body), {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=60",
-      "Access-Control-Allow-Origin": "*",
+      // Authed, token-gated data — must not be stored by shared/CDN caches.
+      // Individual handlers can override with a public Cache-Control if a
+      // response is genuinely non-sensitive.
+      "Cache-Control": "private, no-store",
+      ...corsHeaders(request?.headers.get("origin") ?? null),
       ...(init.headers ?? {}),
+    },
+  });
+}
+
+// Preflight handler for browser callers from allowlisted origins.
+export function corsPreflight(request: Request): Response {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders(request.headers.get("origin")),
+      "Access-Control-Max-Age": "86400",
     },
   });
 }
