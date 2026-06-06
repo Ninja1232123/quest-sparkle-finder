@@ -68,15 +68,30 @@ function Index() {
           <div className="hh-foil" />
           <div className="hh-rays" />
 
-          {/* Flanking law quotes — fill the navy on either side of the eagle */}
-          <blockquote className="hero-quote hero-quote-l">
-            <p>Not legal advice, A legal tool. Research the law, argue for your own justice. That's your right.</p>
-            <cite></cite>
-          </blockquote>
-          <blockquote className="hero-quote hero-quote-r">
-            <p>An attorney is a privilege. Defending yourself is a right. Search across codebooks. Justice is a position you make. Not a position that just occurs. </p>
-            <cite>You can't exercise a right you can't read.</cite>
-          </blockquote>
+          {/* Flanking law quotes — fill the navy on either side of the eagle.
+              Each side is a vertical rail: the quote up top, plus an extra
+              editable note slot below it for informative updates. */}
+          <div className="hero-rail hero-rail-l">
+            <blockquote className="hero-quote">
+              <p>Not legal advice, A legal tool. Research the law, argue for your own justice. That's your right.</p>
+              <cite></cite>
+            </blockquote>
+            {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
+            <div className="hero-note">
+              <p>Add your own note here.</p>
+            </div>
+          </div>
+
+          <div className="hero-rail hero-rail-r">
+            <blockquote className="hero-quote">
+              <p>An attorney is a privilege. Defending yourself is a right. Search across codebooks. Justice is a position you make. Not a position that just occurs. </p>
+              <cite>You can't exercise a right you can't read.</cite>
+            </blockquote>
+            {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
+            <div className="hero-note">
+              <p>Add your own note here.</p>
+            </div>
+          </div>
 
           <img
             className="home-eagle-img"

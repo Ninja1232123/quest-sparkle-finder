@@ -255,7 +255,7 @@ function MarginNote({ text, noteCases, onEdit, onDelete, tone = "ochre" }: { tex
 // narrow widths). Click a paragraph to start/continue its margin note; citations
 // inside still navigate, and selecting text still works. The left rule is always
 // present (transparent) so toggling a note tints it without shifting the words.
-function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, onCompose }: {
+function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, zebra, onCompose }: {
   id: string;
   body: string;
   p: LegalPara;
@@ -264,6 +264,7 @@ function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, onC
   hasNote: boolean;
   selected: boolean;
   hydrated: boolean;
+  zebra?: boolean;
   onCompose: () => void;
 }) {
   const handleClick = (e: ReactMouseEvent) => {
@@ -279,7 +280,12 @@ function Para({ id, body, p, citations, markRe, hasNote, selected, hydrated, onC
       ? "border-ochre/45"
       : "border-transparent";
   return (
-    <div id={id} className="group/para scroll-mt-24">
+    <div
+      id={id}
+      className={`group/para scroll-mt-24 rounded-md transition-colors ${
+        zebra ? "para-zebra" : ""
+      }`}
+    >
       <div className={`flex gap-3 ${LEVEL_INDENT[p.level]}`}>
         {p.label && <span className="ci-pill">{p.label}</span>}
         <span
@@ -718,6 +724,7 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
                 hasNote={mg.hydrated && (mg.notes[i]?.text?.length ?? 0) > 0}
                 selected={composing === i}
                 hydrated={mg.hydrated}
+                zebra={i % 2 === 1}
                 onCompose={() => setComposing(i)}
               />
             );
@@ -1266,7 +1273,7 @@ function DocumentPage() {
     ) : null;
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-[1700px]">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-[1360px]">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -1373,7 +1380,7 @@ function DocumentPage() {
             <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
             <DefinitionsPanel text={body} />
           </div>
-          <div className={`font-serif leading-relaxed text-foreground ${fontClass}`}>
+          <div className={`statute-prose font-serif text-foreground ${fontClass}`}>
             <LegalBody
               body={body}
               segments={segments}
@@ -1466,15 +1473,19 @@ function DocumentPage() {
         </button>
       )}
 
-      {/* Reading ruler — a translucent band locked to the cursor's (or ↑/↓'s)
-          line. Fixed, pointer-events-none so it never blocks clicks/selection.
-          Clear tint + hairline edges so it reads in both light and dark. */}
+      {/* Reading ruler — a focus band locked to the cursor's (or ↑/↓'s) line.
+          Fixed + pointer-events-none so it never blocks clicks/selection. A
+          feathered warm band with a crisp center guide-line reads cleanly in
+          both light and dark and tracks the eye without hiding the text. */}
       {ruler && rulerY > 0 && (
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 z-30 h-8 -translate-y-1/2 border-y border-ochre/55 bg-ochre/20"
+          className="reading-ruler pointer-events-none fixed inset-x-0 z-30 -translate-y-1/2"
           style={{ top: rulerY }}
-        />
+        >
+          <div className="reading-ruler-band" />
+          <div className="reading-ruler-line" />
+        </div>
       )}
     </ResearchShell>
   );
