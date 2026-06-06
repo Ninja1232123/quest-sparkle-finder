@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
 import { Printer, FileText } from "lucide-react";
+
+// Persistence keys — a refresh shouldn't wipe a half-drafted pleading.
+const STORAGE_SPEC = "doc-builder-spec-v1";
+const STORAGE_BODY = "doc-builder-body-v1";
+const DEFAULT_BODY_HTML =
+  "<p>Type your complaint here. Press Enter for a new numbered paragraph.</p>" +
+  "<p>Each paragraph states one fact or allegation, in plain numbered order.</p>";
 
 export const Route = createFileRoute("/builder")({
   component: Builder,
@@ -64,7 +71,28 @@ const DEFAULT_SPEC: Spec = {
 
 function Builder() {
   const [spec, setSpec] = useState<Spec>(DEFAULT_SPEC);
+  const [hydrated, setHydrated] = useState(false);
   const set = <K extends keyof Spec>(k: K, v: Spec[K]) => setSpec((s) => ({ ...s, [k]: v }));
+
+  // Load saved spec once; guard saves until then so we never overwrite storage
+  // with the defaults on first paint.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_SPEC);
+      if (raw) setSpec((s) => ({ ...s, ...JSON.parse(raw) }));
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_SPEC, JSON.stringify(spec));
+    } catch {
+      /* ignore */
+    }
+  }, [spec, hydrated]);
 
   return (
     <div className="min-h-screen">
@@ -74,6 +102,8 @@ function Builder() {
           Paragraph numbering via a CSS counter so the numbers are automatic. */}
       <style>{`
         @page { size: Letter; margin: ${spec.marginIn}in; }
+        [data-doc-body] > p { margin: 0 0 var(--lh, 12pt); }
+        [data-doc-body]:empty::before { content: "Type your complaint here…"; color: #999; }
         .doc-body-numbered { counter-reset: para; }
         .doc-body-numbered > p { position: relative; padding-left: 0.55in; text-indent: 0; }
         .doc-body-numbered > p::before {
@@ -369,27 +399,47 @@ function DocPage({ spec }: { spec: Spec }) {
 }
 
 function DocBody({ spec, lineHeight }: { spec: Spec; lineHeight: number }) {
+  // Uncontrolled on purpose: React must not re-render the editable children (it
+  // would reset the caret). We populate innerHTML once from storage, then persist
+  // on input. Paragraph spacing rides on a CSS var so it tracks the spec live
+  // without React touching the DOM the user is typing in.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(STORAGE_BODY);
+    } catch {
+      /* ignore */
+    }
+    el.innerHTML = saved && saved.trim() ? saved : DEFAULT_BODY_HTML;
+  }, []);
+  const onInput = () => {
+    try {
+      localStorage.setItem(STORAGE_BODY, ref.current?.innerHTML ?? "");
+    } catch {
+      /* ignore */
+    }
+  };
   return (
     <div
+      ref={ref}
       contentEditable
       suppressContentEditableWarning
+      onInput={onInput}
       data-doc-body
       className={spec.paragraphNumbers ? "doc-body-numbered" : ""}
       style={{
-        marginTop: `${lineHeight * 1.5}pt`,
+        // Two blank lines below the caption keeps the body on the line-number grid.
+        marginTop: `${lineHeight * 2}pt`,
         textAlign: spec.align,
         outline: "none",
         minHeight: "3in",
         counterReset: "para",
+        ["--lh" as never]: `${lineHeight}pt`,
       }}
-    >
-      <p style={{ marginBottom: `${lineHeight}pt` }}>
-        Type your complaint here. Press Enter for a new numbered paragraph.
-      </p>
-      <p style={{ marginBottom: `${lineHeight}pt` }}>
-        Each paragraph states one fact or allegation, in plain numbered order.
-      </p>
-    </div>
+    />
   );
 }
 
