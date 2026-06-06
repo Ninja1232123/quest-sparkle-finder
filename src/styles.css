@@ -330,12 +330,32 @@
     letter-spacing: 0.002em;
     word-spacing: 0.01em;
     hyphens: none;
-    max-width: 72ch;            /* the comfortable reading measure */
+    max-width: 66ch;            /* the comfortable reading measure ceiling */
   }
   /* Vertical rhythm between operative paragraphs — scales with font size so the
      spacing stays proportional as the reader bumps the text up or down. */
   .statute-prose .group\/para + .group\/para {
     margin-top: 0.9em;
+  }
+  /* Alternating paragraph shading ("zebra"). A whisper-faint warm band behind
+     every other operative paragraph gives the eye a horizontal anchor down a
+     long, dense section without looking striped. The band is inset slightly
+     past the text on both sides and padded so the words sit comfortably inside
+     it; the negative inline margin keeps the text's left rule aligned. */
+  .statute-prose .para-zebra {
+    background: oklch(0.72 0.07 75 / 0.07);
+    padding: 0.5em 0.85em;
+    margin-left: -0.85em;
+    margin-right: -0.85em;
+  }
+  .dark .statute-prose .para-zebra {
+    background: oklch(0.78 0.06 80 / 0.045);
+  }
+  /* When zebra and the normal paragraph gap stack, trim the extra so banded and
+     un-banded rows keep an even cadence. */
+  .statute-prose .group\/para.para-zebra + .group\/para,
+  .statute-prose .group\/para + .group\/para.para-zebra {
+    margin-top: 0.4em;
   }
   /* Subtle lead-in: the first operative paragraph gets a touch more presence so
      the section opens with intent rather than starting mid-stride. */
@@ -354,7 +374,7 @@
     text-decoration-thickness: 0.06em;
   }
   /* Selection in the reading column picks up the warm highlight, not the browser
-     default blue — keeps the parchment mood intact while quoting. */
+     default blue ��� keeps the parchment mood intact while quoting. */
   .statute-prose ::selection {
     background: oklch(0.86 0.12 85 / 0.55);
     color: var(--ink);
@@ -363,6 +383,50 @@
     background: oklch(0.74 0.12 80 / 0.32);
     color: var(--ink);
   }
+
+  /* ───── READING RULER ─────
+     A line-tracking guide that follows the cursor (or ↑/↓). Two layers: a soft
+     feathered band that gently warms the current line's neighbourhood, and a
+     crisp hairline guide dead-center that the eye actually rides along. The
+     band fades to nothing at its top and bottom edges so there's no hard box. */
+  .reading-ruler-band {
+    height: 2.4rem;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      oklch(0.82 0.12 80 / 0.1) 28%,
+      oklch(0.82 0.13 80 / 0.18) 50%,
+      oklch(0.82 0.12 80 / 0.1) 72%,
+      transparent 100%
+    );
+  }
+  .reading-ruler-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      var(--ochre) 12%,
+      var(--ochre) 88%,
+      transparent 100%
+    );
+    opacity: 0.55;
+  }
+  .dark .reading-ruler-band {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      oklch(0.78 0.1 80 / 0.07) 28%,
+      oklch(0.8 0.12 80 / 0.13) 50%,
+      oklch(0.78 0.1 80 / 0.07) 72%,
+      transparent 100%
+    );
+  }
+  .dark .reading-ruler-line { opacity: 0.4; }
 
   /* Subtle paper texture — barely visible, no longer a grid pattern */
   .paper-grain {
