@@ -17,12 +17,18 @@ export const Route = createFileRoute("/outcomes/states/$state/")({
   component: StatePage,
   head: ({ loaderData }) => {
     const name = loaderData?.courts?.[0]?.state ?? "State";
+    const title = `${name} appeal outcomes — reversal rates by court · Self-Law`;
+    const description = `How often ${name}'s supreme and appellate courts reverse the courts below: reversal and remand base rates by court.`;
+    const url = `https://self-law.org/outcomes/states/${loaderData?.state ?? ""}`;
     return {
       meta: [
-        { title: `${name} appeal outcomes — reversal rates by court · Self-Law` },
-        { name: "description", content: `How often ${name}'s supreme and appellate courts reverse the courts below: reversal and remand base rates by court.` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/outcomes/states/${loaderData?.state ?? ""}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (

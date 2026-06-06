@@ -70,7 +70,9 @@ export const Route = createFileRoute("/forum")({
       },
       { property: "og:title", content: "The Floor · Self-Law" },
       { property: "og:description", content: "Citation-only. No claim without a document." },
+      { property: "og:url", content: "https://self-law.org/forum" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/forum" }],
   }),
 });
 

@@ -23,12 +23,18 @@ export const Route = createFileRoute("/outcomes/federal/court/$court/$casetype")
   head: ({ loaderData }) => {
     const p = loaderData?.page;
     const name = p ? `${p.nos_label} — ${p.court_name}` : "Federal court outcomes";
+    const title = `${name} · Self-Law`;
+    const description = `How ${p?.nos_label?.toLowerCase() ?? "these"} cases close in the ${p?.court_name ?? "court"}: plaintiff-win, settlement, and dismissal base rates, versus the national rate.`;
+    const url = `https://self-law.org/outcomes/federal/court/${loaderData?.params?.court ?? ""}/${loaderData?.params?.casetype ?? ""}`;
     return {
       meta: [
-        { title: `${name} · Self-Law` },
-        { name: "description", content: `How ${p?.nos_label?.toLowerCase() ?? "these"} cases close in the ${p?.court_name ?? "court"}: plaintiff-win, settlement, and dismissal base rates, versus the national rate.` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/court/${loaderData?.params?.court ?? ""}/${loaderData?.params?.casetype ?? ""}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (

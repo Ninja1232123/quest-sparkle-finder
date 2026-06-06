@@ -19,7 +19,11 @@ export const Route = createFileRoute("/cases/")({
         content:
           "Build a case from the law itself: tag your margin notes to a case and they assemble into a citation-backed draft you arrange yourself. Your words, on the record.",
       },
+      { property: "og:title", content: "Your cases · Self-Law" },
+      { property: "og:description", content: "Assemble citation-backed drafts from your own margin notes." },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/cases" }],
   }),
 });
 

@@ -21,7 +21,13 @@ export const Route = createFileRoute("/builder")({
           "Build a court-formatted pleading — caption, pleading paper line numbers, margins, fonts, and spacing — and export to PDF. No Word, no buried menus.",
       },
       { property: "og:title", content: "Legal Document Builder · Self-Law" },
+      {
+        property: "og:description",
+        content: "Build a court-formatted pleading — caption, line numbers, margins, fonts — and export to PDF.",
+      },
+      { property: "og:url", content: "https://self-law.org/builder" },
     ],
+    links: [{ rel: "canonical", href: "https://self-law.org/builder" }],
   }),
 });
 

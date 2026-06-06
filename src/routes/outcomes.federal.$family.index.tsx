@@ -17,12 +17,18 @@ export const Route = createFileRoute("/outcomes/federal/$family/")({
   head: ({ params }) => {
     const meta = FAMILY_META[params.family];
     const name = meta?.name ?? "Federal";
+    const title = `${name} — federal case outcomes · Self-Law`;
+    const description = `${meta?.blurb ?? ""} How ${name.toLowerCase()} cases close in federal court: win, settle, dismiss base rates by claim type.`;
+    const url = `https://self-law.org/outcomes/federal/${params.family}`;
     return {
       meta: [
-        { title: `${name} — federal case outcomes · Self-Law` },
-        { name: "description", content: `${meta?.blurb ?? ""} How ${name.toLowerCase()} cases close in federal court: win, settle, dismiss base rates by claim type.` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
       ],
-      links: [{ rel: "canonical", href: `https://self-law.org/outcomes/federal/${params.family}` }],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   notFoundComponent: () => (
