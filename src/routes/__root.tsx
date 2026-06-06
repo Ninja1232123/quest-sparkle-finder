@@ -174,6 +174,7 @@ const PUBLIC_PREFIXES = [
   "/record",
   "/search",
   "/compare",
+  "/builder",
   "/library",
   "/topic",
   "/forum",

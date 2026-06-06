@@ -34,6 +34,7 @@ import { Route as ConstRouteImport } from './routes/const'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ChambersRouteImport } from './routes/chambers'
 import { Route as CfrRouteImport } from './routes/cfr'
+import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as BillsRouteImport } from './routes/bills'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgencyRouteImport } from './routes/agency'
@@ -194,6 +195,11 @@ const ChambersRoute = ChambersRouteImport.update({
 const CfrRoute = CfrRouteImport.update({
   id: '/cfr',
   path: '/cfr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderRoute = BuilderRouteImport.update({
+  id: '/builder',
+  path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillsRoute = BillsRouteImport.update({
@@ -394,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
   '/bills': typeof BillsRoute
+  '/builder': typeof BuilderRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
@@ -457,6 +464,7 @@ export interface FileRoutesByTo {
   '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
   '/bills': typeof BillsRoute
+  '/builder': typeof BuilderRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
@@ -521,6 +529,7 @@ export interface FileRoutesById {
   '/agency': typeof AgencyRoute
   '/auth': typeof AuthRoute
   '/bills': typeof BillsRoute
+  '/builder': typeof BuilderRoute
   '/cfr': typeof CfrRoute
   '/chambers': typeof ChambersRoute
   '/compare': typeof CompareRoute
@@ -586,6 +595,7 @@ export interface FileRouteTypes {
     | '/agency'
     | '/auth'
     | '/bills'
+    | '/builder'
     | '/cfr'
     | '/chambers'
     | '/compare'
@@ -649,6 +659,7 @@ export interface FileRouteTypes {
     | '/agency'
     | '/auth'
     | '/bills'
+    | '/builder'
     | '/cfr'
     | '/chambers'
     | '/compare'
@@ -712,6 +723,7 @@ export interface FileRouteTypes {
     | '/agency'
     | '/auth'
     | '/bills'
+    | '/builder'
     | '/cfr'
     | '/chambers'
     | '/compare'
@@ -776,6 +788,7 @@ export interface RootRouteChildren {
   AgencyRoute: typeof AgencyRoute
   AuthRoute: typeof AuthRoute
   BillsRoute: typeof BillsRoute
+  BuilderRoute: typeof BuilderRoute
   CfrRoute: typeof CfrRoute
   ChambersRoute: typeof ChambersRoute
   CompareRoute: typeof CompareRoute
@@ -1008,6 +1021,13 @@ declare module '@tanstack/react-router' {
       path: '/cfr'
       fullPath: '/cfr'
       preLoaderRoute: typeof CfrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder': {
+      id: '/builder'
+      path: '/builder'
+      fullPath: '/builder'
+      preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bills': {
@@ -1272,6 +1292,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgencyRoute: AgencyRoute,
   AuthRoute: AuthRoute,
   BillsRoute: BillsRoute,
+  BuilderRoute: BuilderRoute,
   CfrRoute: CfrRoute,
   ChambersRoute: ChambersRoute,
   CompareRoute: CompareRoute,
