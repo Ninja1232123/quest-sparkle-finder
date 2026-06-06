@@ -317,6 +317,53 @@
     font-feature-settings: "onum", "kern";
   }
 
+  /* ───── STATUTE READER PROSE ─────
+     The operative law column. Tuned for long, dense legal text: a calm serif
+     measure, generous leading, old-style figures, and clause numbers that sit
+     in a hanging margin so the eye tracks the indent hierarchy. Everything is
+     em-relative so it scales cleanly with the reader's Aa size control. */
+  .statute-prose {
+    line-height: 1.78;
+    font-feature-settings: "onum", "kern", "liga", "calt";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    letter-spacing: 0.002em;
+    word-spacing: 0.01em;
+    hyphens: none;
+    max-width: 72ch;            /* the comfortable reading measure */
+  }
+  /* Vertical rhythm between operative paragraphs — scales with font size so the
+     spacing stays proportional as the reader bumps the text up or down. */
+  .statute-prose .group\/para + .group\/para {
+    margin-top: 0.9em;
+  }
+  /* Subtle lead-in: the first operative paragraph gets a touch more presence so
+     the section opens with intent rather than starting mid-stride. */
+  .statute-prose .group\/para:first-child {
+    font-size: 1.02em;
+  }
+  /* Clause/subsection numbers — let the pill breathe and align to the text top
+     so "(a)" sits cleanly beside the first line, not floating above it. */
+  .statute-prose .ci-pill {
+    margin-top: 0.18em;
+  }
+  /* Citation links inside the prose: present but not loud. A warm underline that
+     only intensifies on hover, so the reading line stays unbroken. */
+  .statute-prose a {
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 0.06em;
+  }
+  /* Selection in the reading column picks up the warm highlight, not the browser
+     default blue — keeps the parchment mood intact while quoting. */
+  .statute-prose ::selection {
+    background: oklch(0.86 0.12 85 / 0.55);
+    color: var(--ink);
+  }
+  .dark .statute-prose ::selection {
+    background: oklch(0.74 0.12 80 / 0.32);
+    color: var(--ink);
+  }
+
   /* Subtle paper texture — barely visible, no longer a grid pattern */
   .paper-grain {
     background-image:

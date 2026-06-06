@@ -1266,7 +1266,7 @@ function DocumentPage() {
     ) : null;
 
   return (
-    <ResearchShell sources={sources} centerMaxWidth="max-w-[1700px]">
+    <ResearchShell sources={sources} centerMaxWidth="max-w-[1180px]">
       {/* Sticky breadcrumb / utility bar — docks below the SiteHeader */}
       <div className="sticky top-[68px] z-30 -mx-6 -mt-10 mb-6 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex items-center gap-3 px-6 py-2.5">
@@ -1373,7 +1373,7 @@ function DocumentPage() {
             <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
             <DefinitionsPanel text={body} />
           </div>
-          <div className={`font-serif leading-relaxed text-foreground ${fontClass}`}>
+          <div className={`statute-prose font-serif text-foreground ${fontClass}`}>
             <LegalBody
               body={body}
               segments={segments}
