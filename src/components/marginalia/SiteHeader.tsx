@@ -150,7 +150,7 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 font-display text-sm text-foreground/70 hover:bg-muted hover:text-foreground"
+        className="flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 font-display text-sm text-[#9fabcb] hover:bg-[rgba(200,162,75,0.12)] hover:text-[#fbf6e8]"
         aria-haspopup="menu"
         aria-expanded={open}
       >
