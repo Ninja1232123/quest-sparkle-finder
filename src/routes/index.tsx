@@ -85,7 +85,7 @@ function Index() {
           <div className="hero-rail hero-rail-r">
             <blockquote className="hero-quote">
               <p>Justice is a position you make. Not a position that just occurs. </p>
-              <cite>Research and compare federal and state statutes all in one place.</cite>
+              <cite></cite>
             </blockquote>
             {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
             <div className="hero-note">
