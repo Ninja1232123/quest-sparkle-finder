@@ -74,11 +74,11 @@ function Index() {
           <div className="hero-rail hero-rail-l">
             <blockquote className="hero-quote">
               <p>Not legal advice, A legal tool.</p>
-              <cite>Research the law, learn your right's.</cite>
+              <cite>This site is for people looking for the law. Not loopholes.</cite>
             </blockquote>
             {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>This site is for people looking for the law. Not loopholes.</p>
+              <p>Check out our newest feature! - a super easy and simple Legal Document Builder for creating motions and pleadings with perfect format, just add your local court's document specs' and you're good to go!</p>
             </div>
           </div>
 
@@ -89,7 +89,7 @@ function Index() {
             </blockquote>
             {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Enterprise legal data made accessible to everyday people.</p>
+              <p>Read the law. Find something related to your situation? Write about it in the margins. Use @ to tag specific 'Cases' you create to save them to that case file and build a case using the laws supporting your position, without leaving the page you're citing.</p>
             </div>
           </div>
 
