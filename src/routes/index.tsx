@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "description" content="Search primary law across all 50 states. Save marginalia notes directly to your case file, use our legal template builder, and compare statutes side by side."",
+          "Search primary law across all 50 states. Save marginalia notes directly to your case file, use our legal template builder, and compare statutes side by side.",
       },
       { property: "og:title", content: "Self-Law — A citizen's law index" },
       {
