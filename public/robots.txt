@@ -1,11 +1,34 @@
+# robots.txt — self-law.org
+# Goal: let crawlers index the real legal content (constitution, codes,
+# statutes, regulations, court opinions, outcomes, topics, browse pages)
+# while keeping them out of private areas, API endpoints, and the generated
+# tool/result states that waste crawl budget and offer no indexable content.
+
 User-agent: *
 Allow: /
+
+# ── Private & authenticated areas (no public content) ──
 Disallow: /account
 Disallow: /cases
 Disallow: /auth
 Disallow: /checkout
 Disallow: /chambers
+
+# ── Internal application & API ──
 Disallow: /api/
 Disallow: /admin
+
+# ── Generated tool output & live result states (not indexable content) ──
+# The clean /compare and /search landing pages stay crawlable, but the
+# parameterized states they generate do not. NOTE: these are scoped per-path
+# on purpose — statute pages like /code/...?q= use a query only to highlight
+# real content, so we must never blanket-block query strings.
+#
+# Live compare results (?q=&sources=)
+Disallow: /compare?
+# Word-for-word diff output (dynamic document generation)
+Disallow: /compare/diff
+# Empty and highly-filtered search states (?q=&scope=&source=&words=&exclude=)
+Disallow: /search?
 
 Sitemap: https://self-law.org/sitemap.xml
