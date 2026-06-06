@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/marginalia/SiteHeader";
-import { Printer, FileText } from "lucide-react";
+import { Printer, FileText, Eye, Pencil } from "lucide-react";
 
 // Persistence keys — a refresh shouldn't wipe a half-drafted pleading.
 const STORAGE_SPEC = "doc-builder-spec-v1";
@@ -72,7 +72,23 @@ const DEFAULT_SPEC: Spec = {
 function Builder() {
   const [spec, setSpec] = useState<Spec>(DEFAULT_SPEC);
   const [hydrated, setHydrated] = useState(false);
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [bodyHtml, setBodyHtml] = useState("");
   const set = <K extends keyof Spec>(k: K, v: Spec[K]) => setSpec((s) => ({ ...s, [k]: v }));
+
+  // Entering preview paginates from the saved body (the editor persists to it on
+  // input). Re-pagination happens only here, never on keystroke — so the caret in
+  // edit mode is never disturbed.
+  const enterPreview = () => {
+    let saved = "";
+    try {
+      saved = localStorage.getItem(STORAGE_BODY) || "";
+    } catch {
+      /* ignore */
+    }
+    setBodyHtml(saved && saved.trim() ? saved : DEFAULT_BODY_HTML);
+    setMode("preview");
+  };
 
   // Load saved spec once; guard saves until then so we never overwrite storage
   // with the defaults on first paint.
@@ -105,20 +121,23 @@ function Builder() {
         [data-doc-body] > p { margin: 0 0 var(--lh, 12pt); }
         [data-doc-body]:empty::before { content: "Type your complaint here…"; color: #999; }
         .doc-body-numbered { counter-reset: para; }
-        .doc-body-numbered > p { position: relative; padding-left: 0.55in; text-indent: 0; }
+        .doc-body-numbered > p { counter-increment: para; position: relative; padding-left: 0.55in; text-indent: 0; }
         .doc-body-numbered > p::before {
-          counter-increment: para;
           content: counter(para) ".";
           position: absolute;
           left: 0;
           width: 0.45in;
           text-align: left;
         }
+        /* Paged.js preview sheets */
+        .pagedjs-host .pagedjs_page { background: #fff; margin: 0 auto 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.4); }
         @media print {
           body * { visibility: hidden; }
           .doc-print-area, .doc-print-area * { visibility: visible; }
-          .doc-print-area { position: absolute; inset: 0; margin: 0; box-shadow: none; background: #fff; padding: 0; }
+          /* full width, natural height so multi-page output flows across sheets */
+          .doc-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; box-shadow: none; background: #fff; padding: 0; }
           .doc-print-area .doc-page { box-shadow: none; margin: 0; width: auto; min-height: 0; }
+          .pagedjs-host .pagedjs_page { box-shadow: none; margin: 0; }
           .no-print { display: none !important; }
         }
       `}</style>
@@ -269,22 +288,47 @@ function Builder() {
               />
             </Group>
 
-            <button
-              onClick={() => window.print()}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
-            >
-              <Printer className="h-4 w-4" />
-              Export PDF
-            </button>
+            {mode === "edit" ? (
+              <button
+                onClick={enterPreview}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
+              >
+                <Eye className="h-4 w-4" />
+                Paginate &amp; preview
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-ochre px-4 py-2.5 font-display text-sm font-semibold text-[#1a1206]"
+                >
+                  <Printer className="h-4 w-4" />
+                  Export PDF
+                </button>
+                <button
+                  onClick={() => setMode("edit")}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm text-foreground/80"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Back to editing
+                </button>
+              </div>
+            )}
             <p className="text-center text-xs text-foreground/45">
-              Opens your browser&apos;s print dialog → choose &quot;Save as PDF&quot;.
+              {mode === "edit"
+                ? "Preview lays the document into real pages."
+                : "Export opens your print dialog → choose “Save as PDF”."}
             </p>
           </div>
         </aside>
 
-        {/* ---- Live page preview ---- */}
+        {/* ---- Page surface: editable single page, or paginated preview ---- */}
         <main className="doc-print-area flex-1 overflow-x-auto rounded-xl bg-[#525659] p-4 sm:p-8">
-          <DocPage spec={spec} />
+          {mode === "edit" ? (
+            <DocPage spec={spec} />
+          ) : (
+            <PagedPreview spec={spec} bodyHtml={bodyHtml} />
+          )}
         </main>
       </div>
     </div>
@@ -440,6 +484,143 @@ function DocBody({ spec, lineHeight }: { spec: Spec; lineHeight: number }) {
         ["--lh" as never]: `${lineHeight}pt`,
       }}
     />
+  );
+}
+
+/* =============================================================================
+   § Paginated preview (Paged.js). Flows the document into real letter pages,
+   adds "Page N of M" via an @page margin box, and hangs a numbered pleading
+   gutter off every page via a Paged.js handler. Runs only in preview mode, so
+   it never re-paginates while the user types.
+   ========================================================================== */
+function escapeHtml(s: string) {
+  return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] as string);
+}
+
+function buildContentHtml(spec: Spec, bodyHtml: string) {
+  const court = escapeHtml(spec.court);
+  return (
+    `<div class="doc-content">` +
+    `<header class="doc-caption">${court}</header>` +
+    `<table class="doc-parties"><tbody><tr>` +
+    `<td class="l"><div>${escapeHtml(spec.plaintiff) || "PLAINTIFF"},</div>` +
+    `<div class="indent">Plaintiff,</div><div class="gap">v.</div>` +
+    `<div class="gap">${escapeHtml(spec.defendant) || "DEFENDANT"},</div>` +
+    `<div class="indent">Defendant.</div></td>` +
+    `<td class="r"><div>${escapeHtml(spec.caseNo)}</div>` +
+    `<div class="doc-title">${escapeHtml(spec.title)}</div></td>` +
+    `</tr></tbody></table>` +
+    `<div class="doc-body ${spec.paragraphNumbers ? "numbered" : ""}">${bodyHtml}</div>` +
+    `</div>`
+  );
+}
+
+function buildDocCss(spec: Spec) {
+  const lh = spec.sizePt * spec.spacing; // pt
+  const stack = FONT_STACK[spec.font];
+  const pageNum = spec.pageNumbers
+    ? `@bottom-center { content: "Page " counter(page) " of " counter(pages); font-family: ${stack}; font-size: ${spec.sizePt - 1}pt; }`
+    : "";
+  return `
+    @page {
+      size: Letter;
+      margin: ${spec.marginIn}in;
+      margin-left: ${spec.marginIn + (spec.lineNumbers ? 0.4 : 0)}in;
+      ${pageNum}
+    }
+    .doc-content { font-family: ${stack}; font-size: ${spec.sizePt}pt; line-height: ${lh}pt; color: #000; }
+    .doc-caption { text-align: center; white-space: pre-line; font-weight: 700; }
+    .doc-parties { width: 100%; border-collapse: collapse; margin-top: ${lh}pt; }
+    .doc-parties td.l { width: 55%; vertical-align: top; border-right: 1px solid #000; padding-right: .3in; }
+    .doc-parties td.r { vertical-align: top; padding-left: .3in; }
+    .doc-parties .indent { padding-left: 1.5in; }
+    .doc-parties .gap { margin-top: ${lh}pt; }
+    .doc-title { font-weight: 700; text-transform: uppercase; margin-top: ${lh}pt; }
+    .doc-body { margin-top: ${lh * 2}pt; text-align: ${spec.align}; }
+    .doc-body > p { margin: 0 0 ${lh}pt; }
+    .doc-body.numbered { counter-reset: para; }
+    .doc-body.numbered > p { counter-increment: para; position: relative; padding-left: .55in; }
+    .doc-body.numbered > p::before { content: counter(para) "."; position: absolute; left: 0; width: .45in; }
+    /* per-page pleading gutter, appended by the handler */
+    .pagedjs_page_content { position: relative; }
+    .pleading-gutter {
+      position: absolute; top: 0; bottom: 0; left: -.4in; width: .3in;
+      border-right: 1.5px solid #444; text-align: right; padding-right: .08in;
+      font-family: ${stack}; font-size: ${spec.sizePt}pt; line-height: ${lh}pt; color: #333;
+    }
+  `;
+}
+
+// Module-level config the handler reads at layout time (set before each preview).
+const GUTTER = { on: true, count: 28 };
+let pagedReady: Promise<typeof import("pagedjs")> | null = null;
+function ensurePaged() {
+  if (!pagedReady) {
+    pagedReady = import("pagedjs").then((mod) => {
+      class PleadingGutter extends mod.Handler {
+        afterPageLayout(pageElement: HTMLElement) {
+          if (!GUTTER.on) return;
+          const area = pageElement.querySelector(".pagedjs_page_content");
+          if (!area) return;
+          const g = document.createElement("div");
+          g.className = "pleading-gutter";
+          for (let i = 1; i <= GUTTER.count; i++) {
+            const d = document.createElement("div");
+            d.textContent = String(i);
+            g.appendChild(d);
+          }
+          area.appendChild(g);
+        }
+      }
+      mod.registerHandlers(PleadingGutter);
+      return mod;
+    });
+  }
+  return pagedReady;
+}
+
+function PagedPreview({ spec, bodyHtml }: { spec: Spec; bodyHtml: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [pages, setPages] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPages(null);
+    setErr(null);
+    (async () => {
+      try {
+        const mod = await ensurePaged();
+        const host = hostRef.current;
+        if (!host || cancelled) return;
+        host.innerHTML = "";
+        GUTTER.on = spec.lineNumbers;
+        GUTTER.count = spec.lineCount;
+        const content = document.createElement("div");
+        content.innerHTML = buildContentHtml(spec, bodyHtml);
+        const previewer = new mod.Previewer();
+        const flow = await previewer.preview(content, [{ "doc.css": buildDocCss(spec) }], host);
+        if (!cancelled) setPages(flow.total);
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [spec, bodyHtml]);
+
+  return (
+    <div>
+      <div className="no-print pb-3 text-center text-xs text-white/70">
+        {err
+          ? `Pagination error: ${err}`
+          : pages == null
+            ? "Paginating…"
+            : `${pages} page${pages === 1 ? "" : "s"}`}
+      </div>
+      <div ref={hostRef} className="pagedjs-host" />
+    </div>
   );
 }
 
