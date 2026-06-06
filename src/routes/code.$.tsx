@@ -799,20 +799,6 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
   );
 }
 
-// ── Edge cache for statute pages ──────────────────────────────────────────────
-// Statutory text is effectively immutable — a section's body changes only when
-// the law is amended (rare, and we re-ingest when it happens). So we let Vercel's
-// CDN serve the rendered HTML from the edge and skip re-running the SSR + local
-// DB read on every bot/visitor hit. Strategy:
-//   • s-maxage=86400  → shared CDN edge caches the page for 24h.
-//   • stale-while-revalidate=604800 → for the next 7 days the edge can serve the
-//     slightly-stale copy instantly while it refreshes in the background, so no
-//     visitor ever waits on a cold render.
-//   • max-age=0, must-revalidate → browsers don't hold their own stale copy; the
-//     CDN is the single source of truth (cheap to purge/refresh on re-ingest).
-const STATUTE_CACHE_CONTROL =
-  "public, max-age=0, must-revalidate, s-maxage=86400, stale-while-revalidate=604800";
-
 export const Route = createFileRoute("/code/$")({
   validateSearch: (s: Record<string, unknown>) => ({
     q: typeof s.q === "string" ? s.q : undefined,
@@ -824,13 +810,6 @@ export const Route = createFileRoute("/code/$")({
       listSources(),
     ]);
     if (!res.document) throw notFound();
-    // Set the edge cache header on the SSR page response. The dynamic import keeps
-    // the server-only module out of the client bundle, and the SSR guard means it
-    // never runs during client-side navigation (where there's no response to tag).
-    if (import.meta.env.SSR) {
-      const { setResponseHeader } = await import("@tanstack/react-start/server");
-      setResponseHeader("Cache-Control", STATUTE_CACHE_CONTROL);
-    }
     return { ...res, sources: sourcesRes.sources };
   },
   component: DocumentPage,
