@@ -73,23 +73,23 @@ function Index() {
               editable note slot below it for informative updates. */}
           <div className="hero-rail hero-rail-l">
             <blockquote className="hero-quote">
-              <p>Not legal advice, A legal tool. Research the law, argue for your own justice. That's your right.</p>
-              <cite></cite>
+              <p>Not legal advice, A legal tool.</p>
+              <cite>Research the law, learn your right's.</cite>
             </blockquote>
             {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Add your own note here.</p>
+              <p>This site is for people looking for the law. Not loopholes.</p>
             </div>
           </div>
 
           <div className="hero-rail hero-rail-r">
             <blockquote className="hero-quote">
-              <p>An attorney is a privilege. Defending yourself is a right. Search across codebooks. Justice is a position you make. Not a position that just occurs. </p>
-              <cite>You can't exercise a right you can't read.</cite>
+              <p>Justice is a position you make. Not a position that just occurs. </p>
+              <cite>Research and compare federal and state statutes all in one place.</cite>
             </blockquote>
             {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Add your own note here.</p>
+              <p>Enterprise legal data made accessible to everyday people.</p>
             </div>
           </div>
 
