@@ -44,7 +44,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Self-Law — A citizen's law index" },
       {
         property: "og:description",
-        content: "If you don't know your rights, you don't have any. Read the law as one connected record.",
+        content: "A Pro Se legal research and support tool.",
       },
       { property: "og:url", content: "https://self-law.org/" },
     ],
@@ -74,22 +74,22 @@ function Index() {
           <div className="hero-rail hero-rail-l">
             <blockquote className="hero-quote">
               <p>Not legal advice, A legal tool.</p>
-              <cite>Research the law, learn your right's.</cite>
+              <cite></cite>
             </blockquote>
             {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>This site is for people looking for the law. Not loopholes.</p>
+              <p>The Compare Tool let you view multiple sources side by side.</p>
             </div>
           </div>
 
           <div className="hero-rail hero-rail-r">
             <blockquote className="hero-quote">
               <p>Justice is a position you make. Not a position that just occurs. </p>
-              <cite>Research and compare federal and state statutes all in one place.</cite>
+              <cite></cite>
             </blockquote>
             {/* EDITABLE SLOT — right, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>Enterprise legal data made accessible to everyday people.</p>
+              <p>NEW:Legal template document builder in the Tools tab.</p>
             </div>
           </div>
 
