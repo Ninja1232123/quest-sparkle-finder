@@ -17,7 +17,8 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
 import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
-import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search } from "lucide-react";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink } from "lucide-react";
+import type { ClCaseResult } from "@/lib/court-cases";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
 function EagleSvg({ className = "", size = 40 }: { className?: string; size?: number }) {
@@ -65,6 +66,10 @@ type Message = {
   searches?: string[];
   /** How many plain-English readings were saved as labeled AI interpretations. */
   interpretationsRecorded?: number;
+  /** Cases Juri found via search_cases — rendered as clickable CourtListener chips. */
+  casesFound?: ClCaseResult[];
+  /** Queries Juri ran against CourtListener — link to CL search, not corpus search. */
+  caseSearches?: string[];
 };
 
 const SOURCE_SHORT: Record<string, string> = {
@@ -188,6 +193,8 @@ export function Juri() {
           sectionsRead: res.sections_read,
           connectionsRead: res.connections_read,
           searches: res.searches,
+          caseSearches: res.case_searches,
+          casesFound: res.cases_found,
           interpretationsRecorded: res.interpretations_recorded,
         }]);
         setCredits(res.credits_remaining);
@@ -453,6 +460,29 @@ export function Juri() {
                       ))}
                     </div>
                   )}
+                  {msg.casesFound && msg.casesFound.length > 0 && (
+                    <div className="juri-sources">
+                      <div className="juri-sources-label">Cases found — opens on CourtListener</div>
+                      {msg.casesFound.map((c, i) => (
+                        <a
+                          key={i}
+                          href={c.url ?? `https://www.courtlistener.com/?q=${encodeURIComponent(c.name)}&type=o`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="juri-source-chip"
+                        >
+                          {c.court && (
+                            <span className="juri-source-code">{c.court}</span>
+                          )}
+                          <span className="juri-source-label">{c.name}</span>
+                          {c.year && (
+                            <span className="juri-source-code opacity-60">{c.year}</span>
+                          )}
+                          <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   {msg.role === "juri" && !msg.error && msg.creditsCharged != null && (
                     <div className="juri-receipt">
                       {msg.creditsCharged} credit{msg.creditsCharged === 1 ? "" : "s"}
@@ -462,7 +492,7 @@ export function Juri() {
                       {msg.searches && msg.searches.length > 0 && (
                         <div className="juri-receipt-searches">
                           <span className="juri-receipt-searches-lead">
-                            searches I ran — open the full results on the page:
+                            statute searches — open full results:
                           </span>
                           <div className="juri-search-links">
                             {Array.from(new Set(msg.searches)).slice(0, 6).map((s, j) => (
@@ -476,6 +506,28 @@ export function Juri() {
                                 <Search className="h-2.5 w-2.5 shrink-0 opacity-60" />
                                 <span className="juri-search-link-text">{s}</span>
                               </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {msg.caseSearches && msg.caseSearches.length > 0 && (
+                        <div className="juri-receipt-searches">
+                          <span className="juri-receipt-searches-lead">
+                            case searches — open on CourtListener:
+                          </span>
+                          <div className="juri-search-links">
+                            {msg.caseSearches.slice(0, 4).map((s, j) => (
+                              <a
+                                key={j}
+                                href={`https://www.courtlistener.com/?q=${encodeURIComponent(s)}&type=o&order_by=score+desc`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="juri-search-link"
+                                title={`Search CourtListener for "${s}"`}
+                              >
+                                <Search className="h-2.5 w-2.5 shrink-0 opacity-60" />
+                                <span className="juri-search-link-text">{s}</span>
+                              </a>
                             ))}
                           </div>
                         </div>

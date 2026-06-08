@@ -14,7 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { isAdminEmail } from "@/lib/admin";
-import { searchCasesForJuri } from "@/lib/court-cases";
+import { searchCasesForJuri, type ClCaseResult } from "@/lib/court-cases";
 import {
   JURI_REQUIRES_PRO,
   JURI_FREE_TASTE,
@@ -472,6 +472,10 @@ type JuriResponse = {
   interpretations_recorded?: number;
   /** Which depth this answer ran at. */
   mode?: JuriMode;
+  /** Cases Juri found via search_cases — rendered as clickable chips in the UI. */
+  cases_found?: ClCaseResult[];
+  /** Queries Juri ran against CourtListener — shown as case search links (not corpus links). */
+  case_searches?: string[];
 };
 
 export const askJuri = createServerFn({ method: "POST" })
@@ -637,6 +641,8 @@ export const askJuri = createServerFn({ method: "POST" })
 
     // Trackers for transparency + citations + the read budget (bounds cost).
     const searches: string[] = [];
+    const caseSearches: string[] = [];
+    const casesFound: ClCaseResult[] = [];
     const readMeta = new Map<string, { section_label: string | null; heading: string | null; source_code: string }>();
     const connectionCandidates = new Set<string>();
     // Plain-English readings Juri chooses to record, keyed by section id (last
@@ -705,7 +711,16 @@ export const askJuri = createServerFn({ method: "POST" })
         if (name === "search_cases") {
           const q = String(input?.query ?? "").slice(0, 300);
           const cite = input?.statute_citation ? String(input.statute_citation).slice(0, 100) : undefined;
-          return await searchCasesForJuri(q, cite);
+          if (q) caseSearches.push(q);
+          const caseResult = await searchCasesForJuri(q, cite);
+          const seenUrls = new Set(casesFound.map((c) => c.url ?? c.name));
+          for (const c of caseResult.cases) {
+            if (!seenUrls.has(c.url ?? c.name)) {
+              casesFound.push(c);
+              seenUrls.add(c.url ?? c.name);
+            }
+          }
+          return caseResult;
         }
         return { error: "unknown tool" };
       } catch {
@@ -770,7 +785,6 @@ export const askJuri = createServerFn({ method: "POST" })
     };
     try {
       for (let round = 1; round <= profile.maxRounds; round++) {
-        const lastRound = round === profile.maxRounds;
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
@@ -779,7 +793,12 @@ export const askJuri = createServerFn({ method: "POST" })
             max_tokens: profile.maxTokens,
             // Static system prompt → cacheable (GA, no-op below the 2048-tok floor).
             system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-            ...(lastRound ? {} : { tools }),
+            // Always include tools — model signals it's done via end_turn, not by
+            // tool absence. Removing tools on the "last round" causes the model to
+            // output mid-reasoning text ("let me search next...") instead of an
+            // answer. If maxRounds is hit while still calling tools, the loop exits
+            // and the synthesis pass below produces the final answer.
+            tools,
             messages,
           }),
         });
@@ -792,7 +811,7 @@ export const askJuri = createServerFn({ method: "POST" })
         const result = await res.json();
         addUsage(result.usage);
         const content = result.content ?? [];
-        if (!lastRound && result.stop_reason === "tool_use") {
+        if (result.stop_reason === "tool_use") {
           messages.push({ role: "assistant", content });
           const toolResults: unknown[] = [];
           for (const block of content) {
@@ -801,7 +820,7 @@ export const askJuri = createServerFn({ method: "POST" })
             toolResults.push({ type: "tool_result", tool_use_id: block.id, content: JSON.stringify(out).slice(0, 24000) });
           }
           messages.push({ role: "user", content: toolResults });
-          continue;
+          continue; // if this was maxRounds, loop exits and synthesis fires
         }
         answer = content
           .filter((b: { type: string }) => b.type === "text")
@@ -889,6 +908,8 @@ export const askJuri = createServerFn({ method: "POST" })
       sections_read: sectionsRead,
       connections_read: connectionsRead,
       searches,
+      case_searches: caseSearches.length > 0 ? Array.from(new Set(caseSearches)).slice(0, 6) : undefined,
+      cases_found: casesFound.length > 0 ? casesFound.slice(0, 8) : undefined,
       interpretations_recorded: interpretationRows.length,
       mode,
     };
