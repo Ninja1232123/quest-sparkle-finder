@@ -14,6 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { isAdminEmail } from "@/lib/admin";
+import { searchCasesForJuri } from "@/lib/court-cases";
 import {
   JURI_REQUIRES_PRO,
   JURI_FREE_TASTE,
@@ -82,6 +83,7 @@ USING YOUR TOOLS — and how this search actually behaves, so you use it well:
 - lookup_citation: resolve any citation you encounter ("12 CFR 424", "15 U.S.C. 1681a", "UCC 2-207") to the exact section, then read it. Use it to follow a reference straight to its source the moment you hit one.
 - note_interpretation: when you put a section into plain English — "what this says, in everyday words" — record that reading with note_interpretation(identifier, your reading). Only for a section you've actually read; one call per section. It's saved as an AI interpretation: clearly labeled, never authoritative, never legal advice. Do it in the same turn as your reads when you can. This is how your plain-English readings get remembered — so record them whenever you give one, but never invent one just to have something to record.
 - find_connections: follow the citation graph out from a section — what it cites and what cites it. This is the goldmine: definitions that live elsewhere, cross-references, implementing regulations, chains of authority — the related law a person would never find by hand. Run it on the sections that matter and follow the useful threads.
+- search_cases: search court opinions (CourtListener) for cases that applied a statute or decided a legal question. Use when the user asks how courts have ruled, wants examples of wins/losses, or needs case law to back a position. Returns case names, courts, years, and text snippets — cite the relevant ones by name and link.
 - FOLLOW THE THREAD — this is not optional, it's the heart of the job. A section rarely stands alone: its meaning is controlled by defined terms and cross-references ("as defined in section 1681a", "12 CFR 424", "of this title"). You're handed the references each section makes — pull every one the answer depends on, then the ones THOSE depend on, until you actually hold the full chain. You run on a capable model with a fast index; don't be modest about how deep you go. Retrieving the complete picture is the work. A confident interpretation built on a definition you never read is exactly the failure you exist to prevent — so go get the definition.
 - Don't stop at the statutes. Congressional Bills (source "bill") and the Federal Register (source "register") are vast, barely-explored veins — proposed and enacted legislation, agency rulemaking, notices. When a question touches how a rule came to be, a pending change, or an agency's reasoning, mine them too.
 - If the ask is vague, don't burn a search on a guess: say what you think they mean, offer a few terms/angles, and ask them to point you.
@@ -608,6 +610,18 @@ export const askJuri = createServerFn({ method: "POST" })
           required: ["citations"],
         },
       },
+      {
+        name: "search_cases",
+        description: "Search federal court opinions (CourtListener) for cases that cite or apply a specific statute, address a legal issue, or decided a point the user is asking about. Returns case names, courts, years, citation counts, and text snippets. Use when the user asks how courts have applied a law, whether someone has won/lost on this issue, or wants real case examples.",
+        input_schema: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "The legal issue, fact pattern, or case type — real legal terms work better than plain language." },
+            statute_citation: { type: "string", description: "Optional: a specific statute to anchor the search, e.g. '15 U.S.C. § 1692e'. Narrows results to cases applying that provision." },
+          },
+          required: ["query"],
+        },
+      },
     ];
     if (profile.useGraph) {
       tools.push({
@@ -687,6 +701,11 @@ export const askJuri = createServerFn({ method: "POST" })
           const conn = await jFindConnections(corpus, String(input?.identifier ?? ""), profile.maxConnections);
           for (const c of [...conn.cites, ...conn.cited_by]) if (c?.identifier) connectionCandidates.add(c.identifier);
           return conn;
+        }
+        if (name === "search_cases") {
+          const q = String(input?.query ?? "").slice(0, 300);
+          const cite = input?.statute_citation ? String(input.statute_citation).slice(0, 100) : undefined;
+          return await searchCasesForJuri(q, cite);
         }
         return { error: "unknown tool" };
       } catch {
