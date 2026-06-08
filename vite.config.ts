@@ -66,6 +66,21 @@ export default defineConfig({
       routeRules: {
         "/**": { headers: SECURITY_HEADERS },
       },
+      // postgres uses Node built-ins (net/tls/perf_hooks) — keep it out of
+      // the Nitro bundle so it's imported at runtime by the Node.js server.
+      externals: { external: ["postgres"] },
     }),
   ],
+  // postgres is a Node-only package (net/tls/perf_hooks) used only inside
+  // server function handlers. Tell Vite not to bundle it for the browser:
+  // ssr.external keeps it out of the SSR bundle (runtime import instead),
+  // and rollupOptions.external prevents the client-bundle analysis failure.
+  vite: {
+    ssr: { external: ["postgres"] },
+    build: {
+      rollupOptions: {
+        external: ["postgres"],
+      },
+    },
+  },
 });
