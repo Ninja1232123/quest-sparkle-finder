@@ -854,6 +854,12 @@ function CasesPanel({ identifier }: { identifier: string }) {
                         <span>{c.cite_count.toLocaleString()} citations</span>
                       </>
                     )}
+                    {c.outcome && (
+                      <>
+                        <span className="text-foreground/20">·</span>
+                        <span className="text-ochre/80">{c.outcome}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover/case:text-accent/60" />

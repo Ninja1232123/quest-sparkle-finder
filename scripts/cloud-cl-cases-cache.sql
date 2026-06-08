@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS cl_section_cases (
   date_filed    date,
   cite_count    integer DEFAULT 0,
   cl_url        text    NOT NULL,
+  outcome       text,
   fetched_at    timestamptz DEFAULT now(),
   UNIQUE (identifier, cl_cluster_id)
 );
