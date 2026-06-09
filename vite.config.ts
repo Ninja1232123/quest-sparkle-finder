@@ -66,19 +66,20 @@ export default defineConfig({
       routeRules: {
         "/**": { headers: SECURITY_HEADERS },
       },
-      // postgres uses Node built-ins (net/tls/perf_hooks) — keep it out of
-      // the Nitro bundle so it's imported at runtime by the Node.js server.
-      externals: { external: ["postgres"] },
+      // postgres is NOT externalized here. Externalizing it caused Vercel
+      // Lambdas to fail with "Cannot find package 'postgres'" because Nitro's
+      // static rewrite of the dynamic import runs before the CL_DB_URL guard,
+      // and the NFT tracer missed the package so it wasn't deployed.
+      // postgres uses only Node built-ins (net/tls/perf_hooks/crypto/fs/stream)
+      // which are all available in the Lambda runtime — bundling it inline works.
     }),
   ],
-  // postgres is a Node-only package (net/tls/perf_hooks) used only inside
-  // server function handlers. Tell Vite not to bundle it for the browser:
-  // ssr.external keeps it out of the SSR bundle (runtime import instead),
-  // and rollupOptions.external prevents the client-bundle analysis failure.
   vite: {
-    ssr: { external: ["postgres"] },
     build: {
       rollupOptions: {
+        // postgres is a Node-only package. Exclude it from the BROWSER bundle
+        // (the only place that can't handle net/tls/perf_hooks). The SSR/Nitro
+        // build bundles it inline — see note above.
         external: ["postgres"],
       },
     },
