@@ -830,10 +830,9 @@ function CasesPanel({ identifier }: { identifier: string }) {
         <ul className="space-y-2">
           {cases.map((c) => (
             <li key={c.cl_cluster_id}>
-              <a
-                href={c.cl_url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/case/$clusterId"
+                params={{ clusterId: String(c.cl_cluster_id) }}
                 className="group/case flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-background/50 px-3.5 py-2.5 text-sm transition-colors hover:border-border hover:bg-muted/50"
               >
                 <div className="min-w-0">
@@ -862,8 +861,8 @@ function CasesPanel({ identifier }: { identifier: string }) {
                     )}
                   </div>
                 </div>
-                <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover/case:text-accent/60" />
-              </a>
+                <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground/40 group-hover/case:text-accent/60" />
+              </Link>
             </li>
           ))}
         </ul>

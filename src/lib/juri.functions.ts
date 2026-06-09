@@ -14,7 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { isAdminEmail } from "@/lib/admin";
-import { searchCasesForJuri, type ClCaseResult } from "@/lib/court-cases";
+import { searchCasesForJuri, readCaseForJuri, type ClCaseResult } from "@/lib/court-cases";
 import {
   JURI_REQUIRES_PRO,
   JURI_FREE_TASTE,
@@ -626,6 +626,17 @@ export const askJuri = createServerFn({ method: "POST" })
           required: ["query"],
         },
       },
+      {
+        name: "read_case",
+        description: "Read the opinion text of a specific federal court case by its CourtListener cluster ID. Use when the user is reading a case on the site (/case/{id} in the context) and asks about its holding, facts, or reasoning — or when you need to verify what a case actually says before citing it. Returns up to 8k chars of plain-text opinion.",
+        input_schema: {
+          type: "object",
+          properties: {
+            cluster_id: { type: "number", description: "CourtListener opinion cluster ID — from the /case/{id} URL the user is viewing, or from search_cases results." },
+          },
+          required: ["cluster_id"],
+        },
+      },
     ];
     if (profile.useGraph) {
       tools.push({
@@ -722,6 +733,11 @@ export const askJuri = createServerFn({ method: "POST" })
           }
           return caseResult;
         }
+        if (name === "read_case") {
+          const clusterId = Number(input?.cluster_id);
+          if (!clusterId) return { error: "cluster_id required" };
+          return await readCaseForJuri(clusterId);
+        }
         return { error: "unknown tool" };
       } catch {
         return { error: "tool failed" };
@@ -761,7 +777,12 @@ export const askJuri = createServerFn({ method: "POST" })
     }
 
     // Conversation so far + the current question (with mode + context hints).
-    const contextHint = data.context_identifier ? `[The user is currently reading ${data.context_identifier}.]\n` : "";
+    const caseMatch = data.context_identifier?.match(/^\/case\/(\d+)$/);
+    const contextHint = data.context_identifier
+      ? caseMatch
+        ? `[The user is currently reading a court opinion on-site at /case/${caseMatch[1]}. If they ask about this case's holding, facts, reasoning, or anything in the text, call read_case(cluster_id=${caseMatch[1]}) first to get the opinion text before answering.]\n`
+        : `[The user is currently reading ${data.context_identifier}.]\n`
+      : "";
     const modeHint = mode === "deep"
       ? "\n\n(Deep dive: be exhaustive — search several angles, read the strongest hits, and follow every definition and cross-reference that bears on the answer, plus find_connections for related law. Go as deep as the question needs.)"
       : "\n\n(Quick: focused — but still follow any definition or cross-reference the answer genuinely turns on. Don't answer around a term you haven't read.)";

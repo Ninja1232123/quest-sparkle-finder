@@ -37,6 +37,7 @@ export type ClCase = {
 };
 
 export type ClCaseResult = {
+  cl_cluster_id: number | null;
   name: string;
   court: string | null;
   year: string;
@@ -45,6 +46,32 @@ export type ClCaseResult = {
   snippet: string;
   url: string | null;
 };
+
+export type ClOpinion = {
+  cl_cluster_id: number;
+  case_name: string;
+  court: string | null;
+  date_filed: string | null;
+  cite_count: number;
+  outcome: string | null;
+  cl_url: string;
+  // Plain text of the opinion (may be very long — UI paginates).
+  text: string;
+};
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/\n{4,}/g, "\n\n\n")
+    .trim();
+}
 
 // Map CourtListener court IDs to short display names.
 const COURT_SHORT: Record<string, string> = {
@@ -235,6 +262,7 @@ export async function searchCasesForJuri(
       if (rows.length > 0) {
         return {
           cases: rows.map((r) => ({
+            cl_cluster_id: r.cl_cluster_id,
             name: r.case_name,
             court: courtDisplay(r.court),
             year: (r.date_filed ?? "").slice(0, 4),
@@ -262,6 +290,7 @@ export async function searchCasesForJuri(
     const json = await resp.json();
     return {
       cases: (json.results ?? []).slice(0, 8).map((r: any) => ({
+        cl_cluster_id: Number(r.cluster_id ?? r.id ?? 0) || null,
         name: r.caseName ?? r.case_name ?? "Untitled",
         court: courtDisplay(r.court ?? null),
         year: (r.dateFiled ?? r.date_filed ?? "").slice(0, 4),
@@ -273,5 +302,88 @@ export async function searchCasesForJuri(
     };
   } catch {
     return { cases: [] };
+  }
+}
+
+// ── Case reader ──────────────────────────────────────────────────────────────
+
+// Server function: load full case metadata + opinion text for the /case/$id page.
+export const fetchCaseOpinion = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ cluster_id: z.number().int().positive() }))
+  .handler(async ({ data }): Promise<{ opinion: ClOpinion | null }> => {
+    const db = await getClDb();
+    if (!db) return { opinion: null };
+    try {
+      const rows = await db`
+        SELECT
+          oc.id             AS cl_cluster_id,
+          oc.case_name,
+          oc.date_filed,
+          oc.citation_count AS cite_count,
+          oc.slug,
+          d.court_id        AS court,
+          co.outcome,
+          op.plain_text,
+          op.html_with_citations
+        FROM search_opinioncluster oc
+        JOIN search_docket d ON d.id = oc.docket_id
+        LEFT JOIN cluster_outcome co ON co.cluster_id = oc.id
+        LEFT JOIN search_opinion op ON op.cluster_id = oc.id
+        WHERE oc.id = ${data.cluster_id}
+        ORDER BY op.position ASC NULLS LAST
+        LIMIT 1
+      `;
+      await db.end();
+      if (!rows.length) return { opinion: null };
+      const r = rows[0];
+      const rawText = (r.plain_text as string | null)?.trim()
+        || stripHtml((r.html_with_citations as string | null) ?? "");
+      return {
+        opinion: {
+          cl_cluster_id: Number(r.cl_cluster_id),
+          case_name: (r.case_name as string) || "Untitled",
+          court: (r.court as string | null) || null,
+          date_filed: r.date_filed ? String(r.date_filed).slice(0, 10) : null,
+          cite_count: Number(r.cite_count),
+          outcome: (r.outcome as string | null) || null,
+          cl_url: `https://www.courtlistener.com/opinion/${data.cluster_id}/${r.slug || ""}`,
+          text: rawText,
+        },
+      };
+    } catch (e) {
+      console.error("fetchCaseOpinion failed:", e);
+      try { await db.end(); } catch {}
+      return { opinion: null };
+    }
+  });
+
+// Used by Juri's read_case tool — returns up to 8k chars of opinion text so
+// Juri can answer questions about the case without reading the whole document.
+export async function readCaseForJuri(
+  clusterId: number,
+): Promise<{ text: string; truncated: boolean; total_chars: number; error?: string }> {
+  const db = await getClDb();
+  if (!db) return { text: "", truncated: false, total_chars: 0, error: "Local DB not available" };
+  try {
+    const rows = await db`
+      SELECT plain_text, html_with_citations
+      FROM search_opinion
+      WHERE cluster_id = ${clusterId}
+      ORDER BY position ASC NULLS LAST
+      LIMIT 1
+    `;
+    await db.end();
+    if (!rows.length) return { text: "", truncated: false, total_chars: 0, error: "No opinion text found" };
+    const raw = (rows[0].plain_text as string | null)?.trim()
+      || stripHtml((rows[0].html_with_citations as string | null) ?? "");
+    const CHUNK = 8000;
+    return {
+      text: raw.slice(0, CHUNK),
+      truncated: raw.length > CHUNK,
+      total_chars: raw.length,
+    };
+  } catch (e) {
+    try { await db.end(); } catch {}
+    return { text: "", truncated: false, total_chars: 0, error: "Failed to read opinion" };
   }
 }

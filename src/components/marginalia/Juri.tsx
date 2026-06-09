@@ -98,11 +98,15 @@ export function Juri() {
   const router = useRouter();
   const currentPath = router.state.location.pathname;
 
-  // Current section identifier from the URL (if viewing a document)
+  // Current section or case identifier from the URL — passed to askJuri so
+  // Juri knows what the user is reading. /case/{id} triggers the read_case
+  // auto-hint; /code/... identifies the statute.
   const contextId = (() => {
     const path = router.state.location.pathname;
     const m = path.match(/^\/code\/(.+)/);
     if (m && !m[1].startsWith("source/")) return "/" + m[1];
+    const cm = path.match(/^\/case\/(\d+)/);
+    if (cm) return `/case/${cm[1]}`;
     return undefined;
   })();
 
@@ -462,25 +466,36 @@ export function Juri() {
                   )}
                   {msg.casesFound && msg.casesFound.length > 0 && (
                     <div className="juri-sources">
-                      <div className="juri-sources-label">Cases found — opens on CourtListener</div>
-                      {msg.casesFound.map((c, i) => (
-                        <a
-                          key={i}
-                          href={c.url ?? `https://www.courtlistener.com/?q=${encodeURIComponent(c.name)}&type=o`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="juri-source-chip"
-                        >
-                          {c.court && (
-                            <span className="juri-source-code">{c.court}</span>
-                          )}
-                          <span className="juri-source-label">{c.name}</span>
-                          {c.year && (
-                            <span className="juri-source-code opacity-60">{c.year}</span>
-                          )}
-                          <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
-                        </a>
-                      ))}
+                      <div className="juri-sources-label">Cases found — read on Self-Law</div>
+                      {msg.casesFound.map((c, i) =>
+                        c.cl_cluster_id ? (
+                          <Link
+                            key={i}
+                            to="/case/$clusterId"
+                            params={{ clusterId: String(c.cl_cluster_id) }}
+                            className="juri-source-chip"
+                            title={c.name}
+                          >
+                            {c.court && <span className="juri-source-code">{c.court}</span>}
+                            <span className="juri-source-label">{c.name}</span>
+                            {c.year && <span className="juri-source-code opacity-60">{c.year}</span>}
+                            <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                          </Link>
+                        ) : (
+                          <a
+                            key={i}
+                            href={c.url ?? `https://www.courtlistener.com/?q=${encodeURIComponent(c.name)}&type=o`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="juri-source-chip"
+                          >
+                            {c.court && <span className="juri-source-code">{c.court}</span>}
+                            <span className="juri-source-label">{c.name}</span>
+                            {c.year && <span className="juri-source-code opacity-60">{c.year}</span>}
+                            <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                          </a>
+                        )
+                      )}
                     </div>
                   )}
                   {msg.role === "juri" && !msg.error && msg.creditsCharged != null && (
@@ -588,7 +603,13 @@ export function Juri() {
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={contextId ? "Ask about this section…" : "Ask about any statute…"}
+                    placeholder={
+                      contextId?.startsWith("/case/")
+                        ? "Ask about this case — holding, facts, how it applies…"
+                        : contextId
+                        ? "Ask about this section…"
+                        : "Ask about any statute…"
+                    }
                     rows={1}
                     className="juri-input"
                     disabled={loading}

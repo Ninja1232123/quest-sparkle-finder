@@ -10,6 +10,7 @@ GRANT CONNECT ON DATABASE courtlistener TO authenticator;
 GRANT SELECT ON search_opinioncluster            TO authenticator;
 GRANT SELECT ON search_docket                    TO authenticator;
 GRANT SELECT ON cluster_outcome                  TO authenticator;
+GRANT SELECT ON search_opinion                   TO authenticator;
 GRANT SELECT ON search_citation                  TO authenticator;
 GRANT SELECT ON search_parenthetical             TO authenticator;
 GRANT SELECT ON search_court                     TO authenticator;

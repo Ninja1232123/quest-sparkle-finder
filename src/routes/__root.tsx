@@ -186,6 +186,7 @@ const PUBLIC_PREFIXES = [
   "/lovable/",
   // reading surface
   "/code",
+  "/case",
   "/states",
   "/outcomes",
   "/record",
