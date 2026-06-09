@@ -17,7 +17,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
 import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
-import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink } from "lucide-react";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink, Trash2 } from "lucide-react";
 import type { ClCaseResult } from "@/lib/court-cases";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
@@ -77,6 +77,31 @@ const SOURCE_SHORT: Record<string, string> = {
   tfm: "TFM", irm: "IRM", register: "Fed. Reg.", bill: "Bill",
 };
 
+// ── Session persistence ──────────────────────────────────────────────────────
+
+const SESSION_KEY = "juri_messages_v1";
+const SESSION_MAX = 40; // keep last N messages so storage stays small
+
+function loadSessionMessages(): Message[] {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSessionMessages(msgs: Message[]) {
+  try {
+    const trimmed = msgs.slice(-SESSION_MAX);
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(trimmed));
+  } catch {
+    // sessionStorage quota exceeded — skip silently
+  }
+}
+
 // ── Component ───────────────────────────────────────────────────────────
 
 export function Juri() {
@@ -87,7 +112,7 @@ export function Juri() {
   const [keywords, setKeywords] = useState("");
   const [checkoutPack, setCheckoutPack] = useState<CreditPack | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadSessionMessages());
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [headerOffset, setHeaderOffset] = useState(0);
@@ -115,6 +140,11 @@ export function Juri() {
     if (!user) { setCredits(null); return; }
     getJuriCredits().then((r) => setCredits(r.credits)).catch(() => setCredits(0));
   }, [user?.id]);
+
+  // Persist messages to sessionStorage so a refresh restores the conversation.
+  useEffect(() => {
+    saveSessionMessages(messages);
+  }, [messages]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -295,6 +325,17 @@ export function Juri() {
                 >
                   <Coins className="h-3 w-3" />
                   <span>{credits >= 9999 ? "∞" : credits}</span>
+                </button>
+              )}
+              {messages.length > 0 && view === "chat" && (
+                <button
+                  type="button"
+                  onClick={() => { setMessages([]); sessionStorage.removeItem(SESSION_KEY); }}
+                  className="juri-close-btn"
+                  aria-label="Clear conversation"
+                  title="Clear conversation"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               )}
               <button
