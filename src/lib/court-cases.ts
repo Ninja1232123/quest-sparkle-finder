@@ -1,26 +1,14 @@
 /**
- * Court cases — local CourtListener DB integration.
+ * Court cases — CourtListener data via postgres_fdw + PostgREST.
  *
- * Queries the local `courtlistener` PostgreSQL database directly (same server
- * as self_law, owned by the `django` role, grants in cl-grant-authenticator.sql).
- * No REST API calls, no rate limits, and we get cluster_outcome (normalized
- * outcomes) for free — something CourtListener's public API doesn't surface.
+ * The local self_law database has a `cl` schema with foreign tables that
+ * proxy into the courtlistener PostgreSQL database on the same server.
+ * PostgREST exposes `cl` alongside `public`, so the corpus Supabase client
+ * (which already talks to self_law PostgREST) can call cl.* RPC functions
+ * without any extra connection or package.
  *
- * Statute → case link: search_docket.cause holds the PACER cause-of-action
- * code, which uses the format "{title}:{section} ACT NAME", e.g.
- *   "15:1692 FAIR DEBT COLLECTION PRACTICES ACT"
- *   "15:1681 CONSUMER CREDIT PROTECTION ACT"
- *   "42:1983 CIVIL RIGHTS"
- * We extract title + section from the corpus identifier and match cause with
- * ILIKE. For section-level granularity (1692e vs 1692g) the cause field
- * records the subchapter root (1692), so all subsections of an act share
- * one cause code — good enough for "cases under this statute" discovery.
- *
- * Results cached in cl_section_cases (cloud Supabase, 7-day TTL) so the
- * first visitor pays the query cost; everyone else hits the cache.
- *
- * Run scripts/cl-grant-authenticator.sql once to enable the grants.
- * Set CL_DB_URL in Vercel env: postgres://authenticator:{pass}@{host}:5432/courtlistener
+ * Run scripts/cl-grant-authenticator.sql and the two cl.* functions
+ * (search_cases_by_cause, get_case_opinion) to enable this.
  */
 
 import { createServerFn } from "@tanstack/react-start";
@@ -55,7 +43,6 @@ export type ClOpinion = {
   cite_count: number;
   outcome: string | null;
   cl_url: string;
-  // Plain text of the opinion (may be very long — UI paginates).
   text: string;
 };
 
@@ -73,7 +60,6 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-// Map CourtListener court IDs to short display names.
 const COURT_SHORT: Record<string, string> = {
   scotus: "U.S. Sup. Ct.", ca1: "1st Cir.", ca2: "2nd Cir.", ca3: "3rd Cir.",
   ca4: "4th Cir.", ca5: "5th Cir.", ca6: "6th Cir.", ca7: "7th Cir.",
@@ -85,10 +71,7 @@ export function courtDisplay(court: string | null): string {
   return COURT_SHORT[court.toLowerCase()] ?? court.toUpperCase().slice(0, 18);
 }
 
-// Parse a corpus identifier into the PACER cause prefix and display label.
-// Returns null for sources that don't map to federal causes (state, UCC, etc.)
 function identifierToCause(identifier: string): { causePrefix: string; label: string } | null {
-  // /usc/title-15/section-1692e → cause LIKE '15:1692%'
   const usc = identifier.match(/\/usc\/title-(\d+)\/section-(\d+)/);
   if (usc) {
     return {
@@ -96,18 +79,12 @@ function identifierToCause(identifier: string): { causePrefix: string; label: st
       label: `${usc[1]} U.S.C. § ${identifier.match(/\/section-([^/]+)$/)?.[1] ?? usc[2]}`,
     };
   }
-  // /us/cfr/t12/s226.1 — CFR sections appear in dockets by their enabling statute,
-  // not by CFR cite, so we can't reliably map them here.
   return null;
 }
 
-// Direct connection to the local courtlistener DB.
-// Falls back to the REST API if CL_DB_URL isn't set (dev without local DB).
-async function getClDb() {
-  const url = process.env.CL_DB_URL;
-  if (!url) return null;
-  const { default: postgres } = await import("postgres");
-  return postgres(url, { max: 3, idle_timeout: 20, connect_timeout: 2 });
+async function getCorpusClient() {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
 }
 
 async function getCloudClient() {
@@ -118,32 +95,15 @@ async function getCloudClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-// Query the local courtlistener DB for cases whose docket cause matches the
-// statute. Returns top 8 by citation_count (precedential weight).
+// Query the cl schema via PostgREST → FDW → courtlistener database.
 async function queryLocalCases(causePrefix: string): Promise<ClCase[]> {
-  const db = await getClDb();
-  if (!db) return [];
   try {
-    const rows = await db`
-      SELECT
-        oc.id           AS cl_cluster_id,
-        oc.case_name,
-        d.court_id      AS court,
-        oc.date_filed,
-        oc.citation_count AS cite_count,
-        oc.slug,
-        co.outcome
-      FROM search_docket d
-      JOIN search_opinioncluster oc ON oc.docket_id = d.id
-      LEFT JOIN cluster_outcome co ON co.cluster_id = oc.id
-      WHERE d.cause ILIKE ${causePrefix + "%"}
-        AND oc.precedential_status = 'Published'
-        AND oc.citation_count > 0
-      ORDER BY oc.citation_count DESC
-      LIMIT 8
-    `;
-    await db.end();
-    return rows.map((r: any) => ({
+    const corpus = await getCorpusClient();
+    const { data, error } = await (corpus as any)
+      .schema("cl")
+      .rpc("search_cases_by_cause", { cause_prefix: causePrefix, result_limit: 8 });
+    if (error || !data?.length) return [];
+    return (data as any[]).map((r) => ({
       cl_cluster_id: Number(r.cl_cluster_id),
       case_name: r.case_name || "Untitled",
       court: r.court || null,
@@ -152,17 +112,13 @@ async function queryLocalCases(causePrefix: string): Promise<ClCase[]> {
       cl_url: `https://www.courtlistener.com/opinion/${r.cl_cluster_id}/${r.slug || ""}`,
       outcome: r.outcome || null,
     }));
-  } catch (e) {
-    console.error("courtlistener local query failed:", e);
-    try { await db.end(); } catch {}
+  } catch {
     return [];
   }
 }
 
-// Fallback: CourtListener REST API (used when CL_DB_URL not configured).
 function clHeaders(): Record<string, string> {
   const h: Record<string, string> = { Accept: "application/json" };
-  // Accept either name — COURTLISTENER_API_TOKEN or COURTLISTENER_API_KEY
   const token = process.env.COURTLISTENER_API_TOKEN || process.env.COURTLISTENER_API_KEY;
   if (token) h.Authorization = `Token ${token}`;
   return h;
@@ -208,7 +164,6 @@ export const fetchSectionCases = createServerFn({ method: "GET" })
       const cloud = await getCloudClient();
       if (!cloud) return { cases: [] };
 
-      // Cache hit: return fresh rows (< 7 days).
       const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data: cached } = await cloud
         .from("cl_section_cases")
@@ -220,13 +175,10 @@ export const fetchSectionCases = createServerFn({ method: "GET" })
 
       if (cached && cached.length > 0) return { cases: cached as ClCase[] };
 
-      // Cache miss — try local DB first, fall back to REST API if it returns
-      // nothing (e.g. CL_DB_URL set but port not reachable from this host).
-      let results: ClCase[] = [];
-      if (process.env.CL_DB_URL) results = await queryLocalCases(mapped.causePrefix);
+      let results: ClCase[] = await queryLocalCases(mapped.causePrefix);
       if (results.length === 0) results = await queryRestApiCases(mapped.label);
 
-      if (results.length > 0 && cloud) {
+      if (results.length > 0) {
         const rows = results.map((c) => ({
           identifier,
           cl_cluster_id: c.cl_cluster_id,
@@ -255,9 +207,7 @@ export async function searchCasesForJuri(
   query: string,
   statuteCitation?: string,
 ): Promise<{ cases: ClCaseResult[] }> {
-  // Try local DB first if a statute citation is provided (parseable to cause prefix).
-  if (statuteCitation && process.env.CL_DB_URL) {
-    // Extract title:section from the citation string.
+  if (statuteCitation) {
     const m = statuteCitation.match(/(\d+)\s*U\.?S\.?C\.?\s*[§\s]*(\d+)/i);
     if (m) {
       const rows = await queryLocalCases(`${m[1]}:${m[2]}`);
@@ -278,7 +228,6 @@ export async function searchCasesForJuri(
     }
   }
 
-  // Fall back to REST API for free-text queries or when local DB isn't available.
   try {
     const q = statuteCitation ? `"${statuteCitation}" ${query}` : query;
     const params = new URLSearchParams({
@@ -309,37 +258,18 @@ export async function searchCasesForJuri(
 
 // ── Case reader ──────────────────────────────────────────────────────────────
 
-// Server function: load full case metadata + opinion text for the /case/$id page.
 export const fetchCaseOpinion = createServerFn({ method: "GET" })
   .inputValidator(z.object({ cluster_id: z.number().int().positive() }))
   .handler(async ({ data }): Promise<{ opinion: ClOpinion | null }> => {
-    const db = await getClDb();
-    if (!db) return { opinion: null };
     try {
-      const rows = await db`
-        SELECT
-          oc.id             AS cl_cluster_id,
-          oc.case_name,
-          oc.date_filed,
-          oc.citation_count AS cite_count,
-          oc.slug,
-          d.court_id        AS court,
-          co.outcome,
-          op.plain_text,
-          op.html_with_citations
-        FROM search_opinioncluster oc
-        JOIN search_docket d ON d.id = oc.docket_id
-        LEFT JOIN cluster_outcome co ON co.cluster_id = oc.id
-        LEFT JOIN search_opinion op ON op.cluster_id = oc.id
-        WHERE oc.id = ${data.cluster_id}
-        ORDER BY op.position ASC NULLS LAST
-        LIMIT 1
-      `;
-      await db.end();
-      if (!rows.length) return { opinion: null };
-      const r = rows[0];
-      const rawText = (r.plain_text as string | null)?.trim()
-        || stripHtml((r.html_with_citations as string | null) ?? "");
+      const corpus = await getCorpusClient();
+      const { data: rows, error } = await (corpus as any)
+        .schema("cl")
+        .rpc("get_case_opinion", { p_cluster_id: data.cluster_id });
+      if (error || !rows?.length) return { opinion: null };
+      const r = rows[0] as any;
+      const rawText = (r.text_content as string | null)?.trim() ?? "";
+      const text = rawText.startsWith("<") ? stripHtml(rawText) : rawText;
       return {
         opinion: {
           cl_cluster_id: Number(r.cl_cluster_id),
@@ -349,43 +279,36 @@ export const fetchCaseOpinion = createServerFn({ method: "GET" })
           cite_count: Number(r.cite_count),
           outcome: (r.outcome as string | null) || null,
           cl_url: `https://www.courtlistener.com/opinion/${data.cluster_id}/${r.slug || ""}`,
-          text: rawText,
+          text,
         },
       };
     } catch (e) {
       console.error("fetchCaseOpinion failed:", e);
-      try { await db.end(); } catch {}
       return { opinion: null };
     }
   });
 
-// Used by Juri's read_case tool — returns up to 8k chars of opinion text so
-// Juri can answer questions about the case without reading the whole document.
 export async function readCaseForJuri(
   clusterId: number,
 ): Promise<{ text: string; truncated: boolean; total_chars: number; error?: string }> {
-  const db = await getClDb();
-  if (!db) return { text: "", truncated: false, total_chars: 0, error: "Local DB not available" };
   try {
-    const rows = await db`
-      SELECT plain_text, html_with_citations
-      FROM search_opinion
-      WHERE cluster_id = ${clusterId}
-      ORDER BY position ASC NULLS LAST
-      LIMIT 1
-    `;
-    await db.end();
-    if (!rows.length) return { text: "", truncated: false, total_chars: 0, error: "No opinion text found" };
-    const raw = (rows[0].plain_text as string | null)?.trim()
-      || stripHtml((rows[0].html_with_citations as string | null) ?? "");
+    const corpus = await getCorpusClient();
+    const { data: rows, error } = await (corpus as any)
+      .schema("cl")
+      .rpc("get_case_opinion", { p_cluster_id: clusterId });
+    if (error || !rows?.length) {
+      return { text: "", truncated: false, total_chars: 0, error: "No opinion text found" };
+    }
+    const r = rows[0] as any;
+    const rawText = ((r.text_content as string | null) ?? "").trim();
+    const text = rawText.startsWith("<") ? stripHtml(rawText) : rawText;
     const CHUNK = 8000;
     return {
-      text: raw.slice(0, CHUNK),
-      truncated: raw.length > CHUNK,
-      total_chars: raw.length,
+      text: text.slice(0, CHUNK),
+      truncated: text.length > CHUNK,
+      total_chars: text.length,
     };
-  } catch (e) {
-    try { await db.end(); } catch {}
+  } catch {
     return { text: "", truncated: false, total_chars: 0, error: "Failed to read opinion" };
   }
 }
