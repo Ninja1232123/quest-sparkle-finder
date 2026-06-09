@@ -107,7 +107,7 @@ async function getClDb() {
   const url = process.env.CL_DB_URL;
   if (!url) return null;
   const { default: postgres } = await import("postgres");
-  return postgres(url, { max: 3, idle_timeout: 20, connect_timeout: 5 });
+  return postgres(url, { max: 3, idle_timeout: 20, connect_timeout: 2 });
 }
 
 async function getCloudClient() {
@@ -162,7 +162,8 @@ async function queryLocalCases(causePrefix: string): Promise<ClCase[]> {
 // Fallback: CourtListener REST API (used when CL_DB_URL not configured).
 function clHeaders(): Record<string, string> {
   const h: Record<string, string> = { Accept: "application/json" };
-  const token = process.env.COURTLISTENER_API_TOKEN;
+  // Accept either name — COURTLISTENER_API_TOKEN or COURTLISTENER_API_KEY
+  const token = process.env.COURTLISTENER_API_TOKEN || process.env.COURTLISTENER_API_KEY;
   if (token) h.Authorization = `Token ${token}`;
   return h;
 }
@@ -219,10 +220,11 @@ export const fetchSectionCases = createServerFn({ method: "GET" })
 
       if (cached && cached.length > 0) return { cases: cached as ClCase[] };
 
-      // Cache miss — query local DB (preferred) or REST API fallback.
-      const results = process.env.CL_DB_URL
-        ? await queryLocalCases(mapped.causePrefix)
-        : await queryRestApiCases(mapped.label);
+      // Cache miss — try local DB first, fall back to REST API if it returns
+      // nothing (e.g. CL_DB_URL set but port not reachable from this host).
+      let results: ClCase[] = [];
+      if (process.env.CL_DB_URL) results = await queryLocalCases(mapped.causePrefix);
+      if (results.length === 0) results = await queryRestApiCases(mapped.label);
 
       if (results.length > 0 && cloud) {
         const rows = results.map((c) => ({
