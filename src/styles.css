@@ -2885,22 +2885,22 @@ main {
     max-width: 85%;
   }
   .juri-msg-user .juri-msg-text {
-    font-size: 15px;
+    font-size: 16px;
     color: #e7cd7e;
-    line-height: 1.45;
+    line-height: 1.5;
   }
   .juri-msg-eagle .juri-msg-body {
     background: rgba(251,246,232,0.06);
     border: 1px solid rgba(251,246,232,0.1);
     border-radius: 12px 12px 12px 4px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     max-width: 92%;
   }
   .juri-msg-eagle .juri-msg-text {
     font-family: var(--font-serif);
-    font-size: 16px;
+    font-size: 17px;
     color: #c2cde6;
-    line-height: 1.55;
+    line-height: 1.65;
     white-space: pre-wrap;
   }
   .juri-msg-error .juri-msg-body {
@@ -2960,7 +2960,7 @@ main {
   }
   .juri-sources-label {
     font-family: var(--font-mono);
-    font-size: 8.5px;
+    font-size: 10px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #7a8bb0;
@@ -2970,12 +2970,12 @@ main {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 8px;
+    padding: 5px 9px;
     margin-top: 3px;
     border-radius: 6px;
     background: rgba(200,162,75,0.08);
     border: 1px solid rgba(200,162,75,0.18);
-    font-size: 11px;
+    font-size: 13px;
     color: #c2cde6;
     transition: background 120ms, border-color 120ms;
     text-decoration: none;
@@ -2987,7 +2987,7 @@ main {
   }
   .juri-source-code {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -3023,7 +3023,7 @@ main {
     background: rgba(251,246,232,0.06);
     color: #fbf6e8;
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 12px;
     min-height: 38px;
     max-height: 100px;
@@ -3127,7 +3127,7 @@ main {
   .juri-receipt {
     margin-top: 7px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: #6a7a9a;
@@ -3160,7 +3160,7 @@ main {
     background: rgba(120,139,176,0.10);
     border: 1px solid rgba(120,139,176,0.22);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     font-style: normal;
     color: #9aa9c4;
     text-decoration: none;
