@@ -108,23 +108,53 @@ function Index() {
           <div className="home-hero-foot" />
         </section>
 
-        {/* CONSTITUTION CARTOUCHE — overlaps eagle from below */}
-        <div className="home-const-wrap">
-          <Link to="/how-it-works" className="home-const-cartouche">
-            <div className="hcc-wtp">Read the law yourself.</div>
-            <div className="hcc-kicker">How this tool works</div>
-            <h2>Search every U.S. law at once</h2>
-            <div className="hcc-sub">
-              Marginalia indexes U.S. primary law — the Constitution, the U.S. Code, federal regulations, the Federal Register, bills, public laws, statutes, and presidential and agency documents — pulled straight from the official source. Search all of it by keyword or citation, browse any source by its own structure, set the same phrase against several sources at once, and read the real text instead of a summary.
-            </div>
-            <div className="hcc-pills">
-              <span className="hcc-pill">Search every source</span>
-              <span className="hcc-pill">Browse by structure</span>
-              <span className="hcc-pill">Compare side-by-side</span>
-              <span className="hcc-pill">Real source text</span>
-            </div>
-            <div className="hcc-cta">See everything it does →</div>
-          </Link>
+        {/* CONSTITUTION CARTOUCHE — overlaps eagle from below, flanked by update slots */}
+        <div className="home-const-row">
+          {/* LEFT update slot — edit freely to announce features/news */}
+          <div className="home-const-aside home-const-aside-l">
+            <p className="hca-label">New</p>
+            <p className="hca-body">
+              Court record reader: open any federal opinion on Self-Law and ask
+              Juri about the holding — without leaving the page.
+            </p>
+            <div className="hca-divider" />
+            <p className="hca-body">
+              Cases panel now appears on every statute section, ranked by how
+              often courts have cited it.
+            </p>
+          </div>
+
+          {/* CENTER — the main cartouche */}
+          <div className="home-const-wrap">
+            <Link to="/how-it-works" className="home-const-cartouche">
+              <div className="hcc-wtp">Read the law yourself.</div>
+              <div className="hcc-kicker">How this tool works</div>
+              <h2>Search every U.S. law at once</h2>
+              <div className="hcc-sub">
+                Marginalia indexes U.S. primary law — the Constitution, the U.S. Code, federal regulations, the Federal Register, bills, public laws, statutes, and presidential and agency documents — pulled straight from the official source. Search all of it by keyword or citation, browse any source by its own structure, set the same phrase against several sources at once, and read the real text instead of a summary.
+              </div>
+              <div className="hcc-pills">
+                <span className="hcc-pill">Search every source</span>
+                <span className="hcc-pill">Browse by structure</span>
+                <span className="hcc-pill">Compare side-by-side</span>
+                <span className="hcc-pill">Real source text</span>
+              </div>
+              <div className="hcc-cta">See everything it does →</div>
+            </Link>
+          </div>
+
+          {/* RIGHT update slot — edit freely to announce features/news */}
+          <div className="home-const-aside home-const-aside-r">
+            <p className="hca-label">Coming up</p>
+            <p className="hca-body">
+              Juri, the AI research eagle, is now available for Pro members —
+              reads the statutes and cites every answer.
+            </p>
+            <div className="hca-divider" />
+            <p className="hca-body">
+              Legal template document builder is live in the Tools tab.
+            </p>
+          </div>
         </div>
 
         {/* "LAND OF THE FREE" RIBBON */}
