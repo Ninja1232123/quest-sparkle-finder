@@ -258,6 +258,29 @@ export async function searchCasesForJuri(
 
 // ── Case reader ──────────────────────────────────────────────────────────────
 
+// Fetch opinion text directly from the CourtListener REST API.
+// The local search_opinion table is empty (metadata-only dataset), so this
+// is the only source of actual opinion text right now.
+async function fetchOpinionTextFromApi(clusterId: number): Promise<string> {
+  try {
+    const resp = await fetch(
+      `https://www.courtlistener.com/api/rest/v4/opinions/?cluster=${clusterId}&order_by=ordering_key`,
+      { headers: clHeaders(), signal: AbortSignal.timeout(10000) },
+    );
+    if (!resp.ok) return "";
+    const json = await resp.json();
+    const opinions: any[] = json.results ?? [];
+    if (!opinions.length) return "";
+    // Pick the main opinion: prefer one with actual text, fall back to first.
+    const op = opinions.find((o) => o.plain_text?.trim() || o.html_with_citations?.trim())
+      ?? opinions[0];
+    const raw = (op.plain_text ?? "").trim() || (op.html_with_citations ?? "").trim();
+    return raw.startsWith("<") ? stripHtml(raw) : raw;
+  } catch {
+    return "";
+  }
+}
+
 export const fetchCaseOpinion = createServerFn({ method: "GET" })
   .inputValidator(z.object({ cluster_id: z.number().int().positive() }))
   .handler(async ({ data }): Promise<{ opinion: ClOpinion | null }> => {
@@ -268,8 +291,13 @@ export const fetchCaseOpinion = createServerFn({ method: "GET" })
         .rpc("get_case_opinion", { p_cluster_id: data.cluster_id });
       if (error || !rows?.length) return { opinion: null };
       const r = rows[0] as any;
-      const rawText = (r.text_content as string | null)?.trim() ?? "";
-      const text = rawText.startsWith("<") ? stripHtml(rawText) : rawText;
+
+      // text_content from local DB (NULL until opinion text is loaded).
+      // Fall back to REST API fetch when empty.
+      let localText = (r.text_content as string | null)?.trim() ?? "";
+      if (localText.startsWith("<")) localText = stripHtml(localText);
+      const text = localText || await fetchOpinionTextFromApi(data.cluster_id);
+
       return {
         opinion: {
           cl_cluster_id: Number(r.cl_cluster_id),
@@ -297,16 +325,21 @@ export async function readCaseForJuri(
       .schema("cl")
       .rpc("get_case_opinion", { p_cluster_id: clusterId });
     if (error || !rows?.length) {
-      return { text: "", truncated: false, total_chars: 0, error: "No opinion text found" };
+      return { text: "", truncated: false, total_chars: 0, error: "Case metadata not found" };
     }
     const r = rows[0] as any;
-    const rawText = ((r.text_content as string | null) ?? "").trim();
-    const text = rawText.startsWith("<") ? stripHtml(rawText) : rawText;
+    let localText = ((r.text_content as string | null) ?? "").trim();
+    if (localText.startsWith("<")) localText = stripHtml(localText);
+    const full = localText || await fetchOpinionTextFromApi(clusterId);
+
+    if (!full) {
+      return { text: "", truncated: false, total_chars: 0, error: "No opinion text available from local DB or CourtListener API" };
+    }
     const CHUNK = 8000;
     return {
-      text: text.slice(0, CHUNK),
-      truncated: text.length > CHUNK,
-      total_chars: text.length,
+      text: full.slice(0, CHUNK),
+      truncated: full.length > CHUNK,
+      total_chars: full.length,
     };
   } catch {
     return { text: "", truncated: false, total_chars: 0, error: "Failed to read opinion" };
