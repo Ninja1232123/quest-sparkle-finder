@@ -258,9 +258,7 @@ export async function searchCasesForJuri(
 
 // ── Case reader ──────────────────────────────────────────────────────────────
 
-// Fetch opinion text directly from the CourtListener REST API.
-// The local search_opinion table is empty (metadata-only dataset), so this
-// is the only source of actual opinion text right now.
+// Fetch opinion text from CL REST API (local search_opinion table is empty).
 async function fetchOpinionTextFromApi(clusterId: number): Promise<string> {
   try {
     const resp = await fetch(
@@ -271,13 +269,56 @@ async function fetchOpinionTextFromApi(clusterId: number): Promise<string> {
     const json = await resp.json();
     const opinions: any[] = json.results ?? [];
     if (!opinions.length) return "";
-    // Pick the main opinion: prefer one with actual text, fall back to first.
-    const op = opinions.find((o) => o.plain_text?.trim() || o.html_with_citations?.trim())
+    const op = opinions.find((o: any) => o.plain_text?.trim() || o.html_with_citations?.trim())
       ?? opinions[0];
     const raw = (op.plain_text ?? "").trim() || (op.html_with_citations ?? "").trim();
     return raw.startsWith("<") ? stripHtml(raw) : raw;
   } catch {
     return "";
+  }
+}
+
+// Full case fallback: fetch metadata + text from CL API when the local DB
+// function fails (e.g. broken FDW column). Returns null only if CL API is
+// unreachable or the cluster doesn't exist.
+async function fetchCaseFromApi(clusterId: number): Promise<ClOpinion | null> {
+  try {
+    const [clusterResp, opinionsResp] = await Promise.all([
+      fetch(
+        `https://www.courtlistener.com/api/rest/v4/clusters/${clusterId}/`,
+        { headers: clHeaders(), signal: AbortSignal.timeout(8000) },
+      ),
+      fetch(
+        `https://www.courtlistener.com/api/rest/v4/opinions/?cluster=${clusterId}&order_by=ordering_key`,
+        { headers: clHeaders(), signal: AbortSignal.timeout(8000) },
+      ),
+    ]);
+    if (!clusterResp.ok) return null;
+    const c = await clusterResp.json();
+
+    let text = "";
+    if (opinionsResp.ok) {
+      const oj = await opinionsResp.json();
+      const ops: any[] = oj.results ?? [];
+      const op = ops.find((o: any) => o.plain_text?.trim() || o.html_with_citations?.trim()) ?? ops[0];
+      if (op) {
+        const raw = (op.plain_text ?? "").trim() || (op.html_with_citations ?? "").trim();
+        text = raw.startsWith("<") ? stripHtml(raw) : raw;
+      }
+    }
+
+    return {
+      cl_cluster_id: clusterId,
+      case_name: (c.case_name as string) || "Untitled",
+      court: null, // court requires a separate docket fetch; omit for speed
+      date_filed: c.date_filed ? String(c.date_filed).slice(0, 10) : null,
+      cite_count: Number(c.citation_count ?? 0),
+      outcome: null,
+      cl_url: `https://www.courtlistener.com/opinion/${clusterId}/${c.slug || ""}`,
+      text,
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -289,11 +330,15 @@ export const fetchCaseOpinion = createServerFn({ method: "GET" })
       const { data: rows, error } = await (corpus as any)
         .schema("cl")
         .rpc("get_case_opinion", { p_cluster_id: data.cluster_id });
-      if (error || !rows?.length) return { opinion: null };
-      const r = rows[0] as any;
 
-      // text_content from local DB (NULL until opinion text is loaded).
-      // Fall back to REST API fetch when empty.
+      // Local DB failed (broken FDW column, schema not accessible, etc.) —
+      // fall back to CL REST API for both metadata and text.
+      if (error || !rows?.length) {
+        const opinion = await fetchCaseFromApi(data.cluster_id);
+        return { opinion };
+      }
+
+      const r = rows[0] as any;
       let localText = (r.text_content as string | null)?.trim() ?? "";
       if (localText.startsWith("<")) localText = stripHtml(localText);
       const text = localText || await fetchOpinionTextFromApi(data.cluster_id);
@@ -324,13 +369,18 @@ export async function readCaseForJuri(
     const { data: rows, error } = await (corpus as any)
       .schema("cl")
       .rpc("get_case_opinion", { p_cluster_id: clusterId });
+
+    let full = "";
+
     if (error || !rows?.length) {
-      return { text: "", truncated: false, total_chars: 0, error: "Case metadata not found" };
+      // Local DB unavailable — fetch text via CL API directly.
+      full = await fetchOpinionTextFromApi(clusterId);
+    } else {
+      const r = rows[0] as any;
+      let localText = ((r.text_content as string | null) ?? "").trim();
+      if (localText.startsWith("<")) localText = stripHtml(localText);
+      full = localText || await fetchOpinionTextFromApi(clusterId);
     }
-    const r = rows[0] as any;
-    let localText = ((r.text_content as string | null) ?? "").trim();
-    if (localText.startsWith("<")) localText = stripHtml(localText);
-    const full = localText || await fetchOpinionTextFromApi(clusterId);
 
     if (!full) {
       return { text: "", truncated: false, total_chars: 0, error: "No opinion text available from local DB or CourtListener API" };
