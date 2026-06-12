@@ -36,6 +36,17 @@ const TYPE_LABEL: Record<string, string> = {
   led: "Lawyers' Edition",
 };
 
+// Off-corpus citation types that we don't host but can deep-link to a public
+// case database. We resolve to CourtListener's search ("?q=<cite>&type=o") so
+// the reader lands on the actual opinion (or the closest match) in one click.
+const CASE_KINDS = new Set([
+  "scotus", "sct", "fed_app", "fed_supp", "led", "us", "fed", "f2d", "f3d",
+]);
+function courtListenerSearch(cite: string): string {
+  const q = encodeURIComponent(`"${cite}"`);
+  return `https://www.courtlistener.com/?q=${q}&type=o&order_by=citeCount+desc`;
+}
+
 type Chip = { s: number; e: number; cite: DocCitationRow };
 
 function renderChip(c: DocCitationRow, label: string, key: number): ReactNode {
@@ -53,6 +64,22 @@ function renderChip(c: DocCitationRow, label: string, key: number): ReactNode {
     );
   }
   const kind = TYPE_LABEL[c.target_type] ?? "Citation";
+  // Case-law cites get a jump-out link to CourtListener — for pro se readers,
+  // tracing the case in one click matters far more than a tooltip.
+  if (CASE_KINDS.has(c.target_type)) {
+    return (
+      <a
+        key={key}
+        href={courtListenerSearch(c.target_cite || label)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-sm font-medium text-[color:var(--oxblood,#6b3a2a)] underline decoration-dotted decoration-[color:var(--oxblood,#6b3a2a)]/50 underline-offset-2 transition-colors hover:decoration-solid"
+        title={`${kind}: ${c.target_cite} — open on CourtListener`}
+      >
+        {label}
+      </a>
+    );
+  }
   return (
     <span
       key={key}

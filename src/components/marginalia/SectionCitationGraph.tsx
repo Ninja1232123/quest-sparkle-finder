@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Pin } from "lucide-react";
 import { sourceMeta, sourceName } from "@/lib/source-groups";
 
 /**
@@ -64,6 +64,11 @@ const CASE_KINDS = new Set(["scotus", "sct", "fed_app", "fed_supp", "led"]);
 const CASE_ACCENT = "#6b3a2a"; // oxblood — distinguishes off-corpus case law
 const EXT_ACCENT = "#8a8275"; // muted clay — other off-corpus instruments
 
+function courtListenerSearch(cite: string): string {
+  const q = encodeURIComponent(`"${cite}"`);
+  return `https://www.courtlistener.com/?q=${q}&type=o&order_by=citeCount+desc`;
+}
+
 function nodeStyle(t: GraphTrace): { accent: string; short: string } {
   if (t.source) {
     const m = sourceMeta(t.source);
@@ -94,6 +99,10 @@ export function SectionCitationGraph({
   tracesTotal,
 }: Props) {
   const [hover, setHover] = useState<string | null>(null);
+  // Click-to-pin: lets a touch user (or anyone with shaky hover) lock a node
+  // so the tooltip stays put. Click the same node (or empty area) to release.
+  const [pinned, setPinned] = useState<string | null>(null);
+  const active = pinned ?? hover;
 
   const T = traces.slice(0, 12);
   const C = citedBy.slice(0, 7);
@@ -133,7 +142,7 @@ export function SectionCitationGraph({
         >
           {T.map((t, i) => {
             const p = tPos[i];
-            const hot = hover === t.key;
+            const hot = active === t.key;
             const mx = (50 + p.x) / 2 + 5;
             return (
               <path
@@ -141,7 +150,7 @@ export function SectionCitationGraph({
                 d={`M 50 50 Q ${mx} ${p.y} ${p.x} ${p.y}`}
                 fill="none"
                 stroke={hot ? "var(--terracotta)" : nodeStyle(t).accent}
-                strokeOpacity={hover && !hot ? 0.12 : hot ? 0.9 : 0.3}
+                strokeOpacity={active && !hot ? 0.12 : hot ? 0.9 : 0.3}
                 strokeWidth={hot ? 2 : 1.1}
                 vectorEffect="non-scaling-stroke"
                 className="transition-all duration-200"
@@ -151,7 +160,7 @@ export function SectionCitationGraph({
           {C.map((c, i) => {
             const p = cPos[i];
             const key = `cb-${c.source}`;
-            const hot = hover === key;
+            const hot = active === key;
             const mx = (50 + p.x) / 2 - 5;
             return (
               <path
@@ -159,7 +168,7 @@ export function SectionCitationGraph({
                 d={`M 50 50 Q ${mx} ${p.y} ${p.x} ${p.y}`}
                 fill="none"
                 stroke={hot ? "var(--terracotta)" : sourceMeta(c.source).accent}
-                strokeOpacity={hover && !hot ? 0.12 : hot ? 0.9 : 0.28}
+                strokeOpacity={active && !hot ? 0.12 : hot ? 0.9 : 0.28}
                 strokeWidth={hot ? 2 : 1.1}
                 vectorEffect="non-scaling-stroke"
                 className="transition-all duration-200"
@@ -190,6 +199,7 @@ export function SectionCitationGraph({
           const key = `cb-${c.source}`;
           const m = sourceMeta(c.source);
           const d = cRadius(c.n) * 2;
+          const isPinned = pinned === key;
           return (
             <div
               key={key}
@@ -197,6 +207,7 @@ export function SectionCitationGraph({
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
               onMouseEnter={() => setHover(key)}
               onMouseLeave={() => setHover(null)}
+              onClick={(e) => { e.stopPropagation(); setPinned(isPinned ? null : key); }}
             >
               <div
                 className="flex flex-col items-center justify-center rounded-full border-2 bg-background font-mono font-semibold leading-none text-foreground/80 transition-transform group-hover:scale-105"
@@ -205,8 +216,9 @@ export function SectionCitationGraph({
                 <span className="text-[10px]" style={{ color: m.accent }}>{m.short}</span>
                 <span className="mt-0.5 text-[11px] tabular-nums">×{c.n.toLocaleString()}</span>
               </div>
-              <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md border bg-background px-2 py-1 text-[10px] text-muted-foreground shadow-[var(--shadow-soft)] group-hover:block">
+              <div className={`pointer-events-none absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-background px-2 py-1 text-[10px] text-muted-foreground shadow-[var(--shadow-soft)] ${isPinned ? "block" : "hidden group-hover:block"}`}>
                 {sourceName(c.source)} cites this {c.n.toLocaleString()}×
+                {isPinned && <Pin className="ml-1 inline h-2.5 w-2.5 text-terracotta" />}
               </div>
             </div>
           );
@@ -216,6 +228,8 @@ export function SectionCitationGraph({
         {T.map((t, i) => {
           const p = tPos[i];
           const ns = nodeStyle(t);
+          const isCase = CASE_KINDS.has(t.kind);
+          const isPinned = pinned === t.key;
           const inner = (
             <div
               className="flex w-[5.2rem] flex-col items-center rounded-lg border bg-background px-1.5 py-1 text-center shadow-[var(--shadow-soft)] transition-transform group-hover:scale-105"
@@ -235,13 +249,29 @@ export function SectionCitationGraph({
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
               onMouseEnter={() => setHover(t.key)}
               onMouseLeave={() => setHover(null)}
+              onClick={(e) => { if (!t.href && !isCase) { e.stopPropagation(); setPinned(isPinned ? null : t.key); } }}
             >
               {t.href ? (
                 <Link to="/code/$" params={{ _splat: t.href.replace(/^\//, "") }} search={{ q: undefined }} title={t.title}>
                   {inner}
                 </Link>
+              ) : isCase ? (
+                <a
+                  href={courtListenerSearch(t.title)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${t.title} — open on CourtListener`}
+                >
+                  {inner}
+                </a>
               ) : (
                 <div title={`${t.title} — not in our corpus; look it up`}>{inner}</div>
+              )}
+              {(hover === t.key || isPinned) && (
+                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 w-max max-w-[14rem] -translate-x-1/2 rounded-md border bg-background px-2 py-1 text-[10px] leading-snug text-muted-foreground shadow-[var(--shadow-soft)]">
+                  <div className="font-semibold text-foreground/80">{t.title}</div>
+                  {isCase && <div className="mt-0.5 text-[9px] uppercase tracking-wide text-accent">click → CourtListener</div>}
+                </div>
               )}
             </div>
           );
