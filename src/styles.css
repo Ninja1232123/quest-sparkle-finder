@@ -2216,15 +2216,15 @@ main {
      top and a free, editable note slot below it. */
   .hero-rail {
     position: absolute;
-    top: 24%;
+    top: 22%;
     z-index: 3;
-    width: clamp(240px, 20vw, 340px);
+    width: clamp(260px, 22vw, 380px);
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
   }
-  .hero-rail-l { left: 2.6vw; align-items: flex-end; text-align: right; }
-  .hero-rail-r { right: 2.6vw; align-items: flex-start; text-align: left; }
+  .hero-rail-l { left: clamp(10px, 1.2vw, 22px); align-items: flex-end; text-align: right; }
+  .hero-rail-r { right: clamp(10px, 1.2vw, 22px); align-items: flex-start; text-align: left; }
 
   .hero-quote {
     width: 100%;
@@ -2264,7 +2264,7 @@ main {
   .hero-note p + p { margin-top: 8px; }
 
   /* below ~1500px there's no room beside the eagle — hide the rails */
-  @media (max-width: 1500px) { .hero-rail { display: none; } }
+  @media (max-width: 1180px) { .hero-rail { display: none; } }
 
   .home-am-ribbon {
     text-align: center;
