@@ -28,7 +28,7 @@ export const Route = createFileRoute("/outcomes/")({
 
 function OutcomesHub() {
   const { sources, families } = Route.useLoaderData();
-  const totalFiled = families.reduce((n, f) => n + (f.total_cases ?? 0), 0);
+  const totalFiled = families.reduce((n: number, f: any) => n + (f.total_cases ?? 0), 0);
 
   return (
     <ResearchShell sources={sources} centerMaxWidth="max-w-5xl">
@@ -69,7 +69,7 @@ function OutcomesHub() {
 
       <h2 className="mb-3 font-display text-lg font-semibold">Federal — civil cases by claim type</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        {families.map((f) => {
+        {families.map((f: any) => {
           const slug = f.slug;
           const key = slug.split("/").pop() ?? "";
           const meta = FAMILY_META[key];

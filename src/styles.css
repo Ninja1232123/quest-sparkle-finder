@@ -3317,7 +3317,7 @@ main {
   /* ── HERO RAILS — folio marginalia ─────────────────────────────────────── */
   .hero-rail {
     top: 22%;
-    width: clamp(220px, 18vw, 300px);
+    width: clamp(260px, 20vw, 340px);
     gap: 0;
   }
   .hero-rail-l { padding-right: 18px; border-right: 1px solid rgba(184,145,80,0.32); }
@@ -3327,8 +3327,8 @@ main {
     font-family: "Playfair Display", "IM Fell English", var(--font-serif), serif;
     font-style: italic;
     font-weight: 400;
-    font-size: clamp(15px, 1.18vw, 19px);
-    line-height: 1.55;
+    font-size: clamp(18px, 1.45vw, 23px);
+    line-height: 1.5;
     color: var(--codex-slate);
     text-shadow: 0 1px 8px rgba(0,0,0,0.7);
     position: relative;
@@ -3339,7 +3339,7 @@ main {
     display: block;
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: rgba(184,145,80,0.7);
@@ -3353,7 +3353,7 @@ main {
     border-top: 1px solid rgba(184,145,80,0.28);
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: normal;
-    font-size: clamp(13px, 1.0vw, 15.5px);
+    font-size: clamp(15px, 1.15vw, 18px);
     line-height: 1.55;
     color: var(--codex-slate-2);
     text-shadow: 0 1px 8px rgba(0,0,0,0.7);
@@ -3363,7 +3363,7 @@ main {
     content: "Bulletin";
     display: block;
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3395,7 +3395,7 @@ main {
   .home-const-aside { padding-top: 140px; }
   .hca-label {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.28em;
     color: var(--codex-gold);
@@ -3410,8 +3410,8 @@ main {
   .hca-body {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-size: 15px;
-    line-height: 1.6;
+    font-size: 17px;
+    line-height: 1.65;
     color: #2a2418;
   }
   .hca-divider {
