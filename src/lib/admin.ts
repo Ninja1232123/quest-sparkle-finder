@@ -10,7 +10,7 @@ const RAW = import.meta.env.VITE_ADMIN_EMAILS ?? "";
 
 const ADMIN_EMAILS = new Set(
   RAW.split(",")
-    .map((e) => e.trim().toLowerCase())
+    .map((e: string) => e.trim().toLowerCase())
     .filter(Boolean),
 );
 
