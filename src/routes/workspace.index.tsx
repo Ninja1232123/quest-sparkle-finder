@@ -35,7 +35,7 @@ function WorkspaceIndex() {
     navigate({
       to: "/workspace/$threadId",
       params: { threadId: t.id },
-      search: prompt ? { q: prompt } as never : undefined,
+      search: prompt ? { q: prompt } : {},
     });
   }
 
