@@ -251,6 +251,19 @@ function CaseFile() {
           <ArrowLeft className="h-3 w-3" /> The casebook
         </Link>
         <div className="flex shrink-0 items-center gap-1.5">
+          {user && blocks.length > 0 && (
+            <button
+              type="button"
+              onClick={sendToWorkspace}
+              disabled={sending}
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 hover:shadow-sm disabled:opacity-50"
+              style={{ borderColor: "rgba(200,162,75,0.6)", background: "rgba(200,162,75,0.12)" }}
+              aria-label="Send to AI Workspace"
+            >
+              {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Send to Workspace
+            </button>
+          )}
           <button type="button" onClick={exportMd} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs hover:border-foreground/40" aria-label="Download as Markdown">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
