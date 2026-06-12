@@ -8,6 +8,7 @@ import { CmdPalette } from "@/components/marginalia/CmdPalette";
 import { Juri } from "@/components/marginalia/Juri";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { MobileExperienceNotice } from "@/components/marginalia/MobileExperienceNotice";
+import { TosGate } from "@/components/marginalia/TosGate";
 
 const queryClient = new QueryClient();
 
@@ -168,6 +169,7 @@ function RootComponent() {
         </div>
         <CmdPalette />
         <Juri />
+        <TosGate />
       </AuthProvider>
     </QueryClientProvider>
   );
