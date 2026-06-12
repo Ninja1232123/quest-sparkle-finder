@@ -129,6 +129,13 @@ export function Juri() {
 
   const continueInWorkspace = useCallback(async () => {
     if (!user || messages.length === 0 || handoffLoading) return;
+    const ok = window.confirm(
+      "Continue this chat in the AI Workspace?\n\n" +
+      "Reminder: the Workspace is an AI research and drafting tool. It is NOT legal advice, " +
+      "AI can be wrong, and you are responsible for verifying every citation and consulting a " +
+      "licensed attorney before relying on anything it produces. Use at your own risk.",
+    );
+    if (!ok) return;
     setHandoffLoading(true);
     try {
       const uiMessages = messages.map((m) => ({
@@ -710,7 +717,8 @@ export function Juri() {
               </>
             )}
             <div className="juri-disclaimer">
-              Not legal advice. Every claim cites the source — read it yourself.
+              <strong>Not legal advice.</strong> AI can be wrong — verify every citation, read the
+              source yourself, and consult a licensed attorney. Use at your own risk.
             </div>
           </div>
           </>

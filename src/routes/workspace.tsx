@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listThreads, createThread, deleteThread } from "@/lib/workspace.functions";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, MessageSquare } from "lucide-react";
+import { LegalDisclaimer } from "@/components/marginalia/LegalDisclaimer";
 
 export const Route = createFileRoute("/workspace")({
   head: () => ({
@@ -107,7 +108,12 @@ function WorkspaceLayout() {
         </div>
       </aside>
       <main className="flex-1 overflow-hidden">
-        <Outlet />
+        <div className="flex h-full flex-col">
+          <LegalDisclaimer variant="bar" />
+          <div className="flex-1 overflow-hidden">
+            <Outlet />
+          </div>
+        </div>
       </main>
     </div>
   );
