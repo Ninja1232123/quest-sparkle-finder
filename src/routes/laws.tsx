@@ -13,9 +13,9 @@ export const Route = createFileRoute("/laws")({
   head: () => ({
     meta: [
       { title: "Public & Private Laws · Self-Law" },
-      { name: "description", content: "Bills enacted into law, by Congress and number." },
+      { name: "description", content: "Browse public and private laws enacted by Congress — every bill signed into law, organized by Congress and session number." },
       { property: "og:title", content: "Public & Private Laws · Self-Law" },
-      { property: "og:description", content: "Bills enacted into law, by Congress and number." },
+      { property: "og:description", content: "Browse public and private laws enacted by Congress — every bill signed into law, organized by Congress and session number." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/laws" }],
   }),
