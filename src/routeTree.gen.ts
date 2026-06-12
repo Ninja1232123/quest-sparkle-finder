@@ -283,6 +283,11 @@ const CasesIdRoute = CasesIdRouteImport.update({
   path: '/cases/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseClusterIdRoute = CaseClusterIdRouteImport.update({
+  id: '/case/$clusterId',
+  path: '/case/$clusterId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OutcomesStatesIndexRoute = OutcomesStatesIndexRouteImport.update({
   id: '/outcomes/states/',
   path: '/outcomes/states/',
@@ -393,11 +398,6 @@ const ApiPublicV1DocSplatRoute = ApiPublicV1DocSplatRouteImport.update({
   path: '/api/public/v1/doc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CaseClusterIdRoute = CaseClusterIdRouteImport.update({
-  id: '/case/$clusterId',
-  path: '/case/$clusterId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -432,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/case/$clusterId': typeof CaseClusterIdRoute
   '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -462,7 +463,6 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
   '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
   '/outcomes/federal/court/$court/': typeof OutcomesFederalCourtCourtIndexRoute
-  '/case/$clusterId': typeof CaseClusterIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -497,6 +497,7 @@ export interface FileRoutesByTo {
   '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/case/$clusterId': typeof CaseClusterIdRoute
   '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -527,7 +528,6 @@ export interface FileRoutesByTo {
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
   '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
   '/outcomes/federal/court/$court': typeof OutcomesFederalCourtCourtIndexRoute
-  '/case/$clusterId': typeof CaseClusterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -563,6 +563,7 @@ export interface FileRoutesById {
   '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/case/$clusterId': typeof CaseClusterIdRoute
   '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/code/$': typeof CodeSplatRoute
@@ -593,7 +594,6 @@ export interface FileRoutesById {
   '/api/public/v1/doc/$': typeof ApiPublicV1DocSplatRoute
   '/outcomes/federal/court/$court/$casetype': typeof OutcomesFederalCourtCourtCasetypeRoute
   '/outcomes/federal/court/$court/': typeof OutcomesFederalCourtCourtIndexRoute
-  '/case/$clusterId': typeof CaseClusterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -630,6 +630,7 @@ export interface FileRouteTypes {
     | '/ucc'
     | '/usc'
     | '/whitepaper'
+    | '/case/$clusterId'
     | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
@@ -660,7 +661,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/doc/$'
     | '/outcomes/federal/court/$court/$casetype'
     | '/outcomes/federal/court/$court/'
-    | '/case/$clusterId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -695,6 +695,7 @@ export interface FileRouteTypes {
     | '/ucc'
     | '/usc'
     | '/whitepaper'
+    | '/case/$clusterId'
     | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
@@ -725,7 +726,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/doc/$'
     | '/outcomes/federal/court/$court/$casetype'
     | '/outcomes/federal/court/$court'
-    | '/case/$clusterId'
   id:
     | '__root__'
     | '/'
@@ -760,6 +760,7 @@ export interface FileRouteTypes {
     | '/ucc'
     | '/usc'
     | '/whitepaper'
+    | '/case/$clusterId'
     | '/cases/$id'
     | '/checkout/return'
     | '/code/$'
@@ -790,7 +791,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/doc/$'
     | '/outcomes/federal/court/$court/$casetype'
     | '/outcomes/federal/court/$court/'
-    | '/case/$clusterId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -826,6 +826,7 @@ export interface RootRouteChildren {
   UccRoute: typeof UccRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
+  CaseClusterIdRoute: typeof CaseClusterIdRoute
   CasesIdRoute: typeof CasesIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   CodeSplatRoute: typeof CodeSplatRoute
@@ -856,7 +857,6 @@ export interface RootRouteChildren {
   ApiPublicV1DocSplatRoute: typeof ApiPublicV1DocSplatRoute
   OutcomesFederalCourtCourtCasetypeRoute: typeof OutcomesFederalCourtCourtCasetypeRoute
   OutcomesFederalCourtCourtIndexRoute: typeof OutcomesFederalCourtCourtIndexRoute
-  CaseClusterIdRoute: typeof CaseClusterIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1155,6 +1155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case/$clusterId': {
+      id: '/case/$clusterId'
+      path: '/case/$clusterId'
+      fullPath: '/case/$clusterId'
+      preLoaderRoute: typeof CaseClusterIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/outcomes/states/': {
       id: '/outcomes/states/'
       path: '/outcomes/states'
@@ -1295,13 +1302,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1DocSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/case/$clusterId': {
-      id: '/case/$clusterId'
-      path: '/case/$clusterId'
-      fullPath: '/case/$clusterId'
-      preLoaderRoute: typeof CaseClusterIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -1338,6 +1338,7 @@ const rootRouteChildren: RootRouteChildren = {
   UccRoute: UccRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
+  CaseClusterIdRoute: CaseClusterIdRoute,
   CasesIdRoute: CasesIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   CodeSplatRoute: CodeSplatRoute,
@@ -1369,7 +1370,6 @@ const rootRouteChildren: RootRouteChildren = {
   OutcomesFederalCourtCourtCasetypeRoute:
     OutcomesFederalCourtCourtCasetypeRoute,
   OutcomesFederalCourtCourtIndexRoute: OutcomesFederalCourtCourtIndexRoute,
-  CaseClusterIdRoute: CaseClusterIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
