@@ -110,6 +110,11 @@
   --ochre: oklch(0.81 0.14 80);         /* #E8B84A — reserved for marks */
   --highlight: oklch(0.86 0.12 85);     /* softer highlight wash */
 
+  /* v2 workspace accents — brass + ink for the "research desk" surface. */
+  --brass: #c8a24b;
+  --brass-soft: color-mix(in oklab, #c8a24b 22%, transparent);
+  --navy-deep: #0c1b3d;
+
   --background: var(--paper);
   --foreground: var(--ink);
   --card: oklch(1 0 0);                 /* bright white — bubbles read against parchment */

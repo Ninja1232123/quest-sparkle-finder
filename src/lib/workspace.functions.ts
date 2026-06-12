@@ -137,3 +137,99 @@ export const seedThreadFromHandoff = createServerFn({ method: "POST" })
     }
     return { threadId: thread.id };
   });
+
+// ── Session draft (one per thread) ──────────────────────────────────────────
+// One "draft" workspace_document per thread, kind='draft'. The editor owns it.
+// Autosave upserts; on first save it gets created. Other generated artifacts
+// (motions, etc.) keep using kind='memo' / 'motion' so they show separately.
+
+export const getSessionDraft = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ThreadIdInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("workspace_documents")
+      .select("id,title,body_md,updated_at")
+      .eq("thread_id", data.threadId)
+      .eq("kind", "draft")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const upsertSessionDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      threadId: z.string().uuid(),
+      title: z.string().min(1).max(200),
+      bodyMd: z.string().max(500_000),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: existing } = await context.supabase
+      .from("workspace_documents")
+      .select("id")
+      .eq("thread_id", data.threadId)
+      .eq("kind", "draft")
+      .maybeSingle();
+    if (existing?.id) {
+      const { error } = await context.supabase
+        .from("workspace_documents")
+        .update({ title: data.title, body_md: data.bodyMd })
+        .eq("id", existing.id);
+      if (error) throw new Error(error.message);
+      return { id: existing.id, updated_at: new Date().toISOString() };
+    }
+    const { data: row, error } = await context.supabase
+      .from("workspace_documents")
+      .insert({
+        thread_id: data.threadId,
+        user_id: context.userId,
+        kind: "draft",
+        title: data.title,
+        body_md: data.bodyMd,
+      })
+      .select("id,updated_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+// ── Corpus search (wraps existing FTS RPC, scoped to logged-in user) ────────
+type SearchRow = {
+  identifier: string;
+  source_code: string;
+  parent_label: string | null;
+  section_label: string | null;
+  heading: string | null;
+  snippet: string | null;
+  rank: number;
+};
+
+export const searchCorpus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      q: z.string().min(2).max(200),
+      source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().nullable(),
+      limit: z.number().int().min(1).max(30).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await (context.supabase.rpc as unknown as (
+      fn: string, args: Record<string, unknown>,
+    ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>)(
+      "search_documents_fts",
+      { p_query: data.q, p_source: data.source ?? null, p_limit: data.limit ?? 12 },
+    );
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r) => ({
+      identifier: r.identifier,
+      source: r.source_code,
+      heading: r.heading ?? "",
+      sectionLabel: r.section_label ?? "",
+      parentLabel: r.parent_label ?? "",
+      snippet: (r.snippet ?? "").replace(/<\/?mark>/g, ""),
+    }));
+  });
