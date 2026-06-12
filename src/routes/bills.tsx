@@ -17,6 +17,7 @@ export const Route = createFileRoute("/bills")({
       { property: "og:title", content: "Congressional Bills · Self-Law" },
       { property: "og:description", content: "Search congressional bills and resolutions — proposed federal legislation introduced in the House and Senate, tracked by number." },
       { property: "og:url", content: "https://self-law.org/bills" },
+    ],
     links: [{ rel: "canonical", href: "https://self-law.org/bills" }],
   }),
   errorComponent: ({ error }) => (
