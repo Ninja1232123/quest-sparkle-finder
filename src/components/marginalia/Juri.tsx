@@ -12,12 +12,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
+import { seedThreadFromHandoff } from "@/lib/workspace.functions";
 import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
-import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink, Trash2 } from "lucide-react";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink, Trash2, ArrowUpRightSquare } from "lucide-react";
 import type { ClCaseResult } from "@/lib/court-cases";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
