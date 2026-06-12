@@ -175,7 +175,7 @@ function PostPage() {
           <div className="mt-10 border-t border-border/60 pt-5">
             <div className="citation-tag text-muted-foreground">on the record</div>
             <ul className="mt-3 flex flex-wrap gap-2">
-              {post.citations.map((c: { identifier: string }) => (
+              {post.citations.map((c: { identifier: string; source_code?: string; section_label_snapshot?: string | null; heading_snapshot?: string | null }) => (
                 <li key={c.identifier}>
                   <Link
                     to="/code/$"
