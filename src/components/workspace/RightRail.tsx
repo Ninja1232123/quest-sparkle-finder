@@ -22,6 +22,7 @@ type Props = {
   initialTab?: Tab;
   onModeChange: (m: Mode) => void;
   onAddToNotes: (hit: CorpusHit) => void;
+  seedPrompt?: string;
 };
 
 export function RightRail(props: Props) {
@@ -47,10 +48,17 @@ export function RightRail(props: Props) {
 }
 
 function RailInner({
-  threadId, transport, initialMessages, mode, initialTab = "assistant", onModeChange, onAddToNotes,
+  threadId, transport, initialMessages, mode, initialTab = "assistant", onModeChange, onAddToNotes, seedPrompt,
 }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const chat = useChat({ id: threadId, messages: initialMessages, transport });
+  const seededRef = useState({ done: false })[0];
+  useEffect(() => {
+    if (seedPrompt && !seededRef.done && chat.messages.length === 0) {
+      seededRef.done = true;
+      void chat.sendMessage({ text: seedPrompt });
+    }
+  }, [seedPrompt, chat, seededRef]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
