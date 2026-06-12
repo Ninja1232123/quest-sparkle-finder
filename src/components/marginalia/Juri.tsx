@@ -124,6 +124,28 @@ export function Juri() {
   const { isPro } = useSubscription();
   const router = useRouter();
   const currentPath = router.state.location.pathname;
+  const seedHandoff = useServerFn(seedThreadFromHandoff);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+
+  const continueInWorkspace = useCallback(async () => {
+    if (!user || messages.length === 0 || handoffLoading) return;
+    setHandoffLoading(true);
+    try {
+      const uiMessages = messages.map((m) => ({
+        role: m.role === "juri" ? "assistant" : "user",
+        parts: [{ type: "text", text: m.text }],
+      }));
+      const firstUser = messages.find((m) => m.role === "user")?.text ?? "Continued from Juri";
+      const title = firstUser.slice(0, 80);
+      const res = await seedHandoff({ data: { title, messages: uiMessages } });
+      setOpen(false);
+      router.navigate({ to: "/workspace/$threadId", params: { threadId: res.threadId } });
+    } catch (e) {
+      console.error("Workspace handoff failed", e);
+    } finally {
+      setHandoffLoading(false);
+    }
+  }, [user, messages, handoffLoading, seedHandoff, router]);
 
   // Current section or case identifier from the URL — passed to askJuri so
   // Juri knows what the user is reading. /case/{id} triggers the read_case
