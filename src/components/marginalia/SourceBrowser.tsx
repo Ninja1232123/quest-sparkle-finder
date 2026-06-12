@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ChevronDown, ChevronRight, ChevronLeft, Search as SearchIcon, X, BookOpen, Network } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, ChevronLeft, Search as SearchIcon, X, BookOpen, Network, LayoutGrid, List as ListIcon } from "lucide-react";
 import { ResearchShell } from "./ResearchShell";
 import { CodebookHero } from "./CodebookHero";
 import { sourceMeta, sourceName } from "@/lib/source-groups";
@@ -181,10 +181,63 @@ function CatalogueBubble({ kind, token, title, sub, crumb, count, accent, expand
   );
 }
 
+// ── Scannable list row ─────────────────────────────────────────────────────
+// Dense alternative to the catalogue bubble: number badge | title (+ crumb) |
+// count → arrow on a single line. Reads as an index, not a card grid — much
+// faster to scan when a title has 200+ chapters or a chapter has 500 sections.
+function ListRow({ kind, token, title, sub, crumb, count, accent, expandable, expanded, weight = "normal" }: {
+  kind?: string;
+  token: string;
+  title: string;
+  sub?: string;
+  crumb?: string;
+  count?: number;
+  accent: string;
+  expandable?: boolean;
+  expanded?: boolean;
+  /** "header" gets a heavier left accent + bigger title for chapter rows. */
+  weight?: "normal" | "header";
+}) {
+  const bareNumbered = /^(?:chapter|title|article|division|part|subchapter|subpart)\s+[0-9IVXLCDM]+[A-Za-z]?\.?$/i.test(title.trim());
+  const numLabel = bareNumbered ? token : (kind ? `${kind} ${token}` : token);
+  return (
+    <div
+      className="group flex items-baseline gap-4 border-b border-border/40 bg-card/50 px-3 py-2.5 transition-colors hover:bg-muted/60"
+      style={{ borderLeft: `3px solid ${accent}`, ["--c" as never]: accent }}
+    >
+      <span
+        className={`shrink-0 font-mono ${weight === "header" ? "w-20 text-[12px] font-semibold" : "w-16 text-[11px]"} uppercase tracking-wide text-foreground/70`}
+      >
+        {numLabel}
+      </span>
+      <span className="min-w-0 flex-1">
+        {crumb && (
+          <span className="block font-mono text-[10px] uppercase tracking-wide text-muted-foreground/80">{crumb}</span>
+        )}
+        <span className={`block ${weight === "header" ? "font-display text-[15px] font-semibold" : "text-sm"} text-foreground leading-snug`}>
+          {title}
+        </span>
+        {sub && <span className="block font-mono text-[10px] uppercase tracking-wide text-muted-foreground">{sub}</span>}
+      </span>
+      {count != null && (
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+          {count.toLocaleString()}
+        </span>
+      )}
+      <span className="shrink-0 font-mono text-[12px] text-muted-foreground/60 group-hover:text-accent">
+        {expandable ? (expanded ? "▾" : "▸") : "→"}
+      </span>
+    </div>
+  );
+}
+
+type ViewMode = "grid" | "list";
+const VIEW_KEY = "selflaw_toc_view_v1";
+
 // A chapter bubble. Simple chapters drill straight to their sections; chapters
 // with subchapters reveal them inline on click (subchapters stay off-screen by
 // default since they read identically across titles).
-function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent: string; index: number; linkSelf: LinkSelf }) {
+function ChapterCell({ cg, accent, index, linkSelf, view }: { cg: ChapterGroup; accent: string; index: number; linkSelf: LinkSelf; view: ViewMode }) {
   const [open, setOpen] = useState(false);
   const simple = cg.rows.length === 1 && cg.rows[0].sub === null;
   const token = pullToken(cg.chapter);
@@ -192,25 +245,41 @@ function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent
 
   if (simple) {
     return (
-      <Link to={linkSelf.to as never} search={{ group: cg.rows[0].parent_label }} className="block">
-        <CatalogueBubble kind="CH." token={token} title={title} count={cg.total} accent={accent} index={index} />
+      <Link to={linkSelf.to as never} search={{ group: cg.rows[0].parent_label } as never} className="block">
+        {view === "list"
+          ? <ListRow kind="CH." token={token} title={title} count={cg.total} accent={accent} weight="header" />
+          : <CatalogueBubble kind="CH." token={token} title={title} count={cg.total} accent={accent} index={index} />}
       </Link>
     );
   }
   return (
     <div>
       <button type="button" onClick={() => setOpen((v) => !v)} className="block w-full text-left" aria-expanded={open}>
-        <CatalogueBubble
-          kind="CH."
-          token={token}
-          title={title}
-          sub={`${cg.rows.length} subchapters`}
-          count={cg.total}
-          accent={accent}
-          index={index}
-          expandable
-          expanded={open}
-        />
+        {view === "list" ? (
+          <ListRow
+            kind="CH."
+            token={token}
+            title={title}
+            sub={`${cg.rows.length} subchapters`}
+            count={cg.total}
+            accent={accent}
+            expandable
+            expanded={open}
+            weight="header"
+          />
+        ) : (
+          <CatalogueBubble
+            kind="CH."
+            token={token}
+            title={title}
+            sub={`${cg.rows.length} subchapters`}
+            count={cg.total}
+            accent={accent}
+            index={index}
+            expandable
+            expanded={open}
+          />
+        )}
       </button>
       {open && (
         <ul className="mt-2 grid grid-cols-1 gap-1.5 pl-6 sm:grid-cols-2">
@@ -218,7 +287,7 @@ function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent
             <li key={r.parent_label}>
               <Link
                 to={linkSelf.to as never}
-                search={{ group: r.parent_label }}
+                search={{ group: r.parent_label } as never}
                 className="flex items-baseline justify-between gap-3 rounded-lg border border-border/50 bg-card px-4 py-2 transition-colors hover:border-foreground/30 hover:bg-muted/50"
               >
                 <span className="text-sm text-foreground/80">{r.sub ?? "General provisions"}</span>
@@ -232,17 +301,31 @@ function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent
   );
 }
 
-function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: LinkSelf; accent: string }) {
+function TitleParts({ parts, linkSelf, accent, view }: { parts: TocPart[]; linkSelf: LinkSelf; accent: string; view: ViewMode }) {
   const groups = groupPartsByChapter(parts);
 
   // No chapter structure (CFR/IRM/statutes/etc.): a flat two-column bubble grid.
   if (!groups) {
+    if (view === "list") {
+      return (
+        <div className="overflow-hidden rounded-xl border border-border/60">
+          {parts.map((p) => {
+            const L = leveledLabel(p.label);
+            return (
+              <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label } as never} className="block">
+                <ListRow kind={L.kind} token={L.token} title={L.title} crumb={L.crumb} count={p.count} accent={accent} />
+              </Link>
+            );
+          })}
+        </div>
+      );
+    }
     return (
       <div className="toc-grid grid grid-cols-1 items-stretch gap-5 border-t border-border/60 p-4 sm:grid-cols-2 lg:grid-cols-3">
         {parts.map((p, i) => {
           const L = leveledLabel(p.label);
           return (
-            <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
+            <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label } as never} className="block h-full">
               <CatalogueBubble kind={L.kind} token={L.token} title={L.title} crumb={L.crumb} count={p.count} accent={accent} index={i} />
             </Link>
           );
@@ -253,10 +336,19 @@ function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: L
 
   // Chapter-structured (USC): one bubble per chapter, single column so an inline
   // subchapter expansion has room.
+  if (view === "list") {
+    return (
+      <div className="overflow-hidden rounded-xl border border-border/60">
+        {groups.map((cg, i) => (
+          <ChapterCell key={cg.chapter} cg={cg} accent={accent} index={i} linkSelf={linkSelf} view="list" />
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="space-y-2.5 border-t border-border/60 p-4">
       {groups.map((cg, i) => (
-        <ChapterCell key={cg.chapter} cg={cg} accent={accent} index={i} linkSelf={linkSelf} />
+        <ChapterCell key={cg.chapter} cg={cg} accent={accent} index={i} linkSelf={linkSelf} view="grid" />
       ))}
     </div>
   );
@@ -275,6 +367,23 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
   // sub-sources of a multi-source codebook (/code/source/irm) keep a plain head.
   const codebook = cleanPathForSource(source) ? codebookForSource(source) : undefined;
   const [filter, setFilter] = useState("");
+
+  // Grid (visual) vs List (scannable). Persisted per-user. Default to list when
+  // the level has lots of entries — scanning beats browsing once you're past
+  // ~30 cards.
+  const [view, setView] = useState<ViewMode>("grid");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_KEY) as ViewMode | null;
+      if (saved === "list" || saved === "grid") setView(saved);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const setViewPersist = (v: ViewMode) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* ignore */ }
+  };
 
   // Reset filter when navigating between levels.
   useEffect(() => { setFilter(""); }, [tg, group]);
@@ -343,7 +452,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
             </div>
             <Link
               to={linkSelf.to as never}
-              search={parentTg ? { tg: parentTg } : {}}
+              search={(parentTg ? { tg: parentTg } : {}) as never}
               className="mt-2 inline-block text-[11px] text-accent hover:underline"
             >
               ← back{parentTg ? ` to ${cleanBubbleTitle(parentTg)}` : " to table of contents"}
@@ -421,7 +530,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               {parentTg && (
                 <>
                   {" · "}
-                  <Link to={linkSelf.to as never} search={{ tg: parentTg }} className="hover:text-foreground">
+                  <Link to={linkSelf.to as never} search={{ tg: parentTg } as never} className="hover:text-foreground">
                     {cleanBubbleTitle(parentTg)}
                   </Link>
                 </>
@@ -442,8 +551,8 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
           </h1>
         )}
 
-        <div className="sticky top-[68px] z-20 -mx-6 mt-8 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="relative">
+        <div className="sticky top-[68px] z-20 -mx-6 mt-8 flex items-center gap-2 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <div className="relative flex-1">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={filter}
@@ -468,39 +577,82 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               </button>
             )}
           </div>
+          <div className="flex h-11 shrink-0 items-center gap-0.5 rounded-full border border-foreground/15 bg-background/90 p-1 shadow-[var(--shadow-soft)]" role="group" aria-label="Layout">
+            <button
+              type="button"
+              onClick={() => setViewPersist("grid")}
+              aria-pressed={view === "grid"}
+              title="Card grid"
+              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[10px] uppercase tracking-wide transition-colors ${view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewPersist("list")}
+              aria-pressed={view === "list"}
+              title="Compact list"
+              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[10px] uppercase tracking-wide transition-colors ${view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <ListIcon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">List</span>
+            </button>
+          </div>
         </div>
 
         {/* Title list — each title is a direct-link bubble (no accordion) */}
         {!group && !tg && (
-          <div className="toc-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredToc.length === 0 && (
-              <div className="col-span-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground lg:col-span-3">
-                Nothing in the table of contents matches "{filter}".
-              </div>
-            )}
-            {filteredToc.map((t, i) => {
-              const token = pullToken(t.title_group);
-              const titleClean = cleanBubbleTitle(t.title_group);
-              const kind = bubbleKind(t.title_group)?.replace(/CH\./, "CH") ?? "TITLE";
-              return (
-                <Link
-                  key={t.title_group}
-                  to={linkSelf.to as never}
-                  search={{ tg: t.title_group }}
-                  className="block"
-                >
-                  <CatalogueBubble
-                    kind={kind}
-                    token={token}
-                    title={titleClean}
-                    count={t.total}
-                    accent={meta.accent}
-                    index={i}
-                  />
-                </Link>
-              );
-            })}
-          </div>
+          view === "list" ? (
+            <div className="mt-8 overflow-hidden rounded-xl border border-border/60">
+              {filteredToc.length === 0 ? (
+                <div className="bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+                  Nothing in the table of contents matches "{filter}".
+                </div>
+              ) : (
+                filteredToc.map((t) => {
+                  const token = pullToken(t.title_group);
+                  const titleClean = cleanBubbleTitle(t.title_group);
+                  const kind = bubbleKind(t.title_group)?.replace(/CH\./, "CH") ?? "TITLE";
+                  return (
+                    <Link key={t.title_group} to={linkSelf.to as never} search={{ tg: t.title_group } as never} className="block">
+                      <ListRow kind={kind} token={token} title={titleClean} count={t.total} accent={meta.accent} weight="header" />
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div className="toc-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredToc.length === 0 && (
+                <div className="col-span-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center text-sm text-muted-foreground lg:col-span-3">
+                  Nothing in the table of contents matches "{filter}".
+                </div>
+              )}
+              {filteredToc.map((t, i) => {
+                const token = pullToken(t.title_group);
+                const titleClean = cleanBubbleTitle(t.title_group);
+                const kind = bubbleKind(t.title_group)?.replace(/CH\./, "CH") ?? "TITLE";
+                return (
+                  <Link
+                    key={t.title_group}
+                    to={linkSelf.to as never}
+                    search={{ tg: t.title_group } as never}
+                    className="block"
+                  >
+                    <CatalogueBubble
+                      kind={kind}
+                      token={token}
+                      title={titleClean}
+                      count={t.total}
+                      accent={meta.accent}
+                      index={i}
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          )
         )}
 
         {/* Parts/chapters for a selected title group */}
@@ -521,6 +673,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                 }
                 linkSelf={linkSelf}
                 accent={meta.accent}
+                view={view}
               />
             )}
           </div>
@@ -540,28 +693,52 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                     {groupedSections.length.toLocaleString()} {groupedSections.length === 1 ? "entry" : "entries"}
                   </div>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2" style={{ ["--c" as never]: meta.accent }}>
-                  {groupedSections.map((d) => (
-                    <Link
-                      key={d.id}
-                      to="/code/$"
-                      params={{ _splat: d.identifier.replace(/^\//, "") }}
-                      className="am-card compact block"
-                      style={{ ["--c" as never]: meta.accent }}
-                    >
-                      <div className="am-num">{d.section_label ?? "§"}</div>
-                      <div className="am-title">
-                        {isWeakHeading(d.heading, d.section_label)
-                          ? (d.preview ? (d.preview.length > 100 ? d.preview.slice(0, 100) + "…" : d.preview) : d.heading || "—")
-                          : d.heading}
-                      </div>
-                      <div className="am-meta">
-                        <span />
-                        <span className="am-go">Read →</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                {view === "list" ? (
+                  <div className="overflow-hidden rounded-xl border border-border/60">
+                    {groupedSections.map((d) => {
+                      const headingText = isWeakHeading(d.heading, d.section_label)
+                        ? (d.preview ? (d.preview.length > 120 ? d.preview.slice(0, 120) + "…" : d.preview) : d.heading || "—")
+                        : d.heading!;
+                      return (
+                        <Link
+                          key={d.id}
+                          to="/code/$"
+                          params={{ _splat: d.identifier.replace(/^\//, "") }}
+                          className="block"
+                        >
+                          <ListRow
+                            token={d.section_label ?? "§"}
+                            title={headingText}
+                            accent={meta.accent}
+                          />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2" style={{ ["--c" as never]: meta.accent }}>
+                    {groupedSections.map((d) => (
+                      <Link
+                        key={d.id}
+                        to="/code/$"
+                        params={{ _splat: d.identifier.replace(/^\//, "") }}
+                        className="am-card compact block"
+                        style={{ ["--c" as never]: meta.accent }}
+                      >
+                        <div className="am-num">{d.section_label ?? "§"}</div>
+                        <div className="am-title">
+                          {isWeakHeading(d.heading, d.section_label)
+                            ? (d.preview ? (d.preview.length > 100 ? d.preview.slice(0, 100) + "…" : d.preview) : d.heading || "—")
+                            : d.heading}
+                        </div>
+                        <div className="am-meta">
+                          <span />
+                          <span className="am-go">Read →</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -637,7 +814,7 @@ function BucketGrid({
         <Link
           key={it.key}
           to={linkSelf.to as never}
-          search={searchFor(it.key)}
+          search={searchFor(it.key) as never}
           className="group rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
         >
           <div className="font-display text-lg font-semibold">{it.label}</div>
@@ -695,7 +872,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
       {data.view === "register-docs" && (
         <>
           {" · "}
-          <Link to={linkSelf.to as never} search={{ ry: Number(data.rd.slice(0, 4)) }} className="hover:text-foreground">
+          <Link to={linkSelf.to as never} search={{ ry: Number(data.rd.slice(0, 4)) } as never} className="hover:text-foreground">
             {data.rd.slice(0, 4)}
           </Link>
           {" · "}
@@ -706,7 +883,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
       {data.view === "bill-docs" && (
         <>
           {" · "}
-          <Link to={linkSelf.to as never} search={{ bc: data.bk.split(".")[0] }} className="hover:text-foreground">
+          <Link to={linkSelf.to as never} search={{ bc: data.bk.split(".")[0] } as never} className="hover:text-foreground">
             {ordinal(data.bk.split(".")[0])} Congress
           </Link>
           {" · "}
@@ -764,8 +941,8 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
             page={data.bp}
             bills={data.bills}
             hasMore={data.hasMore}
-            onSearch={(q) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: q || undefined } })}
-            onPage={(p) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: data.bq, bp: p || undefined } })}
+            onSearch={(q) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: q || undefined } as never })}
+            onPage={(p) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: data.bq, bp: p || undefined } as never })}
           />
         )}
 
@@ -865,7 +1042,7 @@ function BillList({
               <li key={b.bill_key}>
                 <Link
                   to={linkSelf.to as never}
-                  search={{ bc: congress, bk: b.bill_key }}
+                  search={{ bc: congress, bk: b.bill_key } as never}
                   className="flex items-baseline gap-4 rounded-2xl border bg-card px-5 py-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
                 >
                   <span className="citation-tag w-44 shrink-0 truncate text-muted-foreground">{billLine}</span>

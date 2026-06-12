@@ -102,13 +102,18 @@
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
   --paper-tint: oklch(0.945 0.014 80);  /* between paper and paper-deep — sidebars / chip backgrounds */
   --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
-  --ink-muted: oklch(0.34 0.015 75);    /* darker muted body for contrast on cream/white */
+  --ink-muted: oklch(0.30 0.015 75);    /* WCAG AA body muted on cream (~7:1) */
   --rule-card: oklch(0.66 0.022 75);    /* visible edge for bright-white "ink-on-paper" cards */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
   --terracotta: oklch(0.42 0.13 30);    /* #8B2E1F deep oxblood */
   --ochre: oklch(0.81 0.14 80);         /* #E8B84A — reserved for marks */
   --highlight: oklch(0.86 0.12 85);     /* softer highlight wash */
+
+  /* v2 workspace accents — brass + ink for the "research desk" surface. */
+  --brass: #c8a24b;
+  --brass-soft: color-mix(in oklab, #c8a24b 22%, transparent);
+  --navy-deep: #0c1b3d;
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -155,9 +160,9 @@
      Additive: nothing here redefines an existing var, so the live palette is
      unchanged. These feed the ported prototype component classes. ===== */
   /* Finer ink shades (current only had --ink-muted) */
-  --ink-2: oklch(0.280 0.010 70);   /* strong secondary */
-  --ink-3: oklch(0.380 0.014 75);   /* muted (== --ink-muted) */
-  --ink-4: oklch(0.48 0.015 75);   /* caption */
+  --ink-2: oklch(0.260 0.010 70);   /* strong secondary */
+  --ink-3: oklch(0.340 0.014 75);   /* muted body */
+  --ink-4: oklch(0.40 0.015 75);    /* caption — clears 4.5:1 on cream */
   --ink-card: var(--paper-soft);    /* alias used by prototype card classes */
   /* Accent variants */
   --terracotta-2: oklch(0.560 0.140 32);
@@ -2083,6 +2088,78 @@ main {
   .am-header .cb-tab[data-active="true"] { color: #fbf6e8; background: rgba(200,162,75,0.24); border-color: #e7cd7e; }
   .am-header .cb-tab.soon { color: #8b9bbd; border-color: rgba(200,162,75,0.3); }
 
+  /* ── Codex-styled dropdown panels for the header (NavGroupTab + ToolsMenu).
+     Replaces the parchment `bg-background` panels that clashed against navy. */
+  .am-dropdown {
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(231,205,126,0.10) 0%, transparent 60%),
+      linear-gradient(180deg, #0c2052 0%, #0a1a47 70%, #081640 100%);
+    border: 1px solid rgba(200,162,75,0.55);
+    border-radius: 12px;
+    box-shadow:
+      0 24px 60px -18px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(0,0,0,0.4) inset,
+      0 1px 0 rgba(255,255,255,0.04) inset;
+    color: #e6ecf7;
+  }
+  .am-dropdown-head {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(200,162,75,0.28);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+  .am-dropdown-head-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fbf6e8;
+    letter-spacing: 0.01em;
+  }
+  .am-dropdown-head-sub {
+    margin-top: 4px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #c2cde6;
+  }
+  .am-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: #d6dff2;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .am-dropdown-item:hover {
+    background: rgba(200,162,75,0.14);
+    color: #fbf6e8;
+  }
+  .am-dropdown-item.is-soon { color: #8b9bbd; }
+  .am-dropdown-item .ami-desc {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #9fabcb;
+    margin-top: 2px;
+  }
+  .am-dropdown-soon-badge {
+    margin-left: auto;
+    border-radius: 999px;
+    border: 1px solid rgba(200,162,75,0.5);
+    background: rgba(200,162,75,0.15);
+    padding: 2px 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #e7cd7e;
+  }
+
   /* ── Condensed nav: flag stripe, primary-row actions, codebook "Library" strip ── */
   .am-flagstripe {
     height: 4px;
@@ -2216,15 +2293,15 @@ main {
      top and a free, editable note slot below it. */
   .hero-rail {
     position: absolute;
-    top: 24%;
+    top: 22%;
     z-index: 3;
-    width: clamp(240px, 20vw, 340px);
+    width: clamp(260px, 22vw, 380px);
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
   }
-  .hero-rail-l { left: 2.6vw; align-items: flex-end; text-align: right; }
-  .hero-rail-r { right: 2.6vw; align-items: flex-start; text-align: left; }
+  .hero-rail-l { left: clamp(10px, 1.2vw, 22px); align-items: flex-end; text-align: right; }
+  .hero-rail-r { right: clamp(10px, 1.2vw, 22px); align-items: flex-start; text-align: left; }
 
   .hero-quote {
     width: 100%;
@@ -2264,7 +2341,7 @@ main {
   .hero-note p + p { margin-top: 8px; }
 
   /* below ~1500px there's no room beside the eagle — hide the rails */
-  @media (max-width: 1500px) { .hero-rail { display: none; } }
+  @media (max-width: 1180px) { .hero-rail { display: none; } }
 
   .home-am-ribbon {
     text-align: center;
@@ -2428,10 +2505,10 @@ main {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 32px;
-    max-width: 1440px;
+    gap: clamp(20px, 3vw, 56px);
+    max-width: none;
     margin: -110px auto 0;
-    padding: 0 24px 32px;
+    padding: 0 clamp(12px, 1.4vw, 28px) 32px;
     position: relative;
     z-index: 10;
   }
@@ -2446,7 +2523,7 @@ main {
   .home-const-aside {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 280px;
+    max-width: clamp(280px, 28vw, 460px);
     padding-top: 130px; /* drop below the ribbon overlap so text sits in parchment */
   }
 
@@ -3189,5 +3266,680 @@ main {
       width: 48px;
       height: 48px;
     }
+  }
+}
+
+/* ============================================================================
+   ENGRAVED LEGAL CODEX — landing-page visual refinement.
+
+   Overrides the home-page Americana classes toward a darker, more deliberate,
+   engraved-banknote aesthetic. Keeps the existing palette (navy + ochre +
+   parchment) but deepens the navy, tightens the gold to a brushed-foil tone,
+   restyles marginalia rails as proper folio annotations, promotes the
+   constitution-flanking asides into stamped addenda, and turns the codebook
+   shelf cards into deep navy volumes with gold spine accents.
+
+   Scope: home page only. Selectors target the `.home-hero-am`, `.home-const-*`,
+   `.home-codebook-shelf`, and `.home-am-ribbon` blocks set up in src/routes/
+   index.tsx — no other surface is touched.
+   ============================================================================ */
+@layer components {
+  /* Tokens used throughout the engraved direction */
+  :root {
+    --codex-ink: #050810;
+    --codex-ink-2: #0a1528;
+    --codex-ink-3: #0f203a;
+    --codex-gold: #b89150;
+    --codex-gold-2: #e1b96e;
+    --codex-gold-3: #8a6d3b;
+    --codex-parchment: #fdfaf3;
+    --codex-parchment-2: #f3ead4;
+    --codex-slate: #c4cde2;
+    --codex-slate-2: #8d97ad;
+  }
+
+  /* ── HERO ──────────────────────────────────────────────────────────────── */
+  .home-hero-am {
+    background:
+      radial-gradient(60% 50% at 50% 20%, rgba(184,145,80,0.16) 0%, transparent 60%),
+      radial-gradient(140% 120% at 50% 0%, #0a1528 0%, #060b18 55%, var(--codex-ink) 100%);
+    border-bottom: 1px solid var(--codex-gold);
+    box-shadow: inset 0 -1px 0 rgba(184,145,80,0.25);
+  }
+  /* Quiet the ray pattern — the foil disc carries the ceremony now */
+  .home-hero-am .hh-rays { opacity: 0.45; }
+
+  /* Foil disc: tighter, more luminous, layered concentric ring */
+  .hh-foil {
+    width: 760px;
+    height: 760px;
+    top: -10%;
+    background:
+      radial-gradient(circle at 50% 50%,
+        rgba(225,185,110,0.22) 0%,
+        rgba(184,145,80,0.16) 28%,
+        rgba(138,109,59,0.10) 48%,
+        transparent 62%),
+      repeating-conic-gradient(
+        rgba(225,185,110,0.10) 0deg 4deg,
+        transparent 4deg 14deg
+      );
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+    mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+    animation-duration: 180s;
+  }
+  /* Concentric ring on top of the foil — pulled in via the existing .hh-foil
+     element using a layered ::after through the parent .home-hero-am. */
+  .home-hero-am::before {
+    content: "";
+    position: absolute;
+    left: 50%; top: calc(-10% + 130px);
+    width: 500px; height: 500px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    border: 1px solid rgba(184,145,80,0.28);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .home-hero-am::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: calc(-10% + 170px);
+    width: 420px; height: 420px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    border: 1px dashed rgba(184,145,80,0.18);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Eagle: cooler, more dramatic key light — duotone press feel */
+  .home-eagle-img {
+    filter:
+      drop-shadow(0 24px 48px rgba(0,0,0,0.75))
+      drop-shadow(0 0 24px rgba(184,145,80,0.22))
+      contrast(1.08) saturate(0.85);
+  }
+
+  /* Strip the candy-stripe foot; replace with a hairline gold rule */
+  .home-hero-foot {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(184,145,80,0.35) 12%,
+      rgba(184,145,80,0.55) 50%,
+      rgba(184,145,80,0.35) 88%,
+      transparent 100%);
+  }
+
+  /* Hero pitch line — drop the Western stage type, lean engraved */
+  .hero-pitch { top: 28px; gap: 14px; }
+  .hero-pitch-line {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: clamp(11px, 0.95vw, 13px);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--codex-gold);
+    text-shadow: none;
+  }
+  .hero-pitch-amt {
+    font-family: "Cinzel", "IM Fell English SC", serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2.4vw, 34px);
+    letter-spacing: 0.18em;
+    color: var(--codex-parchment);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 28px rgba(225,185,110,0.25);
+  }
+
+  /* ── HERO RAILS — folio marginalia ─────────────────────────────────────── */
+  .hero-rail {
+    top: 22%;
+    width: clamp(260px, 20vw, 340px);
+    gap: 0;
+  }
+  .hero-rail-l { padding-right: 18px; border-right: 1px solid rgba(184,145,80,0.32); }
+  .hero-rail-r { padding-left: 18px;  border-left:  1px solid rgba(184,145,80,0.32); }
+
+  .hero-quote {
+    font-family: "Playfair Display", "IM Fell English", var(--font-serif), serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(22px, 1.75vw, 29px);
+    line-height: 1.45;
+    color: var(--codex-slate);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+    position: relative;
+    padding-bottom: 14px;
+  }
+  .hero-quote::before {
+    content: "Folio Note";
+    display: block;
+    font-family: "Special Elite", "Courier New", monospace;
+    font-style: normal;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(184,145,80,0.7);
+    margin-bottom: 10px;
+  }
+  .hero-rail-r .hero-quote::before { content: "Annotation"; }
+
+  .hero-note {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(184,145,80,0.28);
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: normal;
+    font-size: clamp(19px, 1.4vw, 23px);
+    line-height: 1.5;
+    color: var(--codex-slate-2);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+    position: relative;
+  }
+  .hero-note::before {
+    content: "Bulletin";
+    display: block;
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--codex-gold);
+    margin-bottom: 8px;
+  }
+
+  /* ── RIBBON — drop the carnival red, swap to engraved navy band ────────── */
+  .home-am-ribbon {
+    background:
+      linear-gradient(0deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
+      linear-gradient(180deg, #0a1528 0%, #050810 100%);
+    border-top: 1px solid rgba(184,145,80,0.55);
+    border-bottom: 1px solid rgba(184,145,80,0.55);
+    color: var(--codex-parchment);
+    font-family: "Cinzel", "IM Fell English SC", serif;
+    font-weight: 600;
+    font-size: clamp(12px, 1.05vw, 15px);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    text-shadow: none;
+    padding: 14px 16px;
+    box-shadow: inset 0 1px 0 rgba(184,145,80,0.15), inset 0 -1px 0 rgba(184,145,80,0.15);
+  }
+  .home-am-ribbon .star { color: var(--codex-gold); margin: 0 18px; opacity: 0.85; }
+
+  /* ── CONSTITUTION CARTOUCHE + flanking news asides ─────────────────────── */
+  .home-const-row { gap: 28px; }
+
+  .home-const-aside { padding-top: 140px; }
+  .hca-label {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    color: var(--codex-gold);
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(184,145,80,0.35);
+    margin-bottom: 10px;
+    display: inline-block;
+  }
+  .home-const-aside-l .hca-label { padding-left: 28px; }
+  .home-const-aside-r .hca-label { padding-right: 28px; }
+
+  .hca-body {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.55;
+    color: #2a2418;
+  }
+  .hca-divider {
+    width: 28px;
+    height: 1px;
+    background: rgba(184,145,80,0.55);
+    margin: 14px 0;
+  }
+
+  /* Cartouche — gold press frame around a true parchment plate */
+  .home-const-cartouche {
+    background: var(--codex-gold);
+    padding: 4px;
+    border: none;
+    border-radius: 4px;
+    box-shadow:
+      0 30px 60px -20px rgba(0,0,0,0.65),
+      0 0 0 1px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .home-const-cartouche::before {
+    content: "";
+    position: absolute; inset: 4px;
+    border: 4px double var(--codex-ink);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .home-const-cartouche > * { position: relative; z-index: 2; }
+  .home-const-cartouche::after {
+    content: "";
+    position: absolute; inset: 4px;
+    background: var(--codex-parchment);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+    z-index: 0;
+  }
+  .home-const-cartouche:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 40px 80px -22px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(0,0,0,0.5);
+  }
+
+  /* Inner cartouche text — keep on parchment ink */
+  .home-const-cartouche .hcc-wtp {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(28px, 3.4vw, 44px);
+    color: var(--codex-ink);
+    margin: 14px 0 4px;
+  }
+  .home-const-cartouche .hcc-kicker {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--codex-gold-3);
+    text-transform: uppercase;
+  }
+  .home-const-cartouche h2 {
+    font-family: "Cinzel", "IM Fell English SC", serif;
+    font-weight: 700;
+    font-size: clamp(22px, 3.4vw, 32px);
+    letter-spacing: 0.06em;
+    color: var(--codex-ink);
+    text-shadow: none;
+    margin: 12px 0 0;
+    padding: 0 0 10px;
+    border-bottom: 1px solid rgba(10,8,16,0.25);
+    display: inline-block;
+  }
+  .home-const-cartouche .hcc-sub {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: #3a2f1a;
+    max-width: 56ch;
+    margin: 14px auto 0;
+  }
+  .home-const-cartouche .hcc-pills { gap: 6px; margin-top: 16px; }
+  .home-const-cartouche .hcc-pill {
+    background: transparent;
+    color: var(--codex-ink);
+    border: 1px solid rgba(10,8,16,0.45);
+    border-radius: 0;
+    padding: 4px 10px;
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .home-const-cartouche .hcc-pill.red {
+    background: var(--codex-ink);
+    color: var(--codex-gold-2);
+    border-color: var(--codex-ink);
+  }
+  .home-const-cartouche .hcc-cta {
+    background: var(--codex-ink);
+    color: var(--codex-parchment);
+    border: none;
+    border-radius: 0;
+    padding: 12px 24px;
+    font-family: "Cinzel", "IM Fell English SC", serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    margin-top: 22px;
+    transition: background 240ms ease, transform 130ms ease;
+  }
+  .home-const-cartouche .hcc-cta:hover {
+    background: var(--codex-gold-3);
+    transform: translateY(-2px);
+  }
+
+  /* ── CODEBOOK SHELF — deep navy volumes with gold spine accent ─────────── */
+  .home-codebook-shelf {
+    background-color: #060b18;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E"),
+      radial-gradient(120% 60% at 50% 0%, rgba(184,145,80,0.08) 0%, transparent 60%),
+      linear-gradient(180deg, #0a1528 0%, #050810 100%);
+    border-top: 1px solid rgba(184,145,80,0.4);
+    border-bottom: 1px solid rgba(184,145,80,0.4);
+    box-shadow: none;
+    padding: 64px 24px 72px;
+  }
+
+  /* Override the parchment-card styling inherited from the global .am-card */
+  .home-codebook-shelf .am-card {
+    background: var(--codex-ink-2);
+    border: 1px solid rgba(184,145,80,0.22);
+    border-left: 6px solid var(--c, var(--codex-gold));
+    border-radius: 2px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 14px 28px -16px rgba(0,0,0,0.7);
+    padding: 22px 22px 18px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+  }
+  .home-codebook-shelf .am-card::after {
+    /* hairline vertical rule down the right side, like a book's text block */
+    content: "";
+    position: absolute;
+    right: 18px; top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(184,145,80,0.10);
+    pointer-events: none;
+  }
+  .home-codebook-shelf .am-card:hover {
+    transform: translateY(-4px);
+    background: var(--codex-ink-3);
+    border-color: rgba(184,145,80,0.45);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.06) inset,
+      0 26px 44px -18px rgba(0,0,0,0.85);
+  }
+
+  .home-codebook-shelf .am-card .am-num {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--codex-gold);
+    opacity: 0.95;
+  }
+  .home-codebook-shelf .am-card .am-title {
+    font-family: "Cinzel", "IM Fell English SC", serif;
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    color: var(--codex-parchment);
+    text-shadow: none;
+    margin-top: 4px;
+  }
+  .home-codebook-shelf .am-card .am-meta {
+    border-top: 1px solid rgba(184,145,80,0.18);
+    padding-top: 12px;
+    margin-top: 18px;
+  }
+  .home-codebook-shelf .am-card .am-count {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--codex-slate-2);
+  }
+  .home-codebook-shelf .am-card .am-go {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--codex-gold);
+  }
+
+  /* ── HERO SEARCH BLOCK — refine typography ─────────────────────────────── */
+  .home-hero-eyebrow {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 11px;
+    letter-spacing: 0.32em;
+    color: var(--codex-gold);
+    text-transform: uppercase;
+  }
+  .home-hero-sub {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    font-size: 19px;
+  }
+}
+
+/* Dark mode: hero asides need lighter ink so the parchment-on-dark body text
+   remains readable when the codebook shelf flips to night. */
+.dark .hca-body { color: #d6cdb8; }
+
+/* ============================================================================
+   CODEX PAGE POLISH — sub-pages
+   Carries the Engraved Legal Codex aesthetic out of the home hero and onto the
+   CodebookLanding right rail, SourceBrowser ToC, search results, and footer.
+   Keeps a parchment-on-paper feel for content surfaces; spends gold + Cinzel
+   on headings, Special Elite on eyebrows, Playfair italics on body marginalia.
+   ============================================================================ */
+@layer components {
+  /* Eyebrows / labels — uniform typewriter monospace across the app */
+  .citation-tag,
+  .cb-section-eyebrow,
+  .desk-eyebrow,
+  .subvol-eyebrow {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.28em !important;
+    text-transform: uppercase;
+    color: var(--codex-gold-3);
+  }
+  .cite-tag {
+    font-family: "Special Elite", "Courier New", monospace;
+    letter-spacing: 0.22em;
+    color: var(--codex-gold-3);
+  }
+
+  /* Section titles — Cinzel engraved across all sub-page headings */
+  .cb-section-title,
+  .section-title-bar h1,
+  .section-title-bar h2 {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    color: var(--codex-ink);
+  }
+  .cb-section-title { font-size: clamp(22px, 2.2vw, 30px); }
+
+  /* Section divider bar — hairline gold rule under the title row */
+  .section-title-bar {
+    border-bottom: 1px solid rgba(184,145,80,0.45);
+    padding-bottom: 12px;
+    position: relative;
+  }
+  .section-title-bar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -3px;
+    height: 1px;
+    background: rgba(184,145,80,0.22);
+  }
+
+  /* Sub-volume cards — parchment plates with gold spine */
+  .subvol-card {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.045'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #fdfaf3 0%, #f3ead4 100%);
+    border: 1px solid rgba(184,145,80,0.35) !important;
+    border-left: 6px solid var(--c, var(--codex-gold)) !important;
+    border-radius: 2px !important;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 14px 28px -18px rgba(0,0,0,0.35);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .subvol-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 22px 36px -16px rgba(0,0,0,0.45);
+  }
+  .subvol-name {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 700 !important;
+    font-size: 19px !important;
+    color: var(--codex-ink);
+    letter-spacing: 0.02em;
+  }
+  .subvol-eyebrow { font-size: 10.5px !important; }
+  .subvol-browse {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--codex-gold-3);
+  }
+
+  /* Desk (right rail) cards on codebook landings */
+  .desk-mini,
+  .desk-card {
+    background:
+      linear-gradient(180deg, #fdfaf3 0%, #f7efd9 100%) !important;
+    border: 1px solid rgba(184,145,80,0.35) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 10px 20px -14px rgba(0,0,0,0.35);
+  }
+  .desk-mini-num {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.02em;
+  }
+  .desk-mini-sub,
+  .desk-card-body {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    color: #3a2f1a;
+  }
+  .desk-card-title {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.04em;
+  }
+  .desk-btn-paper {
+    background: var(--codex-ink) !important;
+    color: var(--codex-parchment) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.28em !important;
+    text-transform: uppercase;
+    padding: 10px 16px !important;
+    transition: background 200ms ease, transform 130ms ease;
+  }
+  .desk-btn-paper:hover {
+    background: var(--codex-gold-3) !important;
+    transform: translateY(-1px);
+  }
+  .desk-rel-row {
+    border-bottom: 1px dashed rgba(184,145,80,0.3);
+    padding: 8px 4px;
+  }
+  .desk-rel-name {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+  }
+
+  /* Generic ToC / browse grids using .am-card OUTSIDE the home shelf — give
+     them the same parchment treatment as subvol-card so they read like vellum
+     plates instead of plain cards. */
+  .toc-grid .am-card {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.045'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #fdfaf3 0%, #f3ead4 100%);
+    border: 1px solid rgba(184,145,80,0.32) !important;
+    border-left: 5px solid var(--c, var(--codex-gold)) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 10px 22px -16px rgba(0,0,0,0.35);
+  }
+  .toc-grid .am-card .am-num {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    color: var(--codex-gold-3) !important;
+    letter-spacing: 0.22em;
+  }
+  .toc-grid .am-card .am-title {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.02em;
+  }
+  .toc-grid .am-card .am-count {
+    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-style: italic;
+    color: #6b5836 !important;
+  }
+  .toc-grid .am-card .am-go {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    color: var(--codex-gold-3) !important;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* Hero H1 across sub-pages */
+  .hero-h1 {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    letter-spacing: 0.02em;
+  }
+  .ink-underline {
+    background-image: linear-gradient(0deg, rgba(184,145,80,0.45) 0%, rgba(184,145,80,0.45) 100%) !important;
+    background-size: 100% 6px !important;
+    background-position: 0 88% !important;
+    background-repeat: no-repeat !important;
+    padding: 0 2px;
+  }
+
+  /* Search "try" chips — typewriter tags */
+  .try-chip {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    border: 1px solid rgba(184,145,80,0.45) !important;
+    color: var(--codex-ink) !important;
+    background: rgba(253,250,243,0.6) !important;
+    border-radius: 0 !important;
+    letter-spacing: 0.08em;
+    padding: 3px 10px !important;
+  }
+  .try-chip:hover {
+    background: var(--codex-ink) !important;
+    color: var(--codex-parchment) !important;
+    border-color: var(--codex-ink) !important;
+  }
+
+  /* "Live / direct from source" pill — engraved seal */
+  .live-pill {
+    background: var(--codex-ink) !important;
+    color: var(--codex-gold-2) !important;
+    border: 1px solid var(--codex-gold) !important;
+    border-radius: 0 !important;
+    font-family: "Special Elite", "Courier New", monospace !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
+  .live-pill .dot { background: var(--codex-gold-2) !important; }
+
+  /* ── FOOTER — engraved colophon ──────────────────────────────────────── */
+  footer.mt-24 {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E"),
+      radial-gradient(120% 60% at 50% 0%, rgba(184,145,80,0.10) 0%, transparent 60%),
+      linear-gradient(180deg, #0a1528 0%, #050810 100%) !important;
+    border-top: 1px solid var(--codex-gold) !important;
+    box-shadow: inset 0 1px 0 rgba(184,145,80,0.25);
+    color: var(--codex-slate) !important;
+  }
+  footer.mt-24 .font-display {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    letter-spacing: 0.06em;
+  }
+  footer.mt-24 .font-mono { font-family: "Special Elite", "Courier New", monospace !important; }
+  footer.mt-24 .font-serif {
+    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-style: italic;
   }
 }

@@ -127,7 +127,7 @@ function PostPage() {
     author: { "@type": "Person", name: post.display_name ?? "anon" },
     publisher: { "@type": "Organization", name: "Self-Law" },
     commentCount: post.replies.length,
-    comment: post.replies.map((r) => ({
+    comment: post.replies.map((r: { body: string; created_at: string; display_name: string | null }) => ({
       "@type": "Comment",
       text: r.body,
       dateCreated: r.created_at,
@@ -175,7 +175,7 @@ function PostPage() {
           <div className="mt-10 border-t border-border/60 pt-5">
             <div className="citation-tag text-muted-foreground">on the record</div>
             <ul className="mt-3 flex flex-wrap gap-2">
-              {post.citations.map((c) => (
+              {post.citations.map((c: { identifier: string; source_code?: string; section_label_snapshot?: string | null; heading_snapshot?: string | null }) => (
                 <li key={c.identifier}>
                   <Link
                     to="/code/$"

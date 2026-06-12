@@ -12,12 +12,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { askJuri, getJuriCredits } from "@/lib/juri.functions";
+import { seedThreadFromHandoff } from "@/lib/workspace.functions";
 import { CREDIT_PACKS, centsPerCredit, PRO_MONTHLY_CREDITS, JURI_MODES, type CreditPack, type JuriMode } from "@/lib/juri-credits";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
-import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink, Trash2 } from "lucide-react";
+import { X, Send, Coins, ArrowUpRight, Loader2, ArrowLeft, Sparkles, Check, Search, ExternalLink, Trash2, ArrowUpRightSquare } from "lucide-react";
 import type { ClCaseResult } from "@/lib/court-cases";
 
 // ── Eagle SVG (profile silhouette — reads at 40px) ──────────────────────
@@ -122,6 +124,35 @@ export function Juri() {
   const { isPro } = useSubscription();
   const router = useRouter();
   const currentPath = router.state.location.pathname;
+  const seedHandoff = useServerFn(seedThreadFromHandoff);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+
+  const continueInWorkspace = useCallback(async () => {
+    if (!user || messages.length === 0 || handoffLoading) return;
+    const ok = window.confirm(
+      "Continue this chat in the AI Workspace?\n\n" +
+      "Reminder: the Workspace is an AI research and drafting tool. It is NOT legal advice, " +
+      "AI can be wrong, and you are responsible for verifying every citation and consulting a " +
+      "licensed attorney before relying on anything it produces. Use at your own risk.",
+    );
+    if (!ok) return;
+    setHandoffLoading(true);
+    try {
+      const uiMessages = messages.map((m) => ({
+        role: m.role === "juri" ? "assistant" : "user",
+        parts: [{ type: "text", text: m.text }],
+      }));
+      const firstUser = messages.find((m) => m.role === "user")?.text ?? "Continued from Juri";
+      const title = firstUser.slice(0, 80);
+      const res = await seedHandoff({ data: { title, messages: uiMessages } });
+      setOpen(false);
+      router.navigate({ to: "/workspace/$threadId", params: { threadId: res.threadId } });
+    } catch (e) {
+      console.error("Workspace handoff failed", e);
+    } finally {
+      setHandoffLoading(false);
+    }
+  }, [user, messages, handoffLoading, seedHandoff, router]);
 
   // Current section or case identifier from the URL — passed to askJuri so
   // Juri knows what the user is reading. /case/{id} triggers the read_case
@@ -328,6 +359,23 @@ export function Juri() {
                 </button>
               )}
               {messages.length > 0 && view === "chat" && (
+                <>
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={continueInWorkspace}
+                      disabled={handoffLoading}
+                      className="juri-close-btn"
+                      aria-label="Continue in workspace"
+                      title="Continue in workspace"
+                    >
+                      {handoffLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ArrowUpRightSquare className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
                 <button
                   type="button"
                   onClick={() => { setMessages([]); sessionStorage.removeItem(SESSION_KEY); }}
@@ -337,6 +385,7 @@ export function Juri() {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
+                </>
               )}
               <button
                 type="button"
@@ -668,7 +717,8 @@ export function Juri() {
               </>
             )}
             <div className="juri-disclaimer">
-              Not legal advice. Every claim cites the source — read it yourself.
+              <strong>Not legal advice.</strong> AI can be wrong — verify every citation, read the
+              source yourself, and consult a licensed attorney. Use at your own risk.
             </div>
           </div>
           </>

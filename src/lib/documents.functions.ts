@@ -539,11 +539,11 @@ export const getDocument = createServerFn({ method: "GET" })
     const edgeDb = supabaseAdmin as unknown as {
       from: (t: string) => {
         select: (cols: string, opts?: { count?: "exact"; head?: boolean }) => {
-          eq: (c: string, v: number) => {
+          eq: (c: string, v: unknown) => {
             order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: EdgeRow[] | null }> };
             limit: (n: number) => Promise<{ data: { source_id: number | null }[] | null; count: number | null }>;
           };
-          in: (c: string, v: number[]) => Promise<{ data: AuthorityRow[] | null }>;
+          in: (c: string, v: unknown[]) => Promise<{ data: AuthorityRow[] | null }>;
         };
       };
     };
@@ -566,9 +566,9 @@ export const getDocument = createServerFn({ method: "GET" })
       const { data: targets } = await supabaseAdmin
         .from("documents")
         .select("id, identifier, heading, source_code, section_label")
-        .in("id", targetIds);
+        .in("id", targetIds as unknown as string[]);
       targetMap = new Map(
-        (targets ?? []).map((t) => [t.id as number, { identifier: t.identifier, heading: t.heading, source: t.source_code, label: t.section_label }]),
+        (targets ?? []).map((t) => [t.id as unknown as number, { identifier: t.identifier, heading: t.heading, source: t.source_code, label: t.section_label }]),
       );
     }
     const citations: DocCitationRow[] = (edges ?? []).map((e) => {
@@ -608,7 +608,7 @@ export const getDocument = createServerFn({ method: "GET" })
     let incoming: IncomingCitation[] = [];
     if (fromIds.length > 0) {
       const [{ data: fromDocs }, { data: auth }] = await Promise.all([
-        supabaseAdmin.from("documents").select("id, identifier, heading, source_code, section_label").in("id", fromIds),
+        supabaseAdmin.from("documents").select("id, identifier, heading, source_code, section_label").in("id", fromIds as unknown as string[]),
         edgeDb.from("doc_authority").select("id, authority").in("id", fromIds),
       ]);
       const authMap = new Map((auth ?? []).map((a) => [a.id as number, a.authority as number]));
@@ -618,7 +618,7 @@ export const getDocument = createServerFn({ method: "GET" })
           heading: d.heading,
           source: d.source_code,
           section_label: d.section_label,
-          authority: authMap.get(d.id as number) ?? 0,
+          authority: authMap.get(d.id as unknown as number) ?? 0,
         }))
         .sort((a, b) => b.authority - a.authority)
         .slice(0, 60);
@@ -660,7 +660,7 @@ export const getDocument = createServerFn({ method: "GET" })
     }
 
     return {
-      document: doc as DocumentRow,
+      document: doc as unknown as DocumentRow,
       citations,
       incoming,
       incoming_total,

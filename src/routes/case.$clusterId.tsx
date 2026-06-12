@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SITE_BRAND } from "@/lib/doc-seo";
 import { ExternalLink, Landmark, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { SendToWorkspaceButton } from "@/components/workspace/SendToWorkspaceButton";
 
 // Words of opinion text to show per page chunk.
 const CHARS_PER_PAGE = 12000;
@@ -60,6 +61,7 @@ function OpinionBody({ text }: { text: string }) {
 
 function CaseReaderPage() {
   const { opinion } = Route.useLoaderData();
+  const { clusterId } = Route.useParams();
 
   if (!opinion) {
     return (
@@ -137,6 +139,12 @@ function CaseReaderPage() {
               <ExternalLink className="h-3 w-3" />
               Full opinion on CourtListener
             </a>
+            <SendToWorkspaceButton
+              identifier={`case/${clusterId}`}
+              citation={case_name}
+              heading={courtLabel ? `${courtLabel}${year ? ` · ${year}` : ""}` : null}
+              excerpt={text ? text.slice(0, 800) : undefined}
+            />
           </div>
         </header>
 

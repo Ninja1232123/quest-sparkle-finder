@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Exte
 import { fetchSectionCases, courtDisplay, type ClCase } from "@/lib/court-cases";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { SendToWorkspaceButton } from "@/components/workspace/SendToWorkspaceButton";
 import { STATE_NAMES, sourceName } from "@/lib/source-groups";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { docSeo, SITE_BRAND } from "@/lib/doc-seo";
@@ -815,7 +816,7 @@ function CasesPanel({ identifier }: { identifier: string }) {
   if (!cases || cases.length === 0) return null;
 
   return (
-    <details className="group mt-12 rounded-2xl border border-border/60 bg-card">
+    <details open className="group mt-12 rounded-2xl border border-border/60 bg-card">
       <summary className="flex w-full cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-left [&::-webkit-details-marker]:hidden">
         <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <Landmark className="h-4 w-4 shrink-0 text-accent" />
@@ -1124,6 +1125,7 @@ function DocumentPage() {
   const [fontSize, setFontSize] = useState<number>(2); // 0..4
   const [showTop, setShowTop] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [citeCopied, setCiteCopied] = useState(false);
   // Reading ruler — a horizontal highlight band that tracks the cursor so the
   // eye doesn't lose its line in long statutory text. Toggle persists.
   const [ruler, setRuler] = useState(false);
@@ -1251,6 +1253,38 @@ function DocumentPage() {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Build a Bluebook-ish citation string for the section. Falls back to the
+  // heading + identifier for sources without a clean canonical cite (e.g. IRM).
+  function buildCitation(): string {
+    const id = document?.identifier ?? "";
+    const label = document?.section_label ?? "";
+    const heading = document?.heading ?? "";
+    const src = document?.source_code ?? "";
+    if (src === "usc") {
+      const m = id.match(/\/usc\/title-(\d+)\/section-([^/]+)/);
+      if (m) return `${m[1]} U.S.C. § ${m[2]}${heading ? ` (${heading})` : ""}`;
+    }
+    if (src === "cfr") {
+      const m = id.match(/\/cfr\/title-(\d+)\/.*\/section-([^/]+)/);
+      if (m) return `${m[1]} C.F.R. § ${m[2]}${heading ? ` (${heading})` : ""}`;
+    }
+    if (src === "const") {
+      return `U.S. Const. ${label || heading}`;
+    }
+    return `${label ? label + " — " : ""}${heading}`.trim() || id;
+  }
+
+  async function copyCitation() {
+    if (typeof window === "undefined") return;
+    try {
+      await navigator.clipboard.writeText(buildCitation());
+      setCiteCopied(true);
+      setTimeout(() => setCiteCopied(false), 1500);
     } catch {
       // ignore
     }
@@ -1424,6 +1458,16 @@ function DocumentPage() {
               {copied ? <Check className="h-3.5 w-3.5 text-accent" /> : <LinkIcon className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{copied ? "Copied" : "Copy link"}</span>
             </button>
+            <button
+              type="button"
+              onClick={copyCitation}
+              className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs text-foreground/80 hover:border-foreground/40 hover:text-foreground sm:flex"
+              aria-label="Copy citation"
+              title="Copy a Bluebook-style citation to the clipboard"
+            >
+              {citeCopied ? <Check className="h-3.5 w-3.5 text-accent" /> : <Scale className="h-3.5 w-3.5" />}
+              <span className="hidden md:inline">{citeCopied ? "Copied" : "Cite"}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1446,6 +1490,14 @@ function DocumentPage() {
             {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
             <span className="text-foreground/30">·</span>
             <code className="font-mono text-[11px]">{document.identifier}</code>
+            <span className="text-foreground/30">·</span>
+            <SendToWorkspaceButton
+              variant="compact"
+              identifier={document.identifier}
+              citation={document.section_label ?? undefined}
+              heading={document.heading}
+              excerpt={body.slice(0, 600)}
+            />
           </div>
           <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground/80">
             <Scale className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50" />

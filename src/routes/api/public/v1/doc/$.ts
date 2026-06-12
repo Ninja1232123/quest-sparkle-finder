@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/v1/doc/$")({
         const edgeDb = supabaseAdmin as unknown as {
           from: (t: string) => {
             select: (cols: string) => {
-              eq: (c: string, v: number) => { limit: (n: number) => Promise<{ data: { target_id: number | null }[] | null }> };
+              eq: (c: string, v: unknown) => { limit: (n: number) => Promise<{ data: { target_id: number | null }[] | null }> };
             };
           };
         };
@@ -45,8 +45,8 @@ export const Route = createFileRoute("/api/public/v1/doc/$")({
           const { data: targets } = await supabaseAdmin
             .from("documents")
             .select("id, identifier, heading")
-            .in("id", targetIds);
-          for (const t of targets ?? []) targetMap.set(t.id as number, { identifier: t.identifier, heading: t.heading });
+            .in("id", targetIds as unknown as string[]);
+          for (const t of targets ?? []) targetMap.set(t.id as unknown as number, { identifier: t.identifier, heading: t.heading });
         }
         const citations = targetIds
           .map((id) => targetMap.get(id))
