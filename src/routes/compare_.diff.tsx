@@ -126,7 +126,7 @@ function DiffPage() {
                 <span className="citation-tag text-muted-foreground">unified diff · first section vs. second</span>
               </div>
               <div className="whitespace-pre-wrap px-5 py-4 font-serif text-[15px] leading-[1.7] text-foreground/85">
-                {pair.segments.map((s, i) =>
+                {pair.segments.map((s: { t: string; v: string }, i: number) =>
                   s.t === "eq" ? (
                     <span key={i}>{s.v}</span>
                   ) : s.t === "del" ? (
