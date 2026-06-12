@@ -17,6 +17,7 @@ export const Route = createFileRoute("/workspace/$threadId")({
 
 function WorkspaceThreadPage() {
   const { threadId } = Route.useParams();
+  const { q: seedPrompt } = Route.useSearch();
   const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ title: string; body: string } | null>(null);
@@ -70,18 +71,20 @@ function WorkspaceThreadPage() {
       initialMessages={initialMessages}
       initialDraft={draft}
       saveDraft={saveDraft}
+      seedPrompt={seedPrompt}
     />
   );
 }
 
 function Desk({
-  threadId, transport, initialMessages, initialDraft, saveDraft,
+  threadId, transport, initialMessages, initialDraft, saveDraft, seedPrompt,
 }: {
   threadId: string;
   transport: DefaultChatTransport<UIMessage>;
   initialMessages: UIMessage[];
   initialDraft: { title: string; body: string };
   saveDraft: (args: { data: { threadId: string; title: string; bodyMd: string } }) => Promise<unknown>;
+  seedPrompt?: string;
 }) {
   const [title, setTitle] = useState(initialDraft.title);
   const [body, setBody] = useState(initialDraft.body);
