@@ -1,9 +1,10 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef, useCallback } from "react";
-import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search } from "lucide-react";
+import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search, ScanText, History } from "lucide-react";
 
 export type EditorCanvasHandle = {
   insertAtCursor: (md: string) => void;
   focus: () => void;
+  getBody: () => string;
 };
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   onChangeTitle: (t: string) => void;
   onChangeBody: (b: string) => void;
   onOpenResearch: () => void;
+  onCiteCheck: () => void;
+  onOpenVersions: () => void;
 };
 
 /**
@@ -22,7 +25,7 @@ type Props = {
  * the user types them). Autosave happens upstream.
  */
 export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function EditorCanvas(
-  { initialTitle, initialBody, saveState, lastSavedAt, onChangeTitle, onChangeBody, onOpenResearch },
+  { initialTitle, initialBody, saveState, lastSavedAt, onChangeTitle, onChangeBody, onOpenResearch, onCiteCheck, onOpenVersions },
   ref,
 ) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +58,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
       onChangeBody(el.innerText);
     },
     focus: () => bodyRef.current?.focus(),
+    getBody: () => bodyRef.current?.innerText ?? "",
   }));
 
   const handleInput = () => {
@@ -148,6 +152,26 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
         >
           <Search className="h-3.5 w-3.5" />
           Open Research
+        </button>
+        <button
+          type="button"
+          onClick={onCiteCheck}
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:-translate-y-px hover:shadow-sm"
+          style={{ borderColor: "var(--rule-card)", color: "var(--ink)" }}
+          title="Verify every USC/CFR citation in your draft"
+        >
+          <ScanText className="h-3.5 w-3.5" />
+          Check citations
+        </button>
+        <button
+          type="button"
+          onClick={onOpenVersions}
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:-translate-y-px hover:shadow-sm"
+          style={{ borderColor: "var(--rule-card)", color: "var(--ink)" }}
+          title="Earlier saved versions of this draft"
+        >
+          <History className="h-3.5 w-3.5" />
+          Versions
         </button>
       </div>
 

@@ -7,17 +7,19 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 
-const SYSTEM = `You are the Marginalia Workspace — an AI legal research and drafting assistant for pro se litigants.
+const SYSTEM = `You are the Marginalia Workspace research assistant for pro se litigants.
+
+THE USER IS THE LEAD RESEARCHER. They are building their own case. You are a junior assistant who SUGGESTS, never acts.
 
 RULES (non-negotiable):
-- ALWAYS use search_corpus before answering any legal question. Do not rely on memory.
-- ALWAYS cite using the returned citation (e.g. "42 U.S.C. § 1983") and identifier.
-- PREFER quoting the operative statutory or regulatory language over paraphrasing.
-- When the user asks for a draft (motion, complaint, demand letter, contract, memo), use search_corpus to gather authority, then call draft_document. Always include a "Citations" footer in the body_md with full identifiers and short pin-cites.
-- After drafting, you may proactively run cite_check on the draft to surface any citations that don't resolve.
-- Use export_document only when the user asks to download.
-- End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
-- Respond in clear markdown. Inline-link citations as [42 U.S.C. § 1983](/code/usc/42/1983) when you cite the corpus.`;
+- NEVER pin authorities, save items, or modify the user's draft. Only the user does that.
+- When you find something the user should consider, emit a proposal tool: propose_search, propose_pin, propose_adverse, or propose_question. Each proposal renders as a card with Accept / Edit / Dismiss for the user to review.
+- Use search_corpus and fetch_document freely as your own research; they are read-only. Ground every proposal in real results — never invent citations.
+- For propose_pin / propose_adverse, ALWAYS include the operative quote verbatim (no paraphrasing) and a one-sentence "why_it_matters" explaining how it bears on the user's case. The user will edit the quote and decide whether to keep it.
+- Use propose_adverse when you find a statute, regulation, or section that cuts AGAINST what the user is trying to argue. Being honest about adverse authority is part of the job.
+- For open issues the user hasn't researched yet, emit propose_question. Don't try to answer everything in one turn.
+- Reply text should be short and direct. Heavy lifting goes into the proposal cards. Do not dump long summaries the user didn't ask for.
+- End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"`;
 
 async function authenticate(request: Request): Promise<{ userId: string; token: string } | Response> {
   const auth = request.headers.get("authorization") ?? "";
@@ -42,8 +44,6 @@ function userScopedDataClient(token: string) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
-
-const CITATION_REGEX = /\b(\d+)\s+(U\.S\.C\.|C\.F\.R\.)\s+§+\s*([\w.\-]+)/g;
 
 export const Route = createFileRoute("/api/workspace/chat")({
   server: {
@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
 
         const tools = {
           search_corpus: tool({
-            description: "Search the US federal legal corpus (USC, CFR, UCC, Constitution, Federal Register, etc.) by keyword or natural-language query. Returns ranked hits with identifier, citation, snippet, url.",
+            description: "READ-ONLY: Search the US federal legal corpus. Use this for your own research before proposing anything to the user.",
             inputSchema: z.object({
               q: z.string().min(2).describe("Search query"),
               source: z.enum(["usc", "cfr", "ucc", "const", "fedreg", "tfm", "irm"]).optional(),
@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             },
           }),
           fetch_document: tool({
-            description: "Fetch the full text and outgoing citations of one document by identifier (e.g. 'usc/42/1983').",
+            description: "READ-ONLY: Fetch the full text of one document by identifier (e.g. 'usc/42/1983').",
             inputSchema: z.object({ identifier: z.string() }),
             execute: async ({ identifier }) => {
               const { data, error } = await supabase
@@ -123,68 +123,51 @@ export const Route = createFileRoute("/api/workspace/chat")({
               };
             },
           }),
-          draft_document: tool({
-            description: "Save a drafted legal document (motion, complaint, demand letter, contract, memo) to the workspace. Include full markdown body with a Citations footer. Returns a document id that becomes downloadable.",
+          propose_search: tool({
+            description: "Suggest a search the user might want to run. Renders as a chip with Run / Edit / Dismiss. Use when you don't have enough to answer or when the user would benefit from exploring a specific query themselves.",
             inputSchema: z.object({
-              kind: z.enum(["motion", "complaint", "demand_letter", "contract", "memo", "brief", "other"]),
-              title: z.string().min(1).max(200),
-              body_md: z.string().min(10),
-              citations: z.array(z.object({
-                identifier: z.string(),
-                citation: z.string(),
-              })).default([]),
+              query: z.string().min(2).max(200),
+              source: z.enum(["usc", "cfr", "ucc", "const", "fedreg"]).optional(),
+              why: z.string().max(280).describe("Why this search helps the user's case, in one sentence."),
             }),
-            execute: async ({ kind, title, body_md, citations }) => {
-              const { data, error } = await supabase
-                .from("workspace_documents")
-                .insert({ thread_id: threadId, user_id: userId, kind, title, body_md, citations })
-                .select("id,title,kind")
-                .single();
-              if (error) return { error: error.message };
-              return { ok: true, document_id: data.id, title: data.title, kind: data.kind };
-            },
+            execute: async (args) => ({ proposal: "search", ...args }),
           }),
-          cite_check: tool({
-            description: "Scan a block of text for legal citations (USC, CFR) and report which resolve to the corpus and which do not.",
-            inputSchema: z.object({ text: z.string().min(10) }),
-            execute: async ({ text }) => {
-              const matches = Array.from(text.matchAll(CITATION_REGEX));
-              const idents = matches.map((m) => {
-                const kind = m[2] === "U.S.C." ? "usc" : "cfr";
-                return { raw: m[0], identifier: `${kind}/${m[1]}/${m[3]}` };
-              });
-              if (idents.length === 0) return { found: [], missing: [], note: "No USC/CFR citations detected." };
-              const { data } = await supabase
-                .from("documents")
-                .select("identifier")
-                .in("identifier", idents.map((i) => i.identifier));
-              const found = new Set((data ?? []).map((d: { identifier: string }) => d.identifier));
-              return {
-                found: idents.filter((i) => found.has(i.identifier)),
-                missing: idents.filter((i) => !found.has(i.identifier)),
-              };
-            },
-          }),
-          export_document: tool({
-            description: "Generate a downloadable file for a previously drafted document. Returns a path the user can open.",
+          propose_pin: tool({
+            description: "Suggest the user pin a supporting authority to their case board. The user will review, edit the quote/pin-cite, and decide whether to keep it.",
             inputSchema: z.object({
-              document_id: z.string().uuid(),
-              format: z.enum(["docx", "pdf", "md"]).default("md"),
+              identifier: z.string().describe("e.g. 'usc/42/1983'"),
+              citation: z.string().describe("e.g. '42 U.S.C. § 1983'"),
+              heading: z.string().optional(),
+              suggested_quote: z.string().max(1500).describe("Verbatim operative language from the section."),
+              suggested_pin_cite: z.string().max(120).optional().describe("e.g. '(a)(2)'"),
+              why_it_matters: z.string().max(400),
             }),
-            execute: async ({ document_id, format }) => {
-              const { data } = await supabase
-                .from("workspace_documents")
-                .select("id,title")
-                .eq("id", document_id)
-                .maybeSingle();
-              if (!data) return { error: "Document not found" };
-              return {
-                ok: true,
-                download_url: `/workspace/doc/${document_id}?format=${format}`,
-                title: data.title,
-                format,
-              };
-            },
+            execute: async (args) => ({ proposal: "pin", stance: "support", ...args }),
+          }),
+          propose_adverse: tool({
+            description: "Flag a statute/regulation that cuts AGAINST the user's position. Same shape as propose_pin but pre-tagged adverse.",
+            inputSchema: z.object({
+              identifier: z.string(),
+              citation: z.string(),
+              heading: z.string().optional(),
+              suggested_quote: z.string().max(1500),
+              suggested_pin_cite: z.string().max(120).optional(),
+              why_it_cuts_against: z.string().max(400),
+            }),
+            execute: async (args) => ({
+              proposal: "pin",
+              stance: "adverse",
+              ...args,
+              why_it_matters: args.why_it_cuts_against,
+            }),
+          }),
+          propose_question: tool({
+            description: "Add an open research question to the user's case board for them (or you) to investigate later.",
+            inputSchema: z.object({
+              text: z.string().min(5).max(400),
+              why: z.string().max(280).optional(),
+            }),
+            execute: async (args) => ({ proposal: "question", ...args }),
           }),
         };
 

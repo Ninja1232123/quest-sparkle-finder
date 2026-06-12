@@ -1,146 +1,84 @@
+# Case Board — user-driven research workspace
 
-# Workspace v2 — "The Research Desk"
+The user is the lead researcher "building a case." The AI never silently searches, pins, or drafts. It **proposes**, and the user accepts, edits, or rejects each step. Two earlier ideas — **adverse-authority finder** and **cite-check** — fold in as proposal types.
 
-A full redesign of `/workspace` into a 3-column research environment: left = notes & documents, center = distraction-free editor, right = AI assistant + corpus search (dockable as overlay). Keeps the existing Americana / serif + Special Elite vibe, pushes it toward a more serious, futuristic-realism aesthetic (deeper navy, brass micro-details, subtle grain, sharper rules, monospace metadata).
+## The mental model
 
-## Goals
+A thread becomes a **case file** with three stacks the user curates:
 
-- Real workspace, not a chat page. Editor is the protagonist; AI is the second seat at the desk.
-- One screen does research → drafting → citation in one motion. No tab juggling.
-- Corpus-aware: search/results hit the same statutes/cases users browse elsewhere on the site, and "Add to notes" / "Cite" push real anchored citations into the editor.
-- Serious. No toy gradients, no purple glow. Deep navy, brass `#c8a24b`, paper cream, hairline rules, monospace eyebrows.
-
-## Layout
-
-```
-┌─────────────┬───────────────────────────────────┬────────────────────────┐
-│ LEFT 20%    │ CENTER ~50%                       │ RIGHT 30%              │
-│ Sessions /  │ Document header (title, wc, save) │ AI + Corpus Search     │
-│ Notes /     │ ─────────────────────────────────  │ ──────────────────────│
-│ Docs tree   │ Floating format toolbar           │ Mode tabs:             │
-│             │                                   │  [Assistant] [Search]  │
-│ + New       │ Markdown editor (contenteditable) │                        │
-│ Filter      │ Margin notes gutter (existing)    │ Results / Chat feed    │
-│ Tabs:       │                                   │                        │
-│  Sessions   │                                   │ Sticky composer        │
-│  Notes      │                                   │                        │
-│  Drafts     │                                   │ [⤢ Expand to modal]    │
-│ Footer nav  │                                   │                        │
-└─────────────┴───────────────────────────────────┴────────────────────────┘
+```text
+┌─ Case Board (left of editor) ──────────┐
+│  Supporting authorities  (3)           │
+│  Adverse authorities     (1)           │
+│  Open questions / to-search (2)        │
+└────────────────────────────────────────┘
 ```
 
-Right panel has two states controlled by `useState<"dock" | "modal">`:
-- `dock` — sticky 30% right rail.
-- `modal` — centered overlay (max-w-3xl, paper bg, brass border) for deep-search mode; dims canvas, keeps editor visible behind. Toggled by the `⤢` button and by a "deep search" trigger from the search bar.
+Everything the AI does flows through **proposals** the user has to accept.
 
-Mobile: collapses to a single column with bottom tab bar (Notes · Editor · AI). Out of scope for v1 polish but layout must not break.
+## What changes
 
-## Left sidebar — Document & Notes Management
+### 1. Data: per-thread case file
+New table `workspace_case_items` (one row per pinned authority / open question):
+- `id`, `thread_id`, `user_id`
+- `kind`: `'authority' | 'question' | 'note'`
+- `stance`: `'support' | 'adverse' | 'neutral' | null`
+- `identifier` (e.g. `usc/42/1983`), `citation` (display), `heading`
+- `pin_cite` (user-typed pin-cite, e.g. "(a)(2)")
+- `quote` (user-selected operative language)
+- `user_note` (why this matters to *their* case)
+- `order_index`, `created_at`
 
-Three tabs at top (segmented control, monospace labels):
-1. **SESSIONS** — current thread list (reuses existing `listThreads`). Grouped Today / Yesterday / This week / Older.
-2. **NOTES** — user's saved margin notes / casebook entries (reuses `casebook.ts`). Tag chips + favorite star filter.
-3. **DRAFTS** — documents generated in the workspace (reuses `listThreadDocuments`, expanded to user-wide).
+RLS scoped to `auth.uid()`, GRANT to authenticated + service_role.
 
-Above tabs:
-- `+ New Session` (primary, brass on navy).
-- Filter input with `Search` icon, monospace.
-- Tag chip row (horizontal scroll) — clicking a tag filters the active tab.
+### 2. AI is rebuilt as a **proposal engine**
+The chat tools stop executing side effects. Instead they emit *proposals* the user reviews:
+- `propose_search({ query, why })` — renders a chip: "Run this search?" with Accept/Edit
+- `propose_pin({ identifier, stance, suggested_quote, why })` — renders a pin card the user confirms (and can edit the quote / pin-cite before saving)
+- `propose_adverse({ identifier, why_it_cuts_against })` — same UI, pre-tagged adverse
+- `propose_question({ text })` — drops onto the Questions stack
+- `cite_check_draft()` — read-only; lists each citation in the draft with "resolved / not found / not in your pinned set" so the user decides what to fix
 
-Collapsible: click chevron in header → collapses to 56px icon rail (icons only, tooltips on hover). Persisted in `localStorage`.
+System prompt updated: "Never act. Always propose. The user runs the search, the user picks the quote, the user pins the authority."
 
-## Center canvas — Editor
+### 3. UI: three-pane Desk becomes four-pane
+```text
+┌── Case Board ──┬──── Editor ─────┬── Right Rail ──┐
+│ Support (n)    │  Draft / Notes  │ Assistant      │
+│ Adverse  (n)   │                 │ ── or ──       │
+│ Questions (n)  │                 │ Search         │
+└────────────────┴─────────────────┴────────────────┘
+```
+- Collapsible on narrow viewports; pinned-open on desktop.
+- Each authority card: stance badge, citation (links to `/code/...`), pin-cite, quote, user note. Drag to reorder; "Insert into draft" pushes `> quote — citation, pin-cite` at cursor.
+- ResultCard gets a third action: **Pin to case** → inline mini-form (stance, pin-cite, edit quote, why) → saves to board.
+- Proposal cards in chat render with Accept / Edit / Dismiss; Accept calls the same server fn the manual UI uses, so AI- and human-added items are indistinguishable on the board.
 
-Header strip (hairline bottom border):
-- Document title (inline-editable, serif). Placeholder: "Untitled draft".
-- Right side: word count, save state ("Saved · 2s ago" in monospace), `Open Research Assistant` button (toggles right panel into modal mode if collapsed).
+### 4. Cite-check is user-triggered, read-only
+Toolbar button in the editor: "Check citations." Runs `cite_check` against current `body_md`. Shows a side sheet listing each detected citation with status (✓ resolves, ✗ not found, ◇ not pinned to your board). User decides what to do — nothing is auto-fixed.
 
-Floating formatting toolbar:
-- Appears on text selection, anchored above selection (Radix popover).
-- Buttons: Bold, Italic, Underline, H2, Quote, Link, Highlight (3 colors), Inline code, `✨ AI Rewrite` (sends selection to assistant with "rewrite/tighten/cite" subactions).
+### 5. Safety on drafts (carry-over)
+Autosave + flush-on-hide is already in. Add a **"Versions"** dropdown (last 5 autosaves kept in `workspace_draft_versions`) so a bad AI insert is one click to revert.
 
-Editor body:
-- `contenteditable` div with markdown shortcuts (start with simple: `#`, `##`, `>`, `-`, `**`). No heavy editor framework v1 — keep it as a controlled `contenteditable` with sanitized HTML out. If complexity grows, swap to Tiptap later; not in scope now.
-- Paper-cream background, serif body (Cinzel for headings, existing serif body), generous line-height, max-w prose.
-- Left gutter shows margin-note dots (existing `Marginalia` pattern) when a note anchors to a paragraph.
-- Drop target: dragging a result card from the right panel inserts a block-quote with citation footer at the cursor.
+## Technical changes
 
-Empty state:
-- Centered cream card: "Start typing, or ask the assistant to draft something." Below: the 4 existing prompt seeds as chips.
+- **Migration**: `workspace_case_items`, `workspace_draft_versions` with RLS + GRANTs.
+- **`src/lib/workspace.functions.ts`**: `listCaseItems`, `upsertCaseItem`, `deleteCaseItem`, `reorderCaseItems`, `listDraftVersions`, `restoreDraftVersion`.
+- **`src/routes/api/workspace/chat.ts`**: rewrite tools to `propose_*` (no DB writes). Keep `search_corpus` and `fetch_document` as read-only research tools the AI uses to ground proposals. `draft_document` removed — the user is the drafter.
+- **New components**:
+  - `src/components/workspace/CaseBoard.tsx` — three stacks, drag/reorder, insert-into-draft.
+  - `src/components/workspace/PinDialog.tsx` — the mini-form for pinning an authority.
+  - `src/components/workspace/ProposalCard.tsx` — rendered inside assistant message parts for `propose_*` tool calls.
+  - `src/components/workspace/CiteCheckSheet.tsx` — read-only cite-check result.
+- **Edited**:
+  - `src/routes/workspace.$threadId.tsx` — adds left CaseBoard column, wires Insert/Pin handlers.
+  - `src/components/workspace/ResultCard.tsx` — "Pin to case" action.
+  - `src/components/workspace/EditorCanvas.tsx` — "Check citations" toolbar button, "Versions" dropdown.
+  - `src/components/workspace/RightRail.tsx` — renders ProposalCards for `tool-propose_*` parts.
 
-Autosave: debounce 800ms → server function `upsertDraft({ threadId, title, contentMd })`. Reuses workspace.functions pattern.
+## Out of scope this pass
+- Cross-thread "Library of authorities" (these stacks stay per-case for now).
+- Public/shared casebooks (idea #10).
+- Outcome stats overlay (idea #3) — separate ticket.
 
-## Right panel — AI Assistant + Corpus Search
-
-Top segmented tabs: **ASSISTANT** · **SEARCH**.
-
-### Search mode
-- Conversational search input ("Ask the corpus or type a citation…").
-- Filter chips below input: `Jurisdiction`, `Source` (USC/CFR/Cases/State), `Year range`, `Court`. Each opens a small popover; selected filters show as removable chips.
-- Streaming result cards:
-  - Title (serif), citation (monospace), 2-line snippet with matched terms highlighted in brass.
-  - Metadata row: source badge, year, court/agency.
-  - Actions: `➕ Add to Notes` (inserts block-quote + citation at cursor), `📝 Summarize` (assistant tab takes over, streams summary), `↗ Open` (opens source in new tab), drag handle.
-- Skeleton shimmer cards while streaming (3 placeholder cards with `animate-pulse`).
-
-### Assistant mode
-- Existing AI-elements `Conversation` / `Message` / `Tool` stack (already wired). Reuse `/api/workspace/chat`.
-- Tool results from the agent's corpus-search tool render as the same cards described above (consistent UI between modes).
-- Sticky `PromptInput` at bottom. Stop button while streaming. Shimmer "Thinking…" while submitted.
-- Streaming caret already provided by AI-elements; keep.
-
-### Modal overlay
-- `⤢` icon in panel header swaps dock ↔ modal.
-- Also auto-opens modal on `⌘K` "deep search".
-- Modal: 760px wide, max 80vh, brass 1px border, soft shadow, paper bg. Clicking backdrop or `Esc` returns to dock.
-
-## Visual system additions (in `src/styles.css`)
-
-- New tokens: `--brass`, `--brass-soft`, `--navy-deep`, `--rule-hair`.
-- Utility `@utility hairline { border-color: color-mix(in oklab, var(--ink) 12%, transparent); }`.
-- Subtle film-grain SVG noise as `::before` on the canvas at 3% opacity (futuristic-realism cue without breaking serif Americana).
-- Mono eyebrows uppercase tracking-[0.3em] (already used) — formalize as `.eyebrow` utility.
-- Button: add a `brass` variant (navy bg, brass border, brass text on hover).
-
-## State & persistence
-
-- Right panel mode: `useState<"dock" | "modal">`, persisted in `localStorage("workspace.rightMode")`.
-- Left sidebar tab + collapsed state: `localStorage`.
-- Editor content: autosaved to `documents` table via server fn (threadId-scoped). No new schema unless current `documents` table can't hold markdown — will verify on implementation.
-
-## Data wiring
-
-Reuses existing server functions where possible:
-- `listThreads`, `createThread`, `deleteThread` — sessions tab.
-- `getThreadMessages`, `/api/workspace/chat` — assistant.
-- `listThreadDocuments` (extend with `listUserDocuments`) — drafts tab.
-- `casebook.ts` notes — notes tab.
-- New small server fns: `upsertDraft`, `searchCorpus` (wraps existing search RPC used elsewhere on the site).
-
-No DB migration expected v1. If `documents` lacks a `content_md` column, a single migration adds it.
-
-## Out of scope (v1)
-
-- Real-time collaboration / presence.
-- Rich Tiptap/ProseMirror editor (stay on `contenteditable` first).
-- Mobile-perfect 3-column collapse beyond "doesn't break".
-- Reordering/folder nesting in the left tree (flat list + tags first).
-
-## File plan
-
-- `src/routes/workspace.$threadId.tsx` — replace body with new 3-col shell.
-- `src/components/workspace/LeftPanel.tsx` — sessions/notes/drafts tabs.
-- `src/components/workspace/EditorCanvas.tsx` — header + toolbar + contenteditable.
-- `src/components/workspace/FormatToolbar.tsx` — floating selection toolbar.
-- `src/components/workspace/RightPanel.tsx` — tabs + dock/modal shell.
-- `src/components/workspace/SearchPane.tsx` — search input + filters + result cards.
-- `src/components/workspace/ResultCard.tsx` — shared card used by search and tool results.
-- `src/components/workspace/AssistantPane.tsx` — thin wrapper around existing AI-elements stack.
-- `src/lib/workspace.functions.ts` — add `upsertDraft`, `searchCorpus`, `listUserDocuments`.
-- `src/styles.css` — new tokens + `.eyebrow`, `.hairline`, grain utility.
-
-## Open questions before build
-
-1. Keep `contenteditable` for v1, or jump straight to Tiptap? (Tiptap = better markdown but +1 day of work.)
-2. Should NOTES tab show all user notes site-wide, or only notes anchored to docs cited in this session?
-3. Drafts: per-thread only, or a global "My drafts" list that can be reattached to any thread?
+Once you accept the plan I'll ship it in order: migration → server fns → board UI → AI proposal tools → cite-check → versions.

@@ -1,4 +1,4 @@
-import { Plus, FileText as Summarize, ExternalLink } from "lucide-react";
+import { Plus, FileText as Summarize, ExternalLink, Pin } from "lucide-react";
 
 export type CorpusHit = {
   identifier: string;
@@ -13,9 +13,10 @@ type Props = {
   hit: CorpusHit;
   onAddToNotes: (hit: CorpusHit) => void;
   onSummarize: (hit: CorpusHit) => void;
+  onPin?: (hit: CorpusHit) => void;
 };
 
-export function ResultCard({ hit, onAddToNotes, onSummarize }: Props) {
+export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
   const url = `/code${hit.identifier}`;
   return (
     <div
@@ -42,6 +43,16 @@ export function ResultCard({ hit, onAddToNotes, onSummarize }: Props) {
         </p>
       )}
       <div className="mt-2 flex items-center gap-1">
+        {onPin && (
+          <button
+            type="button"
+            onClick={() => onPin(hit)}
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+            style={{ color: "var(--ink)" }}
+          >
+            <Pin className="h-3 w-3" /> Pin to case
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onAddToNotes(hit)}
