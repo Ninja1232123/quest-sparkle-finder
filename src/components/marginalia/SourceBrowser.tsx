@@ -192,7 +192,7 @@ function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent
 
   if (simple) {
     return (
-      <Link to={linkSelf.to as never} search={{ group: cg.rows[0].parent_label }} className="block">
+      <Link to={linkSelf.to as never} search={{ group: cg.rows[0].parent_label } as never} className="block">
         <CatalogueBubble kind="CH." token={token} title={title} count={cg.total} accent={accent} index={index} />
       </Link>
     );
@@ -218,7 +218,7 @@ function ChapterCell({ cg, accent, index, linkSelf }: { cg: ChapterGroup; accent
             <li key={r.parent_label}>
               <Link
                 to={linkSelf.to as never}
-                search={{ group: r.parent_label }}
+                search={{ group: r.parent_label } as never}
                 className="flex items-baseline justify-between gap-3 rounded-lg border border-border/50 bg-card px-4 py-2 transition-colors hover:border-foreground/30 hover:bg-muted/50"
               >
                 <span className="text-sm text-foreground/80">{r.sub ?? "General provisions"}</span>
@@ -242,7 +242,7 @@ function TitleParts({ parts, linkSelf, accent }: { parts: TocPart[]; linkSelf: L
         {parts.map((p, i) => {
           const L = leveledLabel(p.label);
           return (
-            <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label }} className="block h-full">
+            <Link key={p.parent_label} to={linkSelf.to as never} search={{ group: p.parent_label } as never} className="block h-full">
               <CatalogueBubble kind={L.kind} token={L.token} title={L.title} crumb={L.crumb} count={p.count} accent={accent} index={i} />
             </Link>
           );
@@ -343,7 +343,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
             </div>
             <Link
               to={linkSelf.to as never}
-              search={parentTg ? { tg: parentTg } : {}}
+              search={(parentTg ? { tg: parentTg } : {}) as never}
               className="mt-2 inline-block text-[11px] text-accent hover:underline"
             >
               ← back{parentTg ? ` to ${cleanBubbleTitle(parentTg)}` : " to table of contents"}
@@ -421,7 +421,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               {parentTg && (
                 <>
                   {" · "}
-                  <Link to={linkSelf.to as never} search={{ tg: parentTg }} className="hover:text-foreground">
+                  <Link to={linkSelf.to as never} search={{ tg: parentTg } as never} className="hover:text-foreground">
                     {cleanBubbleTitle(parentTg)}
                   </Link>
                 </>
@@ -486,7 +486,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
                 <Link
                   key={t.title_group}
                   to={linkSelf.to as never}
-                  search={{ tg: t.title_group }}
+                  search={{ tg: t.title_group } as never}
                   className="block"
                 >
                   <CatalogueBubble
@@ -637,7 +637,7 @@ function BucketGrid({
         <Link
           key={it.key}
           to={linkSelf.to as never}
-          search={searchFor(it.key)}
+          search={searchFor(it.key) as never}
           className="group rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
         >
           <div className="font-display text-lg font-semibold">{it.label}</div>
@@ -695,7 +695,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
       {data.view === "register-docs" && (
         <>
           {" · "}
-          <Link to={linkSelf.to as never} search={{ ry: Number(data.rd.slice(0, 4)) }} className="hover:text-foreground">
+          <Link to={linkSelf.to as never} search={{ ry: Number(data.rd.slice(0, 4)) } as never} className="hover:text-foreground">
             {data.rd.slice(0, 4)}
           </Link>
           {" · "}
@@ -706,7 +706,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
       {data.view === "bill-docs" && (
         <>
           {" · "}
-          <Link to={linkSelf.to as never} search={{ bc: data.bk.split(".")[0] }} className="hover:text-foreground">
+          <Link to={linkSelf.to as never} search={{ bc: data.bk.split(".")[0] } as never} className="hover:text-foreground">
             {ordinal(data.bk.split(".")[0])} Congress
           </Link>
           {" · "}
@@ -764,8 +764,8 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
             page={data.bp}
             bills={data.bills}
             hasMore={data.hasMore}
-            onSearch={(q) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: q || undefined } })}
-            onPage={(p) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: data.bq, bp: p || undefined } })}
+            onSearch={(q) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: q || undefined } as never })}
+            onPage={(p) => navigate({ to: linkSelf.to as never, search: { bc: data.bc, bq: data.bq, bp: p || undefined } as never })}
           />
         )}
 
@@ -865,7 +865,7 @@ function BillList({
               <li key={b.bill_key}>
                 <Link
                   to={linkSelf.to as never}
-                  search={{ bc: congress, bk: b.bill_key }}
+                  search={{ bc: congress, bk: b.bill_key } as never}
                   className="flex items-baseline gap-4 rounded-2xl border bg-card px-5 py-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
                 >
                   <span className="citation-tag w-44 shrink-0 truncate text-muted-foreground">{billLine}</span>
