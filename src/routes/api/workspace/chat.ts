@@ -45,8 +45,6 @@ function userScopedDataClient(token: string) {
   });
 }
 
-const CITATION_REGEX = /\b(\d+)\s+(U\.S\.C\.|C\.F\.R\.)\s+§+\s*([\w.\-]+)/g;
-
 export const Route = createFileRoute("/api/workspace/chat")({
   server: {
     handlers: {
