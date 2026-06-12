@@ -84,31 +84,29 @@ function NavGroupTab({ group }: { group: NavGroup }) {
 
       {open && (
         <div
-          className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-border/60 bg-background shadow-[var(--shadow-warm)]"
+          className="am-dropdown absolute left-0 top-full z-50 mt-1 w-80"
           role="menu"
         >
           <div
-            className="rounded-t-xl px-4 pt-3 pb-2"
+            className="am-dropdown-head"
             style={{
-              backgroundImage: `linear-gradient(135deg, ${group.accent}18 0%, transparent 65%)`,
+              backgroundImage: `linear-gradient(135deg, ${group.accent}33 0%, transparent 70%)`,
             }}
           >
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: group.accent }} />
-              <span className="font-display text-sm font-semibold">{group.label}</span>
+              <span className="am-dropdown-head-title">{group.label}</span>
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-foreground/65">{group.tagline}</p>
+            <p className="am-dropdown-head-sub">{group.tagline}</p>
           </div>
-          <div className="border-t border-border/40 px-2 py-2">
+          <div className="px-2 py-2">
             {group.items.map((it) => {
               const isSoon = it.status === "soon";
               return (
                 <Link
                   key={it.href + it.label}
                   to={it.href as never}
-                  className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] hover:bg-muted ${
-                    isSoon ? "text-foreground/50" : "text-foreground/80 hover:text-foreground"
-                  }`}
+                  className={`am-dropdown-item ${isSoon ? "is-soon" : ""}`}
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -117,9 +115,7 @@ function NavGroupTab({ group }: { group: NavGroup }) {
                   />
                   <span className="min-w-0 truncate">{it.label}</span>
                   {isSoon && (
-                    <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ochre">
-                      soon
-                    </span>
+                    <span className="am-dropdown-soon-badge">soon</span>
                   )}
                 </Link>
               );
@@ -159,21 +155,19 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-border/60 bg-background p-2 shadow-[var(--shadow-warm)]"
+          className="am-dropdown absolute right-0 top-full z-50 mt-1 w-80 p-2"
           role="menu"
         >
           {TOOLS.filter((t) => !t.authRequired || signedIn).map((t) => (
             <Link
               key={t.href}
               to={t.href as never}
-              className="flex items-start gap-2.5 rounded-md px-3 py-2 hover:bg-muted"
+              className="am-dropdown-item items-start"
             >
-              <t.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/60" />
+              <t.icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "#c8a24b" }} />
               <div className="min-w-0">
-                <div className="font-display text-[13px] font-semibold text-foreground">
-                  {t.label}
-                </div>
-                <div className="text-xs leading-snug text-foreground/55">{t.description}</div>
+                <div style={{ fontWeight: 700, color: "#fbf6e8" }}>{t.label}</div>
+                <div className="ami-desc">{t.description}</div>
               </div>
             </Link>
           ))}
@@ -183,10 +177,11 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
                 setOpen(false);
                 onSignOut();
               }}
-              className="mt-1 flex w-full items-center gap-2.5 rounded-md border-t border-border/40 px-3 py-2 pt-3 text-left hover:bg-muted"
+              className="am-dropdown-item mt-1 w-full text-left"
+              style={{ borderTop: "1px solid rgba(200,162,75,0.28)", borderRadius: 0, paddingTop: 12 }}
             >
-              <LogOut className="h-3.5 w-3.5 text-foreground/60" />
-              <span className="font-display text-xs text-foreground/75">Sign out</span>
+              <LogOut className="h-3.5 w-3.5" style={{ color: "#c8a24b" }} />
+              <span>Sign out</span>
             </button>
           )}
         </div>
