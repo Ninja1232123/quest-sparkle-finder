@@ -2657,7 +2657,7 @@ main {
     bottom: 0;
     left: 0;
     z-index: 189;
-    width: 420px;
+    width: 450px;
     max-width: 92vw;
     background: #0a1a47;
     border-right: 2px solid #c8a24b;
@@ -2960,7 +2960,7 @@ main {
   }
   .juri-sources-label {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #7a8bb0;
@@ -2987,8 +2987,8 @@ main {
   }
   .juri-source-code {
     font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #c8a24b;
@@ -3001,7 +3001,7 @@ main {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 600;
   }
 
   /* ── Input area ── */
@@ -3025,7 +3025,7 @@ main {
     font-family: var(--font-sans);
     font-size: 15px;
     padding: 8px 12px;
-    min-height: 38px;
+    min-height: 48px;
     max-height: 100px;
     outline: none;
     transition: border-color 150ms;
@@ -3077,7 +3077,7 @@ main {
   }
   .juri-disclaimer {
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #4a5a78;

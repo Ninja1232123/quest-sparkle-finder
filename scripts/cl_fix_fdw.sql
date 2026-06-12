@@ -1,8 +1,7 @@
--- cl_fix_fdw.sql — run in self_law (as superuser) after loading search_opinion data.
+-- cl_fix_fdw.sql — run in self_law (as superuser) after running cl_opinions_ingest.py.
 --
--- 1. Recreates the cl.opinions foreign table with the correct column name
---    (ordering_key, not position — the old definition caused every case-page load
---    to fail with "column r6.position does not exist").
+-- 1. Points cl.opinions at opinion_text (slim table on sdb1, loaded by ingest script)
+--    instead of the full search_opinion table.
 -- 2. Replaces cl.get_case_opinion with a version that actually joins opinion text.
 
 -- ── 1. Fix cl.opinions foreign table ─────────────────────────────────────────
@@ -17,7 +16,7 @@ CREATE FOREIGN TABLE cl.opinions (
     ordering_key        integer
 )
 SERVER courtlistener_fdw
-OPTIONS (schema_name 'public', table_name 'search_opinion');
+OPTIONS (schema_name 'public', table_name 'opinion_text');
 
 GRANT SELECT ON cl.opinions TO anon, authenticator;
 

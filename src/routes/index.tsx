@@ -145,14 +145,14 @@ function Index() {
 
           {/* RIGHT update slot — edit freely to announce features/news */}
           <div className="home-const-aside home-const-aside-r">
-            <p className="hca-label">Coming up</p>
+            <p className="hca-label">NEW</p>
             <p className="hca-body">
-              Juri, the AI research eagle, is now available for Pro members —
-              reads the statutes and cites every answer.
+              Subscribers can purchase credits to use Juri, the AI model connected to our database —
+              Deep search through court cases and statutes.
             </p>
             <div className="hca-divider" />
             <p className="hca-body">
-              Legal template document builder is live in the Tools tab.
+              Legal document template document builder is live in the Tools tab.
             </p>
           </div>
         </div>
