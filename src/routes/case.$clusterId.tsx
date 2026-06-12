@@ -140,7 +140,7 @@ function CaseReaderPage() {
               Full opinion on CourtListener
             </a>
             <SendToWorkspaceButton
-              identifier={`case/${cluster_id}`}
+              identifier={`case/${clusterId}`}
               citation={case_name}
               heading={courtLabel ? `${courtLabel}${year ? ` · ${year}` : ""}` : null}
               excerpt={text ? text.slice(0, 800) : undefined}
