@@ -3704,3 +3704,237 @@ main {
 /* Dark mode: hero asides need lighter ink so the parchment-on-dark body text
    remains readable when the codebook shelf flips to night. */
 .dark .hca-body { color: #d6cdb8; }
+
+/* ============================================================================
+   CODEX PAGE POLISH — sub-pages
+   Carries the Engraved Legal Codex aesthetic out of the home hero and onto the
+   CodebookLanding right rail, SourceBrowser ToC, search results, and footer.
+   Keeps a parchment-on-paper feel for content surfaces; spends gold + Cinzel
+   on headings, Special Elite on eyebrows, Playfair italics on body marginalia.
+   ============================================================================ */
+@layer components {
+  /* Eyebrows / labels — uniform typewriter monospace across the app */
+  .citation-tag,
+  .cb-section-eyebrow,
+  .desk-eyebrow,
+  .subvol-eyebrow {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.28em !important;
+    text-transform: uppercase;
+    color: var(--codex-gold-3);
+  }
+  .cite-tag {
+    font-family: "Special Elite", "Courier New", monospace;
+    letter-spacing: 0.22em;
+    color: var(--codex-gold-3);
+  }
+
+  /* Section titles — Cinzel engraved across all sub-page headings */
+  .cb-section-title,
+  .section-title-bar h1,
+  .section-title-bar h2 {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    color: var(--codex-ink);
+  }
+  .cb-section-title { font-size: clamp(22px, 2.2vw, 30px); }
+
+  /* Section divider bar — hairline gold rule under the title row */
+  .section-title-bar {
+    border-bottom: 1px solid rgba(184,145,80,0.45);
+    padding-bottom: 12px;
+    position: relative;
+  }
+  .section-title-bar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -3px;
+    height: 1px;
+    background: rgba(184,145,80,0.22);
+  }
+
+  /* Sub-volume cards — parchment plates with gold spine */
+  .subvol-card {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.045'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #fdfaf3 0%, #f3ead4 100%);
+    border: 1px solid rgba(184,145,80,0.35) !important;
+    border-left: 6px solid var(--c, var(--codex-gold)) !important;
+    border-radius: 2px !important;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 14px 28px -18px rgba(0,0,0,0.35);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .subvol-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 22px 36px -16px rgba(0,0,0,0.45);
+  }
+  .subvol-name {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 700 !important;
+    font-size: 19px !important;
+    color: var(--codex-ink);
+    letter-spacing: 0.02em;
+  }
+  .subvol-eyebrow { font-size: 10.5px !important; }
+  .subvol-browse {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--codex-gold-3);
+  }
+
+  /* Desk (right rail) cards on codebook landings */
+  .desk-mini,
+  .desk-card {
+    background:
+      linear-gradient(180deg, #fdfaf3 0%, #f7efd9 100%) !important;
+    border: 1px solid rgba(184,145,80,0.35) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 10px 20px -14px rgba(0,0,0,0.35);
+  }
+  .desk-mini-num {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.02em;
+  }
+  .desk-mini-sub,
+  .desk-card-body {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+    color: #3a2f1a;
+  }
+  .desk-card-title {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.04em;
+  }
+  .desk-btn-paper {
+    background: var(--codex-ink) !important;
+    color: var(--codex-parchment) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.28em !important;
+    text-transform: uppercase;
+    padding: 10px 16px !important;
+    transition: background 200ms ease, transform 130ms ease;
+  }
+  .desk-btn-paper:hover {
+    background: var(--codex-gold-3) !important;
+    transform: translateY(-1px);
+  }
+  .desk-rel-row {
+    border-bottom: 1px dashed rgba(184,145,80,0.3);
+    padding: 8px 4px;
+  }
+  .desk-rel-name {
+    font-family: "Playfair Display", "IM Fell English", serif;
+    font-style: italic;
+  }
+
+  /* Generic ToC / browse grids using .am-card OUTSIDE the home shelf — give
+     them the same parchment treatment as subvol-card so they read like vellum
+     plates instead of plain cards. */
+  .toc-grid .am-card {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.045'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #fdfaf3 0%, #f3ead4 100%);
+    border: 1px solid rgba(184,145,80,0.32) !important;
+    border-left: 5px solid var(--c, var(--codex-gold)) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 10px 22px -16px rgba(0,0,0,0.35);
+  }
+  .toc-grid .am-card .am-num {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    color: var(--codex-gold-3) !important;
+    letter-spacing: 0.22em;
+  }
+  .toc-grid .am-card .am-title {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    color: var(--codex-ink) !important;
+    letter-spacing: 0.02em;
+  }
+  .toc-grid .am-card .am-count {
+    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-style: italic;
+    color: #6b5836 !important;
+  }
+  .toc-grid .am-card .am-go {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    color: var(--codex-gold-3) !important;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* Hero H1 across sub-pages */
+  .hero-h1 {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    letter-spacing: 0.02em;
+  }
+  .ink-underline {
+    background-image: linear-gradient(0deg, rgba(184,145,80,0.45) 0%, rgba(184,145,80,0.45) 100%) !important;
+    background-size: 100% 6px !important;
+    background-position: 0 88% !important;
+    background-repeat: no-repeat !important;
+    padding: 0 2px;
+  }
+
+  /* Search "try" chips — typewriter tags */
+  .try-chip {
+    font-family: "Special Elite", "Courier New", monospace !important;
+    border: 1px solid rgba(184,145,80,0.45) !important;
+    color: var(--codex-ink) !important;
+    background: rgba(253,250,243,0.6) !important;
+    border-radius: 0 !important;
+    letter-spacing: 0.08em;
+    padding: 3px 10px !important;
+  }
+  .try-chip:hover {
+    background: var(--codex-ink) !important;
+    color: var(--codex-parchment) !important;
+    border-color: var(--codex-ink) !important;
+  }
+
+  /* "Live / direct from source" pill — engraved seal */
+  .live-pill {
+    background: var(--codex-ink) !important;
+    color: var(--codex-gold-2) !important;
+    border: 1px solid var(--codex-gold) !important;
+    border-radius: 0 !important;
+    font-family: "Special Elite", "Courier New", monospace !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
+  .live-pill .dot { background: var(--codex-gold-2) !important; }
+
+  /* ── FOOTER — engraved colophon ──────────────────────────────────────── */
+  footer.mt-24 {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E"),
+      radial-gradient(120% 60% at 50% 0%, rgba(184,145,80,0.10) 0%, transparent 60%),
+      linear-gradient(180deg, #0a1528 0%, #050810 100%) !important;
+    border-top: 1px solid var(--codex-gold) !important;
+    box-shadow: inset 0 1px 0 rgba(184,145,80,0.25);
+    color: var(--codex-slate) !important;
+  }
+  footer.mt-24 .font-display {
+    font-family: "Cinzel", "IM Fell English SC", serif !important;
+    letter-spacing: 0.06em;
+  }
+  footer.mt-24 .font-mono { font-family: "Special Elite", "Courier New", monospace !important; }
+  footer.mt-24 .font-serif {
+    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-style: italic;
+  }
+}
