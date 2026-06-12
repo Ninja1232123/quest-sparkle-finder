@@ -11,6 +11,7 @@ import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit 
 import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { FileText, Download } from "lucide-react";
+import { LegalDisclaimer } from "@/components/marginalia/LegalDisclaimer";
 
 export const Route = createFileRoute("/workspace/$threadId")({
   component: WorkspaceThreadPage,
@@ -122,6 +123,9 @@ function ThreadChat({
                 <p className="text-sm text-muted-foreground">
                   Try: "Draft a § 1983 complaint outline for excessive force," or "What does 42 USC 1983 actually say?"
                 </p>
+                <div className="mt-6 text-left">
+                  <LegalDisclaimer variant="inline" />
+                </div>
               </div>
             )}
             {messages.map((m) => (
@@ -183,6 +187,7 @@ function ThreadChat({
               <PromptInputSubmit status={status} disabled={isLoading} />
             </PromptInputFooter>
           </PromptInput>
+          <LegalDisclaimer variant="compact" className="mt-2 text-center" />
         </div>
       </div>
 
