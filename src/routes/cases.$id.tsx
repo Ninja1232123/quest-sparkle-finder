@@ -5,6 +5,10 @@ import { useCases, loadNote, isInline, type CaseItem, type CaseItemRef, type Not
 import { segmentBody, citationSpans, operativeParagraphs, type LegalPara } from "@/lib/legal-structure";
 import { ArrowLeft, Scale, GripVertical, Trash2, Download, Printer, ExternalLink, PenLine, BookOpen, X, Layers } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { seedThreadFromHandoff } from "@/lib/workspace.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/cases/$id")({
   loader: async () => {
