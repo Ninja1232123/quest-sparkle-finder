@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Exte
 import { fetchSectionCases, courtDisplay, type ClCase } from "@/lib/court-cases";
 import { renderDecorated } from "@/lib/auto-link-citations";
 import { segmentBody, splitParagraphs, citationSpans, operativeParagraphs, subsectionBlocks, type BodySegment, type LegalPara } from "@/lib/legal-structure";
+import { SendToWorkspaceButton } from "@/components/workspace/SendToWorkspaceButton";
 import { STATE_NAMES, sourceName } from "@/lib/source-groups";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { docSeo, SITE_BRAND } from "@/lib/doc-seo";
