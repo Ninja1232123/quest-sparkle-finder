@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, ChevronLeft, Search as SearchIcon, X, BookOpen, Network, LayoutGrid, List as ListIcon } from "lucide-react";
 import { ResearchShell } from "./ResearchShell";
 import { CodebookHero } from "./CodebookHero";
