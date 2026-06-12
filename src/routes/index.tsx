@@ -44,7 +44,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Self-Law — A citizen's law index" },
       {
         property: "og:description",
-        content: "A Pro Se legal research and support tool.",
+        content:
+          "Search primary law across all 50 states. Save marginalia notes directly to your case file, use our legal template builder, and compare statutes side by side.",
       },
       { property: "og:url", content: "https://self-law.org/" },
     ],
