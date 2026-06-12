@@ -675,6 +675,65 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_case_items: {
+        Row: {
+          citation: string | null
+          created_at: string
+          heading: string | null
+          id: string
+          identifier: string | null
+          kind: string
+          order_index: number
+          pin_cite: string | null
+          quote: string | null
+          stance: string | null
+          thread_id: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+        }
+        Insert: {
+          citation?: string | null
+          created_at?: string
+          heading?: string | null
+          id?: string
+          identifier?: string | null
+          kind: string
+          order_index?: number
+          pin_cite?: string | null
+          quote?: string | null
+          stance?: string | null
+          thread_id: string
+          updated_at?: string
+          user_id: string
+          user_note?: string | null
+        }
+        Update: {
+          citation?: string | null
+          created_at?: string
+          heading?: string | null
+          id?: string
+          identifier?: string | null
+          kind?: string
+          order_index?: number
+          pin_cite?: string | null
+          quote?: string | null
+          stance?: string | null
+          thread_id?: string
+          updated_at?: string
+          user_id?: string
+          user_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_case_items_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_documents: {
         Row: {
           body_md: string
@@ -712,6 +771,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "workspace_documents_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_draft_versions: {
+        Row: {
+          body_md: string
+          created_at: string
+          id: string
+          thread_id: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          body_md?: string
+          created_at?: string
+          id?: string
+          thread_id: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          body_md?: string
+          created_at?: string
+          id?: string
+          thread_id?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_draft_versions_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "workspace_threads"
