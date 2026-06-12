@@ -1447,6 +1447,14 @@ function DocumentPage() {
             {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
             <span className="text-foreground/30">·</span>
             <code className="font-mono text-[11px]">{document.identifier}</code>
+            <span className="text-foreground/30">·</span>
+            <SendToWorkspaceButton
+              variant="compact"
+              identifier={document.identifier}
+              citation={document.section_label ?? undefined}
+              heading={document.heading}
+              excerpt={body.slice(0, 600)}
+            />
           </div>
           <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground/80">
             <Scale className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50" />
