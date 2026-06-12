@@ -51,7 +51,6 @@ const SECURITY_HEADERS = {
 //                         and a Node server output otherwise. This is the path Vercel's
 //                         TanStack Start docs recommend.
 export default defineConfig({
-  cloudflare: false,
   // Nitro's Vercel preset uses the Build Output API, so vercel.json's `functions`
   // block is ignored — maxDuration must be set here to be written into the
   // function's .vc-config.json. Juri's deep dives chase long chains of
