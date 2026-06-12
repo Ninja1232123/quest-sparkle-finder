@@ -2428,10 +2428,10 @@ main {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 32px;
-    max-width: 1440px;
+    gap: clamp(20px, 3vw, 56px);
+    max-width: none;
     margin: -110px auto 0;
-    padding: 0 24px 32px;
+    padding: 0 clamp(12px, 1.4vw, 28px) 32px;
     position: relative;
     z-index: 10;
   }
@@ -2446,7 +2446,7 @@ main {
   .home-const-aside {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 280px;
+    max-width: clamp(280px, 28vw, 460px);
     padding-top: 130px; /* drop below the ribbon overlap so text sits in parchment */
   }
 
