@@ -2083,6 +2083,78 @@ main {
   .am-header .cb-tab[data-active="true"] { color: #fbf6e8; background: rgba(200,162,75,0.24); border-color: #e7cd7e; }
   .am-header .cb-tab.soon { color: #8b9bbd; border-color: rgba(200,162,75,0.3); }
 
+  /* ── Codex-styled dropdown panels for the header (NavGroupTab + ToolsMenu).
+     Replaces the parchment `bg-background` panels that clashed against navy. */
+  .am-dropdown {
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(231,205,126,0.10) 0%, transparent 60%),
+      linear-gradient(180deg, #0c2052 0%, #0a1a47 70%, #081640 100%);
+    border: 1px solid rgba(200,162,75,0.55);
+    border-radius: 12px;
+    box-shadow:
+      0 24px 60px -18px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(0,0,0,0.4) inset,
+      0 1px 0 rgba(255,255,255,0.04) inset;
+    color: #e6ecf7;
+  }
+  .am-dropdown-head {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(200,162,75,0.28);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+  .am-dropdown-head-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fbf6e8;
+    letter-spacing: 0.01em;
+  }
+  .am-dropdown-head-sub {
+    margin-top: 4px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #c2cde6;
+  }
+  .am-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: #d6dff2;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .am-dropdown-item:hover {
+    background: rgba(200,162,75,0.14);
+    color: #fbf6e8;
+  }
+  .am-dropdown-item.is-soon { color: #8b9bbd; }
+  .am-dropdown-item .ami-desc {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #9fabcb;
+    margin-top: 2px;
+  }
+  .am-dropdown-soon-badge {
+    margin-left: auto;
+    border-radius: 999px;
+    border: 1px solid rgba(200,162,75,0.5);
+    background: rgba(200,162,75,0.15);
+    padding: 2px 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #e7cd7e;
+  }
+
   /* ── Condensed nav: flag stripe, primary-row actions, codebook "Library" strip ── */
   .am-flagstripe {
     height: 4px;
