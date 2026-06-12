@@ -41,7 +41,7 @@ function OpinionReader() {
   const { sources, opinion } = Route.useLoaderData();
   // Old reporter text — split into paragraphs where blank lines exist, else
   // fall back to one block (whitespace preserved by the prose container).
-  const paras = opinion.body_text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paras = opinion.body_text.split(/\n{2,}/).map((p: string) => p.trim()).filter(Boolean);
 
   return (
     <ResearchShell sources={sources} centerMaxWidth="max-w-3xl">
@@ -57,7 +57,7 @@ function OpinionReader() {
       </header>
 
       <article className="prose-opinion max-w-none whitespace-pre-wrap font-serif text-[1.02rem] leading-[1.75] text-foreground/90">
-        {paras.length > 1 ? paras.map((p, i) => <p key={i} className="mb-4">{p}</p>) : opinion.body_text}
+        {paras.length > 1 ? paras.map((p: string, i: number) => <p key={i} className="mb-4">{p}</p>) : opinion.body_text}
       </article>
 
       <p className="mt-10 border-t border-border/50 pt-4 text-[12px] leading-relaxed text-muted-foreground">
