@@ -61,6 +61,7 @@ function OpinionBody({ text }: { text: string }) {
 
 function CaseReaderPage() {
   const { opinion } = Route.useLoaderData();
+  const { clusterId } = Route.useParams();
 
   if (!opinion) {
     return (
