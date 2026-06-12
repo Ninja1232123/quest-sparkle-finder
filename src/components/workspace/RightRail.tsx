@@ -9,6 +9,8 @@ import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit 
 import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { ResultCard, ResultSkeleton, type CorpusHit } from "./ResultCard";
+import { ProposalCard, type ProposalPayload } from "./ProposalCard";
+import type { PinDraft } from "./PinDialog";
 import { Search, MessageSquare, Maximize2, Minimize2, X, Square } from "lucide-react";
 
 type Mode = "dock" | "modal";
@@ -22,6 +24,8 @@ type Props = {
   initialTab?: Tab;
   onModeChange: (m: Mode) => void;
   onAddToNotes: (hit: CorpusHit) => void;
+  onPin: (draft: PinDraft) => void;
+  onAddQuestion: (text: string) => Promise<void> | void;
   seedPrompt?: string;
 };
 
@@ -48,11 +52,20 @@ export function RightRail(props: Props) {
 }
 
 function RailInner({
-  threadId, transport, initialMessages, mode, initialTab = "assistant", onModeChange, onAddToNotes, seedPrompt,
+  threadId, transport, initialMessages, mode, initialTab = "assistant", onModeChange, onAddToNotes, onPin, onAddQuestion, seedPrompt,
 }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const chat = useChat({ id: threadId, messages: initialMessages, transport });
   const seededRef = useState({ done: false })[0];
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  const dismiss = (id: string) => setDismissed((s) => new Set(s).add(id));
+  const markAccepted = (id: string) => setAccepted((s) => new Set(s).add(id));
+
+  const runSuggestedSearch = (q: string, source?: string) => {
+    setTab("search");
+    window.dispatchEvent(new CustomEvent("workspace:run-search", { detail: { q, source } }));
+  };
   useEffect(() => {
     if (seedPrompt && !seededRef.done && chat.messages.length === 0) {
       seededRef.done = true;
@@ -85,9 +98,17 @@ function RailInner({
 
       <div className="min-h-0 flex-1">
         {tab === "assistant" ? (
-          <AssistantPane chat={chat} />
+          <AssistantPane
+            chat={chat}
+            dismissed={dismissed}
+            accepted={accepted}
+            onDismiss={dismiss}
+            onRunSearch={(q, source, id) => { markAccepted(id); runSuggestedSearch(q, source); }}
+            onOpenPin={(draft, id) => { markAccepted(id); onPin(draft); }}
+            onAddQuestion={async (text, id) => { markAccepted(id); await onAddQuestion(text); }}
+          />
         ) : (
-          <SearchPane onAddToNotes={onAddToNotes} onSummarize={(hit) => {
+          <SearchPane onAddToNotes={onAddToNotes} onPin={(hit) => onPin(corpusHitToDraft(hit))} onSummarize={(hit) => {
             setTab("assistant");
             const text = `Summarize ${hit.source.toUpperCase()} ${hit.sectionLabel || hit.identifier} (${hit.heading}) in plain English, then give the operative quote and a one-line "use it when…" note.`;
             void chat.sendMessage({ text });
@@ -96,6 +117,18 @@ function RailInner({
       </div>
     </div>
   );
+}
+
+function corpusHitToDraft(hit: CorpusHit): PinDraft {
+  return {
+    identifier: hit.identifier,
+    citation: `${hit.source.toUpperCase()} ${hit.sectionLabel || hit.identifier}`,
+    heading: hit.heading,
+    stance: "support",
+    quote: hit.snippet,
+    pinCite: "",
+    userNote: "",
+  };
 }
 
 function RailTab({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
@@ -117,7 +150,17 @@ function RailTab({ active, onClick, icon, children }: { active: boolean; onClick
 }
 
 // ── Assistant ─────────────────────────────────────────────────────────────
-function AssistantPane({ chat }: { chat: UseChatHelpers<UIMessage> }) {
+function AssistantPane({
+  chat, dismissed, accepted, onDismiss, onRunSearch, onOpenPin, onAddQuestion,
+}: {
+  chat: UseChatHelpers<UIMessage>;
+  dismissed: Set<string>;
+  accepted: Set<string>;
+  onDismiss: (id: string) => void;
+  onRunSearch: (q: string, source: string | undefined, id: string) => void;
+  onOpenPin: (draft: PinDraft, id: string) => void;
+  onAddQuestion: (text: string, id: string) => Promise<void> | void;
+}) {
   const { messages, sendMessage, status, error, stop } = chat;
   const isLoading = status === "submitted" || status === "streaming";
   return (
@@ -131,7 +174,7 @@ function AssistantPane({ chat }: { chat: UseChatHelpers<UIMessage> }) {
               </div>
               <h3 className="mb-2 text-lg" style={{ fontFamily: "var(--font-serif)" }}>Ask the corpus.</h3>
               <p className="text-xs" style={{ color: "var(--ink-muted)" }}>
-                Cite-check a paragraph, pull a statute, or ask the model to draft language straight into your document.
+                The assistant proposes; you decide. Ask it to find authority for an argument, flag what cuts against you, or suggest searches to run.
               </p>
             </div>
           )}
@@ -143,6 +186,23 @@ function AssistantPane({ chat }: { chat: UseChatHelpers<UIMessage> }) {
                   if (part.type?.startsWith("tool-")) {
                     const tp = part as { type: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown; errorText?: string };
                     const toolName = tp.type.replace(/^tool-/, "");
+                    // Render proposal tools as interactive cards.
+                    if (toolName.startsWith("propose_") && tp.output && typeof tp.output === "object") {
+                      const id = tp.toolCallId ?? `${m.id}-${i}`;
+                      const payload = tp.output as ProposalPayload;
+                      return (
+                        <ProposalCard
+                          key={id}
+                          payload={payload}
+                          dismissed={dismissed.has(id)}
+                          accepted={accepted.has(id)}
+                          onDismiss={() => onDismiss(id)}
+                          onRunSearch={(q, source) => onRunSearch(q, source, id)}
+                          onOpenPin={(draft) => onOpenPin(draft, id)}
+                          onAddQuestion={(text) => onAddQuestion(text, id)}
+                        />
+                      );
+                    }
                     return (
                       <Tool key={tp.toolCallId ?? i} defaultOpen={false}>
                         <ToolHeader type={toolName as `tool-${string}`} state={(tp.state ?? "input-available") as "input-streaming" | "input-available" | "output-available" | "output-error"} />
@@ -200,7 +260,7 @@ const SOURCES = [
   { id: "const", label: "CONST" },
 ] as const;
 
-function SearchPane({ onAddToNotes, onSummarize }: { onAddToNotes: (h: CorpusHit) => void; onSummarize: (h: CorpusHit) => void }) {
+function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: CorpusHit) => void; onSummarize: (h: CorpusHit) => void; onPin: (h: CorpusHit) => void }) {
   const [q, setQ] = useState("");
   const [source, setSource] = useState<string | null>(null);
   const [hits, setHits] = useState<CorpusHit[] | null>(null);
@@ -208,12 +268,15 @@ function SearchPane({ onAddToNotes, onSummarize }: { onAddToNotes: (h: CorpusHit
   const [err, setErr] = useState<string | null>(null);
   const run = useServerFn(searchCorpus);
 
-  const submit = async () => {
-    const query = q.trim();
+  const submit = async (override?: { q?: string; source?: string | null }) => {
+    const query = (override?.q ?? q).trim();
     if (query.length < 2) return;
+    if (override?.q !== undefined) setQ(override.q);
+    if (override?.source !== undefined) setSource(override.source);
+    const useSource = override?.source !== undefined ? override.source : source;
     setLoading(true); setErr(null);
     try {
-      const rows = await run({ data: { q: query, source, limit: 15 } });
+      const rows = await run({ data: { q: query, source: useSource, limit: 15 } });
       setHits(rows as CorpusHit[]);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Search failed");
@@ -222,6 +285,17 @@ function SearchPane({ onAddToNotes, onSummarize }: { onAddToNotes: (h: CorpusHit
       setLoading(false);
     }
   };
+
+  // Listen for AI-proposed searches the user accepted
+  useEffect(() => {
+    const onRun = (e: Event) => {
+      const detail = (e as CustomEvent<{ q: string; source?: string }>).detail;
+      void submit({ q: detail.q, source: detail.source ?? null });
+    };
+    window.addEventListener("workspace:run-search", onRun);
+    return () => window.removeEventListener("workspace:run-search", onRun);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -276,7 +350,7 @@ function SearchPane({ onAddToNotes, onSummarize }: { onAddToNotes: (h: CorpusHit
         {!loading && hits && hits.length > 0 && (
           <div className="space-y-2">
             {hits.map((h) => (
-              <ResultCard key={h.identifier} hit={h} onAddToNotes={onAddToNotes} onSummarize={onSummarize} />
+              <ResultCard key={h.identifier} hit={h} onAddToNotes={onAddToNotes} onSummarize={onSummarize} onPin={onPin} />
             ))}
           </div>
         )}
