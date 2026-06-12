@@ -12,9 +12,9 @@ export const Route = createFileRoute("/usc")({
   head: () => ({
     meta: [
       { title: "U.S. Code · Self-Law" },
-      { name: "description", content: "Federal statutory law, organized by title." },
+      { name: "description", content: "Browse the complete United States Code — federal statutory law organized by title, with margin notes and cross-links to regulations." },
       { property: "og:title", content: "U.S. Code · Self-Law" },
-      { property: "og:description", content: "Federal statutory law, organized by title." },
+      { property: "og:description", content: "Browse the complete United States Code — federal statutory law organized by title, with margin notes and cross-links to regulations." },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/usc" }],
   }),

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/how-it-works")({
       {
         name: "description",
         content:
-          "A five-step visual walkthrough: search every U.S. law at once, read the real text, jot margin notes that assemble into a citation-backed draft, and compare sources side by side.",
+          "Search U.S. law, read the real text, write margin notes that become a citation-backed draft, and compare sources side by side.",
       },
       { property: "og:title", content: "How Self-Law works" },
       { property: "og:description", content: "Read the law, make it yours — in five steps." },
