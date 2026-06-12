@@ -155,21 +155,19 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-border/60 bg-background p-2 shadow-[var(--shadow-warm)]"
+          className="am-dropdown absolute right-0 top-full z-50 mt-1 w-80 p-2"
           role="menu"
         >
           {TOOLS.filter((t) => !t.authRequired || signedIn).map((t) => (
             <Link
               key={t.href}
               to={t.href as never}
-              className="flex items-start gap-2.5 rounded-md px-3 py-2 hover:bg-muted"
+              className="am-dropdown-item items-start"
             >
-              <t.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/60" />
+              <t.icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "#c8a24b" }} />
               <div className="min-w-0">
-                <div className="font-display text-[13px] font-semibold text-foreground">
-                  {t.label}
-                </div>
-                <div className="text-xs leading-snug text-foreground/55">{t.description}</div>
+                <div style={{ fontWeight: 700, color: "#fbf6e8" }}>{t.label}</div>
+                <div className="ami-desc">{t.description}</div>
               </div>
             </Link>
           ))}
@@ -179,10 +177,11 @@ function ToolsMenu({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () =
                 setOpen(false);
                 onSignOut();
               }}
-              className="mt-1 flex w-full items-center gap-2.5 rounded-md border-t border-border/40 px-3 py-2 pt-3 text-left hover:bg-muted"
+              className="am-dropdown-item mt-1 w-full text-left"
+              style={{ borderTop: "1px solid rgba(200,162,75,0.28)", borderRadius: 0, paddingTop: 12 }}
             >
-              <LogOut className="h-3.5 w-3.5 text-foreground/60" />
-              <span className="font-display text-xs text-foreground/75">Sign out</span>
+              <LogOut className="h-3.5 w-3.5" style={{ color: "#c8a24b" }} />
+              <span>Sign out</span>
             </button>
           )}
         </div>
