@@ -84,31 +84,29 @@ function NavGroupTab({ group }: { group: NavGroup }) {
 
       {open && (
         <div
-          className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-border/60 bg-background shadow-[var(--shadow-warm)]"
+          className="am-dropdown absolute left-0 top-full z-50 mt-1 w-80"
           role="menu"
         >
           <div
-            className="rounded-t-xl px-4 pt-3 pb-2"
+            className="am-dropdown-head"
             style={{
-              backgroundImage: `linear-gradient(135deg, ${group.accent}18 0%, transparent 65%)`,
+              backgroundImage: `linear-gradient(135deg, ${group.accent}33 0%, transparent 70%)`,
             }}
           >
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: group.accent }} />
-              <span className="font-display text-sm font-semibold">{group.label}</span>
+              <span className="am-dropdown-head-title">{group.label}</span>
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-foreground/65">{group.tagline}</p>
+            <p className="am-dropdown-head-sub">{group.tagline}</p>
           </div>
-          <div className="border-t border-border/40 px-2 py-2">
+          <div className="px-2 py-2">
             {group.items.map((it) => {
               const isSoon = it.status === "soon";
               return (
                 <Link
                   key={it.href + it.label}
                   to={it.href as never}
-                  className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] hover:bg-muted ${
-                    isSoon ? "text-foreground/50" : "text-foreground/80 hover:text-foreground"
-                  }`}
+                  className={`am-dropdown-item ${isSoon ? "is-soon" : ""}`}
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -117,9 +115,7 @@ function NavGroupTab({ group }: { group: NavGroup }) {
                   />
                   <span className="min-w-0 truncate">{it.label}</span>
                   {isSoon && (
-                    <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ochre">
-                      soon
-                    </span>
+                    <span className="am-dropdown-soon-badge">soon</span>
                   )}
                 </Link>
               );
