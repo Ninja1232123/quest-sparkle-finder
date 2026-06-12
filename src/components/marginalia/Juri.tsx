@@ -352,6 +352,23 @@ export function Juri() {
                 </button>
               )}
               {messages.length > 0 && view === "chat" && (
+                <>
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={continueInWorkspace}
+                      disabled={handoffLoading}
+                      className="juri-close-btn"
+                      aria-label="Continue in workspace"
+                      title="Continue in workspace"
+                    >
+                      {handoffLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ArrowUpRightSquare className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
                 <button
                   type="button"
                   onClick={() => { setMessages([]); sessionStorage.removeItem(SESSION_KEY); }}
@@ -361,6 +378,7 @@ export function Juri() {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
+                </>
               )}
               <button
                 type="button"
