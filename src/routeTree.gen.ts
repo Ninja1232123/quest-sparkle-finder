@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as WhitepaperRouteImport } from './routes/whitepaper'
 import { Route as UscRouteImport } from './routes/usc'
 import { Route as UccRouteImport } from './routes/ucc'
@@ -41,10 +42,12 @@ import { Route as AgencyRouteImport } from './routes/agency'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
 import { Route as RecordIndexRouteImport } from './routes/record.index'
 import { Route as OutcomesIndexRouteImport } from './routes/outcomes.index'
 import { Route as CodeIndexRouteImport } from './routes/code.index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
+import { Route as WorkspaceThreadIdRouteImport } from './routes/workspace.$threadId'
 import { Route as TopicSlugRouteImport } from './routes/topic.$slug'
 import { Route as RecordSlugRouteImport } from './routes/record.$slug'
 import { Route as CompareDiffRouteImport } from './routes/compare_.diff'
@@ -53,6 +56,7 @@ import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as CasesIdRouteImport } from './routes/cases.$id'
 import { Route as CaseClusterIdRouteImport } from './routes/case.$clusterId'
 import { Route as OutcomesStatesIndexRouteImport } from './routes/outcomes.states.index'
+import { Route as WorkspaceDocIdRouteImport } from './routes/workspace.doc.$id'
 import { Route as ForumSlugIdRouteImport } from './routes/forum_.$slug.$id'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
 import { Route as ApiWorkspaceChatRouteImport } from './routes/api/workspace/chat'
@@ -74,6 +78,11 @@ import { Route as OutcomesFederalCourtCourtIndexRouteImport } from './routes/out
 import { Route as OutcomesFederalCourtCourtCasetypeRouteImport } from './routes/outcomes.federal.court.$court.$casetype'
 import { Route as ApiPublicV1DocSplatRouteImport } from './routes/api/public/v1/doc/$'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WhitepaperRoute = WhitepaperRouteImport.update({
   id: '/whitepaper',
   path: '/whitepaper',
@@ -234,6 +243,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
 const RecordIndexRoute = RecordIndexRouteImport.update({
   id: '/record/',
   path: '/record/',
@@ -253,6 +267,11 @@ const CasesIndexRoute = CasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceThreadIdRoute = WorkspaceThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => WorkspaceRoute,
 } as any)
 const TopicSlugRoute = TopicSlugRouteImport.update({
   id: '/topic/$slug',
@@ -293,6 +312,11 @@ const OutcomesStatesIndexRoute = OutcomesStatesIndexRouteImport.update({
   id: '/outcomes/states/',
   path: '/outcomes/states/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceDocIdRoute = WorkspaceDocIdRouteImport.update({
+  id: '/doc/$id',
+  path: '/doc/$id',
+  getParentRoute: () => WorkspaceRoute,
 } as any)
 const ForumSlugIdRoute = ForumSlugIdRouteImport.update({
   id: '/forum_/$slug/$id',
@@ -438,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/workspace': typeof WorkspaceRouteWithChildren
   '/case/$clusterId': typeof CaseClusterIdRoute
   '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -445,13 +470,16 @@ export interface FileRoutesByFullPath {
   '/compare/diff': typeof CompareDiffRoute
   '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/workspace/$threadId': typeof WorkspaceThreadIdRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
   '/record/': typeof RecordIndexRoute
+  '/workspace/': typeof WorkspaceIndexRoute
   '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
+  '/workspace/doc/$id': typeof WorkspaceDocIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
@@ -511,13 +539,16 @@ export interface FileRoutesByTo {
   '/compare/diff': typeof CompareDiffRoute
   '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/workspace/$threadId': typeof WorkspaceThreadIdRoute
   '/cases': typeof CasesIndexRoute
   '/code': typeof CodeIndexRoute
   '/outcomes': typeof OutcomesIndexRoute
   '/record': typeof RecordIndexRoute
+  '/workspace': typeof WorkspaceIndexRoute
   '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
+  '/workspace/doc/$id': typeof WorkspaceDocIdRoute
   '/outcomes/states': typeof OutcomesStatesIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
@@ -571,6 +602,7 @@ export interface FileRoutesById {
   '/ucc': typeof UccRoute
   '/usc': typeof UscRoute
   '/whitepaper': typeof WhitepaperRoute
+  '/workspace': typeof WorkspaceRouteWithChildren
   '/case/$clusterId': typeof CaseClusterIdRoute
   '/cases/$id': typeof CasesIdRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -578,13 +610,16 @@ export interface FileRoutesById {
   '/compare_/diff': typeof CompareDiffRoute
   '/record/$slug': typeof RecordSlugRoute
   '/topic/$slug': typeof TopicSlugRoute
+  '/workspace/$threadId': typeof WorkspaceThreadIdRoute
   '/cases/': typeof CasesIndexRoute
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
   '/record/': typeof RecordIndexRoute
+  '/workspace/': typeof WorkspaceIndexRoute
   '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum_/$slug/$id': typeof ForumSlugIdRoute
+  '/workspace/doc/$id': typeof WorkspaceDocIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/export-documents': typeof ApiPublicV1ExportDocumentsRoute
@@ -639,6 +674,7 @@ export interface FileRouteTypes {
     | '/ucc'
     | '/usc'
     | '/whitepaper'
+    | '/workspace'
     | '/case/$clusterId'
     | '/cases/$id'
     | '/checkout/return'
@@ -646,13 +682,16 @@ export interface FileRouteTypes {
     | '/compare/diff'
     | '/record/$slug'
     | '/topic/$slug'
+    | '/workspace/$threadId'
     | '/cases/'
     | '/code/'
     | '/outcomes/'
     | '/record/'
+    | '/workspace/'
     | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum/$slug/$id'
+    | '/workspace/doc/$id'
     | '/outcomes/states/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
@@ -712,13 +751,16 @@ export interface FileRouteTypes {
     | '/compare/diff'
     | '/record/$slug'
     | '/topic/$slug'
+    | '/workspace/$threadId'
     | '/cases'
     | '/code'
     | '/outcomes'
     | '/record'
+    | '/workspace'
     | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum/$slug/$id'
+    | '/workspace/doc/$id'
     | '/outcomes/states'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
@@ -771,6 +813,7 @@ export interface FileRouteTypes {
     | '/ucc'
     | '/usc'
     | '/whitepaper'
+    | '/workspace'
     | '/case/$clusterId'
     | '/cases/$id'
     | '/checkout/return'
@@ -778,13 +821,16 @@ export interface FileRouteTypes {
     | '/compare_/diff'
     | '/record/$slug'
     | '/topic/$slug'
+    | '/workspace/$threadId'
     | '/cases/'
     | '/code/'
     | '/outcomes/'
     | '/record/'
+    | '/workspace/'
     | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum_/$slug/$id'
+    | '/workspace/doc/$id'
     | '/outcomes/states/'
     | '/api/public/payments/webhook'
     | '/api/public/v1/export-documents'
@@ -838,6 +884,7 @@ export interface RootRouteChildren {
   UccRoute: typeof UccRoute
   UscRoute: typeof UscRoute
   WhitepaperRoute: typeof WhitepaperRoute
+  WorkspaceRoute: typeof WorkspaceRouteWithChildren
   CaseClusterIdRoute: typeof CaseClusterIdRoute
   CasesIdRoute: typeof CasesIdRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
@@ -874,6 +921,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/whitepaper': {
       id: '/whitepaper'
       path: '/whitepaper'
@@ -1098,6 +1152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workspace/': {
+      id: '/workspace/'
+      path: '/'
+      fullPath: '/workspace/'
+      preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
     '/record/': {
       id: '/record/'
       path: '/record'
@@ -1125,6 +1186,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cases/'
       preLoaderRoute: typeof CasesIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$threadId': {
+      id: '/workspace/$threadId'
+      path: '/$threadId'
+      fullPath: '/workspace/$threadId'
+      preLoaderRoute: typeof WorkspaceThreadIdRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/topic/$slug': {
       id: '/topic/$slug'
@@ -1181,6 +1249,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/outcomes/states/'
       preLoaderRoute: typeof OutcomesStatesIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/workspace/doc/$id': {
+      id: '/workspace/doc/$id'
+      path: '/doc/$id'
+      fullPath: '/workspace/doc/$id'
+      preLoaderRoute: typeof WorkspaceDocIdRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/forum_/$slug/$id': {
       id: '/forum_/$slug/$id'
@@ -1325,6 +1400,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface WorkspaceRouteChildren {
+  WorkspaceThreadIdRoute: typeof WorkspaceThreadIdRoute
+  WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceDocIdRoute: typeof WorkspaceDocIdRoute
+}
+
+const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceThreadIdRoute: WorkspaceThreadIdRoute,
+  WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceDocIdRoute: WorkspaceDocIdRoute,
+}
+
+const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
+  WorkspaceRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1358,6 +1449,7 @@ const rootRouteChildren: RootRouteChildren = {
   UccRoute: UccRoute,
   UscRoute: UscRoute,
   WhitepaperRoute: WhitepaperRoute,
+  WorkspaceRoute: WorkspaceRouteWithChildren,
   CaseClusterIdRoute: CaseClusterIdRoute,
   CasesIdRoute: CasesIdRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,

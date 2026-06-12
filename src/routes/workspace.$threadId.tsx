@@ -50,7 +50,7 @@ function WorkspaceThreadPage() {
     () =>
       new DefaultChatTransport({
         api: "/api/workspace/chat",
-        headers: () => (token ? { Authorization: `Bearer ${token}` } : {}),
+        headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
         body: { threadId },
       }),
     [threadId, token],
