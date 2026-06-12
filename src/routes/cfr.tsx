@@ -15,6 +15,7 @@ export const Route = createFileRoute("/cfr")({
       { name: "description", content: "Browse the Code of Federal Regulations — administrative rules that implement federal statutes, organized by title and part." },
       { property: "og:title", content: "Code of Federal Regulations · Self-Law" },
       { property: "og:description", content: "Browse the Code of Federal Regulations — administrative rules that implement federal statutes, organized by title and part." },
+      { property: "og:url", content: "https://self-law.org/cfr" },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/cfr" }],
   }),

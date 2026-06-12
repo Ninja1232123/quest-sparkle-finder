@@ -15,6 +15,7 @@ export const Route = createFileRoute("/usc")({
       { name: "description", content: "Browse the complete United States Code — federal statutory law organized by title, with margin notes and cross-links to regulations." },
       { property: "og:title", content: "U.S. Code · Self-Law" },
       { property: "og:description", content: "Browse the complete United States Code — federal statutory law organized by title, with margin notes and cross-links to regulations." },
+      { property: "og:url", content: "https://self-law.org/usc" },
     ],
     links: [{ rel: "canonical", href: "https://self-law.org/usc" }],
   }),
