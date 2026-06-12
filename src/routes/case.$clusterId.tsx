@@ -138,6 +138,12 @@ function CaseReaderPage() {
               <ExternalLink className="h-3 w-3" />
               Full opinion on CourtListener
             </a>
+            <SendToWorkspaceButton
+              identifier={`case/${cluster_id}`}
+              citation={case_name}
+              heading={courtLabel ? `${courtLabel}${year ? ` · ${year}` : ""}` : null}
+              excerpt={text ? text.slice(0, 800) : undefined}
+            />
           </div>
         </header>
 
