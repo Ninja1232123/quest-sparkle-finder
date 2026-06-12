@@ -169,6 +169,7 @@ function Desk({
           mode={rightMode}
           onModeChange={setRightMode}
           onAddToNotes={handleAddToNotes}
+          seedPrompt={seedPrompt}
         />
       </div>
     </div>
