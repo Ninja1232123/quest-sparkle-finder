@@ -108,7 +108,7 @@ function RecordIndex() {
         </div>
       ) : (
         <ul className="divide-y divide-border/60 overflow-hidden rounded-2xl border bg-card">
-          {items.map((o) => (
+          {items.map((o: any) => (
             <li key={o.slug}>
               <Link to="/record/$slug" params={{ slug: o.slug }} className="group flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/50">
                 <div className="min-w-0 flex-1">
