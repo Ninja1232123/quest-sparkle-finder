@@ -61,7 +61,7 @@ function FamilyPage() {
 
       <h2 className="mb-3 font-display text-lg font-semibold">By claim type</h2>
       <ul className="divide-y divide-border/60 overflow-hidden rounded-2xl border bg-card">
-        {caseTypes.map((ct) => (
+        {caseTypes.map((ct: any) => (
           <li key={ct.slug}>
             <Link to={ct.slug as never} className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/50">
               <div className="min-w-0 flex-1">
