@@ -183,6 +183,35 @@ function CaseFile() {
     URL.revokeObjectURL(url);
   }
 
+  const { user } = useAuth();
+  const seed = useServerFn(seedThreadFromHandoff);
+  const [sending, setSending] = useState(false);
+  async function sendToWorkspace() {
+    if (!c || !user || sending) return;
+    setSending(true);
+    try {
+      const lines = [
+        `I'm working on **${c.name}**. Here are my margin notes and the authority I've pulled so far:`,
+        "",
+      ];
+      blocks.forEach((b, i) => {
+        lines.push(`${i + 1}. ${b.text}`);
+        for (const cite of b.cites) lines.push(`   — \`${cite.identifier}\` — ${cite.sectionLabel} ${cite.heading}`);
+      });
+      lines.push("", "Please use `fetch_document` on each identifier above to read them in full, then help me reason through the case, find any missing authority, and draft what I need.");
+      const res = await seed({
+        data: {
+          title: `Re: ${c.name}`.slice(0, 80),
+          messages: [{ role: "user", parts: [{ type: "text", text: lines.join("\n") }] }],
+        },
+      });
+      navigate({ to: "/workspace/$threadId", params: { threadId: res.threadId } });
+    } catch (e) {
+      console.error("[case → workspace] failed:", e);
+      setSending(false);
+    }
+  }
+
   function del() {
     if (typeof window !== "undefined" && window.confirm("Delete this case? Your margin notes stay; only this folder and its ordering go.")) {
       cb.remove(id);
