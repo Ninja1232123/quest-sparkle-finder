@@ -94,7 +94,7 @@ function CaseTypePage() {
             The same claim resolves differently across districts. Plaintiff-win rate among merits judgments, busiest courts first.
           </p>
           <ul className="divide-y divide-border/60 overflow-hidden rounded-2xl border bg-card">
-            {courts.map((ct: { slug: string; court_name: string; total_cases: number; merits_cases: number; plaintiff_win_rate?: number | null }) => (
+            {courts.map((ct: any) => (
               <li key={ct.slug}>
                 <Link to={ct.slug as never} className="group flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/50">
                   <div className="min-w-0 flex-1">
