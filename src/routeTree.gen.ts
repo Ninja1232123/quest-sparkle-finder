@@ -55,6 +55,7 @@ import { Route as CaseClusterIdRouteImport } from './routes/case.$clusterId'
 import { Route as OutcomesStatesIndexRouteImport } from './routes/outcomes.states.index'
 import { Route as ForumSlugIdRouteImport } from './routes/forum_.$slug.$id'
 import { Route as CodeSourceSourceRouteImport } from './routes/code.source.$source'
+import { Route as ApiWorkspaceChatRouteImport } from './routes/api/workspace/chat'
 import { Route as OutcomesStatesStateIndexRouteImport } from './routes/outcomes.states.$state.index'
 import { Route as OutcomesFederalFamilyIndexRouteImport } from './routes/outcomes.federal.$family.index'
 import { Route as OutcomesStatesStateCourtRouteImport } from './routes/outcomes.states.$state.$court'
@@ -303,6 +304,11 @@ const CodeSourceSourceRoute = CodeSourceSourceRouteImport.update({
   path: '/code/source/$source',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWorkspaceChatRoute = ApiWorkspaceChatRouteImport.update({
+  id: '/api/workspace/chat',
+  path: '/api/workspace/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OutcomesStatesStateIndexRoute =
   OutcomesStatesStateIndexRouteImport.update({
     id: '/outcomes/states/$state/',
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
   '/record/': typeof RecordIndexRoute
+  '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/code': typeof CodeIndexRoute
   '/outcomes': typeof OutcomesIndexRoute
   '/record': typeof RecordIndexRoute
+  '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states': typeof OutcomesStatesIndexRoute
@@ -574,6 +582,7 @@ export interface FileRoutesById {
   '/code/': typeof CodeIndexRoute
   '/outcomes/': typeof OutcomesIndexRoute
   '/record/': typeof RecordIndexRoute
+  '/api/workspace/chat': typeof ApiWorkspaceChatRoute
   '/code/source/$source': typeof CodeSourceSourceRoute
   '/forum_/$slug/$id': typeof ForumSlugIdRoute
   '/outcomes/states/': typeof OutcomesStatesIndexRoute
@@ -641,6 +650,7 @@ export interface FileRouteTypes {
     | '/code/'
     | '/outcomes/'
     | '/record/'
+    | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/outcomes/states/'
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/code'
     | '/outcomes'
     | '/record'
+    | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum/$slug/$id'
     | '/outcomes/states'
@@ -771,6 +782,7 @@ export interface FileRouteTypes {
     | '/code/'
     | '/outcomes/'
     | '/record/'
+    | '/api/workspace/chat'
     | '/code/source/$source'
     | '/forum_/$slug/$id'
     | '/outcomes/states/'
@@ -837,6 +849,7 @@ export interface RootRouteChildren {
   CodeIndexRoute: typeof CodeIndexRoute
   OutcomesIndexRoute: typeof OutcomesIndexRoute
   RecordIndexRoute: typeof RecordIndexRoute
+  ApiWorkspaceChatRoute: typeof ApiWorkspaceChatRoute
   CodeSourceSourceRoute: typeof CodeSourceSourceRoute
   ForumSlugIdRoute: typeof ForumSlugIdRoute
   OutcomesStatesIndexRoute: typeof OutcomesStatesIndexRoute
@@ -1183,6 +1196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeSourceSourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/workspace/chat': {
+      id: '/api/workspace/chat'
+      path: '/api/workspace/chat'
+      fullPath: '/api/workspace/chat'
+      preLoaderRoute: typeof ApiWorkspaceChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/outcomes/states/$state/': {
       id: '/outcomes/states/$state/'
       path: '/outcomes/states/$state'
@@ -1349,6 +1369,7 @@ const rootRouteChildren: RootRouteChildren = {
   CodeIndexRoute: CodeIndexRoute,
   OutcomesIndexRoute: OutcomesIndexRoute,
   RecordIndexRoute: RecordIndexRoute,
+  ApiWorkspaceChatRoute: ApiWorkspaceChatRoute,
   CodeSourceSourceRoute: CodeSourceSourceRoute,
   ForumSlugIdRoute: ForumSlugIdRoute,
   OutcomesStatesIndexRoute: OutcomesStatesIndexRoute,
