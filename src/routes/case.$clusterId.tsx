@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/marginalia/SiteFooter";
 import { SITE_BRAND } from "@/lib/doc-seo";
 import { ExternalLink, Landmark, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { SendToWorkspaceButton } from "@/components/workspace/SendToWorkspaceButton";
 
 // Words of opinion text to show per page chunk.
 const CHARS_PER_PAGE = 12000;
