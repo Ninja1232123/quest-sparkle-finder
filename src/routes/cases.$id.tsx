@@ -5,6 +5,10 @@ import { useCases, loadNote, isInline, type CaseItem, type CaseItemRef, type Not
 import { segmentBody, citationSpans, operativeParagraphs, type LegalPara } from "@/lib/legal-structure";
 import { ArrowLeft, Scale, GripVertical, Trash2, Download, Printer, ExternalLink, PenLine, BookOpen, X, Layers } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { seedThreadFromHandoff } from "@/lib/workspace.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/cases/$id")({
   loader: async () => {
@@ -179,6 +183,35 @@ function CaseFile() {
     URL.revokeObjectURL(url);
   }
 
+  const { user } = useAuth();
+  const seed = useServerFn(seedThreadFromHandoff);
+  const [sending, setSending] = useState(false);
+  async function sendToWorkspace() {
+    if (!c || !user || sending) return;
+    setSending(true);
+    try {
+      const lines = [
+        `I'm working on **${c.name}**. Here are my margin notes and the authority I've pulled so far:`,
+        "",
+      ];
+      blocks.forEach((b, i) => {
+        lines.push(`${i + 1}. ${b.text}`);
+        for (const cite of b.cites) lines.push(`   — \`${cite.identifier}\` — ${cite.sectionLabel} ${cite.heading}`);
+      });
+      lines.push("", "Please use `fetch_document` on each identifier above to read them in full, then help me reason through the case, find any missing authority, and draft what I need.");
+      const res = await seed({
+        data: {
+          title: `Re: ${c.name}`.slice(0, 80),
+          messages: [{ role: "user", parts: [{ type: "text", text: lines.join("\n") }] }],
+        },
+      });
+      navigate({ to: "/workspace/$threadId", params: { threadId: res.threadId } });
+    } catch (e) {
+      console.error("[case → workspace] failed:", e);
+      setSending(false);
+    }
+  }
+
   function del() {
     if (typeof window !== "undefined" && window.confirm("Delete this case? Your margin notes stay; only this folder and its ordering go.")) {
       cb.remove(id);
@@ -218,6 +251,19 @@ function CaseFile() {
           <ArrowLeft className="h-3 w-3" /> The casebook
         </Link>
         <div className="flex shrink-0 items-center gap-1.5">
+          {user && blocks.length > 0 && (
+            <button
+              type="button"
+              onClick={sendToWorkspace}
+              disabled={sending}
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 hover:shadow-sm disabled:opacity-50"
+              style={{ borderColor: "rgba(200,162,75,0.6)", background: "rgba(200,162,75,0.12)" }}
+              aria-label="Send to AI Workspace"
+            >
+              {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Send to Workspace
+            </button>
+          )}
           <button type="button" onClick={exportMd} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs hover:border-foreground/40" aria-label="Download as Markdown">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
