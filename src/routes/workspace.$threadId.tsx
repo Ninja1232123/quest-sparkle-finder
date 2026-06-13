@@ -165,7 +165,7 @@ function Desk({
     const now = Date.now();
     if (now - lastSnapshotAt.current < 60_000) return;
     lastSnapshotAt.current = now;
-    void snap({ data: { threadId, title, bodyMd: body } }).catch(() => {});
+    void snap({ data: { threadId, title: latestRef.current.title, bodyMd: latestRef.current.body } }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [body, threadId]);
 
@@ -260,7 +260,7 @@ function Desk({
       const rows = await loadVersions({ data: { threadId } });
       setVersions(rows as typeof versions);
     } catch { /* ignore */ }
-  }, [loadVersions, threadId, versions]);
+  }, [loadVersions, threadId]);
 
   const handleRestoreVersion = useCallback((v: { title: string | null; body_md: string }) => {
     if (!window.confirm("Replace your current draft with this version? Your current draft is also saved in versions.")) return;
@@ -297,6 +297,8 @@ function Desk({
             initialBody={initialDraft.body}
             saveState={saveState}
             lastSavedAt={savedAt}
+            supportCount={caseItems.filter((i) => i.kind === "authority" && i.stance !== "adverse").length}
+            questionCount={caseItems.filter((i) => i.kind === "question").length}
             onChangeTitle={setTitle}
             onChangeBody={setBody}
             onOpenResearch={() => setRightMode((m) => (m === "dock" ? "modal" : "dock"))}

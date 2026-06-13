@@ -34,7 +34,7 @@ function WorkspaceLayout() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) navigate({ to: "/auth" });
+    if (!user) navigate({ to: "/auth", search: { mode: "login", redirect: "/workspace" } });
   }, [user, loading, navigate]);
 
   async function newSession() {

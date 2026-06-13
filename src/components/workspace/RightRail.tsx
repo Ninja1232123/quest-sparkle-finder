@@ -168,14 +168,27 @@ function AssistantPane({
       <Conversation className="flex-1">
         <ConversationContent>
           {messages.length === 0 && (
-            <div className="mx-auto max-w-md py-10 text-center">
-              <div className="mb-2 text-[10px] tracking-[0.3em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
-                RESEARCH ASSISTANT
+            <div className="mx-auto max-w-sm px-5 py-8">
+              <div className="mb-1 text-[9px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                Research assistant
               </div>
-              <h3 className="mb-2 text-lg" style={{ fontFamily: "var(--font-serif)" }}>Ask the corpus.</h3>
-              <p className="text-xs" style={{ color: "var(--ink-muted)" }}>
-                The assistant proposes; you decide. Ask it to find authority for an argument, flag what cuts against you, or suggest searches to run.
+              <p className="mb-1 text-[15px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
+                The assistant proposes.<br />You decide.
               </p>
+              <p className="mb-5 text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+                Find authority, flag what cuts against you, or surface gaps in your case. It won't touch your draft without asking.
+              </p>
+              <div className="space-y-2">
+                {STARTER_PROMPTS.map((p) => (
+                  <StarterChip
+                    key={p.text}
+                    label={p.label}
+                    sublabel={p.sublabel}
+                    disabled={isLoading}
+                    onClick={() => void sendMessage({ text: p.text })}
+                  />
+                ))}
+              </div>
             </div>
           )}
           {messages.map((m) => (
@@ -356,6 +369,57 @@ function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: Co
         )}
       </div>
     </div>
+  );
+}
+
+// ── Starter prompts ───────────────────────────────────────────────────────
+const STARTER_PROMPTS = [
+  {
+    label: "Find the elements of my claim",
+    sublabel: "What do I need to prove to win?",
+    text: "What are the legal elements I need to establish for this claim? List each one and tell me what law supports it.",
+  },
+  {
+    label: "What will the other side argue?",
+    sublabel: "Know their 12(b)(6) before they file it",
+    text: "What are the strongest arguments the opposing party will raise against my complaint? Include any threshold defenses like standing, limitations, or Twombly/Iqbal plausibility.",
+  },
+  {
+    label: "What's missing from my case board?",
+    sublabel: "Gaps before I can file",
+    text: "Look at the authorities and questions on my case board. What's still missing — what do I still need to establish before this complaint is ready to file?",
+  },
+  {
+    label: "How do I serve this?",
+    sublabel: "FRCP Rule 4 service requirements",
+    text: "What are the service of process requirements for this type of case under FRCP Rule 4? Walk me through who gets served and how.",
+  },
+] as const;
+
+function StarterChip({ label, sublabel, disabled, onClick }: {
+  label: string;
+  sublabel: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="w-full rounded-lg border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-sm disabled:pointer-events-none disabled:opacity-50"
+      style={{
+        borderColor: "var(--rule-card)",
+        background: "var(--paper)",
+      }}
+    >
+      <div className="text-[12px] font-medium leading-snug" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
+        {label}
+      </div>
+      <div className="mt-0.5 text-[10px]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+        {sublabel}
+      </div>
+    </button>
   );
 }
 

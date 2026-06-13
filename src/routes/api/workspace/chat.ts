@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { anthropic } from "@ai-sdk/anthropic";
 
 const SYSTEM = `You are the Marginalia Workspace research assistant for pro se litigants.
 
@@ -34,15 +34,21 @@ async function authenticate(request: Request): Promise<{ userId: string; token: 
   return { userId: data.user.id, token };
 }
 
-function userScopedDataClient(token: string) {
-  // Data tables live in the local data project; reads use that client. We
-  // attach the user's bearer so RLS applies for workspace_* writes/reads.
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+// Workspace tables (threads, messages, case_items) live in the cloud auth project.
+function cloudClient(token: string) {
+  const url = process.env.SUPABASE_AUTH_URL!;
+  const key = process.env.SUPABASE_AUTH_PUBLISHABLE_KEY!;
   return createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+// Corpus data (documents, FTS search) lives in the local self-hosted backend.
+function corpusClient() {
+  const url = process.env.SUPABASE_URL!;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
 export const Route = createFileRoute("/api/workspace/chat")({
@@ -58,10 +64,11 @@ export const Route = createFileRoute("/api/workspace/chat")({
           return new Response("messages and threadId required", { status: 400 });
         }
         const threadId = body.threadId;
-        const supabase = userScopedDataClient(token);
+        const workspace = cloudClient(token);
+        const corpus = corpusClient();
 
         // Verify thread ownership
-        const { data: thread } = await supabase
+        const { data: thread } = await workspace
           .from("workspace_threads")
           .select("id,user_id,title")
           .eq("id", threadId)
@@ -70,10 +77,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
           return new Response("Forbidden", { status: 403 });
         }
 
-        const lovableKey = process.env.LOVABLE_API_KEY;
-        if (!lovableKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
-        const gateway = createLovableAiGatewayProvider(lovableKey);
-        const model = gateway("google/gemini-3-flash-preview");
+        const model = anthropic("claude-sonnet-4-6");
 
         const tools = {
           search_corpus: tool({
@@ -84,7 +88,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
               limit: z.number().int().min(1).max(20).default(8),
             }),
             execute: async ({ q, source, limit }) => {
-              const { data, error } = await supabase.rpc("search_documents_fts", {
+              const { data, error } = await corpus.rpc("search_documents_fts", {
                 p_query: q,
                 p_source: source ?? null,
                 p_limit: limit,
@@ -107,7 +111,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             description: "READ-ONLY: Fetch the full text of one document by identifier (e.g. 'usc/42/1983').",
             inputSchema: z.object({ identifier: z.string() }),
             execute: async ({ identifier }) => {
-              const { data, error } = await supabase
+              const { data, error } = await corpus
                 .from("documents")
                 .select("identifier,source_code,section_label,heading,body_text")
                 .eq("identifier", identifier)
@@ -184,7 +188,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
           onFinish: async ({ messages }) => {
             try {
               // Replace stored messages with the new full transcript (simpler than diffing).
-              await supabase.from("workspace_messages").delete().eq("thread_id", threadId);
+              await workspace.from("workspace_messages").delete().eq("thread_id", threadId);
               const rows = messages.map((m) => ({
                 thread_id: threadId,
                 user_id: userId,
@@ -192,7 +196,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 parts: m.parts,
               }));
               if (rows.length > 0) {
-                await supabase.from("workspace_messages").insert(rows);
+                await workspace.from("workspace_messages").insert(rows);
               }
               // Auto-title from first user message if still default
               if (thread.title === "New session" || thread.title === "Continued from chat") {
@@ -202,13 +206,13 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   .join(" ")
                   .trim();
                 if (text) {
-                  await supabase
+                  await workspace
                     .from("workspace_threads")
                     .update({ title: text.slice(0, 80), last_message_at: new Date().toISOString() })
                     .eq("id", threadId);
                 }
               } else {
-                await supabase
+                await workspace
                   .from("workspace_threads")
                   .update({ last_message_at: new Date().toISOString() })
                   .eq("id", threadId);
