@@ -6,11 +6,12 @@ import { ResearchShell } from "@/components/marginalia/ResearchShell";
 import { SearchBar } from "@/components/marginalia/SearchBar";
 import { SearchSyntax } from "@/components/marginalia/SearchSyntax";
 import { searchDocuments, listSources } from "@/lib/documents.functions";
+import { getOpinionsIndex, type OpinionListItem } from "@/lib/opinions.functions";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { STATE_NAMES } from "@/lib/source-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { useSearchQuota, FREE_DAILY_LIMIT } from "@/hooks/use-search-quota";
-import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Lock } from "lucide-react";
+import { SlidersHorizontal, GitCompare, X, Copy, Check, Network, Languages, Brain, Bell, History, Mic, Wand2, BookmarkPlus, Lock, Scale } from "lucide-react";
 import { ComingSoonCard, ComingSoonHeader } from "@/components/marginalia/ComingSoon";
 const useLocalState = useState;
 
@@ -31,7 +32,7 @@ const SCOPES = [
   { key: "codified", label: "Codified law", blurb: "Constitution, U.S. Code, CFR, UCC, Treasury & IRS manuals", sources: ["const", "usc", "cfr", "ucc", "tfm", "irm"] },
   { key: "primary", label: "Primary sources", blurb: "Federal Register, Statutes at Large, bills & presidential papers", sources: ["register", "statutes-at-large", "bill", "public-papers-president", "statute-compilations", "public-private-law"] },
   { key: "states", label: "State law", blurb: "All 50 states' statutes & constitutions — or pick one", sources: [] },
-  { key: "cases", label: "Court cases", blurb: "Supreme Court opinions — coming soon", sources: [] },
+  { key: "cases", label: "Court cases", blurb: "~28,500 Supreme Court opinions, full text, searchable by case name", sources: [] },
 ] as const;
 
 // State-law jurisdiction picker: people want either all states or their one
@@ -95,11 +96,19 @@ export const Route = createFileRoute("/search")({
   }),
   loader: async ({ deps }) => {
     const sourcesPromise = listSources();
-    // Court cases live in a separate corpus we haven't wired into search yet —
-    // show the coming-soon panel instead of querying document_sections.
-    if (deps.scope === "cases" || !deps.q || deps.q.trim().length < 2) {
+
+    if (deps.scope === "cases") {
       const { sources } = await sourcesPromise;
-      return { hits: [] as Hit[], sources, error: null as string | null };
+      if (!deps.q || deps.q.trim().length < 2) {
+        return { hits: [] as Hit[], sources, error: null as string | null, opinions: [] as OpinionListItem[], opinionTotal: 0 };
+      }
+      const { items, total } = await getOpinionsIndex({ data: { q: deps.q.trim(), page: 0 } });
+      return { hits: [] as Hit[], sources, error: null as string | null, opinions: items, opinionTotal: total };
+    }
+
+    if (!deps.q || deps.q.trim().length < 2) {
+      const { sources } = await sourcesPromise;
+      return { hits: [] as Hit[], sources, error: null as string | null, opinions: [] as OpinionListItem[], opinionTotal: 0 };
     }
 
     // Build websearch-compatible query string.
@@ -118,7 +127,7 @@ export const Route = createFileRoute("/search")({
       sourcesPromise,
     ]);
 
-    return { hits: hits ?? [], sources, error };
+    return { hits: hits ?? [], sources, error, opinions: [] as OpinionListItem[], opinionTotal: 0 };
   },
   component: SearchPage,
   head: ({ match }) => {
@@ -155,7 +164,7 @@ function parseSnippet(snippet: string): React.ReactNode {
 
 function SearchPage() {
   const { q, source, exact, words, exclude, scope } = Route.useSearch();
-  const { hits, sources, error } = Route.useLoaderData();
+  const { hits, sources, error, opinions, opinionTotal } = Route.useLoaderData();
   const navigate = useNavigate();
 
   // ── Freemium gate (the single enforcement point for ALL search paths) ──
@@ -166,15 +175,11 @@ function SearchPage() {
   const { isPro, consume } = useSearchQuota();
   const trimmed = q.trim();
   const consumedFor = useRef<string | null>(null);
-  // The 'cases' scope has no search yet (caselaw is a separate corpus), so it
-  // neither gates nor consumes a quota — it just shows the coming-soon panel.
   const isCases = scope === "cases";
-  // True once auth has resolved and a signed-out visitor has a real query —
-  // we hide results and bounce them to sign-up.
-  const needsAuth = !authLoading && !user && trimmed.length >= 2 && !isCases;
+  const needsAuth = !authLoading && !user && trimmed.length >= 2;
 
   useEffect(() => {
-    if (authLoading || trimmed.length < 2 || isCases) return;
+    if (authLoading || trimmed.length < 2) return;
     if (!user) {
       navigate({ to: "/auth", search: { mode: "signup", redirect: `/search?q=${encodeURIComponent(trimmed)}` } });
       return;
@@ -358,11 +363,6 @@ function SearchPage() {
                 }`}
               >
                 {sc.label}
-                {sc.key === "cases" && (
-                  <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">
-                    soon
-                  </span>
-                )}
               </Link>
             );
           })}
@@ -393,17 +393,38 @@ function SearchPage() {
           </div>
         )}
 
-        {/* Court cases: no search wired yet — show the coming-soon panel. */}
-        {isCases && (
-          <div className="mt-10 rounded-2xl border border-dashed border-border/70 bg-card/40 p-8 text-center">
-            <Network className="mx-auto h-6 w-6 text-muted-foreground" />
-            <h2 className="mt-3 font-display text-xl font-semibold">Court cases are coming</h2>
-            <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
-              Caselaw lives in its own corpus (Supreme Court opinions, with the citation graph
-              tying them to the statutes they interpret). Searching it lands here next — for now,
-              switch to <span className="font-medium text-foreground">Codified law</span> or{" "}
-              <span className="font-medium text-foreground">Primary sources</span>.
-            </p>
+        {/* Court cases — opinion search results */}
+        {isCases && !needsAuth && (
+          <div className="mt-6">
+            {q && trimmed.length >= 2 && (
+              <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="font-display font-semibold text-foreground">{opinionTotal.toLocaleString()}</span>
+                <span>{opinionTotal === 1 ? "opinion" : "opinions"} matching case name</span>
+                <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                  SCOTUS · public domain · full text
+                </span>
+              </div>
+            )}
+            {q && trimmed.length >= 2 && opinions.length === 0 && (
+              <div className="mt-12 text-center">
+                <p className="font-display text-2xl text-foreground/50">No opinions matching "{q}"</p>
+                <p className="mt-2 text-sm text-muted-foreground">Search by case name — try <em>Miranda</em>, <em>Brown</em>, <em>Chevron</em>.</p>
+              </div>
+            )}
+            <div className="space-y-2">
+              {(opinions as OpinionListItem[]).map((op) => (
+                <OpinionCard key={op.slug} op={op} />
+              ))}
+            </div>
+            {!q || trimmed.length < 2 ? (
+              <div className="mt-10 text-center">
+                <Scale className="mx-auto h-6 w-6 text-muted-foreground" />
+                <p className="mt-3 font-display text-lg font-semibold">Search 28,500 Supreme Court opinions</p>
+                <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
+                  Search by case name — <em>Miranda v. Arizona</em>, <em>Marbury v. Madison</em>, <em>Roe v. Wade</em>. Full opinion text opens in the reader.
+                </p>
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -664,6 +685,42 @@ function buildCitation(hit: Hit): string {
   const heading = hit.heading || hit.section_label || hit.identifier;
   if (fmt) return fmt(hit.identifier, heading);
   return `${hit.identifier} — ${heading}`;
+}
+
+function OpinionCard({ op }: { op: OpinionListItem }) {
+  return (
+    <Link
+      to="/record/$slug"
+      params={{ slug: op.slug }}
+      className="group flex items-start gap-4 rounded-2xl border border-border/60 bg-card p-5 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[var(--shadow-warm)]"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {op.us_cite && (
+            <span className="citation-tag rounded-full border border-foreground/20 px-2 py-0.5 text-foreground/60 shrink-0">
+              {op.us_cite}
+            </span>
+          )}
+          {op.year && (
+            <span className="citation-tag text-muted-foreground/70">{op.year}</span>
+          )}
+        </div>
+        <h3 className="mt-2 font-display text-lg font-semibold leading-snug text-foreground">
+          {op.case_title}
+        </h3>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1 pt-1">
+        {op.cited_count > 0 && (
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+            {op.cited_count.toLocaleString()} cites
+          </span>
+        )}
+        <span className="text-xs text-accent opacity-0 transition-opacity group-hover:opacity-100">
+          Read →
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 function ResultCard({ hit, q }: { hit: Hit; q: string }) {

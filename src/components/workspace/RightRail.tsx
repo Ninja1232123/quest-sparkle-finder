@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useChat, type UseChatHelpers } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
 import { searchCorpus } from "@/lib/workspace.functions";
+import { getOpinionsIndex } from "@/lib/opinions.functions";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
@@ -271,6 +272,7 @@ const SOURCES = [
   { id: "usc", label: "USC" },
   { id: "cfr", label: "CFR" },
   { id: "const", label: "CONST" },
+  { id: "opinions", label: "OPINIONS" },
 ] as const;
 
 function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: CorpusHit) => void; onSummarize: (h: CorpusHit) => void; onPin: (h: CorpusHit) => void }) {
@@ -280,6 +282,7 @@ function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: Co
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const run = useServerFn(searchCorpus);
+  const runOpinions = useServerFn(getOpinionsIndex);
 
   const submit = async (override?: { q?: string; source?: string | null }) => {
     const query = (override?.q ?? q).trim();
@@ -289,8 +292,20 @@ function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: Co
     const useSource = override?.source !== undefined ? override.source : source;
     setLoading(true); setErr(null);
     try {
-      const rows = await run({ data: { q: query, source: useSource, limit: 15 } });
-      setHits(rows as CorpusHit[]);
+      if (useSource === "opinions") {
+        const { items } = await runOpinions({ data: { q: query, page: 0 } });
+        setHits((items ?? []).map((op) => ({
+          identifier: `record/${op.slug}`,
+          source: "opinions",
+          heading: op.case_title,
+          sectionLabel: op.us_cite ?? "",
+          parentLabel: op.year ? String(op.year) : "",
+          snippet: op.cited_count > 0 ? `${op.cited_count.toLocaleString()} citations` : "",
+        })));
+      } else {
+        const rows = await run({ data: { q: query, source: useSource, limit: 15 } });
+        setHits(rows as CorpusHit[]);
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Search failed");
       setHits([]);
