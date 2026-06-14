@@ -21,6 +21,10 @@ RULES (non-negotiable):
 - Reply text should be short and direct. Heavy lifting goes into the proposal cards. Do not dump long summaries the user didn't ask for.
 - End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
 
+YOU ARE WORKING TOGETHER, NOT GRADING:
+- The user is the lead. They will pull different passages than you would and tag authorities with stances you might not pick (good / adverse / worth-mentioning). That divergence is signal — they have reasons. Engage their reasoning; don't silently override it or re-propose your own version of something they already pinned.
+- When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
+
 THE CORPUS YOU CAN SEARCH (all read-only, all on the self_law backend):
 - STATUTES & REGULATIONS via search_corpus — 3.9M sections across: federal (source codes "usc", "cfr", "const", "ucc", "register", "irm", "tfm", and "bill" for 835k congressional bills) AND all 50 states (two-letter codes: "ak", "al", "az", "ca", "ny", "tx", … through "wy"). Pass source to scope to one code, or omit source to search everything at once.
 - CASE LAW via search_cases — U.S. Supreme Court opinions (full text, 28k) and state supreme court opinions (full text, 528k, all 50 states). Use jurisdiction to scope: "scotus", "state", or a state name; omit it to search both.
@@ -80,6 +84,36 @@ function buildBoardContext(rows: BoardRow[]): string {
   return lines.join("\n");
 }
 
+// Fetch the document the user is currently reading (statute by identifier, or an
+// opinion by a search id) and render it as a focus block for the system prompt.
+async function buildFocusContext(
+  corpus: ReturnType<typeof corpusClient>,
+  ref: string | null,
+): Promise<string> {
+  if (!ref) return "";
+  const db = corpus as unknown as { from: (t: string) => any };
+  let citation = "", heading = "", court: string | null = null, bodyText = "";
+  try {
+    if (ref.startsWith("scotus:")) {
+      const { data } = await db.from("opinion_record").select("case_title,us_cite,body_text").eq("slug", ref.slice(7)).maybeSingle();
+      if (!data) return "";
+      citation = data.us_cite ?? data.case_title; heading = data.case_title; court = "U.S. Supreme Court"; bodyText = data.body_text ?? "";
+    } else if (ref.startsWith("state:")) {
+      const { data } = await db.from("state_supreme_opinions").select("title,citation,state,issuer,body_text").eq("id", ref.slice(6)).maybeSingle();
+      if (!data) return "";
+      citation = data.citation ?? data.title; heading = data.title; court = data.issuer ?? `${data.state} Supreme Court`; bodyText = data.body_text ?? "";
+    } else {
+      const { data } = await db.from("documents").select("identifier,section_label,heading,body_text").eq("identifier", ref).maybeSingle();
+      if (!data) return "";
+      citation = data.section_label ?? data.identifier; heading = data.heading ?? ""; bodyText = data.body_text ?? "";
+    }
+  } catch {
+    return "";
+  }
+  const trimmed = bodyText.slice(0, 9000);
+  return `\n\nCURRENTLY VIEWING (the user has this open in their reader right now — comment on THIS, flag the operative language and any exceptions, and don't make them paste it):\n${[court, citation, heading].filter(Boolean).join(" · ")}\n"""\n${trimmed}${bodyText.length > 9000 ? "\n…[truncated]" : ""}\n"""`;
+}
+
 async function authenticate(request: Request): Promise<{ userId: string; token: string } | Response> {
   const auth = request.headers.get("authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
@@ -118,7 +152,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         if (auth instanceof Response) return auth;
         const { userId, token } = auth;
 
-        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string };
+        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null };
         if (!Array.isArray(body.messages) || !body.threadId) {
           return new Response("messages and threadId required", { status: 400 });
         }
@@ -145,7 +179,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
           .eq("thread_id", threadId)
           .order("kind", { ascending: true })
           .order("order_index", { ascending: true });
-        const systemPrompt = SYSTEM + buildBoardContext(boardRows ?? []);
+        // Shared focus: if the user has a document open in the reader, fetch its
+        // text and append it so the model is looking at exactly what they are.
+        const focusContext = await buildFocusContext(corpus, body.focusedRef ?? null);
+        const systemPrompt = SYSTEM + buildBoardContext(boardRows ?? []) + focusContext;
 
         const model = anthropic("claude-sonnet-4-6");
 

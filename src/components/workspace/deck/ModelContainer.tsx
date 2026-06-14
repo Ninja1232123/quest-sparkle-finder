@@ -91,6 +91,10 @@ export function ModelContainer({
                 <p className="mb-4 text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                   Ask it to find authority, flag what cuts against you, or pull the case that controls. Nothing touches your draft without a tap.
                 </p>
+                <IntakeForm disabled={isLoading} onSubmit={(text) => void sendMessage({ text })} />
+                <div className="mb-1.5 text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                  …or jump in
+                </div>
                 <div className="space-y-1.5">
                   {STARTERS.map((p) => (
                     <button
@@ -152,6 +156,93 @@ export function ModelContainer({
         </Conversation>
       </Surface>
     </Panel>
+  );
+}
+
+// Five-field intake → a structured opening message that lets the assistant run a
+// meaningful first sweep with no back-and-forth. Everything else gets discovered.
+function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text: string) => void }) {
+  const [parties, setParties] = useState("");
+  const [what, setWhat] = useState("");
+  const [where, setWhere] = useState("");
+  const [side, setSide] = useState("");
+  const [relief, setRelief] = useState("");
+  const [open, setOpen] = useState(true);
+
+  const ready = what.trim().length > 3;
+  const submit = () => {
+    if (!ready || disabled) return;
+    const lines = [
+      parties.trim() && `- Parties: ${parties.trim()}`,
+      `- What happened: ${what.trim()}`,
+      where.trim() && `- Jurisdiction: ${where.trim()}`,
+      side && `- I am the: ${side}`,
+      relief.trim() && `- Relief I want: ${relief.trim()}`,
+    ].filter(Boolean).join("\n");
+    onSubmit(
+      `Here's my case — run an opening sweep so we can start building the board:\n${lines}\n\n` +
+        `Sweep statutes and cases (federal + the state above) for the claims and defenses this raises. ` +
+        `Propose authorities to pin, flag anything adverse, and log the open questions. I'll decide what actually goes on the board.`,
+    );
+  };
+
+  const field = "w-full rounded-md px-2 py-1.5 text-[12px] outline-none";
+  const fieldStyle = { background: "var(--paper)", color: "var(--ink)", boxShadow: "inset 0 0 0 1px var(--rule-card)" } as const;
+  const labelCls = "mb-0.5 block text-[10px] font-semibold tracking-[0.12em] uppercase";
+  const labelStyle = { color: "var(--ink-muted)", fontFamily: "var(--font-mono)" } as const;
+
+  return (
+    <div className="mb-4 rounded-xl border p-3" style={{ borderColor: "var(--rule-card)", background: "color-mix(in oklab, var(--paper) 70%, transparent)" }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="mb-1 flex w-full items-center justify-between text-left">
+        <span className="text-[12px] font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
+          Start with the basics →
+        </span>
+        <span className="text-[10px]" style={{ color: "var(--ink-muted)" }}>{open ? "hide" : "show"}</span>
+      </button>
+      {open && (
+        <div className="space-y-2">
+          <p className="text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+            Five quick fields and I'll run a real opening sweep — no back-and-forth. Only the one-sentence summary is required.
+          </p>
+          <div>
+            <label className={labelCls} style={labelStyle}>Who are the parties</label>
+            <input className={field} style={fieldStyle} value={parties} onChange={(e) => setParties(e.target.value)} placeholder="e.g. me vs. Acme Collections LLC" disabled={disabled} />
+          </div>
+          <div>
+            <label className={labelCls} style={labelStyle}>What happened, in one sentence *</label>
+            <textarea className={field} style={fieldStyle} rows={2} value={what} onChange={(e) => setWhat(e.target.value)} placeholder="e.g. a collector kept calling after I disputed a debt that isn't mine" disabled={disabled} />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className={labelCls} style={labelStyle}>State / jurisdiction</label>
+              <input className={field} style={fieldStyle} value={where} onChange={(e) => setWhere(e.target.value)} placeholder="e.g. California" disabled={disabled} />
+            </div>
+            <div className="flex-1">
+              <label className={labelCls} style={labelStyle}>Your side</label>
+              <select className={field} style={fieldStyle} value={side} onChange={(e) => setSide(e.target.value)} disabled={disabled}>
+                <option value="">—</option>
+                <option value="Plaintiff">Plaintiff</option>
+                <option value="Defendant">Defendant</option>
+                <option value="Not sure yet">Not sure yet</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={labelCls} style={labelStyle}>Relief you want</label>
+            <input className={field} style={fieldStyle} value={relief} onChange={(e) => setRelief(e.target.value)} placeholder="e.g. damages and an injunction to stop the calls" disabled={disabled} />
+          </div>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!ready || disabled}
+            className="w-full rounded-lg py-2 text-[12px] font-bold tracking-wide transition-transform hover:-translate-y-px disabled:opacity-50"
+            style={{ background: "var(--ink)", color: "var(--paper)", fontFamily: "var(--font-serif)" }}
+          >
+            Run my opening sweep →
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

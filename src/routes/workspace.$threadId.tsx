@@ -6,6 +6,7 @@ import {
   getThreadMessages, getSessionDraft, upsertSessionDraft,
   listCaseItems, upsertCaseItem, deleteCaseItem,
   snapshotDraft, listDraftVersions, citeCheck,
+  getCorpusDocument, type CorpusDoc,
 } from "@/lib/workspace.functions";
 import { supabaseAuth } from "@/integrations/supabase/auth-client";
 import { EditorCanvas, type EditorCanvasHandle } from "@/components/workspace/EditorCanvas";
@@ -16,6 +17,7 @@ import { Panel } from "@/components/workspace/deck/Panel";
 import { SourceReader } from "@/components/workspace/deck/SourceReader";
 import { RefinedIssues } from "@/components/workspace/deck/RefinedIssues";
 import { ModelContainer } from "@/components/workspace/deck/ModelContainer";
+import { DocViewer } from "@/components/workspace/deck/DocViewer";
 import { SessionMenu } from "@/components/workspace/deck/SessionMenu";
 import { X } from "lucide-react";
 
@@ -61,12 +63,21 @@ function WorkspaceThreadPage() {
       .catch(() => setDraft({ title: "Untitled draft", body: "" }));
   }, [threadId, loadMessages, loadDraft]);
 
+  // The document the user currently has open in the reader. Held in a ref so the
+  // chat transport can read the latest value at send time without rebuilding.
+  const focusRef = useRef<{ ref: string } | null>(null);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/workspace/chat",
         headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
         body: { threadId },
+        // Merge the focused-document ref into every send so the model reads what
+        // the user is reading. Must preserve the default body fields we override.
+        prepareSendMessagesRequest: ({ body, messages, id, trigger, messageId }) => ({
+          body: { ...body, id, messages, trigger, messageId, focusedRef: focusRef.current?.ref ?? null },
+        }),
       }),
     [threadId, token],
   );
@@ -79,6 +90,7 @@ function WorkspaceThreadPage() {
       key={threadId}
       threadId={threadId}
       transport={transport}
+      focusRef={focusRef}
       initialMessages={initialMessages}
       initialDraft={draft}
       saveDraft={saveDraft}
@@ -88,10 +100,11 @@ function WorkspaceThreadPage() {
 }
 
 function Desk({
-  threadId, transport, initialMessages, initialDraft, saveDraft, seedPrompt,
+  threadId, transport, focusRef, initialMessages, initialDraft, saveDraft, seedPrompt,
 }: {
   threadId: string;
   transport: DefaultChatTransport<UIMessage>;
+  focusRef: React.MutableRefObject<{ ref: string } | null>;
   initialMessages: UIMessage[];
   initialDraft: { title: string; body: string };
   saveDraft: (args: { data: { threadId: string; title: string; bodyMd: string } }) => Promise<unknown>;
@@ -102,6 +115,30 @@ function Desk({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [docOpen, setDocOpen] = useState(false);
+
+  // Shared document focus — the reader the user opens over the Sources column.
+  const getDoc = useServerFn(getCorpusDocument);
+  const [focusDoc, setFocusDoc] = useState<CorpusDoc | null>(null);
+  const [focusOpen, setFocusOpen] = useState(false);
+  const [focusLoading, setFocusLoading] = useState(false);
+  const handleOpenDoc = useCallback(async (ref: string) => {
+    setFocusOpen(true);
+    setFocusLoading(true);
+    focusRef.current = { ref }; // model picks this up on the next message
+    try {
+      setFocusDoc((await getDoc({ data: { ref } })) as CorpusDoc);
+    } catch {
+      setFocusDoc(null);
+    } finally {
+      setFocusLoading(false);
+    }
+  }, [getDoc, focusRef]);
+  const handleCloseDoc = useCallback(() => {
+    setFocusOpen(false);
+    setFocusDoc(null);
+    focusRef.current = null;
+  }, [focusRef]);
+
   const editorRef = useRef<EditorCanvasHandle | null>(null);
   const dirtyRef = useRef(false);
   const latestRef = useRef({ title, body });
@@ -296,9 +333,14 @@ function Desk({
         backgroundImage: "radial-gradient(1200px 600px at 25% -15%, rgba(200,162,75,0.07), transparent)",
       }}
     >
-      {/* Sources — split statute / case law */}
-      <div className="flex min-w-0 flex-[1.7]">
-        <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} />
+      {/* Sources — split statute / case law, with the reader overlaying it when a doc is open */}
+      <div className="relative flex min-w-0 flex-[1.7]">
+        <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} onOpenDoc={handleOpenDoc} />
+        {focusOpen && (
+          <div className="absolute inset-0 flex">
+            <DocViewer doc={focusDoc} loading={focusLoading} onClose={handleCloseDoc} />
+          </div>
+        )}
       </div>
 
       {/* Refined issues, with the Doc Creator overlaying this column when open */}

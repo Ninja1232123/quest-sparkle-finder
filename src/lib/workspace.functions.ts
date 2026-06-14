@@ -294,6 +294,60 @@ export const searchCases = createServerFn({ method: "GET" })
     return out;
   });
 
+// ── Full corpus document (for the in-workspace reader / shared focus) ───────
+// Fetches the full text of one statute/reg (by identifier, e.g. "usc/42/1983")
+// or one opinion (by a searchCases id, "scotus:<slug>" | "state:<uuid>") from the
+// LOCAL corpus. The viewer shows this and the same `ref` is sent to the chat
+// endpoint so the model reads exactly what the user is reading.
+export type CorpusDoc = {
+  ref: string;
+  identifier: string;
+  citation: string;
+  heading: string;
+  court: string | null;
+  body: string;
+};
+
+export const getCorpusDocument = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ ref: z.string().min(1).max(300) }).parse(d))
+  .handler(async ({ data }): Promise<CorpusDoc> => {
+    const ref = data.ref.trim();
+    const db = corpus as unknown as { from: (t: string) => any };
+
+    if (ref.startsWith("scotus:")) {
+      const slug = ref.slice("scotus:".length);
+      const { data: row, error } = await db
+        .from("opinion_record").select("slug,case_title,us_cite,year,body_text").eq("slug", slug).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Opinion not found");
+      return {
+        ref, identifier: `record/${row.slug}`, citation: row.us_cite ?? row.case_title,
+        heading: row.case_title, court: "U.S. Supreme Court", body: (row.body_text ?? "").slice(0, 24000),
+      };
+    }
+    if (ref.startsWith("state:")) {
+      const id = ref.slice("state:".length);
+      const { data: row, error } = await db
+        .from("state_supreme_opinions").select("id,title,citation,state,issuer,body_text").eq("id", id).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Opinion not found");
+      return {
+        ref, identifier: `state/${row.id}`, citation: row.citation ?? row.title,
+        heading: row.title, court: row.issuer ?? `${row.state} Supreme Court`, body: (row.body_text ?? "").slice(0, 24000),
+      };
+    }
+    // Statute / regulation / constitution by identifier.
+    const { data: row, error } = await db
+      .from("documents").select("identifier,source_code,section_label,heading,body_text").eq("identifier", ref).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Document not found");
+    return {
+      ref, identifier: row.identifier, citation: row.section_label ?? row.identifier,
+      heading: row.heading ?? "", court: null, body: (row.body_text ?? "").slice(0, 24000),
+    };
+  });
+
 // ── Case Board (per-thread stacks the user curates) ────────────────────────
 const StanceEnum = z.enum(["support", "adverse", "neutral"]);
 const KindEnum = z.enum(["authority", "question", "note"]);

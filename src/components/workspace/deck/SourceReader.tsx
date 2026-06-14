@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, BookOpen } from "lucide-react";
 import { searchCorpus, searchCases, type CaseHit } from "@/lib/workspace.functions";
 import type { CorpusHit } from "@/components/workspace/ResultCard";
 import type { PinDraft } from "@/components/workspace/PinDialog";
@@ -47,9 +47,11 @@ function caseToDraft(c: CaseHit, stance: PinDraft["stance"]): PinDraft {
 export function SourceReader({
   onAddIssue,
   onAddToDraft,
+  onOpenDoc,
 }: {
   onAddIssue: (draft: PinDraft) => void;
   onAddToDraft: (markdown: string) => void;
+  onOpenDoc: (ref: string) => void;
 }) {
   const [q, setQ] = useState("");
   const [statuteScope, setStatuteScope] = useState<Scope>("both");
@@ -166,7 +168,7 @@ export function SourceReader({
             placeholder='Try "qualified immunity" or "42 USC 1983".'
           >
             {statHits?.map((h) => (
-              <StatuteRow key={h.identifier} hit={h} onAddIssue={onAddIssue} onAddToDraft={onAddToDraft} />
+              <StatuteRow key={h.identifier} hit={h} onAddIssue={onAddIssue} onAddToDraft={onAddToDraft} onOpenDoc={onOpenDoc} />
             ))}
           </ResultList>
         </Pane>
@@ -177,7 +179,7 @@ export function SourceReader({
             placeholder="SCOTUS + all 50 state supreme courts."
           >
             {caseHits?.map((c) => (
-              <CaseRow key={c.id} hit={c} onAddIssue={onAddIssue} onAddToDraft={onAddToDraft} />
+              <CaseRow key={c.id} hit={c} onAddIssue={onAddIssue} onAddToDraft={onAddToDraft} onOpenDoc={onOpenDoc} />
             ))}
           </ResultList>
         </Pane>
@@ -231,7 +233,7 @@ function ResultList({
 }
 
 // ── Result rows ─────────────────────────────────────────────────────────────
-function StatuteRow({ hit, onAddIssue, onAddToDraft }: { hit: CorpusHit; onAddIssue: (d: PinDraft) => void; onAddToDraft: (md: string) => void }) {
+function StatuteRow({ hit, onAddIssue, onAddToDraft, onOpenDoc }: { hit: CorpusHit; onAddIssue: (d: PinDraft) => void; onAddToDraft: (md: string) => void; onOpenDoc: (ref: string) => void }) {
   const cite = `${hit.source.toUpperCase()} ${hit.sectionLabel || hit.identifier}`;
   return (
     <Row
@@ -239,18 +241,20 @@ function StatuteRow({ hit, onAddIssue, onAddToDraft }: { hit: CorpusHit; onAddIs
       title={hit.heading || cite}
       sub={hit.sectionLabel || hit.parentLabel}
       body={hit.snippet}
+      onOpen={() => onOpenDoc(hit.identifier)}
       onStance={(s) => onAddIssue(statuteToDraft(hit, s))}
       onDraft={() => onAddToDraft(`> ${hit.snippet || hit.heading}\n> — ${cite}${hit.heading ? `, "${hit.heading}"` : ""}`)}
     />
   );
 }
-function CaseRow({ hit, onAddIssue, onAddToDraft }: { hit: CaseHit; onAddIssue: (d: PinDraft) => void; onAddToDraft: (md: string) => void }) {
+function CaseRow({ hit, onAddIssue, onAddToDraft, onOpenDoc }: { hit: CaseHit; onAddIssue: (d: PinDraft) => void; onAddToDraft: (md: string) => void; onOpenDoc: (ref: string) => void }) {
   return (
     <Row
       chip={[hit.court, hit.year].filter(Boolean).join(" · ") || "CASE"}
       title={hit.title}
       sub={hit.citation}
       body=""
+      onOpen={() => onOpenDoc(hit.id)}
       onStance={(s) => onAddIssue(caseToDraft(hit, s))}
       onDraft={() => onAddToDraft(`${hit.citation || hit.title}`)}
     />
@@ -262,6 +266,7 @@ function Row({
   title,
   sub,
   body,
+  onOpen,
   onStance,
   onDraft,
 }: {
@@ -269,6 +274,7 @@ function Row({
   title: string;
   sub?: string;
   body?: string;
+  onOpen: () => void;
   onStance: (s: PinDraft["stance"]) => void;
   onDraft: () => void;
 }) {
@@ -283,9 +289,15 @@ function Row({
         </span>
         {sub && <span className="truncate text-[11.5px]" style={{ color: "rgba(12,27,61,0.6)" }}>{sub}</span>}
       </div>
-      <div className="text-[12px] font-medium leading-snug" style={{ color: "var(--ink)", fontFamily: "var(--font-serif, 'Cinzel')" }}>
+      <button
+        type="button"
+        onClick={onOpen}
+        title="Open in reader — the assistant reads it with you"
+        className="block w-full text-left text-[12px] font-medium leading-snug hover:underline"
+        style={{ color: "var(--ink)", fontFamily: "var(--font-serif, 'Cinzel')" }}
+      >
         {title}
-      </div>
+      </button>
       {body ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug" style={{ color: "rgba(12,27,61,0.65)" }}>{body}</p> : null}
       <div className="mt-1.5 flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
         <span className="mr-0.5 text-[9.5px] tracking-widest" style={{ color: "rgba(12,27,61,0.4)" }}>GRAB →</span>
@@ -301,9 +313,18 @@ function Row({
         ))}
         <button
           type="button"
+          title="Open in reader"
+          onClick={onOpen}
+          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
+          style={{ color: "rgba(12,27,61,0.7)" }}
+        >
+          <BookOpen className="h-3 w-3" /> READ
+        </button>
+        <button
+          type="button"
           title="Insert into draft"
           onClick={onDraft}
-          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
+          className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
           style={{ color: "rgba(12,27,61,0.7)" }}
         >
           <FileText className="h-3 w-3" /> DRAFT
