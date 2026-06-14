@@ -9,11 +9,14 @@ import {
 } from "@/lib/workspace.functions";
 import { supabaseAuth } from "@/integrations/supabase/auth-client";
 import { EditorCanvas, type EditorCanvasHandle } from "@/components/workspace/EditorCanvas";
-import { RightRail } from "@/components/workspace/RightRail";
-import type { CorpusHit } from "@/components/workspace/ResultCard";
-import { CaseBoard, type CaseItem } from "@/components/workspace/CaseBoard";
+import { type CaseItem } from "@/components/workspace/CaseBoard";
 import { PinDialog, type PinDraft } from "@/components/workspace/PinDialog";
 import { CiteCheckSheet, type CiteCheckResult } from "@/components/workspace/CiteCheckSheet";
+import { Panel } from "@/components/workspace/deck/Panel";
+import { SourceReader } from "@/components/workspace/deck/SourceReader";
+import { RefinedIssues } from "@/components/workspace/deck/RefinedIssues";
+import { ModelContainer } from "@/components/workspace/deck/ModelContainer";
+import { X } from "lucide-react";
 
 export const Route = createFileRoute("/workspace/$threadId")({
   component: WorkspaceThreadPage,
@@ -97,10 +100,7 @@ function Desk({
   const [body, setBody] = useState(initialDraft.body);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
-  const [rightMode, setRightMode] = useState<"dock" | "modal">(() => {
-    if (typeof window === "undefined") return "dock";
-    return (localStorage.getItem("workspace.rightMode") as "dock" | "modal") || "dock";
-  });
+  const [docOpen, setDocOpen] = useState(false);
   const editorRef = useRef<EditorCanvasHandle | null>(null);
   const dirtyRef = useRef(false);
   const latestRef = useRef({ title, body });
@@ -134,8 +134,6 @@ function Desk({
   const loadVersions = useServerFn(listDraftVersions);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<Array<{ id: string; title: string | null; created_at: string; body_md: string }>>([]);
-
-  useEffect(() => { localStorage.setItem("workspace.rightMode", rightMode); }, [rightMode]);
 
   // Autosave: debounced + flush on unload / visibility hidden so nothing is lost.
   const lastSnapshotAt = useRef(0);
@@ -187,12 +185,21 @@ function Desk({
     };
   }, [flush]);
 
-  const handleAddToNotes = useCallback((hit: CorpusHit) => {
-    const cite = `${hit.source.toUpperCase()} ${hit.sectionLabel || hit.identifier}`;
-    const block = `> ${hit.snippet || hit.heading}\n> — ${cite}${hit.heading ? `, "${hit.heading}"` : ""}`;
-    editorRef.current?.insertAtCursor(block);
-    if (rightMode === "modal") setRightMode("dock");
-  }, [rightMode]);
+  const handleAddToDraft = useCallback((markdown: string) => {
+    setDocOpen(true);
+    editorRef.current?.insertAtCursor(markdown);
+  }, []);
+
+  // Grab → file straight onto the issues board with the stance picked at the source.
+  const handleQuickAddIssue = useCallback(async (d: PinDraft) => {
+    await saveItem({ data: {
+      threadId, kind: "authority", stance: d.stance,
+      identifier: d.identifier ?? null, citation: d.citation ?? null,
+      heading: d.heading ?? null, pinCite: d.pinCite ?? null,
+      quote: d.quote ?? null, userNote: d.userNote ?? null,
+    } });
+    await refreshItems();
+  }, [saveItem, threadId, refreshItems]);
 
   const handleInsertItem = useCallback((item: CaseItem) => {
     const cite = item.citation || item.identifier || "";
@@ -205,8 +212,7 @@ function Desk({
 
   const handleOpenPin = useCallback((draft: PinDraft) => {
     setPinDraft(draft);
-    if (rightMode === "modal") setRightMode("dock");
-  }, [rightMode]);
+  }, []);
 
   const handleSavePin = useCallback(async (d: PinDraft) => {
     await saveItem({ data: {
@@ -282,42 +288,80 @@ function Desk({
   }, [body, snap, threadId, title]);
 
   return (
-    <div className="flex h-full min-h-0 w-full">
-      <div className="flex min-w-0 flex-1">
-        <CaseBoard
+    <div
+      className="flex h-full min-h-0 w-full gap-3 p-3"
+      style={{
+        background: "var(--navy-deep, #0c1b3d)",
+        backgroundImage: "radial-gradient(1200px 600px at 25% -15%, rgba(200,162,75,0.07), transparent)",
+      }}
+    >
+      {/* Sources — split statute / case law */}
+      <div className="flex min-w-0 flex-[1.4]">
+        <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} />
+      </div>
+
+      {/* Refined issues, with the Doc Creator overlaying this column when open */}
+      <div className="relative flex min-w-0 flex-1">
+        <RefinedIssues
           items={caseItems}
+          docOpen={docOpen}
+          onToggleDoc={() => setDocOpen((v) => !v)}
           onInsert={handleInsertItem}
           onDelete={handleDeleteItem}
           onAddQuestion={handleAddQuestionPrompt}
         />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <EditorCanvas
-            ref={editorRef}
-            initialTitle={initialDraft.title}
-            initialBody={initialDraft.body}
-            saveState={saveState}
-            lastSavedAt={savedAt}
-            supportCount={caseItems.filter((i) => i.kind === "authority" && i.stance !== "adverse").length}
-            questionCount={caseItems.filter((i) => i.kind === "question").length}
-            onChangeTitle={setTitle}
-            onChangeBody={setBody}
-            onOpenResearch={() => setRightMode((m) => (m === "dock" ? "modal" : "dock"))}
-            onCiteCheck={handleCiteCheck}
-            onOpenVersions={handleOpenVersions}
-          />
+        {/* Always mounted (keeps autosave + editor ref); revealed over the column when open. */}
+        <div
+          className={`absolute inset-0 flex ${docOpen ? "" : "pointer-events-none opacity-0"}`}
+          style={{ transition: "opacity 140ms ease" }}
+        >
+          <Panel
+            label="Doc Creator"
+            accent="#7bb651"
+            className="w-full"
+            bodyClassName="flex bg-white"
+            headerRight={
+              <button
+                type="button"
+                onClick={() => setDocOpen(false)}
+                className="grid h-6 w-6 place-items-center rounded hover:bg-white/10"
+                style={{ color: "#cfe3bf" }}
+                title="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            }
+          >
+            <EditorCanvas
+              ref={editorRef}
+              initialTitle={initialDraft.title}
+              initialBody={initialDraft.body}
+              saveState={saveState}
+              lastSavedAt={savedAt}
+              supportCount={caseItems.filter((i) => i.kind === "authority" && i.stance !== "adverse").length}
+              questionCount={caseItems.filter((i) => i.kind === "question").length}
+              onChangeTitle={setTitle}
+              onChangeBody={setBody}
+              onOpenResearch={() => setDocOpen(false)}
+              onCiteCheck={handleCiteCheck}
+              onOpenVersions={handleOpenVersions}
+            />
+          </Panel>
         </div>
-        <RightRail
+      </div>
+
+      {/* Assistant */}
+      <div className="flex min-w-0 flex-1">
+        <ModelContainer
           threadId={threadId}
           transport={transport}
           initialMessages={initialMessages}
-          mode={rightMode}
-          onModeChange={setRightMode}
-          onAddToNotes={handleAddToNotes}
+          seedPrompt={seedPrompt}
           onPin={handleOpenPin}
           onAddQuestion={handleAddQuestion}
-          seedPrompt={seedPrompt}
         />
       </div>
+
       <PinDialog
         open={pinDraft !== null}
         draft={pinDraft}
