@@ -30,11 +30,14 @@ THE CORPUS YOU CAN SEARCH (all read-only, all on the self_law backend):
 - CASE LAW via search_cases — U.S. Supreme Court opinions (full text, 28k) and state supreme court opinions (full text, 528k, all 50 states). Use jurisdiction to scope: "scotus", "state", or a state name; omit it to search both.
 - FULL TEXT via fetch_document (a statute/reg section by identifier) and fetch_case (a full opinion by id from a search_cases result).
 
-SEARCH LIKE A LAWYER — USE EVERYTHING:
-- Fire multiple searches in parallel in a single turn. A real research sweep hits statutes AND cases AND adverse authority at once — don't drip one query at a time.
-- Don't stay in one source. If the user has a federal claim with a state-law component, search both. If a statute governs, also search_cases for opinions that interpret it. Statutes are the skeleton; cases are how courts actually apply them.
-- Tight queries beat broad ones. Quote the operative phrase ("qualified immunity", "deliberate indifference") rather than full sentences. If a query is noisy, narrow the source/jurisdiction rather than fetching everything.
-- When you cite a controlling statute, look for the cases interpreting it — then look for the adverse cases where a court found it did NOT apply. Research is not complete until both sides are checked.
+SEARCH LIKE A LAWYER — QUERY WITH PRECISION:
+- search_corpus AND-s every word together. Each extra word NARROWS the results — a natural-language sentence ("debt collector definition under 15 USC 1692 for foreclosure trustees") demands one document containing all of those words and usually returns nothing. This is a feature: used well, AND is the most powerful, most specific tool you have.
+- So query like a specialist drafting a Boolean search — 2-4 KEYWORDS or terms of art, the controlled vocabulary the drafters and courts actually use: "nonjudicial foreclosure", "holder in due course", "material alteration", "deed of trust", "deliberate indifference". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt". Think about the exact words that would appear IN the statute.
+- If a query returns 0, you over-constrained: drop the weakest word, or swap in a synonym (the same idea has a limited set of legal terms — "void/voidable", "assignment/transfer/conveyance", "endorsement/indorsement"). Try a few keyword combinations in parallel rather than re-running one verbose phrase.
+- Fire multiple searches at once. A real sweep hits statutes AND cases AND adverse authority in one turn — don't drip one query at a time. Don't stay in one source: if a statute governs, also search_cases for the opinions interpreting it. Statutes are the skeleton; cases are how courts apply them.
+- search_cases: ALWAYS pass jurisdiction when you can. Unscoped case searches pull unrelated SCOTUS noise over on-point state cases. Scope to the user's state, or "scotus", and only widen if scoped comes up short.
+- When you cite a controlling statute, find the cases interpreting it — then the adverse cases where a court found it did NOT apply. Research isn't complete until both sides are checked.
+- When a search by identifier would be exact (you know the cite, e.g. "usc/title-15/section-1692a"), fetch_document directly instead of searching for it.
 
 LEGAL REASONING METHOD:
 When reading any statute, regulation, or case, apply three components in order:
@@ -206,9 +209,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
             description:
               "READ-ONLY: Full-text search of statutes, regulations, the Constitution, and bills (3.9M sections). " +
               "Sources: federal (\"usc\", \"cfr\", \"const\", \"ucc\", \"register\", \"irm\", \"tfm\", \"bill\") and all 50 states (two-letter codes like \"ca\", \"ny\", \"tx\"). " +
-              "Pass `source` to scope to one code; omit it to search the entire corpus. For case law, use search_cases instead.",
+              "Pass `source` to scope to one code; omit it to search the entire corpus. For case law, use search_cases instead. " +
+              "QUERY WITH 2-4 KEYWORDS / TERMS OF ART, not sentences — every word is AND-ed, so each extra word narrows the result and long phrases return nothing. Use the controlled vocabulary that appears IN the statute (e.g. 'material alteration negotiable instrument'). If you get 0 hits, drop a word or try a synonym.",
             inputSchema: z.object({
-              q: z.string().min(2).describe("Search query — quote the operative phrase, e.g. 'qualified immunity'"),
+              q: z.string().min(2).describe("2-4 keywords / terms of art (AND-ed). e.g. 'nonjudicial foreclosure deed of trust' — NOT a natural-language sentence."),
               source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to (e.g. 'usc', 'ca'). Omit to search everything."),
               limit: z.number().int().min(1).max(20).default(8),
             }),
@@ -357,7 +361,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             inputSchema: z.object({
               query: z.string().min(2).max(200),
               source: z.enum(["usc", "cfr", "ucc", "const", "register"]).optional(),
-              why: z.string().max(280).describe("Why this search helps the user's case, in one sentence."),
+              why: z.string().max(600).describe("Why this search helps the user's case, in one sentence."),
             }),
             execute: async (args) => ({ proposal: "search", ...args }),
           }),
@@ -367,9 +371,9 @@ export const Route = createFileRoute("/api/workspace/chat")({
               identifier: z.string().describe("e.g. 'usc/42/1983'"),
               citation: z.string().describe("e.g. '42 U.S.C. § 1983'"),
               heading: z.string().optional(),
-              suggested_quote: z.string().max(1500).describe("Verbatim operative language from the section."),
+              suggested_quote: z.string().max(4000).describe("Verbatim operative language from the section."),
               suggested_pin_cite: z.string().max(120).optional().describe("e.g. '(a)(2)'"),
-              why_it_matters: z.string().max(400),
+              why_it_matters: z.string().max(2000).describe("One tight IRAC paragraph: issue, rule, application, conclusion."),
             }),
             execute: async (args) => ({ proposal: "pin", stance: "support", ...args }),
           }),
@@ -379,9 +383,9 @@ export const Route = createFileRoute("/api/workspace/chat")({
               identifier: z.string(),
               citation: z.string(),
               heading: z.string().optional(),
-              suggested_quote: z.string().max(1500),
+              suggested_quote: z.string().max(4000),
               suggested_pin_cite: z.string().max(120).optional(),
-              why_it_cuts_against: z.string().max(400),
+              why_it_cuts_against: z.string().max(2000).describe("Danger rating + why, one tight paragraph."),
             }),
             execute: async (args) => ({
               proposal: "pin",
@@ -393,8 +397,8 @@ export const Route = createFileRoute("/api/workspace/chat")({
           propose_question: tool({
             description: "Add an open research question to the user's case board for them (or you) to investigate later.",
             inputSchema: z.object({
-              text: z.string().min(5).max(400),
-              why: z.string().max(280).optional(),
+              text: z.string().min(5).max(600),
+              why: z.string().max(600).optional(),
             }),
             execute: async (args) => ({ proposal: "question", ...args }),
           }),
