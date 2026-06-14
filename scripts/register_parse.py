@@ -190,9 +190,13 @@ def cmd_sample(n):
 
 
 def cmd_apply(limit):
-    conn = connect()
-    conn.autocommit = False
-    cur = conn.cursor()
+    # Two connections: a read connection holds the streaming named cursor, a
+    # write connection commits per batch. Separating them keeps per-batch
+    # commits from destroying the WITHOUT HOLD server-side cursor mid-stream.
+    rconn = connect()
+    wconn = connect()
+    wconn.autocommit = False
+    cur = wconn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS register_meta (
             id            integer PRIMARY KEY REFERENCES document_sections(id) ON DELETE CASCADE,
@@ -208,7 +212,7 @@ def cmd_apply(limit):
         );
         CREATE INDEX IF NOT EXISTS register_meta_cfr_gin ON register_meta USING gin (cfr_refs jsonb_path_ops);
     """)
-    conn.commit()
+    wconn.commit()
     sel = """
         SELECT id, identifier, heading, body_text
         FROM document_sections
@@ -219,11 +223,15 @@ def cmd_apply(limit):
     """
     if limit:
         sel += f" LIMIT {int(limit)}"
-    cur.execute(sel)
-    upd = conn.cursor()
+    # Server-side named cursor: streams rows in itersize chunks instead of
+    # buffering all ~120k body_text blobs into client memory at once.
+    rcur = rconn.cursor(name="register_scan", cursor_factory=psycopg2.extras.RealDictCursor)
+    rcur.itersize = 1000
+    rcur.execute(sel)
+    upd = wconn.cursor()
     done = 0
     batch_meta, batch_md = [], []
-    for r in cur:
+    for r in rcur:
         title, fields, meta, md = parse_row(r)
         batch_meta.append((r["id"], meta["fr_volume"], meta["fr_issue"],
                            meta["fr_doc_number"], meta["rin"], meta["docket_ids"],
@@ -232,13 +240,13 @@ def cmd_apply(limit):
         batch_md.append((md, r["id"]))
         done += 1
         if len(batch_meta) >= 1000:
-            flush(upd, batch_meta, batch_md); conn.commit()
+            flush(upd, batch_meta, batch_md); wconn.commit()
             batch_meta, batch_md = [], []
             print(f"  ...{done}", flush=True)
     if batch_meta:
-        flush(upd, batch_meta, batch_md); conn.commit()
+        flush(upd, batch_meta, batch_md); wconn.commit()
     print(f"DONE: parsed + wrote {done} register rules")
-    conn.close()
+    rconn.close(); wconn.close()
 
 
 def flush(cur, batch_meta, batch_md):
