@@ -73,7 +73,7 @@ function WorkspaceLayout() {
   if (loading || !user) return <div className="p-8 text-muted-foreground">Loading workspace…</div>;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full" style={{ background: "var(--paper, #f7f3ea)" }}>
+    <div className="flex h-[100dvh] w-full overflow-hidden" style={{ background: "var(--paper, #f7f3ea)" }}>
       <aside className="flex w-72 flex-col border-r" style={{ background: "#0c1b3d", borderColor: "rgba(200,162,75,0.25)" }}>
         <div className="space-y-2 p-3">
           <Button onClick={newSession} className="w-full" style={{ background: "#c8a24b", color: "#0c1b3d" }}>
