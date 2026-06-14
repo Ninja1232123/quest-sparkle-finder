@@ -8,8 +8,10 @@ import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/componen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { ProposalCard, type ProposalPayload } from "@/components/workspace/ProposalCard";
 import type { PinDraft } from "@/components/workspace/PinDialog";
-import { Square } from "lucide-react";
+import { Square, FileSignature, CornerDownLeft } from "lucide-react";
 import { Panel, Surface } from "./Panel";
+
+type Mode = "research" | "draft";
 
 export function ModelContainer({
   threadId,
@@ -18,6 +20,7 @@ export function ModelContainer({
   seedPrompt,
   onPin,
   onAddQuestion,
+  onAddToDraft,
   headerRight,
 }: {
   threadId: string;
@@ -26,6 +29,7 @@ export function ModelContainer({
   seedPrompt?: string;
   onPin: (draft: PinDraft) => void;
   onAddQuestion: (text: string) => Promise<void> | void;
+  onAddToDraft?: (markdown: string) => void;
   headerRight?: React.ReactNode;
 }) {
   const chat = useChat({ id: threadId, messages: initialMessages, transport });
@@ -34,7 +38,13 @@ export function ModelContainer({
   const seeded = useState({ done: false })[0];
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<Mode>("research");
   const mark = (set: typeof setAccepted) => (id: string) => set((s) => new Set(s).add(id));
+
+  // Every send carries the current mode (or an override) so the server knows
+  // whether to research-and-propose or draft strictly from the board.
+  const send = (text: string, modeOverride?: Mode) =>
+    sendMessage({ text }, { body: { mode: modeOverride ?? mode } });
 
   const runSearch = (q: string, source?: string) =>
     window.dispatchEvent(new CustomEvent("workspace:run-search", { detail: { q, source } }));
@@ -42,24 +52,57 @@ export function ModelContainer({
   useEffect(() => {
     if (seedPrompt && !seeded.done && chat.messages.length === 0) {
       seeded.done = true;
-      void chat.sendMessage({ text: seedPrompt });
+      void chat.sendMessage({ text: seedPrompt }, { body: { mode: "research" } });
     }
   }, [seedPrompt, chat, seeded]);
 
+  // Board-driven actions (e.g. the "Break my theory" pressure-test) dispatch a
+  // prompt here so the chat owns the send. They always run in research mode.
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text;
+      if (text) void send(text, "research");
+    };
+    window.addEventListener("workspace:ask", onAsk);
+    return () => window.removeEventListener("workspace:ask", onAsk);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   return (
     <Panel
-      label="Assistant"
+      label={mode === "draft" ? "Assistant · Drafting" : "Assistant"}
+      accent={mode === "draft" ? "#7bb651" : undefined}
       bodyClassName="p-2"
-      headerRight={headerRight}
+      headerRight={
+        <>
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === "draft" ? "research" : "draft"))}
+            title={mode === "draft"
+              ? "Drafting mode: the assistant writes only from your pinned authorities. Tap to return to research."
+              : "Switch to constrained drafting — every sentence must trace to a pinned card."}
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase transition-colors"
+            style={{
+              borderColor: mode === "draft" ? "#7bb651" : "rgba(200,162,75,0.4)",
+              color: mode === "draft" ? "#0c1b3d" : "#c8a24b",
+              background: mode === "draft" ? "#7bb651" : "transparent",
+              fontFamily: "var(--font-mono, 'Special Elite')",
+            }}
+          >
+            <FileSignature className="h-3 w-3" /> {mode === "draft" ? "Drafting" : "Draft"}
+          </button>
+          {headerRight}
+        </>
+      }
       footer={
         <PromptInput
           onSubmit={async (msg) => {
             const text = msg.text?.trim();
-            if (text) await sendMessage({ text });
+            if (text) await send(text);
           }}
         >
-          <div className="rounded-lg" style={{ background: "#fff", boxShadow: "inset 0 0 0 1.5px rgba(200,162,75,0.4)" }}>
-            <PromptInputTextarea placeholder="Ask the assistant — it proposes, you decide…" />
+          <div className="rounded-lg" style={{ background: "#fff", boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}>
+            <PromptInputTextarea placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"} />
             <PromptInputFooter className="justify-end px-2 pb-1.5">
               {isLoading && (
                 <button
@@ -91,7 +134,7 @@ export function ModelContainer({
                 <p className="mb-4 text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                   Ask it to find authority, flag what cuts against you, or pull the case that controls. Nothing touches your draft without a tap.
                 </p>
-                <IntakeForm disabled={isLoading} onSubmit={(text) => void sendMessage({ text })} />
+                <IntakeForm disabled={isLoading} onSubmit={(text) => void send(text, "research")} />
                 <div className="mb-1.5 text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   …or jump in
                 </div>
@@ -101,7 +144,7 @@ export function ModelContainer({
                       key={p.text}
                       type="button"
                       disabled={isLoading}
-                      onClick={() => void sendMessage({ text: p.text })}
+                      onClick={() => void send(p.text, "research")}
                       className="w-full rounded-lg border px-3 py-2 text-left text-[12px] font-medium transition-all hover:-translate-y-px hover:shadow-sm disabled:opacity-50"
                       style={{ borderColor: "var(--rule-card)", background: "var(--paper)", color: "var(--ink)", fontFamily: "var(--font-serif)" }}
                     >
@@ -115,7 +158,24 @@ export function ModelContainer({
               <Message key={m.id} from={m.role}>
                 <MessageContent>
                   {m.parts.map((part, i) => {
-                    if (part.type === "text") return <MessageResponse key={i}>{part.text}</MessageResponse>;
+                    if (part.type === "text") {
+                      return (
+                        <div key={i}>
+                          <MessageResponse>{part.text}</MessageResponse>
+                          {m.role === "assistant" && onAddToDraft && part.text.trim() && (
+                            <button
+                              type="button"
+                              onClick={() => onAddToDraft(part.text)}
+                              title="Insert this into your draft"
+                              className="mt-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-60 transition hover:opacity-100"
+                              style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}
+                            >
+                              <CornerDownLeft className="h-3 w-3" /> Insert into draft
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
                     if (part.type?.startsWith("tool-")) {
                       const tp = part as { type: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown; errorText?: string };
                       const toolName = tp.type.replace(/^tool-/, "");

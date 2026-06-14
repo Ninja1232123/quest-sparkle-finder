@@ -402,6 +402,7 @@ function Desk({
           seedPrompt={seedPrompt}
           onPin={handleOpenPin}
           onAddQuestion={handleAddQuestion}
+          onAddToDraft={handleAddToDraft}
           headerRight={<SessionMenu currentId={threadId} />}
         />
       </div>

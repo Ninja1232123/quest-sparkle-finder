@@ -47,6 +47,18 @@ RESEARCH SEQUENCE: Start with the controlling statute or constitutional provisio
 IRAC FOR PROPOSALS: Every why_it_matters should answer: What is the precise legal issue? What does this authority say the rule is? How does that rule apply to the user's specific facts? What is the conclusion — does it help or hurt?`;
 
 
+// Constrained drafting mode (#5): the case board is the ONLY source of truth.
+const DRAFT_SYSTEM = `You are drafting a section of the user's legal document in CONSTRAINED MODE. The user's CASE BOARD (below) is your ONLY source of authority.
+
+ABSOLUTE RULES — non-negotiable:
+- Every legal or factual assertion MUST trace to an authority already pinned on the case board. Cite it inline by its citation (e.g. "42 U.S.C. § 1983").
+- You may NOT introduce any case, statute, regulation, or rule that is not on the board. NO citations from memory. NO improvising. If you "know" a great case that isn't pinned, you may not use it — say so as a gap instead.
+- When the argument needs a proposition the board does not support, do NOT fill it from training data. Insert a visible placeholder exactly like: [GAP: need authority for <the missing proposition>]. Gaps are the whole point — they show the user what research is left. Never paper over a hole.
+- Use the supporting authorities to build the argument; use the adverse authorities to pre-empt the other side (address and distinguish them). Weave in the user's pinned quotes verbatim where they fit.
+- Write plain, direct legal prose in the user's voice (first person where natural). Follow IRAC where it fits the section.
+- Output the draft text only — no preamble, no "here's a draft," no meta-commentary about what you did.
+- Close with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"`;
+
 // Serialize the case board into a compact block appended to the system prompt.
 // Gives the model working memory of the case so it builds on what's there instead
 // of starting cold or re-proposing already-pinned authorities.
@@ -152,7 +164,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         if (auth instanceof Response) return auth;
         const { userId, token } = auth;
 
-        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null };
+        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft" };
         if (!Array.isArray(body.messages) || !body.threadId) {
           return new Response("messages and threadId required", { status: 400 });
         }
@@ -182,7 +194,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // Shared focus: if the user has a document open in the reader, fetch its
         // text and append it so the model is looking at exactly what they are.
         const focusContext = await buildFocusContext(corpus, body.focusedRef ?? null);
-        const systemPrompt = SYSTEM + buildBoardContext(boardRows ?? []) + focusContext;
+        // Constrained drafting (#5) swaps the base prompt and drops the research
+        // tools, so the board is the only source the model can draw from.
+        const draftMode = body.mode === "draft";
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + focusContext;
 
         const model = anthropic("claude-sonnet-4-6");
 
@@ -389,8 +404,8 @@ export const Route = createFileRoute("/api/workspace/chat")({
           model,
           system: systemPrompt,
           messages: await convertToModelMessages(body.messages),
-          tools,
-          stopWhen: stepCountIs(50),
+          tools: draftMode ? {} : tools,
+          stopWhen: stepCountIs(draftMode ? 3 : 50),
         });
 
         return result.toUIMessageStreamResponse({

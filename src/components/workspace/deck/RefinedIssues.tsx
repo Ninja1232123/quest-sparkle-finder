@@ -1,4 +1,4 @@
-import { FilePen, Plus, Trash2, CornerDownLeft, HelpCircle } from "lucide-react";
+import { FilePen, Plus, Trash2, CornerDownLeft, HelpCircle, FlaskConical } from "lucide-react";
 import type { CaseItem } from "@/components/workspace/CaseBoard";
 import { Panel } from "./Panel";
 
@@ -36,6 +36,17 @@ export function RefinedIssues({
     authorities.filter((i) =>
       b.key === "support" ? i.stance === "support" || i.stance == null : i.stance === b.key,
     );
+  const supportCount = authorities.filter((i) => i.stance === "support" || i.stance == null).length;
+
+  // Hand the assistant the supporting column and tell it to break the theory.
+  // The board is already in the model's context, so this is just a directive.
+  const pressureTest = () =>
+    window.dispatchEvent(new CustomEvent("workspace:ask", {
+      detail: {
+        text:
+          "Pressure-test my theory. Go through each SUPPORTING authority on my case board and attack it the way opposing counsel would — find the adverse cases, the distinguishing facts, the exceptions, and the threshold defenses (standing, limitations, Twombly/Iqbal plausibility). For each real weakness, use propose_adverse so it lands on my board. Be blunt about what's weakest; I'd rather hear it from you than from the other side.",
+      },
+    }));
 
   return (
     <Panel
@@ -56,6 +67,16 @@ export function RefinedIssues({
             style={{ color: "rgba(230,236,247,0.7)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}
           >
             <Plus className="h-3 w-3" /> Question
+          </button>
+          <button
+            type="button"
+            onClick={pressureTest}
+            disabled={supportCount === 0}
+            title={supportCount === 0 ? "Pin a supporting authority first" : "Have the assistant attack your supporting authorities"}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(207,75,75,0.18)] disabled:opacity-40"
+            style={{ color: "#ff9b9b", boxShadow: "inset 0 0 0 1px rgba(207,75,75,0.4)" }}
+          >
+            <FlaskConical className="h-3 w-3" /> Pressure-test
           </button>
           <button
             type="button"
