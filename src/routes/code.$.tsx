@@ -12,6 +12,8 @@ import { STATE_NAMES, sourceName } from "@/lib/source-groups";
 import { formatGroupCrumb } from "@/lib/label-format";
 import { docSeo, SITE_BRAND } from "@/lib/doc-seo";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
+import { Streamdown } from "streamdown";
+import { RegisterHistory } from "@/components/marginalia/RegisterHistory";
 
 // Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
 // and @/lib/auto-link-citations (renderDecorated). Both work in original
@@ -1507,22 +1509,42 @@ function DocumentPage() {
         </div>
 
         <div className="mt-8">
-          <div>
-            <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
-            <DefinitionsPanel text={body} />
-          </div>
-          <div className={`statute-prose font-serif text-foreground ${fontClass}`}>
-            <LegalBody
-              body={body}
-              segments={segments}
-              opParas={opParas}
-              citations={citations}
-              q={search.q}
-              identifier={document.identifier}
-              docMeta={{ sourceCode: document.source_code, sectionLabel: document.section_label ?? "", heading: document.heading ?? "" }}
-            />
-          </div>
+          {document.source_code === "register" && document.body_md ? (
+            // Federal Register docs are parsed into structured markdown
+            // (agency / action / citation / summary / supplementary info) by
+            // scripts/register_parse.py. They're firehose docs, not part of the
+            // citation_edges graph, so render the structured body_md directly
+            // rather than the body_text offset machinery. The leading H2 echoes
+            // the heading already shown in the <h1>, so strip it.
+            <div className={`statute-prose prose prose-stone max-w-none font-serif text-foreground ${fontClass}`}>
+              <Streamdown>{document.body_md.replace(/^##\s+.*\n+/, "")}</Streamdown>
+            </div>
+          ) : (
+            <>
+              <div>
+                <div className="mb-6"><DocOutline body={body} opParas={opParas} /></div>
+                <DefinitionsPanel text={body} />
+              </div>
+              <div className={`statute-prose font-serif text-foreground ${fontClass}`}>
+                <LegalBody
+                  body={body}
+                  segments={segments}
+                  opParas={opParas}
+                  citations={citations}
+                  q={search.q}
+                  identifier={document.identifier}
+                  docMeta={{ sourceCode: document.source_code, sectionLabel: document.section_label ?? "", heading: document.heading ?? "" }}
+                />
+              </div>
+            </>
+          )}
         </div>
+
+        {/* CFR sections: the Federal Register rulemakings that created or amended
+            this part — agency reasoning, "right from the horse's mouth". */}
+        {document.source_code === "cfr" && (
+          <RegisterHistory identifier={document.identifier} />
+        )}
 
         {/* Court cases that have applied or cited this section — free, visible
             before login. Fetched from CourtListener, cached 7 days. */}

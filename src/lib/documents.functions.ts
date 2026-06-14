@@ -460,6 +460,36 @@ export type DiffPair = {
   stats: { added: number; removed: number; common: number };
 };
 
+// Federal Register rulemakings that created or amended a CFR part — the
+// regulatory history behind a codified section. Powered by the
+// cfr_register_history RPC over register_meta.cfr_refs (see
+// scripts/register_parse.py). Newest first.
+export type RegisterHistoryRow = {
+  fr_doc_number: string;
+  identifier: string;
+  title: string | null;
+  doc_type: string | null;
+  decided: string | null;
+};
+
+export const getRegisterHistory = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
+  .handler(async ({ data }): Promise<{ rows: RegisterHistoryRow[] }> => {
+    // CFR identifiers look like /us/cfr/t42/s§ 410.5 — title is t<N>, and the
+    // CFR *part* is the integer before the dot in the section number (410.5 is
+    // in part 410). That part is what register_meta.cfr_refs keys off.
+    const m = data.identifier.match(/\/cfr\/t(\d+)\/s\D*(\d+)/);
+    if (!m) return { rows: [] };
+    const supabaseAdmin = await getAdminClient();
+    const { data: rows, error } = await supabaseAdmin.rpc("cfr_register_history", {
+      p_title: Number(m[1]),
+      p_part: Number(m[2]),
+      p_limit: 40,
+    });
+    if (error) return { rows: [] };
+    return { rows: (rows ?? []) as RegisterHistoryRow[] };
+  });
+
 export const getDiffPair = createServerFn({ method: "GET" })
   .inputValidator(z.object({ a: z.string().min(1).max(300), b: z.string().min(1).max(300) }))
   .handler(async ({ data }): Promise<{ pair: DiffPair | null }> => {
