@@ -73,7 +73,16 @@ function WorkspaceLayout() {
   if (loading || !user) return <div className="p-8 text-muted-foreground">Loading workspace…</div>;
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden" style={{ background: "var(--paper, #f7f3ea)" }}>
+    <div
+      // `body` carries a global `zoom: 0.75`, which shrinks vh units so a plain
+      // 100vh shell only fills 75% of the window. Divide by --site-zoom to reach
+      // the real viewport floor — same compensation, and same no-fallback var,
+      // as the .min-h-screen rule in styles.css: if the var is ever out of scope
+      // the inline value voids and the h-screen class below takes over (100vh,
+      // correct when there's no zoom to cancel).
+      className="flex h-screen w-full overflow-hidden"
+      style={{ height: "calc(100vh / var(--site-zoom))", background: "var(--paper, #f7f3ea)" }}
+    >
       <aside className="flex w-72 flex-col border-r" style={{ background: "#0c1b3d", borderColor: "rgba(200,162,75,0.25)" }}>
         <div className="space-y-2 p-3">
           <Button onClick={newSession} className="w-full" style={{ background: "#c8a24b", color: "#0c1b3d" }}>
