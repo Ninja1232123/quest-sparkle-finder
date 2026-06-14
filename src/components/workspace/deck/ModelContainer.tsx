@@ -82,7 +82,7 @@ export function ModelContainer({
           <ConversationContent>
             {messages.length === 0 && (
               <div className="px-4 py-7">
-                <div className="mb-1 text-[9px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                <div className="mb-1 text-[10.5px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   Research assistant
                 </div>
                 <p className="mb-1 text-[15px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>

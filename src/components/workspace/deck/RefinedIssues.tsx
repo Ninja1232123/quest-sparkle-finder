@@ -44,7 +44,7 @@ export function RefinedIssues({
       footer={
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold tracking-[0.18em] uppercase"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-[0.18em] uppercase"
             style={{ background: "rgba(207,75,75,0.18)", color: "#ff9b9b", fontFamily: "var(--font-mono, 'Special Elite')" }}
           >
             Issues
@@ -52,7 +52,7 @@ export function RefinedIssues({
           <button
             type="button"
             onClick={onAddQuestion}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
             style={{ color: "rgba(230,236,247,0.7)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}
           >
             <Plus className="h-3 w-3" /> Question
@@ -60,7 +60,7 @@ export function RefinedIssues({
           <button
             type="button"
             onClick={onToggleDoc}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[9.5px] font-bold tracking-[0.16em] uppercase transition-transform hover:scale-[1.03]"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-bold tracking-[0.16em] uppercase transition-transform hover:scale-[1.03]"
             style={{
               background: docOpen ? "#0c1b3d" : "#7bb651",
               color: docOpen ? "#7bb651" : "#0c1b3d",
@@ -82,14 +82,14 @@ export function RefinedIssues({
             <div key={b.key}>
               <div className="mb-1 flex items-center gap-1.5 px-0.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }} />
-                <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
+                <span className="text-[11px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
                   {b.label}
                 </span>
-                <span className="text-[9px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
+                <span className="text-[10.5px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
               </div>
               {rows.length === 0 ? (
                 <div
-                  className="rounded-md px-2 py-2.5 text-center text-[10px]"
+                  className="rounded-md px-2 py-2.5 text-center text-[11.5px]"
                   style={{ background: b.tint, color: "rgba(230,236,247,0.45)", boxShadow: `inset 0 0 0 1px ${b.color}33` }}
                 >
                   Grab authority from the sources to file it here.
@@ -109,7 +109,7 @@ export function RefinedIssues({
           <div>
             <div className="mb-1 flex items-center gap-1.5 px-0.5">
               <HelpCircle className="h-3 w-3" style={{ color: "#9fb3d8" }} />
-              <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+              <span className="text-[11px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
                 Open questions
               </span>
             </div>
@@ -158,9 +158,9 @@ function IssueCard({
           <div className="truncate text-[11px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
             {cite}
           </div>
-          {item.heading && <div className="truncate text-[10px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
+          {item.heading && <div className="truncate text-[11.5px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
           {item.quote && (
-            <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
+            <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
               “{item.quote}”{item.pin_cite ? ` ${item.pin_cite}` : ""}
             </p>
           )}

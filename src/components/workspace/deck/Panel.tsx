@@ -33,7 +33,7 @@ export function Panel({
 }) {
   return (
     <section
-      className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[14px] ${className}`}
+      className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] ${className}`}
       style={{
         background: NAVY,
         border: `2px solid ${BRASS}`,
@@ -54,7 +54,7 @@ export function Panel({
           style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
         />
         <span
-          className="text-[10px] font-semibold tracking-[0.28em] uppercase"
+          className="text-[11.5px] font-semibold tracking-[0.28em] uppercase"
           style={{ color: accent, fontFamily: "var(--font-mono, 'Special Elite')" }}
         >
           {label}

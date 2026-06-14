@@ -191,7 +191,7 @@ function Pane({ title, accent, children }: { title: string; accent: string; chil
   return (
     <div className="flex min-h-0 min-w-0 flex-col">
       <div
-        className="mb-1 px-1 text-[9px] font-semibold tracking-[0.26em] uppercase"
+        className="mb-1 px-1 text-[10.5px] font-semibold tracking-[0.26em] uppercase"
         style={{ color: accent, fontFamily: "var(--font-mono, 'Special Elite')" }}
       >
         {title}
@@ -276,19 +276,19 @@ function Row({
     <div className="group rounded-md p-2 transition-colors hover:bg-[rgba(200,162,75,0.08)]" style={{ boxShadow: "inset 0 0 0 1px rgba(12,27,61,0.08)" }}>
       <div className="mb-0.5 flex items-center gap-1.5">
         <span
-          className="rounded px-1 py-0.5 text-[8.5px] font-semibold tracking-wider"
+          className="rounded px-1 py-0.5 text-[10px] font-semibold tracking-wider"
           style={{ background: "rgba(200,162,75,0.18)", color: "#7a5e16", fontFamily: "var(--font-mono, 'Special Elite')" }}
         >
           {chip}
         </span>
-        {sub && <span className="truncate text-[10px]" style={{ color: "rgba(12,27,61,0.6)" }}>{sub}</span>}
+        {sub && <span className="truncate text-[11.5px]" style={{ color: "rgba(12,27,61,0.6)" }}>{sub}</span>}
       </div>
       <div className="text-[12px] font-medium leading-snug" style={{ color: "var(--ink)", fontFamily: "var(--font-serif, 'Cinzel')" }}>
         {title}
       </div>
       {body ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug" style={{ color: "rgba(12,27,61,0.65)" }}>{body}</p> : null}
       <div className="mt-1.5 flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
-        <span className="mr-0.5 text-[8px] tracking-widest" style={{ color: "rgba(12,27,61,0.4)" }}>GRAB →</span>
+        <span className="mr-0.5 text-[9.5px] tracking-widest" style={{ color: "rgba(12,27,61,0.4)" }}>GRAB →</span>
         {STANCES.map((s) => (
           <button
             key={s.stance ?? "n"}
@@ -303,7 +303,7 @@ function Row({
           type="button"
           title="Insert into draft"
           onClick={onDraft}
-          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
+          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
           style={{ color: "rgba(12,27,61,0.7)" }}
         >
           <FileText className="h-3 w-3" /> DRAFT
@@ -327,7 +327,7 @@ function SelectorRow({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 text-[9px] tracking-[0.18em] uppercase" style={{ color: "rgba(230,236,247,0.7)", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+      <span className="w-16 shrink-0 text-[10.5px] tracking-[0.18em] uppercase" style={{ color: "rgba(230,236,247,0.7)", fontFamily: "var(--font-mono, 'Special Elite')" }}>
         {label}
       </span>
       <div className="flex rounded-md p-0.5" style={{ background: "rgba(0,0,0,0.25)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}>
@@ -336,7 +336,7 @@ function SelectorRow({
             key={s}
             type="button"
             onClick={() => onScope(s)}
-            className="rounded px-2 py-0.5 text-[9.5px] font-semibold tracking-wider uppercase transition-colors"
+            className="rounded px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase transition-colors"
             style={{
               fontFamily: "var(--font-mono, 'Special Elite')",
               background: scope === s ? "#c8a24b" : "transparent",
@@ -357,7 +357,7 @@ function Toggle({ active, color, onClick, children }: { active: boolean; color: 
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md px-2 py-1 text-[9.5px] font-semibold tracking-wider uppercase transition-colors"
+      className="rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase transition-colors"
       style={{
         fontFamily: "var(--font-mono, 'Special Elite')",
         background: active ? color : "transparent",
