@@ -18,6 +18,7 @@ export function ModelContainer({
   seedPrompt,
   onPin,
   onAddQuestion,
+  headerRight,
 }: {
   threadId: string;
   transport: DefaultChatTransport<UIMessage>;
@@ -25,6 +26,7 @@ export function ModelContainer({
   seedPrompt?: string;
   onPin: (draft: PinDraft) => void;
   onAddQuestion: (text: string) => Promise<void> | void;
+  headerRight?: React.ReactNode;
 }) {
   const chat = useChat({ id: threadId, messages: initialMessages, transport });
   const { messages, sendMessage, status, error, stop } = chat;
@@ -48,6 +50,7 @@ export function ModelContainer({
     <Panel
       label="Assistant"
       bodyClassName="p-2"
+      headerRight={headerRight}
       footer={
         <PromptInput
           onSubmit={async (msg) => {

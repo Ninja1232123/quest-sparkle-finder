@@ -300,6 +300,10 @@ export function Juri() {
 
   // ── Render ──
 
+  // The Workspace has its own always-on assistant column, so the floating
+  // Juri launcher is redundant there — hide it entirely on /workspace.
+  if (currentPath.startsWith("/workspace")) return null;
+
   return (
     <>
       {/* Eagle launcher — bottom-left. Closed only; the close control lives

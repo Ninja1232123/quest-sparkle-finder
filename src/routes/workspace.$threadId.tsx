@@ -16,6 +16,7 @@ import { Panel } from "@/components/workspace/deck/Panel";
 import { SourceReader } from "@/components/workspace/deck/SourceReader";
 import { RefinedIssues } from "@/components/workspace/deck/RefinedIssues";
 import { ModelContainer } from "@/components/workspace/deck/ModelContainer";
+import { SessionMenu } from "@/components/workspace/deck/SessionMenu";
 import { X } from "lucide-react";
 
 export const Route = createFileRoute("/workspace/$threadId")({
@@ -296,12 +297,12 @@ function Desk({
       }}
     >
       {/* Sources — split statute / case law */}
-      <div className="flex min-w-0 flex-[1.4]">
+      <div className="flex min-w-0 flex-[1.7]">
         <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} />
       </div>
 
       {/* Refined issues, with the Doc Creator overlaying this column when open */}
-      <div className="relative flex min-w-0 flex-1">
+      <div className="relative flex min-w-0 flex-[1.4]">
         <RefinedIssues
           items={caseItems}
           docOpen={docOpen}
@@ -359,6 +360,7 @@ function Desk({
           seedPrompt={seedPrompt}
           onPin={handleOpenPin}
           onAddQuestion={handleAddQuestion}
+          headerRight={<SessionMenu currentId={threadId} />}
         />
       </div>
 
