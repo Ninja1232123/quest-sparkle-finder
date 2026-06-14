@@ -13,7 +13,7 @@
 @font-face {
   font-family: "Architects Daughter";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 600;
   font-display: swap;
   src: url("/fonts/ArchitectsDaughter-Regular.ttf") format("truetype");
 }
@@ -286,7 +286,7 @@
        at the page bottom). `zoom` keeps fixed positioning correct. Its one
        quirk — it shrinks vh units — is handled by the .min-h-screen rule
        below. Tune one number: 0.7, 0.75, 0.8 … */
-    --site-zoom: 0.75;
+    --site-zoom: 1.0;
     zoom: var(--site-zoom);
   }
 
@@ -316,7 +316,7 @@
   article .reading,
   .prose-legal {
     font-family: var(--font-serif);
-    font-size: 1.125rem;        /* 18px */
+    font-size: 1.325rem;        /* 18px */
     line-height: 1.7;
     color: var(--ink);
     font-feature-settings: "onum", "kern";
@@ -365,7 +365,7 @@
   /* Subtle lead-in: the first operative paragraph gets a touch more presence so
      the section opens with intent rather than starting mid-stride. */
   .statute-prose .group\/para:first-child {
-    font-size: 1.02em;
+    font-size: 1.12em;
   }
   /* Clause/subsection numbers — let the pill breathe and align to the text top
      so "(a)" sits cleanly beside the first line, not floating above it. */
@@ -523,7 +523,7 @@
     align-items: center;
     gap: 6px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -534,7 +534,7 @@
     white-space: nowrap;
   }
   .count-pill.lg {
-    font-size: 12.5px;
+    font-size: 14.5px;
     padding: 6px 14px;
     gap: 8px;
   }
@@ -544,7 +544,7 @@
   }
   .count-pill .lbl {
     opacity: 0.85;
-    font-weight: 600;
+    font-weight: 800;
   }
   /* Coming-soon variant — neutral, hollow */
   .count-pill.soon {
@@ -651,7 +651,7 @@
     position: relative;
     font-family: var(--font-display);
     font-size: 13.5px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--ink-muted);
     padding: 10px 14px;
     border-bottom: 2px solid transparent;
@@ -666,14 +666,14 @@
   .top-nav-link[data-active="true"] {
     color: var(--ink);
     border-bottom-color: var(--terracotta);
-    font-weight: 700;
+    font-weight: 800;
   }
   .top-nav-support {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 0.04em;
     color: var(--ink-muted);
     padding: 8px 12px;
@@ -692,7 +692,7 @@
     border-radius: 999px;
     padding: 9px 18px;
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 700;
     font-size: 14px;
     border: 1.5px solid var(--ink);
     transition: opacity 150ms, transform 150ms;
@@ -776,7 +776,7 @@ main {
   }
   .cb-hero-status {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -786,8 +786,8 @@ main {
   }
   .cb-hero-status-dot {
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 9px;
+    height: 9px;
     border-radius: 999px;
     background: var(--c);
     margin-right: 8px;
@@ -887,7 +887,7 @@ main {
   .subvol-recent {
     font-family: var(--font-mono);
     font-size: 9.5px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-muted);
@@ -898,7 +898,7 @@ main {
     align-items: center;
     gap: 4px;
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 12.5px;
     color: var(--ink-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -907,7 +907,7 @@ main {
   /* ───── THE DESK (right rail) ───── */
   .desk-eyebrow {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
@@ -933,7 +933,7 @@ main {
   }
   .desk-mini-sub {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--ink-muted);
@@ -970,8 +970,8 @@ main {
     border: 1.5px solid var(--ink);
     border-radius: 999px;
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 12px;
+    font-weight: 800;
+    font-size: 14px;
     color: var(--ink);
     background: transparent;
     transition: background 150ms, color 150ms;
@@ -991,7 +991,7 @@ main {
   }
   .desk-stat-lab {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-muted);
@@ -1009,7 +1009,7 @@ main {
     gap: 10px;
     padding: 7px 10px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 15px;
     color: var(--ink-muted);
     transition: background 120ms, color 120ms;
   }
@@ -3286,8 +3286,8 @@ main {
 @layer components {
   /* Tokens used throughout the engraved direction */
   :root {
-    --codex-ink: #050810;
-    --codex-ink-2: #0a1528;
+    --codex-ink: #10214d;
+    --codex-ink-2: #c5d4ed;
     --codex-ink-3: #0f203a;
     --codex-gold: #b89150;
     --codex-gold-2: #e1b96e;
@@ -3403,7 +3403,7 @@ main {
   .hero-quote {
     font-family: "Playfair Display", "IM Fell English", var(--font-serif), serif;
     font-style: italic;
-    font-weight: 400;
+    font-weight: 600;
     font-size: clamp(22px, 1.75vw, 29px);
     line-height: 1.45;
     color: var(--codex-slate);
@@ -3537,14 +3537,14 @@ main {
   .home-const-cartouche .hcc-wtp {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-weight: 400;
+    font-weight: 600;
     font-size: clamp(28px, 3.4vw, 44px);
     color: var(--codex-ink);
     margin: 14px 0 4px;
   }
   .home-const-cartouche .hcc-kicker {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.28em;
     color: var(--codex-gold-3);
     text-transform: uppercase;
@@ -3578,7 +3578,7 @@ main {
     border-radius: 0;
     padding: 4px 10px;
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
   }
@@ -3595,7 +3595,7 @@ main {
     padding: 12px 24px;
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     margin-top: 22px;
@@ -3655,7 +3655,7 @@ main {
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
     font-weight: 400;
-    font-size: 10px;
+    font-size: 14px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3679,13 +3679,13 @@ main {
   .home-codebook-shelf .am-card .am-count {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--codex-slate-2);
   }
   .home-codebook-shelf .am-card .am-go {
     font-family: "Special Elite", "Courier New", monospace;
     font-weight: 400;
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3694,7 +3694,7 @@ main {
   /* ── HERO SEARCH BLOCK — refine typography ─────────────────────────────── */
   .home-hero-eyebrow {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 0.32em;
     color: var(--codex-gold);
     text-transform: uppercase;
@@ -3724,7 +3724,7 @@ main {
   .desk-eyebrow,
   .subvol-eyebrow {
     font-family: "Special Elite", "Courier New", monospace !important;
-    font-weight: 400 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.28em !important;
     text-transform: uppercase;
     color: var(--codex-gold-3);
