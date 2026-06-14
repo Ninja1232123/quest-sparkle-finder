@@ -3287,15 +3287,15 @@ main {
   /* Tokens used throughout the engraved direction */
   :root {
     --codex-ink: #10214d;
-    --codex-ink-2: #113f8c;
+    --codex-ink-2: #4e4f4f;
     --codex-ink-3: #07224d;
     --codex-gold: #b89150;
     --codex-gold-2: #e1b96e;
     --codex-gold-3: #8a6d3b;
     --codex-parchment: #fdfaf3;
     --codex-parchment-2: #f3ead4;
-    --codex-slate: #092c7a;
-    --codex-slate-2: #0a3dad;
+    --codex-slate: #deae02;
+    --codex-slate-2: #4a4c4f;
   }
 
   /* ── HERO ──────────────────────────────────────────────────────────────── */
