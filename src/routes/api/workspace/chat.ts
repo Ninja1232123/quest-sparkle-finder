@@ -14,12 +14,23 @@ THE USER IS THE LEAD RESEARCHER. They are building their own case. You are a jun
 RULES (non-negotiable):
 - NEVER pin authorities, save items, or modify the user's draft. Only the user does that.
 - When you find something the user should consider, emit a proposal tool: propose_search, propose_pin, propose_adverse, or propose_question. Each proposal renders as a card with Accept / Edit / Dismiss for the user to review.
-- Use search_corpus and fetch_document freely as your own research; they are read-only. Ground every proposal in real results — never invent citations.
+- Use the read-only research tools (search_corpus, search_cases, fetch_document, fetch_case) freely as your own research. Ground every proposal in real results — never invent citations or quotes.
 - For propose_pin / propose_adverse, ALWAYS include the operative quote verbatim (no paraphrasing). The why_it_matters must follow IRAC: state the Issue it addresses, the Rule (what the authority says), and the Application (how it connects to the user's specific facts). One tight paragraph.
 - Use propose_adverse when you find authority that cuts AGAINST the user's position. Rate its danger: CRITICAL (defeats the claim on its face), HIGH (requires rebuttal argument), MEDIUM (distinguishable but needs addressing), LOW (background noise). Put the rating in why_it_matters.
 - For open issues the user hasn't researched yet, emit propose_question. Don't try to answer everything in one turn.
 - Reply text should be short and direct. Heavy lifting goes into the proposal cards. Do not dump long summaries the user didn't ask for.
 - End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
+
+THE CORPUS YOU CAN SEARCH (all read-only, all on the self_law backend):
+- STATUTES & REGULATIONS via search_corpus — 3.9M sections across: federal (source codes "usc", "cfr", "const", "ucc", "fedreg", "irm", "tfm", and "bill" for 835k congressional bills) AND all 50 states (two-letter codes: "ak", "al", "az", "ca", "ny", "tx", … through "wy"). Pass source to scope to one code, or omit source to search everything at once.
+- CASE LAW via search_cases — U.S. Supreme Court opinions (full text, 28k) and state supreme court opinions (full text, 528k, all 50 states). Use jurisdiction to scope: "scotus", "state", or a state name; omit it to search both.
+- FULL TEXT via fetch_document (a statute/reg section by identifier) and fetch_case (a full opinion by id from a search_cases result).
+
+SEARCH LIKE A LAWYER — USE EVERYTHING:
+- Fire multiple searches in parallel in a single turn. A real research sweep hits statutes AND cases AND adverse authority at once — don't drip one query at a time.
+- Don't stay in one source. If the user has a federal claim with a state-law component, search both. If a statute governs, also search_cases for opinions that interpret it. Statutes are the skeleton; cases are how courts actually apply them.
+- Tight queries beat broad ones. Quote the operative phrase ("qualified immunity", "deliberate indifference") rather than full sentences. If a query is noisy, narrow the source/jurisdiction rather than fetching everything.
+- When you cite a controlling statute, look for the cases interpreting it — then look for the adverse cases where a court found it did NOT apply. Research is not complete until both sides are checked.
 
 LEGAL REASONING METHOD:
 When reading any statute, regulation, or case, apply three components in order:
@@ -31,6 +42,43 @@ RESEARCH SEQUENCE: Start with the controlling statute or constitutional provisio
 
 IRAC FOR PROPOSALS: Every why_it_matters should answer: What is the precise legal issue? What does this authority say the rule is? How does that rule apply to the user's specific facts? What is the conclusion — does it help or hurt?`;
 
+
+// Serialize the case board into a compact block appended to the system prompt.
+// Gives the model working memory of the case so it builds on what's there instead
+// of starting cold or re-proposing already-pinned authorities.
+type BoardRow = {
+  kind: string;
+  stance: string | null;
+  citation: string | null;
+  identifier: string | null;
+  heading: string | null;
+  pin_cite: string | null;
+  quote: string | null;
+  user_note: string | null;
+};
+function buildBoardContext(rows: BoardRow[]): string {
+  if (rows.length === 0) {
+    return `\n\nCASE BOARD: empty. The user has not pinned any authorities or logged questions yet. A good opening move is a parallel sweep (statutes + cases) and a draft set of proposals.`;
+  }
+  const support = rows.filter((r) => r.kind === "authority" && r.stance !== "adverse");
+  const adverse = rows.filter((r) => r.kind === "authority" && r.stance === "adverse");
+  const questions = rows.filter((r) => r.kind === "question");
+  const notes = rows.filter((r) => r.kind === "note");
+  const fmtAuthority = (r: BoardRow) => {
+    const cite = [r.citation || r.identifier, r.pin_cite].filter(Boolean).join(" ");
+    const q = r.quote ? ` — "${r.quote.slice(0, 200)}${r.quote.length > 200 ? "…" : ""}"` : "";
+    return `  • ${cite}${r.heading ? ` (${r.heading})` : ""}${q}`;
+  };
+  const lines: string[] = [
+    `\n\nCASE BOARD (the user's working case — already on the board, do NOT re-propose these):`,
+  ];
+  if (support.length) lines.push(`SUPPORTING AUTHORITIES (${support.length}):`, ...support.map(fmtAuthority));
+  if (adverse.length) lines.push(`ADVERSE AUTHORITIES (${adverse.length}):`, ...adverse.map(fmtAuthority));
+  if (questions.length) lines.push(`OPEN QUESTIONS (${questions.length}):`, ...questions.map((r) => `  • ${r.user_note ?? ""}`));
+  if (notes.length) lines.push(`NOTES (${notes.length}):`, ...notes.map((r) => `  • ${r.user_note ?? ""}`));
+  lines.push(`Build on this. Fill gaps, find adverse authority for the supporting pins, and answer the open questions — don't repeat what's already here.`);
+  return lines.join("\n");
+}
 
 async function authenticate(request: Request): Promise<{ userId: string; token: string } | Response> {
   const auth = request.headers.get("authorization") ?? "";
@@ -88,14 +136,28 @@ export const Route = createFileRoute("/api/workspace/chat")({
           return new Response("Forbidden", { status: 403 });
         }
 
+        // Working memory: the user's case board, serialized into the system prompt so
+        // the model knows what's already established/contested/parked and doesn't
+        // re-propose things the user already pinned or asked.
+        const { data: boardRows } = await workspace
+          .from("workspace_case_items")
+          .select("kind,stance,citation,identifier,heading,pin_cite,quote,user_note")
+          .eq("thread_id", threadId)
+          .order("kind", { ascending: true })
+          .order("order_index", { ascending: true });
+        const systemPrompt = SYSTEM + buildBoardContext(boardRows ?? []);
+
         const model = anthropic("claude-sonnet-4-6");
 
         const tools = {
           search_corpus: tool({
-            description: "READ-ONLY: Search the US federal legal corpus. Use this for your own research before proposing anything to the user.",
+            description:
+              "READ-ONLY: Full-text search of statutes, regulations, the Constitution, and bills (3.9M sections). " +
+              "Sources: federal (\"usc\", \"cfr\", \"const\", \"ucc\", \"fedreg\", \"irm\", \"tfm\", \"bill\") and all 50 states (two-letter codes like \"ca\", \"ny\", \"tx\"). " +
+              "Pass `source` to scope to one code; omit it to search the entire corpus. For case law, use search_cases instead.",
             inputSchema: z.object({
-              q: z.string().min(2).describe("Search query"),
-              source: z.enum(["usc", "cfr", "ucc", "const", "fedreg", "tfm", "irm"]).optional(),
+              q: z.string().min(2).describe("Search query — quote the operative phrase, e.g. 'qualified immunity'"),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to (e.g. 'usc', 'ca'). Omit to search everything."),
               limit: z.number().int().min(1).max(20).default(8),
             }),
             execute: async ({ q, source, limit }) => {
@@ -136,6 +198,106 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 body,
                 url: `/code/${data.identifier}`,
               };
+            },
+          }),
+          search_cases: tool({
+            description:
+              "READ-ONLY: Search U.S. court opinions by full text. Covers the Supreme Court (28k opinions) and state supreme courts (528k, all 50 states). " +
+              "Use this to find how courts have actually applied a statute, the elements of a common-law claim, or adverse holdings. " +
+              "Scope with `jurisdiction`: 'scotus', 'state', or a state name (e.g. 'california'); omit to search both.",
+            inputSchema: z.object({
+              q: z.string().min(2).describe("Search query — operative phrase or doctrine, e.g. 'deliberate indifference'"),
+              jurisdiction: z.string().optional().describe("'scotus', 'state', or a state name. Omit to search both."),
+              limit: z.number().int().min(1).max(15).default(8),
+            }),
+            execute: async ({ q, jurisdiction, limit }) => {
+              const j = (jurisdiction ?? "").trim().toLowerCase();
+              const wantScotus = j === "" || j === "scotus" || j === "us" || j === "supreme";
+              const wantState = j === "" || j === "state" || (!wantScotus);
+              const results: Array<Record<string, unknown>> = [];
+              // SCOTUS — title index, ranked by how often the opinion is cited.
+              if (wantScotus) {
+                const { data } = await corpus
+                  .from("opinion_record")
+                  .select("slug,case_title,us_cite,year,cited_count")
+                  .textSearch("title_tsv", q, { type: "websearch", config: "english" })
+                  .order("cited_count", { ascending: false })
+                  .limit(limit);
+                for (const r of (data ?? []) as Array<{ slug: string; case_title: string; us_cite: string | null; year: number | null; cited_count: number }>) {
+                  results.push({
+                    id: `scotus:${r.slug}`,
+                    court: "U.S. Supreme Court",
+                    title: r.case_title,
+                    citation: r.us_cite ?? "",
+                    year: r.year,
+                    cited_count: r.cited_count,
+                    url: `/record/${r.slug}`,
+                  });
+                }
+              }
+              // State supreme courts — full body index. Filter to a state name if given.
+              if (wantState) {
+                let query = corpus
+                  .from("state_supreme_opinions")
+                  .select("id,title,citation,state,issuer,decided_at")
+                  .textSearch("body_tsv", q, { type: "websearch", config: "english" });
+                const stateName = j && !["state", "scotus", "us", "supreme", ""].includes(j) ? j : null;
+                if (stateName) query = query.eq("state", stateName);
+                const { data } = await query.limit(limit);
+                for (const r of (data ?? []) as Array<{ id: string; title: string; citation: string | null; state: string; issuer: string | null; decided_at: string | null }>) {
+                  results.push({
+                    id: `state:${r.id}`,
+                    court: r.issuer ?? `${r.state} Supreme Court`,
+                    state: r.state,
+                    title: r.title,
+                    citation: r.citation ?? "",
+                    year: r.decided_at ? new Date(r.decided_at).getFullYear() : null,
+                  });
+                }
+              }
+              return { count: results.length, results };
+            },
+          }),
+          fetch_case: tool({
+            description: "READ-ONLY: Fetch the full text of one court opinion by the `id` returned from search_cases (e.g. 'scotus:miranda-v-arizona' or 'state:<uuid>').",
+            inputSchema: z.object({ id: z.string() }),
+            execute: async ({ id }) => {
+              if (id.startsWith("scotus:")) {
+                const slug = id.slice("scotus:".length);
+                const { data, error } = await corpus
+                  .from("opinion_record")
+                  .select("slug,case_title,us_cite,year,body_text")
+                  .eq("slug", slug)
+                  .maybeSingle();
+                if (error || !data) return { error: error?.message ?? "Not found" };
+                return {
+                  id,
+                  court: "U.S. Supreme Court",
+                  title: data.case_title,
+                  citation: data.us_cite ?? "",
+                  year: data.year,
+                  body: (data.body_text ?? "").slice(0, 12000),
+                  url: `/record/${data.slug}`,
+                };
+              }
+              if (id.startsWith("state:")) {
+                const sid = id.slice("state:".length);
+                const { data, error } = await corpus
+                  .from("state_supreme_opinions")
+                  .select("id,title,citation,state,issuer,decided_at,body_text")
+                  .eq("id", sid)
+                  .maybeSingle();
+                if (error || !data) return { error: error?.message ?? "Not found" };
+                return {
+                  id,
+                  court: data.issuer ?? `${data.state} Supreme Court`,
+                  title: data.title,
+                  citation: data.citation ?? "",
+                  year: data.decided_at ? new Date(data.decided_at).getFullYear() : null,
+                  body: (data.body_text ?? "").slice(0, 12000),
+                };
+              }
+              return { error: "id must start with 'scotus:' or 'state:'" };
             },
           }),
           propose_search: tool({
@@ -188,7 +350,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
 
         const result = streamText({
           model,
-          system: SYSTEM,
+          system: systemPrompt,
           messages: await convertToModelMessages(body.messages),
           tools,
           stopWhen: stepCountIs(50),

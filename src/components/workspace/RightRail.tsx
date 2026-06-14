@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useChat, type UseChatHelpers } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
-import { searchCorpus } from "@/lib/workspace.functions";
-import { getOpinionsIndex } from "@/lib/opinions.functions";
+import { searchCorpus, searchCases, type CaseHit } from "@/lib/workspace.functions";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
@@ -272,7 +271,7 @@ const SOURCES = [
   { id: "usc", label: "USC" },
   { id: "cfr", label: "CFR" },
   { id: "const", label: "CONST" },
-  { id: "opinions", label: "OPINIONS" },
+  { id: "cases", label: "CASES" },
 ] as const;
 
 function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: CorpusHit) => void; onSummarize: (h: CorpusHit) => void; onPin: (h: CorpusHit) => void }) {
@@ -282,7 +281,7 @@ function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: Co
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const run = useServerFn(searchCorpus);
-  const runOpinions = useServerFn(getOpinionsIndex);
+  const runCases = useServerFn(searchCases);
 
   const submit = async (override?: { q?: string; source?: string | null }) => {
     const query = (override?.q ?? q).trim();
@@ -292,15 +291,15 @@ function SearchPane({ onAddToNotes, onSummarize, onPin }: { onAddToNotes: (h: Co
     const useSource = override?.source !== undefined ? override.source : source;
     setLoading(true); setErr(null);
     try {
-      if (useSource === "opinions") {
-        const { items } = await runOpinions({ data: { q: query, page: 0 } });
-        setHits((items ?? []).map((op) => ({
-          identifier: `record/${op.slug}`,
-          source: "opinions",
-          heading: op.case_title,
-          sectionLabel: op.us_cite ?? "",
-          parentLabel: op.year ? String(op.year) : "",
-          snippet: op.cited_count > 0 ? `${op.cited_count.toLocaleString()} citations` : "",
+      if (useSource === "cases") {
+        const rows = (await runCases({ data: { q: query, limit: 15 } })) as CaseHit[];
+        setHits((rows ?? []).map((c) => ({
+          identifier: c.url ?? c.id,
+          source: "case",
+          heading: c.title,
+          sectionLabel: c.citation,
+          parentLabel: [c.court, c.year].filter(Boolean).join(" · "),
+          snippet: "",
         })));
       } else {
         const rows = await run({ data: { q: query, source: useSource, limit: 15 } });

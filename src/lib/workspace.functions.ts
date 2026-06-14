@@ -3,7 +3,13 @@
 // this file + the chat route's tool handlers.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase as corpus } from "@/integrations/supabase/client";
 import { z } from "zod";
+
+// Two backends: `context.supabase` is the CLOUD auth project (workspace_* tables,
+// RLS-scoped to the user). `corpus` is the LOCAL self_law backend (read-only
+// publishable key) holding the legal corpus — documents, opinions, etc. Corpus
+// reads MUST go through `corpus`; the cloud project has no corpus data.
 
 const ThreadIdInput = z.object({ threadId: z.string().uuid() });
 
@@ -216,8 +222,8 @@ export const searchCorpus = createServerFn({ method: "GET" })
       limit: z.number().int().min(1).max(30).optional(),
     }).parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: rows, error } = await (context.supabase.rpc as unknown as (
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await (corpus.rpc as unknown as (
       fn: string, args: Record<string, unknown>,
     ) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>)(
       "search_documents_fts",
@@ -232,6 +238,60 @@ export const searchCorpus = createServerFn({ method: "GET" })
       parentLabel: r.parent_label ?? "",
       snippet: (r.snippet ?? "").replace(/<\/?mark>/g, ""),
     }));
+  });
+
+// ── Case-law search (SCOTUS + state supreme courts, LOCAL corpus) ───────────
+export type CaseHit = {
+  id: string;            // 'scotus:<slug>' | 'state:<uuid>'
+  court: string;
+  title: string;
+  citation: string;
+  year: number | null;
+  url: string | null;
+};
+
+export const searchCases = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      q: z.string().min(2).max(200),
+      jurisdiction: z.string().max(40).optional().nullable(),
+      limit: z.number().int().min(1).max(20).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const limit = data.limit ?? 12;
+    const j = (data.jurisdiction ?? "").trim().toLowerCase();
+    const wantScotus = j === "" || j === "scotus" || j === "us" || j === "supreme";
+    const wantState = j === "" || j === "state" || !wantScotus;
+    const out: CaseHit[] = [];
+    // opinion_record / state_supreme_opinions aren't in the generated Database
+    // types, so use an untyped view of the corpus client for these reads.
+    const db = corpus as unknown as { from: (t: string) => any };
+    if (wantScotus) {
+      const { data: rows } = await db
+        .from("opinion_record")
+        .select("slug,case_title,us_cite,year,cited_count")
+        .textSearch("title_tsv", data.q, { type: "websearch", config: "english" })
+        .order("cited_count", { ascending: false })
+        .limit(limit);
+      for (const r of (rows ?? []) as Array<{ slug: string; case_title: string; us_cite: string | null; year: number | null }>) {
+        out.push({ id: `scotus:${r.slug}`, court: "U.S. Supreme Court", title: r.case_title, citation: r.us_cite ?? "", year: r.year, url: `/record/${r.slug}` });
+      }
+    }
+    if (wantState) {
+      let query = db
+        .from("state_supreme_opinions")
+        .select("id,title,citation,state,issuer,decided_at")
+        .textSearch("body_tsv", data.q, { type: "websearch", config: "english" });
+      const stateName = j && !["", "state", "scotus", "us", "supreme"].includes(j) ? j : null;
+      if (stateName) query = query.eq("state", stateName);
+      const { data: rows } = await query.limit(limit);
+      for (const r of (rows ?? []) as Array<{ id: string; title: string; citation: string | null; state: string; issuer: string | null; decided_at: string | null }>) {
+        out.push({ id: `state:${r.id}`, court: r.issuer ?? `${r.state} Supreme Court`, title: r.title, citation: r.citation ?? "", year: r.decided_at ? new Date(r.decided_at).getFullYear() : null, url: null });
+      }
+    }
+    return out;
   });
 
 // ── Case Board (per-thread stacks the user curates) ────────────────────────
@@ -377,20 +437,28 @@ export const citeCheck = createServerFn({ method: "POST" })
     const matches = Array.from(data.text.matchAll(CITE_RX));
     const seen = new Map<string, { raw: string; identifier: string; citation: string }>();
     for (const m of matches) {
-      const kind = m[2].toUpperCase().startsWith("U") ? "usc" : "cfr";
-      const ident = `${kind}/${m[1]}/${m[3]}`;
+      const isUsc = m[2].toUpperCase().startsWith("U");
+      const title = m[1];
+      const section = m[3];
+      // Match the corpus identifier scheme exactly:
+      //   USC → /usc/title-42/section-1983
+      //   CFR → /us/cfr/t1/s§ 1.1
+      const ident = isUsc
+        ? `/usc/title-${title}/section-${section}`
+        : `/us/cfr/t${title}/s§ ${section}`;
       if (!seen.has(ident)) {
         seen.set(ident, {
           raw: m[0],
           identifier: ident,
-          citation: `${m[1]} ${kind.toUpperCase()} § ${m[3]}`,
+          citation: `${title} ${isUsc ? "U.S.C." : "C.F.R."} § ${section}`,
         });
       }
     }
     const cites = Array.from(seen.values());
     if (cites.length === 0) return { cites: [] };
 
-    const { data: foundRows } = await context.supabase
+    // Resolve against the LOCAL corpus (documents only exist there).
+    const { data: foundRows } = await corpus
       .from("documents")
       .select("identifier")
       .in("identifier", cites.map((c) => c.identifier));
