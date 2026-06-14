@@ -286,7 +286,7 @@
        at the page bottom). `zoom` keeps fixed positioning correct. Its one
        quirk — it shrinks vh units — is handled by the .min-h-screen rule
        below. Tune one number: 0.7, 0.75, 0.8 … */
-    --site-zoom: 1.0;
+    --site-zoom: 0.9;
     zoom: var(--site-zoom);
   }
 
@@ -332,7 +332,7 @@
     font-feature-settings: "onum", "kern", "liga", "calt";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    letter-spacing: 0.002em;
+    letter-spacing: 0.006em;
     word-spacing: 0.01em;
     hyphens: none;
     max-width: 66ch;            /* the comfortable reading measure ceiling */
@@ -3287,15 +3287,15 @@ main {
   /* Tokens used throughout the engraved direction */
   :root {
     --codex-ink: #10214d;
-    --codex-ink-2: #c5d4ed;
-    --codex-ink-3: #0f203a;
+    --codex-ink-2: #113f8c;
+    --codex-ink-3: #07224d;
     --codex-gold: #b89150;
     --codex-gold-2: #e1b96e;
     --codex-gold-3: #8a6d3b;
     --codex-parchment: #fdfaf3;
     --codex-parchment-2: #f3ead4;
-    --codex-slate: #c4cde2;
-    --codex-slate-2: #8d97ad;
+    --codex-slate: #092c7a;
+    --codex-slate-2: #0a3dad;
   }
 
   /* ── HERO ──────────────────────────────────────────────────────────────── */
