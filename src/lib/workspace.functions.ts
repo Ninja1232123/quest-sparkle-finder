@@ -272,7 +272,7 @@ export const searchCases = createServerFn({ method: "GET" })
       const { data: rows } = await db
         .from("opinion_record")
         .select("slug,case_title,us_cite,year,cited_count")
-        .textSearch("title_tsv", data.q, { type: "websearch", config: "english" })
+        .textSearch("body_tsv", data.q, { type: "websearch", config: "english" })
         .order("cited_count", { ascending: false })
         .limit(limit);
       for (const r of (rows ?? []) as Array<{ slug: string; case_title: string; us_cite: string | null; year: number | null }>) {

@@ -220,7 +220,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 const { data } = await corpus
                   .from("opinion_record")
                   .select("slug,case_title,us_cite,year,cited_count")
-                  .textSearch("title_tsv", q, { type: "websearch", config: "english" })
+                  .textSearch("body_tsv", q, { type: "websearch", config: "english" })
                   .order("cited_count", { ascending: false })
                   .limit(limit);
                 for (const r of (data ?? []) as Array<{ slug: string; case_title: string; us_cite: string | null; year: number | null; cited_count: number }>) {
