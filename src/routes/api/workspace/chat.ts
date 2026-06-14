@@ -22,7 +22,7 @@ RULES (non-negotiable):
 - End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
 
 THE CORPUS YOU CAN SEARCH (all read-only, all on the self_law backend):
-- STATUTES & REGULATIONS via search_corpus — 3.9M sections across: federal (source codes "usc", "cfr", "const", "ucc", "fedreg", "irm", "tfm", and "bill" for 835k congressional bills) AND all 50 states (two-letter codes: "ak", "al", "az", "ca", "ny", "tx", … through "wy"). Pass source to scope to one code, or omit source to search everything at once.
+- STATUTES & REGULATIONS via search_corpus — 3.9M sections across: federal (source codes "usc", "cfr", "const", "ucc", "register", "irm", "tfm", and "bill" for 835k congressional bills) AND all 50 states (two-letter codes: "ak", "al", "az", "ca", "ny", "tx", … through "wy"). Pass source to scope to one code, or omit source to search everything at once.
 - CASE LAW via search_cases — U.S. Supreme Court opinions (full text, 28k) and state supreme court opinions (full text, 528k, all 50 states). Use jurisdiction to scope: "scotus", "state", or a state name; omit it to search both.
 - FULL TEXT via fetch_document (a statute/reg section by identifier) and fetch_case (a full opinion by id from a search_cases result).
 
@@ -153,7 +153,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
           search_corpus: tool({
             description:
               "READ-ONLY: Full-text search of statutes, regulations, the Constitution, and bills (3.9M sections). " +
-              "Sources: federal (\"usc\", \"cfr\", \"const\", \"ucc\", \"fedreg\", \"irm\", \"tfm\", \"bill\") and all 50 states (two-letter codes like \"ca\", \"ny\", \"tx\"). " +
+              "Sources: federal (\"usc\", \"cfr\", \"const\", \"ucc\", \"register\", \"irm\", \"tfm\", \"bill\") and all 50 states (two-letter codes like \"ca\", \"ny\", \"tx\"). " +
               "Pass `source` to scope to one code; omit it to search the entire corpus. For case law, use search_cases instead.",
             inputSchema: z.object({
               q: z.string().min(2).describe("Search query — quote the operative phrase, e.g. 'qualified immunity'"),
@@ -304,7 +304,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             description: "Suggest a search the user might want to run. Renders as a chip with Run / Edit / Dismiss. Use when you don't have enough to answer or when the user would benefit from exploring a specific query themselves.",
             inputSchema: z.object({
               query: z.string().min(2).max(200),
-              source: z.enum(["usc", "cfr", "ucc", "const", "fedreg"]).optional(),
+              source: z.enum(["usc", "cfr", "ucc", "const", "register"]).optional(),
               why: z.string().max(280).describe("Why this search helps the user's case, in one sentence."),
             }),
             execute: async (args) => ({ proposal: "search", ...args }),
