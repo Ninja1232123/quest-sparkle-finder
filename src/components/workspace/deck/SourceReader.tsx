@@ -8,8 +8,12 @@ import { Panel, Surface } from "./Panel";
 
 type Scope = "fed" | "state" | "both";
 
-/** Federal source codes; everything else in `documents.source` is a 2-letter state code. */
-const FEDERAL = new Set(["usc", "cfr", "const", "ucc", "fedreg", "irm", "tfm", "bill"]);
+/**
+ * US state/territory codes in `documents.source` are always 2 letters (ca, ny, tx…);
+ * federal codes never are (usc, cfr, const, ucc, register, irm, tfm, bill). Keying the
+ * Fed/State lens off length keeps it correct even if a source label is renamed.
+ */
+const isStateCode = (s: string) => s.length === 2;
 
 export const STANCES: { stance: PinDraft["stance"]; label: string; color: string }[] = [
   { stance: "support", label: "Good", color: "#3f9e57" },
@@ -79,7 +83,7 @@ export function SourceReader({
           statSource || statuteScope === "both"
             ? stat
             : stat.filter((h) =>
-                statuteScope === "fed" ? FEDERAL.has(h.source) : !FEDERAL.has(h.source),
+                statuteScope === "state" ? isStateCode(h.source) : !isStateCode(h.source),
               );
         setStatHits(filtered);
         setCaseHits(cases);
