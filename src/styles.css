@@ -7,9 +7,9 @@
 /* Americana / patriotic display faces — scoped to .merica on /const, and global for home hero. */
 @import url("https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Rye&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap");
 
-/* Marginalia / "hand" voice — pulled back from the old Architects Daughter
-   handwriting (too cursive, hard to read at small sizes). Now an italic serif
-   built on Fraunces, which is already loaded above. Relaxed but sharp. */
+/* Marginalia / "hand" voice — Architects Daughter, the real handwritten
+   face. Used on margin notes that need to read as written-in-the-margin. */
+@import url("https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap");
 
 /*
  * Design system definition.
@@ -82,8 +82,8 @@
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  /* Relaxed but sharp — italic serif instead of a true handwriting face. */
-  --font-hand: "Fraunces", "Iowan Old Style", Georgia, serif;
+  /* True handwriting for marginalia notes. */
+  --font-hand: "Architects Daughter", "Bradley Hand", "Segoe Print", cursive;
 }
 
 :root {
