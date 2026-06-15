@@ -224,7 +224,7 @@ function Features() {
                     <cb.icon className="h-4 w-4" style={{ color: cb.accent }} />
                   </span>
                   <div className="font-display text-base font-semibold leading-tight">{cb.name}</div>
-                  <span className="ml-auto rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-ochre">
+                  <span className="ml-auto rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[12px] font-medium uppercase tracking-wider text-ochre">
                     soon
                   </span>
                 </div>

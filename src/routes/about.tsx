@@ -84,7 +84,7 @@ function About() {
               to="/subscribe"
               className="group relative inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3 text-sm font-bold text-accent-foreground shadow-[var(--shadow-warm)] ring-2 ring-accent/40 ring-offset-2 ring-offset-background transition-transform hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <span className="absolute -top-2 -right-2 rounded-full bg-foreground px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">
+              <span className="absolute -top-2 -right-2 rounded-full bg-foreground px-2 py-0.5 text-[12px] font-bold uppercase tracking-wider text-background">
                 $5
               </span>
               ♥ Chip in / Go Pro

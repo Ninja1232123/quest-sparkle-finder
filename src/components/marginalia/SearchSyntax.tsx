@@ -65,7 +65,7 @@ export function SearchSyntax({ defaultOpen = false }: { defaultOpen?: boolean })
               </Link>
             ))}
           </div>
-          <p className="mt-2 px-3 text-[11px] leading-relaxed text-muted-foreground/60">
+          <p className="mt-2 px-3 text-[12px] leading-relaxed text-muted-foreground/60">
             Misspelled a word? We fall back to the closest spelling automatically. Use the source tabs
             (<span className="font-mono">U.S.C.</span>, <span className="font-mono">C.F.R.</span>, …) to limit results to one codebook.
           </p>

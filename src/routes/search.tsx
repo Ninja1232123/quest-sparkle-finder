@@ -207,7 +207,7 @@ function SearchPage() {
           <SlidersHorizontal className="h-3 w-3" />
           refine
           {hasFilters && (
-            <span className="ml-auto rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
+            <span className="ml-auto rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[12px] font-medium text-accent">
               active
             </span>
           )}
@@ -400,7 +400,7 @@ function SearchPage() {
               <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-display font-semibold text-foreground">{opinionTotal.toLocaleString()}</span>
                 <span>{opinionTotal === 1 ? "opinion" : "opinions"} matching case name</span>
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                <span className="ml-auto font-mono text-[12px] text-muted-foreground/50 uppercase tracking-wider">
                   SCOTUS · public domain · full text
                 </span>
               </div>
@@ -462,7 +462,7 @@ function SearchPage() {
               >
                 All
                 {!source && hits.length > 0 && (
-                  <span className="ml-1.5 rounded-full bg-background/20 px-1.5 py-0.5 text-[10px]">
+                  <span className="ml-1.5 rounded-full bg-background/20 px-1.5 py-0.5 text-[12px]">
                     {(hits as Hit[]).length}
                   </span>
                 )}
@@ -483,7 +483,7 @@ function SearchPage() {
                   >
                     {SOURCE_ABBR[s.code] ?? s.code.toUpperCase()}
                     {cnt > 0 && (
-                      <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${source === s.code ? "bg-background/20" : "bg-muted"}`}>
+                      <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[12px] ${source === s.code ? "bg-background/20" : "bg-muted"}`}>
                         {cnt}
                       </span>
                     )}
@@ -504,18 +504,18 @@ function SearchPage() {
                   {bySource.size === 1 ? "codebook" : "codebooks"}
                 </span>
                 {(hits as Hit[]).some((h: Hit) => h.semantic) && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 text-[10px] font-medium text-accent">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 text-[12px] font-medium text-accent">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                     semantic
                   </span>
                 )}
                 {(hits as Hit[]).some((h: Hit) => h.trgm) && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-ochre/30 bg-ochre/8 px-2 py-0.5 text-[10px] font-medium text-ochre" title="Fuzzy match — no exact keyword hits found, showing closest results">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-ochre/30 bg-ochre/8 px-2 py-0.5 text-[12px] font-medium text-ochre" title="Fuzzy match — no exact keyword hits found, showing closest results">
                     <span className="h-1.5 w-1.5 rounded-full bg-ochre" />
                     fuzzy match
                   </span>
                 )}
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                <span className="ml-auto font-mono text-[12px] text-muted-foreground/50 uppercase tracking-wider">
                   direct from source · verify against the official text
                 </span>
               </div>
@@ -711,7 +711,7 @@ function OpinionCard({ op }: { op: OpinionListItem }) {
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 pt-1">
         {op.cited_count > 0 && (
-          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-accent">
             {op.cited_count.toLocaleString()} cites
           </span>
         )}
@@ -769,7 +769,7 @@ function ResultCard({ hit, q }: { hit: Hit; q: string }) {
           </p>
         )}
         <div className="mt-3 flex items-center gap-2">
-          <code className="font-mono text-[11px] text-muted-foreground/60">{hit.identifier}</code>
+          <code className="font-mono text-[12px] text-muted-foreground/60">{hit.identifier}</code>
           <span className="ml-auto text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
             Read →
           </span>
@@ -779,7 +779,7 @@ function ResultCard({ hit, q }: { hit: Hit; q: string }) {
       <button
         onClick={handleCite}
         title="Copy citation"
-        className={`absolute right-3 top-3 flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
+        className={`absolute right-3 top-3 flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium transition-all ${
           copied
             ? "border-green-500/40 bg-green-500/10 text-green-600 opacity-100"
             : "border-border/60 bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 hover:border-foreground/30 hover:text-foreground"

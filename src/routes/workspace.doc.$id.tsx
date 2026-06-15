@@ -43,7 +43,7 @@ function DocPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{doc.kind}</div>
+          <div className="text-[12px] uppercase tracking-[0.25em] text-muted-foreground">{doc.kind}</div>
           <h1 className="text-3xl" style={{ fontFamily: "var(--font-serif, 'Cinzel')" }}>{doc.title}</h1>
         </div>
         <div className="flex gap-2">

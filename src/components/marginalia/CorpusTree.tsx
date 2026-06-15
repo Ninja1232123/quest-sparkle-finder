@@ -114,7 +114,7 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
         activeProps={{ className: "mb-3 flex items-center justify-between rounded-md px-2 py-2 text-[0.95rem] font-medium bg-muted text-foreground" }}
       >
         <span>All sources</span>
-        <span className="font-mono text-[11px] text-foreground/65">
+        <span className="font-mono text-[12px] text-foreground/65">
           {sources.reduce((n, s) => n + s.count, 0).toLocaleString()}
         </span>
       </Link>
@@ -136,7 +136,7 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
                   <Icon className="h-4 w-4 text-foreground/75" />
                   <span className="font-medium">{G.label}</span>
                 </span>
-                <span className="font-mono text-[11px] text-foreground/60">{b.items.length}</span>
+                <span className="font-mono text-[12px] text-foreground/60">{b.items.length}</span>
               </button>
               {isOpen && (
                 <ul className="mt-1 space-y-px pl-8">
@@ -161,7 +161,7 @@ export function CorpusTree({ sources, collapsed = false }: Props) {
                             />
                             <span className="truncate">{s.name}</span>
                           </span>
-                          <span className="font-mono text-[11px] text-foreground/55 group-hover:text-foreground/75">
+                          <span className="font-mono text-[12px] text-foreground/55 group-hover:text-foreground/75">
                             {s.count.toLocaleString()}
                           </span>
                         </Link>

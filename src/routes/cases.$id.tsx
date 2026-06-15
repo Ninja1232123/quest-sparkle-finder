@@ -59,7 +59,7 @@ function CitationPanel({ pinned, onClose }: { pinned: CaseItemRef; onClose: () =
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="citation-tag inline-flex items-center gap-1.5 text-terracotta"><BookOpen className="h-3.5 w-3.5" /> Reading</div>
-          {st.label ? <div className="mt-1 font-mono text-[11px] text-muted-foreground">{st.label}</div> : null}
+          {st.label ? <div className="mt-1 font-mono text-[12px] text-muted-foreground">{st.label}</div> : null}
           {st.heading ? <div className="font-display text-sm font-semibold leading-snug">{st.heading}</div> : null}
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -83,7 +83,7 @@ function CitationPanel({ pinned, onClose }: { pinned: CaseItemRef; onClose: () =
                   ref={hot ? hlRef : undefined}
                   className={hot ? "rounded-md border-l-2 border-ochre bg-ochre/10 px-2 py-1" : ""}
                 >
-                  {p.label ? <span className="mr-1.5 font-mono text-[11px] text-foreground/45">{p.label}</span> : null}
+                  {p.label ? <span className="mr-1.5 font-mono text-[12px] text-foreground/45">{p.label}</span> : null}
                   {text}
                 </div>
               );
@@ -94,7 +94,7 @@ function CitationPanel({ pinned, onClose }: { pinned: CaseItemRef; onClose: () =
             params={{ _splat: pinned.identifier.replace(/^\//, "") }}
             search={{ q: undefined }}
             hash={`para-${pinned.paraIndex}`}
-            className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-terracotta hover:underline"
+            className="mt-3 inline-flex items-center gap-1.5 font-mono text-[12px] text-terracotta hover:underline"
           >
             Open full section <ExternalLink className="h-3 w-3" />
           </Link>
@@ -288,7 +288,7 @@ function CaseFile() {
             placeholder="Untitled case"
             className="mt-2 w-full bg-transparent text-center font-display text-3xl font-semibold tracking-tight outline-none md:text-4xl"
           />
-          <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
             Prepared by the reader · {blocks.length} point{blocks.length === 1 ? "" : "s"} · {totalCites} citation{totalCites === 1 ? "" : "s"}
           </div>
         </header>
@@ -350,17 +350,17 @@ function CaseFile() {
                   {/* authority line(s): one per citation */}
                   <div className="mt-1.5 space-y-1">
                     {b.cites.length > 1 && (
-                      <div className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                      <div className="inline-flex items-center gap-1 font-mono text-[12px] uppercase tracking-wider text-muted-foreground/70">
                         <Layers className="h-3 w-3 text-terracotta" /> synthesis · {b.cites.length} authorities
                       </div>
                     )}
                     {b.cites.map((cite, ci) => (
                       <div key={ci} className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        <span className="min-w-0 font-mono text-[11px] text-terracotta">— {cite.sectionLabel} {cite.heading}</span>
+                        <span className="min-w-0 font-mono text-[12px] text-terracotta">— {cite.sectionLabel} {cite.heading}</span>
                         <button
                           type="button"
                           onClick={() => setPinned(pinnedHit(cite) ? null : { identifier: cite.identifier, paraIndex: cite.paraIndex })}
-                          className={`inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider ${pinnedHit(cite) ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
+                          className={`inline-flex items-center gap-1 font-mono text-[12px] uppercase tracking-wider ${pinnedHit(cite) ? "text-terracotta" : "text-muted-foreground hover:text-foreground"}`}
                         >
                           <BookOpen className="h-3 w-3" /> {pinnedHit(cite) ? "reading" : "read"}
                         </button>
@@ -369,7 +369,7 @@ function CaseFile() {
                           params={{ _splat: cite.identifier.replace(/^\//, "") }}
                           search={{ q: undefined }}
                           hash={`para-${cite.paraIndex}`}
-                          className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                          className="inline-flex items-center gap-1 font-mono text-[12px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
                         >
                           open <ExternalLink className="h-3 w-3" />
                         </Link>
@@ -378,7 +378,7 @@ function CaseFile() {
                     <button
                       type="button"
                       onClick={() => { removeBlock(b); setPinned(null); }}
-                      className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+                      className="font-mono text-[12px] uppercase tracking-wider text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
                     >
                       remove
                     </button>
@@ -390,7 +390,7 @@ function CaseFile() {
         )}
 
         {blocks.length > 0 && (
-          <p className="mt-8 border-t border-border/50 pt-4 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+          <p className="mt-8 border-t border-border/50 pt-4 text-center font-mono text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
             Drag a point by its handle to set the order it reads in
           </p>
         )}

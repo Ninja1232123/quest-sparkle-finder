@@ -16,7 +16,7 @@ export function LegalDisclaimer({
   if (variant === "compact") {
     return (
       <p
-        className={`text-[10px] leading-snug tracking-wide ${className}`}
+        className={`text-[12px] leading-snug tracking-wide ${className}`}
         style={{ color: "rgba(0,0,0,0.55)", fontFamily: "var(--font-mono, 'Special Elite')" }}
       >
         Not legal advice. AI can be wrong — verify every citation and consult a licensed attorney.
@@ -50,7 +50,7 @@ export function LegalDisclaimer({
 
   return (
     <div
-      className={`flex items-start gap-2 border-b px-4 py-2 text-[11px] leading-snug ${className}`}
+      className={`flex items-start gap-2 border-b px-4 py-2 text-[12px] leading-snug ${className}`}
       style={{
         borderColor: "rgba(180,60,40,0.3)",
         background: "rgba(200,80,55,0.08)",

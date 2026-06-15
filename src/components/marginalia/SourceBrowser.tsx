@@ -170,7 +170,7 @@ function CatalogueBubble({ kind, token, title, sub, crumb, count, accent, expand
       <div className="am-num">{numLabel}</div>
       {crumb && <div className="am-crumb">{crumb}</div>}
       <div className="am-title">{title}</div>
-      {sub && <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
+      {sub && <div className="mt-1 font-mono text-[12px] uppercase tracking-wider text-muted-foreground">{sub}</div>}
       <div className="am-meta">
         {count != null ? (
           <span className="am-count">{count.toLocaleString()} sections</span>
@@ -206,21 +206,21 @@ function ListRow({ kind, token, title, sub, crumb, count, accent, expandable, ex
       style={{ borderLeft: `3px solid ${accent}`, ["--c" as never]: accent }}
     >
       <span
-        className={`shrink-0 font-mono ${weight === "header" ? "w-20 text-[12px] font-semibold" : "w-16 text-[11px]"} uppercase tracking-wide text-foreground/70`}
+        className={`shrink-0 font-mono ${weight === "header" ? "w-20 text-[12px] font-semibold" : "w-16 text-[12px]"} uppercase tracking-wide text-foreground/70`}
       >
         {numLabel}
       </span>
       <span className="min-w-0 flex-1">
         {crumb && (
-          <span className="block font-mono text-[10px] uppercase tracking-wide text-muted-foreground/80">{crumb}</span>
+          <span className="block font-mono text-[12px] uppercase tracking-wide text-muted-foreground/80">{crumb}</span>
         )}
         <span className={`block ${weight === "header" ? "font-display text-[15px] font-semibold" : "text-sm"} text-foreground leading-snug`}>
           {title}
         </span>
-        {sub && <span className="block font-mono text-[10px] uppercase tracking-wide text-muted-foreground">{sub}</span>}
+        {sub && <span className="block font-mono text-[12px] uppercase tracking-wide text-muted-foreground">{sub}</span>}
       </span>
       {count != null && (
-        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+        <span className="shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
           {count.toLocaleString()}
         </span>
       )}
@@ -430,7 +430,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               style={{ backgroundColor: meta.accent }}
             />
             <span className="font-display text-sm font-semibold">{meta.short}</span>
-            <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="ml-auto font-mono text-[12px] uppercase tracking-wide text-muted-foreground">
               {meta.group}
             </span>
           </div>
@@ -446,14 +446,14 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
         <div>
           <div className="citation-tag mb-1.5 text-muted-foreground">in {groupLabel}</div>
           <div className="rounded-lg border border-border/60 bg-card p-3 text-xs text-foreground/70">
-            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">entries</div>
+            <div className="font-mono text-[12px] uppercase tracking-wide text-muted-foreground">entries</div>
             <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
               {(documents as DocLite[]).length.toLocaleString()}
             </div>
             <Link
               to={linkSelf.to as never}
               search={(parentTg ? { tg: parentTg } : {}) as never}
-              className="mt-2 inline-block text-[11px] text-accent hover:underline"
+              className="mt-2 inline-block text-[12px] text-accent hover:underline"
             >
               ← back{parentTg ? ` to ${cleanBubbleTitle(parentTg)}` : " to table of contents"}
             </Link>
@@ -463,13 +463,13 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
         <div>
           <div className="citation-tag mb-1.5 text-muted-foreground">in {cleanBubbleTitle(tg)}</div>
           <div className="rounded-lg border border-border/60 bg-card p-3 text-xs text-foreground/70">
-            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">parts</div>
+            <div className="font-mono text-[12px] uppercase tracking-wide text-muted-foreground">parts</div>
             <div className="mt-0.5 font-display text-lg font-semibold text-foreground">
               {titleNode.parts.length.toLocaleString()}
             </div>
             <Link
               to={linkSelf.to as never}
-              className="mt-2 inline-block text-[11px] text-accent hover:underline"
+              className="mt-2 inline-block text-[12px] text-accent hover:underline"
             >
               ← back to all titles
             </Link>
@@ -583,7 +583,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               onClick={() => setViewPersist("grid")}
               aria-pressed={view === "grid"}
               title="Card grid"
-              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[10px] uppercase tracking-wide transition-colors ${view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[12px] uppercase tracking-wide transition-colors ${view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Grid</span>
@@ -593,7 +593,7 @@ function SourceBrowser({ data, linkSelf }: { data: TocData; linkSelf: LinkSelf }
               onClick={() => setViewPersist("list")}
               aria-pressed={view === "list"}
               title="Compact list"
-              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[10px] uppercase tracking-wide transition-colors ${view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex h-full items-center gap-1.5 rounded-full px-3 font-mono text-[12px] uppercase tracking-wide transition-colors ${view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
             >
               <ListIcon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">List</span>
@@ -844,7 +844,7 @@ function FirehoseBrowser({ data, linkSelf }: { data: FirehoseData; linkSelf: Lin
           <div className="flex items-center gap-2">
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.accent }} />
             <span className="font-display text-sm font-semibold">{meta.short}</span>
-            <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-muted-foreground">{meta.group}</span>
+            <span className="ml-auto font-mono text-[12px] uppercase tracking-wide text-muted-foreground">{meta.group}</span>
           </div>
           <div className="mt-2 font-mono text-xs text-muted-foreground">documents</div>
           <div className="font-display text-2xl font-semibold">{total.toLocaleString()}</div>

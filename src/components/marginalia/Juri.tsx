@@ -447,7 +447,7 @@ export function Juri() {
                         <div className="flex items-center gap-2">
                           <span className="font-display text-sm font-semibold">{pack.label}</span>
                           {pack.badge && (
-                            <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+                            <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[12px] font-bold uppercase tracking-wider text-accent">
                               {pack.badge}
                             </span>
                           )}
@@ -461,7 +461,7 @@ export function Juri() {
                       </div>
                     </button>
                   ))}
-                  <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-foreground/45">
+                  <div className="flex items-center justify-center gap-1.5 pt-1 text-[12px] text-foreground/45">
                     <Check className="h-3 w-3" /> Secure checkout by Stripe
                   </div>
                 </div>

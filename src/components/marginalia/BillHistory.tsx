@@ -59,7 +59,7 @@ export function BillHistory({ identifier }: { identifier: string }) {
                     {r.short_title || r.title || billCite(r)}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 citation-tag text-muted-foreground">
-                    <span className="font-mono text-[11px]">{billCite(r)}</span>
+                    <span className="font-mono text-[12px]">{billCite(r)}</span>
                     <span className="text-foreground/20">·</span>
                     {r.enacted ? (
                       <span className="font-semibold text-accent">Enacted</span>

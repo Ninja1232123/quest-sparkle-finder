@@ -43,14 +43,14 @@ function SearchResults({ toolName, input, output }: { toolName: string; input?: 
   const query = inp?.q ?? inp?.phrase ?? [...(inp?.all ?? []), ...(inp?.any ?? [])].join(" ") ?? "";
 
   if (out?.error) {
-    return <div className="mx-1 my-1 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1.5 text-[11px] text-destructive">search error: {out.error}</div>;
+    return <div className="mx-1 my-1 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1.5 text-[12px] text-destructive">search error: {out.error}</div>;
   }
   if (rows.length === 0) return null;
 
   return (
     <div className="my-1 overflow-hidden rounded-lg border" style={{ borderColor: "var(--rule-card)" }}>
       <div className="flex items-center justify-between gap-2 border-b px-2.5 py-1.5" style={{ borderColor: "var(--rule-card)", background: "var(--paper-soft)" }}>
-        <span className="text-[10px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
+        <span className="text-[12px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
           {out?.count ?? rows.length} results{query ? ` · ${query}` : ""}
         </span>
       </div>
@@ -63,7 +63,7 @@ function SearchResults({ toolName, input, output }: { toolName: string; input?: 
           const inner = (
             <>
               <span className="block truncate text-[12px] font-medium" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>{label}</span>
-              {sub && <span className="block truncate text-[10px]" style={{ color: "var(--ink-muted)" }}>{sub}</span>}
+              {sub && <span className="block truncate text-[12px]" style={{ color: "var(--ink-muted)" }}>{sub}</span>}
             </>
           );
           return (
@@ -108,7 +108,7 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
     <aside className="flex h-full min-h-0 w-full flex-col border-l bg-paper-tint" style={{ borderColor: "var(--rule-card)" }}>
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--rule-card)" }}>
         <span className="h-2 w-2 rounded-full" style={{ background: "var(--brass)" }} />
-        <span className="text-[10px] uppercase tracking-[0.22em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
+        <span className="text-[12px] uppercase tracking-[0.22em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
           Research partner
         </span>
       </div>
@@ -120,7 +120,7 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
               <p className="text-[14px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
                 You drive. I dig.
               </p>
-              <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+              <p className="mt-1.5 text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                 I read the corpus before I speak, and I&apos;m as uncertain of the law as you are — so we check it together. Tell me the matter and I&apos;ll go down the list, container by container, for what cuts your way and what cuts against.
               </p>
               <div className="mt-4 space-y-2">
@@ -151,7 +151,7 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
                     // Search hits render as a visible, clickable results list.
                     if (SEARCH_TOOLS.has(toolName)) {
                       if (tp.output != null) return <SearchResults key={tp.toolCallId ?? i} toolName={toolName} input={tp.input} output={tp.output} />;
-                      return <div key={tp.toolCallId ?? i} className="px-2.5 py-1 text-[10px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>scanning the corpus…</div>;
+                      return <div key={tp.toolCallId ?? i} className="px-2.5 py-1 text-[12px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>scanning the corpus…</div>;
                     }
                     return (
                       <Tool key={tp.toolCallId ?? i} defaultOpen={false}>
@@ -186,7 +186,7 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
           <PromptInputTextarea placeholder="Ask, discuss, or describe the matter…" />
           <PromptInputFooter className="justify-end">
             {isLoading && (
-              <button type="button" onClick={() => stop()} className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] hover:bg-foreground/5" style={{ borderColor: "var(--rule-card)" }}>
+              <button type="button" onClick={() => stop()} className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] hover:bg-foreground/5" style={{ borderColor: "var(--rule-card)" }}>
                 <Square className="h-3 w-3 fill-current" /> Stop
               </button>
             )}

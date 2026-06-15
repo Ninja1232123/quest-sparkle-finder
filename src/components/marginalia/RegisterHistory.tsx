@@ -52,7 +52,7 @@ export function RegisterHistory({ identifier }: { identifier: string }) {
                       </>
                     )}
                     <span className="text-foreground/20">·</span>
-                    <span className="font-mono text-[11px]">FR Doc. {r.fr_doc_number}</span>
+                    <span className="font-mono text-[12px]">FR Doc. {r.fr_doc_number}</span>
                   </div>
                 </div>
                 <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground/40 group-hover/rule:text-accent/60" />
