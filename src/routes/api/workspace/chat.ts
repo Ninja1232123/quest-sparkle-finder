@@ -29,6 +29,7 @@ YOUR RESEARCH TOOLS (all read-only, all on the self_law backend):
 PRIMARY — grab a LOT, cheaply, and show it to the user:
 - scan_corpus — your workhorse. Pulls up to 300 matching sections as lean citation rows (no bodies) from the 4M-section corpus, ranked. It grabs the HITS, it doesn't read them — so set a high limit and pull the whole field. Boolean ops inline in q: space=AND, OR, "phrase", -exclude. The full list is ALSO rendered to the user in their browser as a clickable list — a wide scan hands them the whole landscape, not just you. Omit source to sweep everything; scope to a source/state to focus.
 - citations(identifier, direction) — follow the citation graph one hop without reading any text: 'out' = what this cites; 'in' = who cites it (load-bearing). Go DEEP cheaply.
+- list_basins(term) / open_basin(id) — precomputed AND-combinations of legal trigger words (e.g. 'debt & collector & instrument|note') with their matching sections already cached. list_basins(word) shows the angles that include a word; open_basin pulls that whole field instantly (a keyed read, not a live scan). Skim the labels for a combination you wouldn't have queried.
 - legislative_history(title, section) / regulatory_history(title, part) — the bills behind a USC section / the Federal Register rulemakings behind a CFR part: Congress's & the agency's OWN reasoning.
 READ-CLOSELY — only for the handful of cites you'll actually quote:
 - search_corpus / search_boolean — same matches WITH snippets (search_boolean adds explicit gates: all/any/phrase/exclude). Use to read the matched language once you've picked cites from a scan.
@@ -289,6 +290,50 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   cite: r.cite,
                   id: r.identifier ?? null,
                   type: r.target_type,
+                })),
+              };
+            },
+          }),
+          list_basins: tool({
+            description:
+              "READ-ONLY: PRECOMPUTED BASINS — cached boolean trigger-expressions, mined offline. Each basin is an AND of legal trigger words " +
+              "(e.g. 'debt & collector & instrument|note', 'taxation & void & discharge & fraud') whose matching sections were computed ahead of time. " +
+              "Pass ONE trigger word to find the basins that include it (most-matched first); omit to list the largest basins. " +
+              "Use this to AIM: when the matter maps onto common trigger combinations, find the basin then open_basin to pull its whole field instantly — no live sweep of 3.4M. Different basins surface different fields; scan the labels for an angle you hadn't queried.",
+            inputSchema: z.object({
+              term: z.string().min(2).optional().describe("A single trigger word to find basins containing it, e.g. 'discharge'. Omit to list the largest basins."),
+              limit: z.number().int().min(1).max(200).default(60),
+            }),
+            execute: async ({ term, limit }) => {
+              const { data, error } = await corpus.rpc("basin_list", { p_term: term ?? null, p_limit: limit });
+              if (error) return { error: error.message, basins: [] };
+              return {
+                count: data?.length ?? 0,
+                basins: (data ?? []).map((r: { id: number; label: string; doc_count: number }) => ({
+                  id: r.id, label: r.label, docs: r.doc_count,
+                })),
+              };
+            },
+          }),
+          open_basin: tool({
+            description:
+              "READ-ONLY: Open a precomputed basin by id (from list_basins) — returns its cached section hits as lean citation rows (no bodies). " +
+              "This is a KEYED READ of a precomputed set, not a live scan, so it's near-free and instant. The whole field is also rendered to the user's browser as a clickable list. Scope with a source code to focus the cached set.",
+            inputSchema: z.object({
+              basin_id: z.number().int().describe("A basin id from list_basins."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope the cached set."),
+              limit: z.number().int().min(1).max(500).default(200),
+            }),
+            execute: async ({ basin_id, source, limit }) => {
+              const { data, error } = await corpus.rpc("basin_docs", { p_basin_id: basin_id, p_source: source ?? null, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
+                  id: r.identifier,
+                  cite: r.section_label || r.heading || r.identifier,
+                  heading: r.section_label && r.heading && r.heading !== r.section_label ? r.heading : null,
+                  source: r.source_code,
                 })),
               };
             },
