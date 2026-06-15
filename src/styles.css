@@ -7,16 +7,9 @@
 /* Americana / patriotic display faces — scoped to .merica on /const, and global for home hero. */
 @import url("https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Rye&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap");
 
-/* Architects Daughter (SIL OFL) — self-hosted from public/fonts. Powers the
-   reader's handwritten marginalia (--font-hand). Intentionally not in the
-   Google import above so the "hand" works even if that request is blocked. */
-@font-face {
-  font-family: "Architects Daughter";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/ArchitectsDaughter-Regular.ttf") format("truetype");
-}
+/* Marginalia / "hand" voice — pulled back from the old Architects Daughter
+   handwriting (too cursive, hard to read at small sizes). Now an italic serif
+   built on Fraunces, which is already loaded above. Relaxed but sharp. */
 
 /*
  * Design system definition.
