@@ -82,7 +82,8 @@
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-hand: "Architects Daughter", "Bradley Hand", "Segoe Print", cursive;
+  /* Relaxed but sharp — italic serif instead of a true handwriting face. */
+  --font-hand: "Fraunces", "Iowan Old Style", Georgia, serif;
 }
 
 :root {
