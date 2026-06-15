@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -21,6 +22,66 @@ const INTRO_PROMPTS = [
   "What's the strongest thing the other side will cite, and what answers it?",
   "Read what I pulled into Supportive and tell me what's still missing.",
 ];
+
+// Tool calls whose output is a list of corpus/case hits — rendered as a visible
+// clickable results list (the "shitload of results, pushed to the browser")
+// instead of a collapsed JSON blob, so the user sees the whole field the model
+// pulled, not just the model's eventual reply.
+const SEARCH_TOOLS = new Set(["scan_corpus", "search_corpus", "search_boolean", "search_cases"]);
+
+type HitRow = {
+  id?: string; identifier?: string; cite?: string; citation?: string;
+  title?: string; heading?: string | null; source?: string; court?: string;
+  year?: number | null; url?: string;
+};
+
+function SearchResults({ toolName, input, output }: { toolName: string; input?: unknown; output?: unknown }) {
+  const out = output as { count?: number; results?: HitRow[]; error?: string } | undefined;
+  const rows = out?.results ?? [];
+  const isCase = toolName === "search_cases";
+  const inp = input as { q?: string; all?: string[]; any?: string[]; phrase?: string } | undefined;
+  const query = inp?.q ?? inp?.phrase ?? [...(inp?.all ?? []), ...(inp?.any ?? [])].join(" ") ?? "";
+
+  if (out?.error) {
+    return <div className="mx-1 my-1 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1.5 text-[11px] text-destructive">search error: {out.error}</div>;
+  }
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="my-1 overflow-hidden rounded-lg border" style={{ borderColor: "var(--rule-card)" }}>
+      <div className="flex items-center justify-between gap-2 border-b px-2.5 py-1.5" style={{ borderColor: "var(--rule-card)", background: "var(--paper-soft)" }}>
+        <span className="text-[10px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
+          {out?.count ?? rows.length} results{query ? ` · ${query}` : ""}
+        </span>
+      </div>
+      <ul className="max-h-72 divide-y overflow-y-auto" style={{ borderColor: "var(--rule-card)" }}>
+        {rows.map((r, i) => {
+          const id = r.id ?? r.identifier ?? "";
+          const label = r.cite ?? r.citation ?? r.title ?? id;
+          const sub = isCase ? [r.court, r.year].filter(Boolean).join(" · ") : (r.heading || null);
+          const splat = id.replace(/^\//, "");
+          const inner = (
+            <>
+              <span className="block truncate text-[12px] font-medium" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>{label}</span>
+              {sub && <span className="block truncate text-[10px]" style={{ color: "var(--ink-muted)" }}>{sub}</span>}
+            </>
+          );
+          return (
+            <li key={id || i} className="px-2.5 py-1.5 transition-colors hover:bg-foreground/[0.03]">
+              {!isCase && splat ? (
+                <Link to="/code/$" params={{ _splat: splat }} className="block">{inner}</Link>
+              ) : r.url ? (
+                <a href={r.url} className="block">{inner}</a>
+              ) : (
+                <div className="block">{inner}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export function ChatDock({ threadId, transport, initialMessages, onProposeSearch }: Props) {
   const chat = useChat({ id: threadId, messages: initialMessages, transport });
@@ -87,6 +148,11 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
                   if (part.type?.startsWith("tool-")) {
                     const tp = part as { type: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown; errorText?: string };
                     const toolName = tp.type.replace(/^tool-/, "");
+                    // Search hits render as a visible, clickable results list.
+                    if (SEARCH_TOOLS.has(toolName)) {
+                      if (tp.output != null) return <SearchResults key={tp.toolCallId ?? i} toolName={toolName} input={tp.input} output={tp.output} />;
+                      return <div key={tp.toolCallId ?? i} className="px-2.5 py-1 text-[10px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>scanning the corpus…</div>;
+                    }
                     return (
                       <Tool key={tp.toolCallId ?? i} defaultOpen={false}>
                         <ToolHeader type={toolName as `tool-${string}`} state={(tp.state ?? "input-available") as "input-streaming" | "input-available" | "output-available" | "output-error"} />
