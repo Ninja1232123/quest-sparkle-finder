@@ -1,5 +1,6 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Home } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { LegalDisclaimer } from "@/components/marginalia/LegalDisclaimer";
 
@@ -37,7 +38,23 @@ function WorkspaceLayout() {
     >
       <main className="flex-1 overflow-hidden">
         <div className="flex h-full flex-col">
-          <LegalDisclaimer variant="bar" />
+          <div className="flex shrink-0 items-stretch" style={{ background: "var(--navy-deep, #0c1b3d)" }}>
+            <Link
+              to="/"
+              aria-label="Back to home"
+              className="group flex shrink-0 items-center gap-2 px-4 text-[13px] font-bold uppercase tracking-[0.18em] transition-colors"
+              style={{
+                background: "#c8a24b",
+                color: "#0c1b3d",
+                fontFamily: "var(--font-mono, 'Special Elite')",
+                boxShadow: "inset -1px 0 0 rgba(0,0,0,0.25)",
+              }}
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+            <LegalDisclaimer variant="bar" className="flex-1 border-b-0" />
+          </div>
           <div className="flex-1 overflow-hidden">
             <Outlet />
           </div>
