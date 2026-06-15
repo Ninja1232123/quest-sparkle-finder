@@ -81,7 +81,7 @@ export function ModelContainer({
             title={mode === "draft"
               ? "Drafting mode: the assistant writes only from your pinned authorities. Tap to return to research."
               : "Switch to constrained drafting — every sentence must trace to a pinned card."}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] font-semibold tracking-[0.14em] uppercase transition-colors"
             style={{
               borderColor: mode === "draft" ? "#7bb651" : "rgba(200,162,75,0.4)",
               color: mode === "draft" ? "#0c1b3d" : "#c8a24b",
@@ -108,7 +108,7 @@ export function ModelContainer({
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] hover:bg-foreground/5"
+                  className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] hover:bg-foreground/5"
                   style={{ borderColor: "var(--rule-card)" }}
                 >
                   <Square className="h-3 w-3 fill-current" /> Stop
@@ -125,17 +125,17 @@ export function ModelContainer({
           <ConversationContent>
             {messages.length === 0 && (
               <div className="px-4 py-7">
-                <div className="mb-1 text-[10.5px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                <div className="mb-1 text-[12px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   Research assistant
                 </div>
                 <p className="mb-1 text-[15px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
                   It proposes.<br />You decide.
                 </p>
-                <p className="mb-4 text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+                <p className="mb-4 text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                   Ask it to find authority, flag what cuts against you, or pull the case that controls. Nothing touches your draft without a tap.
                 </p>
                 <IntakeForm disabled={isLoading} onSubmit={(text) => void send(text, "research")} />
-                <div className="mb-1.5 text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                <div className="mb-1.5 text-[12px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   …or jump in
                 </div>
                 <div className="space-y-1.5">
@@ -167,7 +167,7 @@ export function ModelContainer({
                               type="button"
                               onClick={() => onAddToDraft(part.text)}
                               title="Insert this into your draft"
-                              className="mt-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-60 transition hover:opacity-100"
+                              className="mt-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[12px] font-semibold tracking-wider uppercase opacity-60 transition hover:opacity-100"
                               style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}
                             >
                               <CornerDownLeft className="h-3 w-3" /> Insert into draft
@@ -248,7 +248,7 @@ function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text
 
   const field = "w-full rounded-md px-2 py-1.5 text-[12px] outline-none";
   const fieldStyle = { background: "var(--paper)", color: "var(--ink)", boxShadow: "inset 0 0 0 1px var(--rule-card)" } as const;
-  const labelCls = "mb-0.5 block text-[10px] font-semibold tracking-[0.12em] uppercase";
+  const labelCls = "mb-0.5 block text-[12px] font-semibold tracking-[0.12em] uppercase";
   const labelStyle = { color: "var(--ink-muted)", fontFamily: "var(--font-mono)" } as const;
 
   return (
@@ -257,11 +257,11 @@ function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text
         <span className="text-[12px] font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
           Start with the basics →
         </span>
-        <span className="text-[10px]" style={{ color: "var(--ink-muted)" }}>{open ? "hide" : "show"}</span>
+        <span className="text-[12px]" style={{ color: "var(--ink-muted)" }}>{open ? "hide" : "show"}</span>
       </button>
       {open && (
         <div className="space-y-2">
-          <p className="text-[11px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+          <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
             Five quick fields and I'll run a real opening sweep — no back-and-forth. Only the one-sentence summary is required.
           </p>
           <div>

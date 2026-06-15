@@ -249,7 +249,7 @@ function MobileNavGroup({ group, onNavigate }: { group: NavGroup; onNavigate: ()
                 />
                 <span className="min-w-0 truncate">{it.label}</span>
                 {isSoon && (
-                  <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ochre">
+                  <span className="ml-auto shrink-0 rounded-full border border-ochre/40 bg-ochre/10 px-1.5 py-0.5 text-[12px] font-medium uppercase tracking-wider text-ochre">
                     soon
                   </span>
                 )}
@@ -396,7 +396,7 @@ function MobileNav({
 
                 {/* The Library — codebook groups */}
                 <div className="mt-2 border-t border-border/30 pt-2">
-                  <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
+                  <div className="px-1 pb-1 font-display text-[12px] uppercase tracking-[0.18em] text-foreground/45">
                     The Library
                   </div>
                   {NAV_GROUPS.map((group) => (
@@ -406,7 +406,7 @@ function MobileNav({
 
                 {/* Tools */}
                 <div className="mt-2 border-t border-border/30 pt-2">
-                  <div className="px-1 pb-1 font-display text-[11px] uppercase tracking-[0.18em] text-foreground/45">
+                  <div className="px-1 pb-1 font-display text-[12px] uppercase tracking-[0.18em] text-foreground/45">
                     Tools
                   </div>
                   {TOOLS.filter((t) => !t.authRequired || signedIn).map((t) => (
@@ -494,7 +494,7 @@ export function SiteHeader() {
             <div className="font-display text-lg font-semibold tracking-tight text-[#fbf6e8]">
               Marginalia
             </div>
-            <div className="hidden font-display text-[11px] uppercase tracking-[0.18em] text-[#c8a24b]/80 sm:block">
+            <div className="hidden font-display text-[12px] uppercase tracking-[0.18em] text-[#c8a24b]/80 sm:block">
               a citizen's law index
             </div>
           </div>

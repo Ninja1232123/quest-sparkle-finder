@@ -132,7 +132,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
       </form>
 
       {user && !isPro && (
-        <div className={`mt-1.5 flex items-center justify-between gap-2 px-2 text-[11px] ${blocked ? "text-destructive" : "text-muted-foreground"}`}>
+        <div className={`mt-1.5 flex items-center justify-between gap-2 px-2 text-[12px] ${blocked ? "text-destructive" : "text-muted-foreground"}`}>
           <span className="inline-flex items-center gap-1">
             {blocked ? <Lock className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
             {blocked
@@ -170,7 +170,7 @@ export function SearchBar({ compact = false, autoFocus = false }: Props) {
                       <div className="truncate font-display text-sm font-semibold text-foreground">
                         {h.heading ?? h.section_label ?? h.identifier}
                         {h.exact && (
-                          <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+                          <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[12px] uppercase tracking-wider text-accent">
                             exact
                           </span>
                         )}

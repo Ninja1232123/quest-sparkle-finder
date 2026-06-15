@@ -45,7 +45,7 @@ export function PinDialog({ open, draft, title = "Pin authority to case", onClos
       <div className="relative z-10 w-full max-w-lg rounded-lg border shadow-2xl" style={{ background: "var(--paper)", borderColor: "var(--brass, #c8a24b)" }}>
         <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--rule-card)" }}>
           <div>
-            <div className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>{title}</div>
+            <div className="text-[12px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>{title}</div>
             <div className="text-sm font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
               {draft.citation || draft.identifier}
             </div>
@@ -62,7 +62,7 @@ export function PinDialog({ open, draft, title = "Pin authority to case", onClos
                   key={s}
                   type="button"
                   onClick={() => setStance(s)}
-                  className="rounded-full border px-3 py-1 text-[11px] tracking-[0.15em] uppercase transition-colors"
+                  className="rounded-full border px-3 py-1 text-[12px] tracking-[0.15em] uppercase transition-colors"
                   style={{
                     fontFamily: "var(--font-mono)",
                     borderColor: stance === s ? stanceColor(s) : "var(--rule-card)",
@@ -134,7 +134,7 @@ export function PinDialog({ open, draft, title = "Pin authority to case", onClos
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>{children}</div>;
+  return <div className="text-[12px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>{children}</div>;
 }
 
 export function stanceColor(s: "support" | "adverse" | "neutral") {

@@ -452,7 +452,7 @@ function VersionsModal({
       <div className="relative z-10 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border shadow-2xl" style={{ background: "var(--paper)", borderColor: "var(--brass, #c8a24b)" }}>
         <div className="flex shrink-0 items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--rule-card)" }}>
           <div>
-            <div className="text-[10px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Versions</div>
+            <div className="text-[12px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Versions</div>
             <div className="text-sm" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>Saved snapshots of this draft</div>
           </div>
           <button type="button" onClick={onClose} className="rounded px-2 py-1 text-xs hover:bg-foreground/5">Close</button>
@@ -469,13 +469,13 @@ function VersionsModal({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="truncate text-sm" style={{ fontFamily: "var(--font-serif)" }}>{v.title || "Untitled"}</div>
-                      <div className="text-[10px]" style={{ color: "var(--ink-muted)" }}>{new Date(v.created_at).toLocaleString()} · {v.body_md.length} chars</div>
+                      <div className="text-[12px]" style={{ color: "var(--ink-muted)" }}>{new Date(v.created_at).toLocaleString()} · {v.body_md.length} chars</div>
                     </div>
-                    <button type="button" onClick={() => onRestore(v)} className="rounded px-2 py-1 text-[11px] font-medium text-white" style={{ background: "var(--ink)" }}>
+                    <button type="button" onClick={() => onRestore(v)} className="rounded px-2 py-1 text-[12px] font-medium text-white" style={{ background: "var(--ink)" }}>
                       Restore
                     </button>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-[11px]" style={{ color: "var(--ink-muted)" }}>{v.body_md.slice(0, 200)}{v.body_md.length > 200 ? "…" : ""}</p>
+                  <p className="mt-1 line-clamp-2 text-[12px]" style={{ color: "var(--ink-muted)" }}>{v.body_md.slice(0, 200)}{v.body_md.length > 200 ? "…" : ""}</p>
                 </li>
               ))}
             </ul>

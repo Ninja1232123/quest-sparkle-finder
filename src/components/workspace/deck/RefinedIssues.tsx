@@ -55,7 +55,7 @@ export function RefinedIssues({
       footer={
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-[0.18em] uppercase"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-[0.18em] uppercase"
             style={{ background: "rgba(207,75,75,0.18)", color: "#ff9b9b", fontFamily: "var(--font-mono, 'Special Elite')" }}
           >
             Issues
@@ -63,7 +63,7 @@ export function RefinedIssues({
           <button
             type="button"
             onClick={onAddQuestion}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
             style={{ color: "rgba(230,236,247,0.7)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}
           >
             <Plus className="h-3 w-3" /> Question
@@ -73,7 +73,7 @@ export function RefinedIssues({
             onClick={pressureTest}
             disabled={supportCount === 0}
             title={supportCount === 0 ? "Pin a supporting authority first" : "Have the assistant attack your supporting authorities"}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(207,75,75,0.18)] disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(207,75,75,0.18)] disabled:opacity-40"
             style={{ color: "#ff9b9b", boxShadow: "inset 0 0 0 1px rgba(207,75,75,0.4)" }}
           >
             <FlaskConical className="h-3 w-3" /> Pressure-test
@@ -103,10 +103,10 @@ export function RefinedIssues({
             <div key={b.key}>
               <div className="mb-1 flex items-center gap-1.5 px-0.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: b.color, boxShadow: `0 0 8px ${b.color}` }} />
-                <span className="text-[11px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
+                <span className="text-[12px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
                   {b.label}
                 </span>
-                <span className="text-[10.5px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
+                <span className="text-[12px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
               </div>
               {rows.length === 0 ? (
                 <div
@@ -176,7 +176,7 @@ function IssueCard({
     >
       <div className="flex items-start gap-1.5">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[11px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
+          <div className="truncate text-[12px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
             {cite}
           </div>
           {item.heading && <div className="truncate text-[14px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}

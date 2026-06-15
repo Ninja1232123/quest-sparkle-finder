@@ -695,7 +695,7 @@ const inputCls =
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="pb-2 font-display text-[11px] uppercase tracking-[0.16em] text-foreground/45">
+      <div className="pb-2 font-display text-[12px] uppercase tracking-[0.16em] text-foreground/45">
         {label}
       </div>
       <div className="space-y-2.5">{children}</div>

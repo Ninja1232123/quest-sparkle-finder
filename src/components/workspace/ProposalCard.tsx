@@ -18,13 +18,13 @@ type Props = {
 
 export function ProposalCard({ payload, dismissed, accepted, onRunSearch, onOpenPin, onAddQuestion, onDismiss }: Props) {
   if (dismissed) {
-    return <div className="rounded border border-dashed px-2 py-1 text-[10px]" style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}>Suggestion dismissed.</div>;
+    return <div className="rounded border border-dashed px-2 py-1 text-[12px]" style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}>Suggestion dismissed.</div>;
   }
   if (payload.proposal === "search") {
     return (
       <Card icon={<Search className="h-3.5 w-3.5" />} label="Suggested search" accepted={accepted} onDismiss={onDismiss}>
         <div className="font-mono text-[12px]" style={{ color: "var(--ink)" }}>"{payload.query}"{payload.source ? <span className="opacity-60"> · {payload.source.toUpperCase()}</span> : null}</div>
-        <p className="mt-0.5 text-[11px]" style={{ color: "var(--ink-muted)" }}>{payload.why}</p>
+        <p className="mt-0.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>{payload.why}</p>
         {!accepted && (
           <div className="mt-1.5 flex gap-1">
             <BtnPrimary onClick={() => onRunSearch(payload.query, payload.source)}>Run search</BtnPrimary>
@@ -40,13 +40,13 @@ export function ProposalCard({ payload, dismissed, accepted, onRunSearch, onOpen
         <a href={`/code/${payload.identifier}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold hover:underline" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
           {payload.citation}{payload.suggested_pin_cite ? <span className="opacity-70"> {payload.suggested_pin_cite}</span> : null}
         </a>
-        {payload.heading && <div className="text-[10px]" style={{ color: "var(--ink-muted)" }}>{payload.heading}</div>}
+        {payload.heading && <div className="text-[12px]" style={{ color: "var(--ink-muted)" }}>{payload.heading}</div>}
         {payload.suggested_quote && (
-          <p className="mt-1 line-clamp-3 text-[11px] italic" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
+          <p className="mt-1 line-clamp-3 text-[12px] italic" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
             "{payload.suggested_quote}"
           </p>
         )}
-        <p className="mt-1 text-[11px]" style={{ color: "var(--ink-muted)" }}>{payload.why_it_matters}</p>
+        <p className="mt-1 text-[12px]" style={{ color: "var(--ink-muted)" }}>{payload.why_it_matters}</p>
         {!accepted && (
           <div className="mt-1.5 flex gap-1">
             <BtnPrimary onClick={() => onOpenPin({
@@ -67,7 +67,7 @@ export function ProposalCard({ payload, dismissed, accepted, onRunSearch, onOpen
   return (
     <Card icon={<HelpCircle className="h-3.5 w-3.5" />} label="Suggested question" accepted={accepted} onDismiss={onDismiss}>
       <p className="text-[12px]" style={{ color: "var(--ink)" }}>{payload.text}</p>
-      {payload.why && <p className="mt-0.5 text-[11px]" style={{ color: "var(--ink-muted)" }}>{payload.why}</p>}
+      {payload.why && <p className="mt-0.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>{payload.why}</p>}
       {!accepted && (
         <div className="mt-1.5 flex gap-1">
           <BtnPrimary onClick={() => onAddQuestion(payload.text)}>Add to board</BtnPrimary>
@@ -82,10 +82,10 @@ function Card({ icon, label, accepted, onDismiss, children }: {
 }) {
   return (
     <div className="my-1.5 rounded-md border p-2" style={{ borderColor: "var(--brass, #c8a24b)", background: "color-mix(in oklab, var(--brass, #c8a24b) 6%, transparent)" }}>
-      <div className="mb-1 flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+      <div className="mb-1 flex items-center gap-1.5 text-[12px] tracking-[0.2em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
         {icon}
         <span>{label}</span>
-        {accepted && <span className="ml-1 inline-flex items-center gap-0.5 text-[9px]" style={{ color: "#3f7d4e" }}><Check className="h-2.5 w-2.5" /> done</span>}
+        {accepted && <span className="ml-1 inline-flex items-center gap-0.5 text-[12px]" style={{ color: "#3f7d4e" }}><Check className="h-2.5 w-2.5" /> done</span>}
         {!accepted && (
           <button type="button" onClick={onDismiss} className="ml-auto rounded p-0.5 hover:bg-foreground/5" title="Dismiss">
             <X className="h-3 w-3" />
@@ -99,7 +99,7 @@ function Card({ icon, label, accepted, onDismiss, children }: {
 
 function BtnPrimary({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="rounded px-2 py-1 text-[11px] font-medium text-white transition-colors" style={{ background: "var(--ink)" }}>
+    <button type="button" onClick={onClick} className="rounded px-2 py-1 text-[12px] font-medium text-white transition-colors" style={{ background: "var(--ink)" }}>
       {children}
     </button>
   );

@@ -61,7 +61,7 @@ export function TosGate() {
         }}
       >
         <div
-          className="flex items-center gap-2 border-b px-5 py-3 text-[11px] uppercase tracking-[0.22em]"
+          className="flex items-center gap-2 border-b px-5 py-3 text-[12px] uppercase tracking-[0.22em]"
           style={{
             borderColor: "rgba(80,40,20,0.25)",
             fontFamily: "var(--font-mono, 'Special Elite')",
