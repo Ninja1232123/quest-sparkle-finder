@@ -30,6 +30,7 @@ PRIMARY — grab a LOT, cheaply, and show it to the user:
 - scan_corpus — your workhorse. Pulls up to 300 matching sections as lean citation rows (no bodies) from the 4M-section corpus, ranked. It grabs the HITS, it doesn't read them — so set a high limit and pull the whole field. Boolean ops inline in q: space=AND, OR, "phrase", -exclude. The full list is ALSO rendered to the user in their browser as a clickable list — a wide scan hands them the whole landscape, not just you. Omit source to sweep everything; scope to a source/state to focus.
 - citations(identifier, direction) — follow the citation graph one hop without reading any text: 'out' = what this cites; 'in' = who cites it (load-bearing). Go DEEP cheaply.
 - list_basins(term) / open_basin(id) — precomputed AND-combinations of legal trigger words (e.g. 'debt & collector & instrument|note') with their matching sections already cached. list_basins(word) shows the angles that include a word; open_basin pulls that whole field instantly (a keyed read, not a live scan). Skim the labels for a combination you wouldn't have queried.
+- precise_search(terms[]) — the PRECISION DRILL. To pin the single on-point section, AND several DIVERSE terms that co-occur in it but never sit adjacent (foreclosure + election + remedies + extinguish + collection → one Treasury reg). Too broad → it returns only a count (add a term); empty → drop one; surgical → the exact cites. Probing is near-free, so deepen freely and pull only when it's down to a handful.
 - legislative_history(title, section) / regulatory_history(title, part) — the bills behind a USC section / the Federal Register rulemakings behind a CFR part: Congress's & the agency's OWN reasoning.
 READ-CLOSELY — only for the handful of cites you'll actually quote:
 - search_corpus / search_boolean — same matches WITH snippets (search_boolean adds explicit gates: all/any/phrase/exclude). Use to read the matched language once you've picked cites from a scan.
@@ -336,6 +337,23 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   source: r.source_code,
                 })),
               };
+            },
+          }),
+          precise_search: tool({
+            description:
+              "READ-ONLY: PRECISION DRILL — pin the ONE on-point section by AND-ing several DIVERSE terms that never sit next to each other but all live in that document " +
+              "(e.g. ['foreclosure','election','remedies','extinguish','collection'] → a single Treasury reg). Which terms fit varies per matter — pick the ones that describe THIS case. " +
+              "CHEAP TO PROBE: if the combo is still too broad it returns ONLY a count (broad:true) and transfers NO rows — so add another distinguishing term and call again; if it returns 0, drop the term that doesn't belong; when it narrows to <= max hits you get those exact citations. This is how you cut wasteful searches: deepen for almost nothing, pull only when surgical.",
+            inputSchema: z.object({
+              terms: z.array(z.string().min(2)).min(2).max(10).describe("Diverse case-relevant terms to AND — words that co-occur in the target document though not adjacent. Add more to narrow, remove to broaden."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to."),
+              max: z.number().int().min(1).max(100).default(12).describe("Return rows only at/below this many hits; above it you get just the count (broad:true)."),
+            }),
+            execute: async ({ terms, source, max }) => {
+              const { data, error } = await corpus.rpc("precise_match", { p_terms: terms, p_source: source ?? null, p_max: max });
+              if (error) return { error: error.message, results: [] };
+              const d = (data ?? {}) as { count?: number; broad?: boolean; results?: Array<{ id: string; cite: string; heading: string | null; source: string }> };
+              return { count: d.count ?? 0, broad: d.broad ?? false, results: d.results ?? [] };
             },
           }),
           search_boolean: tool({

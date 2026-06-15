@@ -27,7 +27,7 @@ const INTRO_PROMPTS = [
 // clickable results list (the "shitload of results, pushed to the browser")
 // instead of a collapsed JSON blob, so the user sees the whole field the model
 // pulled, not just the model's eventual reply.
-const SEARCH_TOOLS = new Set(["scan_corpus", "search_corpus", "search_boolean", "search_cases", "open_basin"]);
+const SEARCH_TOOLS = new Set(["scan_corpus", "search_corpus", "search_boolean", "search_cases", "open_basin", "precise_search"]);
 
 type HitRow = {
   id?: string; identifier?: string; cite?: string; citation?: string;
