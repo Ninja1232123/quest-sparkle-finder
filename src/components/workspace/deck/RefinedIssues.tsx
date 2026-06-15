@@ -81,7 +81,7 @@ export function RefinedIssues({
           <button
             type="button"
             onClick={onToggleDoc}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-bold tracking-[0.16em] uppercase transition-transform hover:scale-[1.03]"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[14px] font-bold tracking-[0.16em] uppercase transition-transform hover:scale-[1.03]"
             style={{
               background: docOpen ? "#0c1b3d" : "#7bb651",
               color: docOpen ? "#7bb651" : "#0c1b3d",
@@ -102,7 +102,7 @@ export function RefinedIssues({
           return (
             <div key={b.key}>
               <div className="mb-1 flex items-center gap-1.5 px-0.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: b.color, boxShadow: `0 0 8px ${b.color}` }} />
                 <span className="text-[11px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
                   {b.label}
                 </span>
@@ -110,7 +110,7 @@ export function RefinedIssues({
               </div>
               {rows.length === 0 ? (
                 <div
-                  className="rounded-md px-2 py-2.5 text-center text-[11.5px]"
+                  className="rounded-md px-2 py-2.5 text-center text-[14px]"
                   style={{ background: b.tint, color: "rgba(230,236,247,0.45)", boxShadow: `inset 0 0 0 1px ${b.color}33` }}
                 >
                   Grab authority from the sources to file it here.
@@ -128,9 +128,9 @@ export function RefinedIssues({
 
         {questions.length > 0 && (
           <div>
-            <div className="mb-1 flex items-center gap-1.5 px-0.5">
+            <div className="mb-1 flex items-center gap-1.5 px-3">
               <HelpCircle className="h-3 w-3" style={{ color: "#9fb3d8" }} />
-              <span className="text-[11px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+              <span className="text-[15px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
                 Open questions
               </span>
             </div>
@@ -141,7 +141,7 @@ export function RefinedIssues({
                   className="group flex items-start gap-1.5 rounded-md px-2 py-1.5"
                   style={{ background: "rgba(159,179,216,0.10)", boxShadow: "inset 0 0 0 1px rgba(159,179,216,0.2)" }}
                 >
-                  <span className="flex-1 text-[11px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
+                  <span className="flex-1 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
                   <button type="button" onClick={() => onDelete(q)} className="opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100" aria-label="Delete">
                     <Trash2 className="h-3 w-3" style={{ color: "#ffb4b4" }} />
                   </button>
@@ -179,9 +179,9 @@ function IssueCard({
           <div className="truncate text-[11px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
             {cite}
           </div>
-          {item.heading && <div className="truncate text-[11.5px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
+          {item.heading && <div className="truncate text-[14px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
           {item.quote && (
-            <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
+            <p className="mt-0.5 line-clamp-2 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
               “{item.quote}”{item.pin_cite ? ` ${item.pin_cite}` : ""}
             </p>
           )}
