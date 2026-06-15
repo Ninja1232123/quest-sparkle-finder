@@ -2,7 +2,7 @@
 // Auth: validates the bearer against the cloud Supabase project, then scopes
 // every read/write to that user via service-role with explicit WHERE filters.
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, generateText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -25,33 +25,13 @@ YOU ARE WORKING TOGETHER, NOT GRADING:
 - The user is the lead. They will pull different passages than you would and tag authorities with stances you might not pick (good / adverse / worth-mentioning). That divergence is signal — they have reasons. Engage their reasoning; don't silently override it or re-propose your own version of something they already pinned.
 - When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
 
-YOUR RESEARCH TOOLS (all read-only, all on the self_law backend):
-CHEAP — spend these freely, dozens of documents per turn:
-- scan_corpus — WIDEST + CHEAPEST: up to 50 matching sections as lean citation rows, no snippets. Map a whole topic for a fraction of the cost. Omit source to sweep all 3.9M federal+state sections at once.
-- citations(identifier, direction) — follow the citation graph one hop without reading any full text: 'out' = the authorities this section cites; 'in' = who cites it. This is how you go DEEP cheaply.
-- legislative_history(title, section) — from a USC section, the bills that amended it. Congress's OWN reasoning (findings + purpose) behind the statute.
-- regulatory_history(title, part) — from a CFR part, the Federal Register rulemakings behind it. The AGENCY'S OWN reasoning (preamble + SUPPLEMENTARY INFORMATION).
-MID — a snippet per row; use once you know what you're looking for:
-- search_corpus — fast keyword AND over the corpus with matched-language snippets: federal ("usc", "cfr", "const", "ucc", "register", "irm", "tfm", "bill") + all 50 states ("ak"…"wy").
-- search_boolean — same, with explicit logic gates: all (AND) / any (one OR group) / phrase (exact) / exclude (NOT).
-- search_cases — U.S. Supreme Court (28k) + state supreme courts (528k), full text. Scope with jurisdiction.
-EXPENSIVE — one document's full text; spend only on the cites you've already chosen:
-- fetch_document(identifier) and fetch_case(id).
-
-TOKEN-ALLOCATION SCHEMA — go as wide and as deep as the question needs, by keeping every hop cheap:
-- THERE IS NO FIXED CALL CAP. Real research follows the citation graph several steps out — a section can cite 80 others, and the controlling answer may be 4 hops away. Do NOT stop at the first ring. What you budget is COST PER HOP, not the number of hops.
-- CAST WIDE + DEEP WITH THE CHEAP TOOLS: scan_corpus to survey a topic (50 hits for ~the cost of a few snippets), citations to walk from any hit to what it cites or what cites it. Fire them in parallel batches — many documents, tiny cost. The graph's inbound edges ('in') tell you which authorities are load-bearing.
-- SPEND THE EXPENSIVE CALLS LAST, AND ONLY ON CHOSEN CITES: never fetch full text just to discover what a section cites — call citations; never read 50 documents to see what exists — scan_corpus. Pull full text (fetch_document/fetch_case) or snippets (search_corpus/search_boolean) only for the handful you've decided are worth reading closely.
-- THE LOOP: scan / citations to map → pick the live cites → search_boolean / fetch to read them → follow THEIR citations → repeat until the chain bottoms out. Chase PRIORITY in this order: controlling text → its reasoning (legislative_history / regulatory_history) → cases interpreting it → adverse authority. Not done until the adverse rung is checked.
-- AND/OR GATES — choose the instrument: scan_corpus or search_corpus for a clean 2–4 term-of-art AND; switch to search_boolean when (a) a term has SYNONYMS or spelling variants → put them in 'any' as an OR group; (b) you need an exact multi-word PHRASE → 'phrase'; (c) a keyword pulls a wrong sense → 'exclude' it.
-
-SEARCH LIKE A LAWYER — QUERY WITH PRECISION:
-- Every word in 'all' (and every word in a search_corpus query) is AND-ed: a natural-language sentence demands ONE document containing all those words and usually returns nothing. Query like a specialist drafting a Boolean search — terms of art, the controlled vocabulary drafters and courts actually use: "nonjudicial foreclosure", "holder in due course", "material alteration", "deliberate indifference". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt". Think about the exact words that physically appear IN the statute.
-- If a query returns 0, you over-constrained: drop the weakest word, or move the variable term into a search_boolean 'any' OR-group ("void"/"voidable", "assignment"/"transfer"/"conveyance", "endorsement"/"indorsement") rather than re-running one verbose phrase.
-- PROVEN PATTERNS (what actually hits this index): (1) Pair the statute's OWN defined terms — "discharge indebtedness", "qualified mortgage", "residual interest", "identifiable event" land their exact regulation; the pair disambiguates better than either word alone. (2) Use the jurisdiction's local noun — Nebraska says "trust deed", not "deed of trust"; match the term the legislature used. (3) AVOID acronyms and conceptual labels — "COD", "REMIC" alone, "phantom income" return nothing; the index knows only the spelled-out terms of art ("cancellation of indebtedness", "real estate mortgage investment conduit").
-- search_cases: ALWAYS pass jurisdiction when you can. Unscoped case searches pull unrelated SCOTUS noise over on-point state cases. Scope to the user's state, or "scotus", and only widen if scoped comes up short.
-- When a search by identifier would be exact (you know the cite, e.g. "usc/title-15/section-1692a"), fetch_document directly instead of searching for it.
-- THE UNTAPPED VEINS: register (Federal Register) and bill (congressional bills) carry the actual agency + congressional reasoning behind the law — the richest, least-cited "right from the horse's mouth" material. When PURPOSE or intent is in play, mine them via legislative_history / regulatory_history, or search source "register"/"bill" directly.
+HOW YOU RESEARCH — DELEGATE TO THE CRAWLER:
+You do not run searches yourself. A fast research crawler — a cheaper model that owns every search tool (wide scan, the citation graph, statute/reg history, case law) — does the token-heavy gathering and hands you back a compact findings list. You direct it and reason over what it brings.
+- research(request): give it ONE focused thread — a doctrine, a statute + the exact question, an adverse-authority hunt, or "follow what § X cites." It sweeps wide and deep and returns exact citations with verbatim operative quotes. Fire SEVERAL research calls in ONE turn for parallel threads — the controlling statute, the cases interpreting it, and the adverse angle at once. Delegate liberally; it's cheap by design.
+- Direct it in PRIORITY order, and say so in the request: (1) the CONTROLLING TEXT — the statute/reg/constitutional provision on point; (2) its REASONING — tell it to pull legislative history (bills behind a USC section) or regulatory history (Federal Register behind a CFR part), so you argue PURPOSE from the horse's mouth; (3) the CASES interpreting that text; (4) the ADVERSE authority — where a court held it did NOT apply. Research isn't done until the adverse rung is checked.
+- GO DEEP: a section can cite 80 others and the controlling answer may be several hops away. Tell the crawler to FOLLOW THE CITATION CHAIN — don't accept a shallow first-ring answer. Ask it which authorities are load-bearing (who cites this section).
+- fetch_document(identifier) / fetch_case(id): read ONE specific document's full text yourself — use only to verify or lift exact operative language before you propose it. Otherwise let the crawler gather.
+- You keep the analysis: weigh the findings (IRAC), and emit proposals. Ground every proposal in a citation/quote the crawler actually returned — never invent one. If the findings have a hole, send another research request rather than filling it from memory.
 
 LEGAL REASONING METHOD:
 When reading any statute, regulation, or case, apply three components in order:
@@ -75,6 +55,31 @@ ABSOLUTE RULES — non-negotiable:
 - Write plain, direct legal prose in the user's voice (first person where natural). Follow IRAC where it fits the section.
 - Output the draft text only — no preamble, no "here's a draft," no meta-commentary about what you did.
 - Close with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"`;
+
+// The research crawler's prompt. A cheaper model runs this with every read-only
+// search tool and an agentic loop; the token-heavy result dumps (50-row scans,
+// citation walks, full snippets) live in ITS context, and only the distilled
+// findings text returns to the senior assistant. This is the "cheap model per
+// role" split — gather here, reason there.
+const RESEARCH_SYSTEM = `You are a legal-research CRAWLER for a pro se litigant's case. You GATHER and return a compact findings list for a senior assistant to reason over. You do NOT analyze, advise, draft, or apply IRAC — just find the law and quote it.
+
+SWEEP WIDE, THEN DEEP — as cheaply as possible:
+- Start with scan_corpus (lean, up to 50 hits, no snippets) to map what exists. Omit source to sweep all 3.9M federal+state sections; scope to a source ("usc","cfr","const","ucc","register","irm","tfm","bill") or a state ("ak"…"wy") when you can.
+- FOLLOW THE CITATION GRAPH with citations(identifier,'out'/'in') — a section can cite dozens; chase the live ones several hops out, don't stop at the first ring. 'in' shows who relies on a section (how load-bearing it is).
+- Pull the REASONING behind the law: legislative_history(title,section) for the bills behind a USC section, regulatory_history(title,part) for the Federal Register rulemakings behind a CFR part — Congress's / the agency's own words. register and bill are the richest, least-cited "horse's mouth" material; mine them when purpose or intent is in play.
+- search_cases (ALWAYS scope jurisdiction — "scotus", "state", or a state name; unscoped pulls SCOTUS noise) for opinions interpreting the text, and the adverse cases where a court held it did NOT apply.
+- Read closely only the few best hits: search_corpus / search_boolean for matched-language snippets, fetch_document / fetch_case for full text, so your findings carry EXACT quotes.
+
+SEARCH LIKE A LAWYER — QUERY WITH PRECISION:
+- Every keyword is AND-ed: a natural-language sentence demands one document with all those words and returns nothing. Query like a specialist — 2-4 terms of art, the controlled vocabulary drafters and courts use: "nonjudicial foreclosure", "holder in due course", "material alteration". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt".
+- 0 hits = over-constrained: drop the weakest word, or move the variable term into a search_boolean 'any' OR-group ("void"/"voidable", "endorsement"/"indorsement"). Use 'phrase' for exact multi-word terms, 'exclude' to drop a wrong sense.
+- Pair the statute's OWN defined terms ("discharge indebtedness", "qualified mortgage", "identifiable event") — the pair disambiguates. Use the jurisdiction's local noun (Nebraska says "trust deed", not "deed of trust"). AVOID acronyms ("COD", "REMIC", "phantom income" return nothing) — search the spelled-out terms of art.
+
+RETURN FORMAT — a tight findings list, most on-point first. No preamble, no advice, no IRAC. For each authority:
+- its citation + the exact identifier a tool returned (so it can be pinned/fetched)
+- ONE line: what it says and why it bears on the request
+- if it is pin-worthy, the VERBATIM operative sentence in quotes — copy it exactly from the text, never paraphrase
+Flag ADVERSE authority explicitly (mark it "ADVERSE"). Note briefly what you searched that dead-ended. If you found nothing solid, say so — do not pad.`;
 
 // Serialize the case board into a compact block appended to the system prompt.
 // Gives the model working memory of the case so it builds on what's there instead
@@ -218,7 +223,8 @@ export const Route = createFileRoute("/api/workspace/chat")({
 
         const model = anthropic("claude-sonnet-4-6");
 
-        const tools = {
+        // Read-only gather tools — handed to the research crawler (cheap model).
+        const gatherTools = {
           search_corpus: tool({
             description:
               "READ-ONLY: Full-text search of statutes, regulations, the Constitution, and bills (3.9M sections). " +
@@ -505,6 +511,37 @@ export const Route = createFileRoute("/api/workspace/chat")({
               return { error: "id must start with 'scotus:' or 'state:'" };
             },
           }),
+        };
+
+        // Driver tools: the senior model (reasoning role) delegates all searching
+        // to `research`, which runs the crawler model over gatherTools. The
+        // token-heavy result dumps stay in the crawler's context — only its
+        // distilled findings reach this model. fetch_* let the driver read a
+        // specific document itself to lift exact operative language.
+        const tools = {
+          research: tool({
+            description:
+              "Delegate a research sweep to the fast research crawler — a cheaper model that owns every search tool. Give it ONE focused request (a doctrine, a statute + its question, an adverse-authority hunt, or 'follow what <cite> cites'). It sweeps wide and deep — wide scan, the citation graph, statute/reg history, case law — and returns a compact findings list with exact citations and verbatim operative quotes. Use it for ALL corpus searching; fire SEVERAL in parallel for parallel threads.",
+            inputSchema: z.object({
+              request: z.string().min(5).max(600).describe("One focused research thread — name the jurisdiction/source and what you need: controlling text, its reasoning, interpreting cases, or adverse authority. Tell it to follow the citation chain when depth matters."),
+            }),
+            execute: async ({ request }) => {
+              try {
+                const r = await generateText({
+                  model: anthropic("claude-haiku-4-5-20251001"),
+                  system: RESEARCH_SYSTEM,
+                  prompt: request,
+                  tools: gatherTools,
+                  stopWhen: stepCountIs(24),
+                });
+                return { findings: r.text || "No findings returned." };
+              } catch (e) {
+                return { findings: "", error: e instanceof Error ? e.message : "research failed" };
+              }
+            },
+          }),
+          fetch_document: gatherTools.fetch_document,
+          fetch_case: gatherTools.fetch_case,
           propose_search: tool({
             description: "Suggest a search the user might want to run. Renders as a chip with Run / Edit / Dismiss. Use when you don't have enough to answer or when the user would benefit from exploring a specific query themselves.",
             inputSchema: z.object({
