@@ -20,7 +20,7 @@ export const BUCKETS: {
   hint: string;
   accent: string;
   wash: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }[] = [
   {
     id: "supportive",
@@ -72,14 +72,14 @@ export function CompileBuckets({ snippets, onRemove, onSendToDraft }: Props) {
               <div className="flex items-center gap-1.5">
                 <b.icon className="h-3.5 w-3.5" style={{ color: b.accent }} />
                 <span
-                  className="text-[11px] uppercase tracking-[0.18em]"
+                  className="text-[12px] uppercase tracking-[0.18em]"
                   style={{ fontFamily: "var(--font-mono)", color: "var(--ink)" }}
                 >
                   {b.label}
                 </span>
               </div>
               <span
-                className="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold"
+                className="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[12px] font-bold"
                 style={{ background: b.accent, color: "var(--paper-soft)" }}
               >
                 {items.length}
@@ -89,7 +89,7 @@ export function CompileBuckets({ snippets, onRemove, onSendToDraft }: Props) {
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
               {items.length === 0 ? (
                 <p
-                  className="px-1 py-4 text-center text-[11px] leading-relaxed"
+                  className="px-1 py-4 text-center text-[12px] leading-relaxed"
                   style={{ color: "var(--ink-muted)" }}
                 >
                   {b.hint}. Select text in an open container and send it here.
@@ -109,7 +109,7 @@ export function CompileBuckets({ snippets, onRemove, onSendToDraft }: Props) {
                     </p>
                     <div className="mt-1.5 flex items-center justify-between gap-2">
                       <span
-                        className="truncate text-[9px] uppercase tracking-[0.14em]"
+                        className="truncate text-[12px] uppercase tracking-[0.14em]"
                         style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}
                         title={s.citation}
                       >

@@ -113,7 +113,7 @@ function RecordIndex() {
               <Link to="/record/$slug" params={{ slug: o.slug }} className="group flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/50">
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-display text-[15px] font-semibold leading-tight">{o.case_title}</div>
-                  <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                  <div className="mt-0.5 font-mono text-[12px] text-muted-foreground">
                     {o.us_cite ?? "U.S. Reports"}{o.year ? ` · ${o.year}` : ""}{o.cited_count ? ` · cites ${o.cited_count}` : ""}
                   </div>
                 </div>

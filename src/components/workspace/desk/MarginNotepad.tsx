@@ -85,10 +85,10 @@ export function MarginNotepad({ threadId, registerHandle }: Props) {
     <div className="flex h-full min-h-0 flex-col border-r bg-paper-tint" style={{ borderColor: "var(--rule-card)" }}>
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--rule-card)" }}>
         <PenLine className="h-3.5 w-3.5" style={{ color: "var(--ink-muted)" }} />
-        <span className="text-[10px] uppercase tracking-[0.22em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
+        <span className="text-[12px] uppercase tracking-[0.22em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
           In the margins
         </span>
-        <span className="ml-auto inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
+        <span className="ml-auto inline-flex items-center gap-1 text-[12px] uppercase tracking-[0.14em]" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-muted)" }}>
           {save === "saving" && <><Loader2 className="h-3 w-3 animate-spin" /> Saving</>}
           {save === "saved" && <><Check className="h-3 w-3" /> Saved</>}
           {save === "error" && <span className="inline-flex items-center gap-1 text-destructive"><AlertCircle className="h-3 w-3" /> Local only</span>}

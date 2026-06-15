@@ -163,7 +163,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
 
         {/* Save status */}
         <div
-          className="hidden shrink-0 items-center gap-2 text-[10px] tracking-[0.18em] uppercase lg:flex"
+          className="hidden shrink-0 items-center gap-2 text-[12px] tracking-[0.18em] uppercase lg:flex"
           style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}
         >
           <span>{wordCount} words</span>
@@ -195,7 +195,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
         <button
           type="button"
           onClick={() => setHeaderOpen((o) => !o)}
-          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] transition-colors hover:bg-foreground/6"
+          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-0.5 text-[12px] transition-colors hover:bg-foreground/6"
           style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}
         >
           {headerOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -210,7 +210,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
           style={{ borderColor: "var(--rule-card)", background: "color-mix(in oklab, var(--paper) 85%, var(--paper-tint))" }}
         >
           <div className="mx-auto max-w-2xl space-y-3">
-            <div className="text-[10px] tracking-[0.25em] uppercase mb-3" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+            <div className="text-[12px] tracking-[0.25em] uppercase mb-3" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
               Filing information
             </div>
             {/* Court + Case No. */}
@@ -246,11 +246,11 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
             </div>
             {/* Visual v. divider */}
             {(plaintiff || defendant) && (
-              <div className="text-center text-[11px] font-semibold tracking-widest py-0.5" style={{ color: "var(--ink-muted)" }}>
+              <div className="text-center text-[12px] font-semibold tracking-widest py-0.5" style={{ color: "var(--ink-muted)" }}>
                 — v. —
               </div>
             )}
-            <p className="text-[10px]" style={{ color: "var(--ink-muted)" }}>
+            <p className="text-[12px]" style={{ color: "var(--ink-muted)" }}>
               Header is for your reference — it doesn't affect the draft body. Use the Document Builder to generate a court-formatted PDF.
             </p>
           </div>
@@ -331,7 +331,7 @@ function ToolBtn({ children, onClick, title, accent }: {
       type="button"
       title={title}
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition-all hover:-translate-y-px hover:shadow-sm"
+      className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-all hover:-translate-y-px hover:shadow-sm"
       style={{
         borderColor: accent ? "var(--brass, #c8a24b)" : "var(--rule-card)",
         color: "var(--ink)",
@@ -351,7 +351,7 @@ function Pip({ on, label, warn }: { on: boolean; label: string; warn?: boolean }
         className="h-1.5 w-1.5 rounded-full transition-colors"
         style={{ background: on && !warn ? "#3f7d4e" : warn ? "#a8413a" : "var(--rule-card)" }}
       />
-      <span className="text-[10px] tracking-[0.12em]" style={{ color, fontFamily: "var(--font-mono)" }}>
+      <span className="text-[12px] tracking-[0.12em]" style={{ color, fontFamily: "var(--font-mono)" }}>
         {label}
       </span>
     </div>
@@ -367,7 +367,7 @@ function Field({ label, value, onChange, placeholder, compact }: {
 }) {
   return (
     <div className={compact ? "w-44" : ""}>
-      <div className="mb-1 text-[9px] font-medium tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+      <div className="mb-1 text-[12px] font-medium tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
         {label}
       </div>
       <input

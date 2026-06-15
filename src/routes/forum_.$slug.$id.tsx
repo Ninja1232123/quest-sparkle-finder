@@ -154,11 +154,11 @@ function PostPage() {
             {date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
           </time>
           {post.pinned && (
-            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[12px] uppercase tracking-wider text-accent">
               pinned
             </span>
           )}
-          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${kindPill(post.kind)}`}>
+          <span className={`rounded-full border px-2 py-0.5 text-[12px] uppercase tracking-wider ${kindPill(post.kind)}`}>
             {KIND_TAG[post.kind] ?? post.kind}
           </span>
         </div>
@@ -265,7 +265,7 @@ function PostPage() {
             )}
           </div>
 
-          <p className="mt-6 text-[11px] leading-relaxed text-foreground/55">
+          <p className="mt-6 text-[12px] leading-relaxed text-foreground/55">
             Replies are research and opinion, not legal advice. If it's about the law, cite the
             section. Validate any interpretation with a licensed attorney in your jurisdiction
             before you act on it.
@@ -310,7 +310,7 @@ function ReplyComposer({ postId, onPosted }: { postId: string; onPosted: () => v
         maxLength={4000}
       />
       <div className="mt-2 flex items-center justify-between gap-3">
-        <span className="text-[11px] text-muted-foreground">{body.length} / 4000</span>
+        <span className="text-[12px] text-muted-foreground">{body.length} / 4000</span>
         {error && <span className="text-xs text-destructive">{error}</span>}
         <Button onClick={submit} disabled={busy || body.trim().length < 2}>
           {busy ? "Posting…" : "Post reply"}

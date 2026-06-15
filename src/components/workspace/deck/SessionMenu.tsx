@@ -100,7 +100,7 @@ export function SessionMenu({ currentId }: { currentId?: string }) {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11.5px] font-semibold tracking-[0.18em] uppercase transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] font-semibold tracking-[0.18em] uppercase transition-colors"
         style={{
           borderColor: "rgba(200,162,75,0.4)",
           color: "#c8a24b",
@@ -156,7 +156,7 @@ export function SessionMenu({ currentId }: { currentId?: string }) {
                 {(["Today", "Yesterday", "This week", "Older"] as const).map((label) =>
                   grouped[label].length === 0 ? null : (
                     <div key={label}>
-                      <div className="px-2 pb-1 text-[10.5px] tracking-[0.3em]" style={{ color: "rgba(230,236,247,0.4)", fontFamily: mono }}>
+                      <div className="px-2 pb-1 text-[12px] tracking-[0.3em]" style={{ color: "rgba(230,236,247,0.4)", fontFamily: mono }}>
                         {label.toUpperCase()}
                       </div>
                       <ul className="space-y-0.5">
@@ -200,8 +200,8 @@ export function SessionMenu({ currentId }: { currentId?: string }) {
           </div>
 
           <div className="space-y-1.5 border-t p-2.5" style={{ borderColor: "rgba(200,162,75,0.2)", fontFamily: mono }}>
-            <Link to="/cases" onClick={() => setOpen(false)} className="block text-[11.5px] tracking-wider opacity-60 hover:opacity-100" style={{ color: "#e6ecf7" }}>↳ CASEBOOK</Link>
-            <Link to="/builder" onClick={() => setOpen(false)} className="block text-[11.5px] tracking-wider opacity-60 hover:opacity-100" style={{ color: "#e6ecf7" }}>↳ PLEADING BUILDER</Link>
+            <Link to="/cases" onClick={() => setOpen(false)} className="block text-[12px] tracking-wider opacity-60 hover:opacity-100" style={{ color: "#e6ecf7" }}>↳ CASEBOOK</Link>
+            <Link to="/builder" onClick={() => setOpen(false)} className="block text-[12px] tracking-wider opacity-60 hover:opacity-100" style={{ color: "#e6ecf7" }}>↳ PLEADING BUILDER</Link>
           </div>
         </div>,
         document.body,

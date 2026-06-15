@@ -27,7 +27,7 @@ export function DocViewer({
       headerRight={
         <>
           <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wider uppercase"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-semibold tracking-wider uppercase"
             style={{ background: "rgba(122,162,216,0.18)", color: "#bcd3f2", fontFamily: "var(--font-mono, 'Special Elite')" }}
             title="The assistant is reading this with you"
           >
@@ -53,7 +53,7 @@ export function DocViewer({
           </div>
         ) : (
           <article>
-            <div className="mb-0.5 text-[11px] font-semibold tracking-wider uppercase" style={{ color: "#7a5e16", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+            <div className="mb-0.5 text-[12px] font-semibold tracking-wider uppercase" style={{ color: "#7a5e16", fontFamily: "var(--font-mono, 'Special Elite')" }}>
               {[doc.court, doc.citation].filter(Boolean).join(" · ")}
             </div>
             {doc.heading && (

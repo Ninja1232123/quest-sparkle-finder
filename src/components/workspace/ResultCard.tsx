@@ -23,7 +23,7 @@ export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
       className="group relative rounded-md border bg-card p-3 transition-all hover:-translate-y-px hover:shadow-md"
       style={{ borderColor: "var(--rule-card)" }}
     >
-      <div className="mb-1 flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+      <div className="mb-1 flex items-center gap-2 text-[12px] tracking-[0.18em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
         <span className="rounded px-1.5 py-0.5" style={{ background: "color-mix(in oklab, var(--brass, #c8a24b) 18%, transparent)" }}>{hit.source}</span>
         {hit.sectionLabel && <span>{hit.sectionLabel}</span>}
         {hit.parentLabel && <span className="opacity-60 truncate">· {hit.parentLabel}</span>}
@@ -47,7 +47,7 @@ export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
           <button
             type="button"
             onClick={() => onPin(hit)}
-            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-medium transition-colors hover:bg-foreground/5"
             style={{ color: "var(--ink)" }}
           >
             <Pin className="h-3 w-3" /> Pin to case
@@ -56,7 +56,7 @@ export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
         <button
           type="button"
           onClick={() => onAddToNotes(hit)}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-medium transition-colors hover:bg-foreground/5"
           style={{ color: "var(--ink)" }}
         >
           <Plus className="h-3 w-3" /> Add to notes
@@ -64,7 +64,7 @@ export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
         <button
           type="button"
           onClick={() => onSummarize(hit)}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-medium transition-colors hover:bg-foreground/5"
           style={{ color: "var(--ink)" }}
         >
           <Summarize className="h-3 w-3" /> Summarize
@@ -73,7 +73,7 @@ export function ResultCard({ hit, onAddToNotes, onSummarize, onPin }: Props) {
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-medium transition-colors hover:bg-foreground/5"
           style={{ color: "var(--ink-muted)" }}
         >
           <ExternalLink className="h-3 w-3" /> Open

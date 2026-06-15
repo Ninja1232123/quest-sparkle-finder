@@ -108,7 +108,7 @@ function MarginaliaStyle() {
   transition: opacity 200ms ease-out;
 }
 .mn-cite {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;

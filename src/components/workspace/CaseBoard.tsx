@@ -42,7 +42,7 @@ export function CaseBoard({ items, onInsert, onDelete, onAddQuestion }: Props) {
             <Scale className="h-3.5 w-3.5" style={{ color: "var(--brass, #c8a24b)" }} />
           </div>
           <div>
-            <div className="text-[10px] font-medium tracking-[0.22em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+            <div className="text-[12px] font-medium tracking-[0.22em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
               Case Brief
             </div>
             <div className="text-[13px] font-semibold leading-tight" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
@@ -115,7 +115,7 @@ export function CaseBoard({ items, onInsert, onDelete, onAddQuestion }: Props) {
             <button
               type="button"
               onClick={onAddQuestion}
-              className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors hover:bg-foreground/8"
+              className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] transition-colors hover:bg-foreground/8"
               style={{ color: "var(--ink-muted)" }}
             >
               <Plus className="h-3 w-3" /> Add
@@ -129,7 +129,7 @@ export function CaseBoard({ items, onInsert, onDelete, onAddQuestion }: Props) {
         className="shrink-0 border-t px-4 py-2.5"
         style={{ borderColor: "var(--rule-card)" }}
       >
-        <p className="text-[10px] leading-relaxed" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+        <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
           Pin law from search or accept an AI suggestion. Insert any card directly into your draft.
         </p>
       </div>
@@ -163,20 +163,20 @@ function Stack({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[11px] font-semibold tracking-[0.08em] uppercase"
+              className="text-[12px] font-semibold tracking-[0.08em] uppercase"
               style={{ color: "var(--ink)", fontFamily: "var(--font-mono)" }}
             >
               {label}
             </span>
             <span
-              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium tabular-nums"
+              className="rounded-full px-1.5 py-0.5 text-[12px] font-medium tabular-nums"
               style={{ background: `color-mix(in oklab, ${color} 15%, transparent)`, color }}
             >
               {items.length}
             </span>
             {extraHeader}
           </div>
-          <p className="mt-0.5 text-[10px] leading-snug" style={{ color: "var(--ink-muted)" }}>
+          <p className="mt-0.5 text-[12px] leading-snug" style={{ color: "var(--ink-muted)" }}>
             {sublabel}
           </p>
         </div>
@@ -216,13 +216,13 @@ function GhostCard({ citation, heading, quote, note, color }: {
         </div>
         <ExternalLink className="h-3 w-3 shrink-0 mt-0.5 opacity-40" />
       </div>
-      {heading && <div className="mt-0.5 text-[10px]" style={{ color: "var(--ink-muted)" }}>{heading}</div>}
+      {heading && <div className="mt-0.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>{heading}</div>}
       {quote && (
-        <p className="mt-1.5 text-[11px] italic leading-snug" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
+        <p className="mt-1.5 text-[12px] italic leading-snug" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
           "{quote}"
         </p>
       )}
-      <p className="mt-1.5 text-[10px] leading-snug" style={{ color: "var(--ink-muted)" }}>{note}</p>
+      <p className="mt-1.5 text-[12px] leading-snug" style={{ color: "var(--ink-muted)" }}>{note}</p>
     </div>
   );
 }
@@ -261,15 +261,15 @@ function ItemCard({ item, color, onInsert, onDelete }: {
             <div className="text-[12px] font-semibold" style={{ color: "var(--ink)" }}>{item.citation}</div>
           )}
           {item.heading && (
-            <div className="mt-0.5 text-[10px]" style={{ color: "var(--ink-muted)" }}>{item.heading}</div>
+            <div className="mt-0.5 text-[12px]" style={{ color: "var(--ink-muted)" }}>{item.heading}</div>
           )}
           {item.quote && (
-            <p className="mt-1.5 line-clamp-3 rounded bg-foreground/[0.03] px-2 py-1 text-[11px] italic leading-relaxed" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
+            <p className="mt-1.5 line-clamp-3 rounded bg-foreground/[0.03] px-2 py-1 text-[12px] italic leading-relaxed" style={{ color: "var(--ink)", fontFamily: "var(--font-serif)" }}>
               "{item.quote}"
             </p>
           )}
           {item.user_note && (
-            <p className="mt-1.5 text-[10px] leading-snug" style={{ color: "var(--ink-muted)" }}>{item.user_note}</p>
+            <p className="mt-1.5 text-[12px] leading-snug" style={{ color: "var(--ink-muted)" }}>{item.user_note}</p>
           )}
         </>
       ) : (
@@ -282,7 +282,7 @@ function ItemCard({ item, color, onInsert, onDelete }: {
           <button
             type="button"
             onClick={() => onInsert(item)}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-foreground/6"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-medium transition-colors hover:bg-foreground/6"
             style={{ color: "var(--ink)" }}
             title="Insert into draft"
           >
@@ -292,7 +292,7 @@ function ItemCard({ item, color, onInsert, onDelete }: {
         <button
           type="button"
           onClick={() => onDelete(item)}
-          className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors hover:bg-destructive/10 hover:text-destructive"
+          className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] transition-colors hover:bg-destructive/10 hover:text-destructive"
           style={{ color: "var(--ink-muted)" }}
           title="Remove"
         >

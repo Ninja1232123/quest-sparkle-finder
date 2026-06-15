@@ -296,7 +296,7 @@ function ComparePage() {
               </Link>
             );
           })}
-          <span className="self-center font-mono text-[10px] uppercase tracking-wider text-foreground/45">· up to 4 columns</span>
+          <span className="self-center font-mono text-[12px] uppercase tracking-wider text-foreground/45">· up to 4 columns</span>
         </div>
 
         {error && (
@@ -370,14 +370,14 @@ function Column({
           <span className="font-display text-sm font-bold leading-tight text-[#1c140a]">{SOURCE_LABELS[code] ?? code}</span>
         </div>
         <span
-          className="shrink-0 rounded-full border border-[#cbb88a] bg-white/60 px-2 py-0.5 font-mono text-[11px] font-bold"
+          className="shrink-0 rounded-full border border-[#cbb88a] bg-white/60 px-2 py-0.5 font-mono text-[12px] font-bold"
           style={{ color: accent }}
         >
           {hits.length}
         </span>
       </div>
       {hits.length === 0 ? (
-        <div className="px-4 py-12 text-center font-mono text-[11px] uppercase tracking-wider text-foreground/40">
+        <div className="px-4 py-12 text-center font-mono text-[12px] uppercase tracking-wider text-foreground/40">
           no matches
         </div>
       ) : (
@@ -422,7 +422,7 @@ function HitCard({ hit, q, shelf }: { hit: Hit; q: string; shelf: Shelf }) {
       <div className="px-4 py-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="font-mono text-[10px] text-muted-foreground/70">{hit.identifier}</div>
+            <div className="font-mono text-[12px] text-muted-foreground/70">{hit.identifier}</div>
             <Link
               to="/code/$"
               params={{ _splat: hit.identifier.replace(/^\//, "") }}
@@ -477,7 +477,7 @@ function HitCard({ hit, q, shelf }: { hit: Hit; q: string; shelf: Shelf }) {
                     to="/code/$"
                     params={{ _splat: hit.identifier.replace(/^\//, "") }}
                     search={{ q: q || undefined }}
-                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-terracotta hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-terracotta hover:underline"
                   >
                     Open full section <ExternalLink className="h-3 w-3" />
                   </Link>
@@ -490,7 +490,7 @@ function HitCard({ hit, q, shelf }: { hit: Hit; q: string; shelf: Shelf }) {
         <button
           type="button"
           onClick={toggleOpen}
-          className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground"
         >
           <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
           {open ? "Show less" : "Show more"}
@@ -526,7 +526,7 @@ function ShelfPanel({
         >
           <Layers className="h-4 w-4 text-terracotta" />
           Shelf
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[12px] font-medium text-muted-foreground">
             {count}
           </span>
           <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
@@ -535,7 +535,7 @@ function ShelfPanel({
           <button
             type="button"
             onClick={shelf.clear}
-            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
+            className="inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="h-3 w-3" /> clear
           </button>
@@ -564,7 +564,7 @@ function ShelfPanel({
                     <GitCompare className="h-3.5 w-3.5" /> Compare these two →
                   </Link>
                 ) : (
-                  <p className="text-center text-[11px] text-muted-foreground">
+                  <p className="text-center text-[12px] text-muted-foreground">
                     {validPick.length === 1
                       ? "Pick one more with the ⇄ toggle to diff."
                       : "Select two with the ⇄ toggle for a word-for-word diff."}
@@ -597,7 +597,7 @@ function ShelfPanel({
                           onClick={() => onTogglePick(it.identifier)}
                           aria-label={slot >= 0 ? "Unselect from diff" : "Select for diff"}
                           title="Select for diff"
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold transition ${
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border text-[12px] font-bold transition ${
                             slot >= 0
                               ? "border-terracotta bg-terracotta text-paper"
                               : "border-border/70 text-muted-foreground/60 hover:border-foreground/40 hover:text-foreground"
@@ -616,7 +616,7 @@ function ShelfPanel({
                       </div>
                     </div>
                     {it.snippet && (
-                      <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-foreground/55">
+                      <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-foreground/55">
                         {renderMarked(it.snippet)}
                       </p>
                     )}
@@ -679,7 +679,7 @@ function FileToCase({ items }: { items: ShelfItem[] }) {
               key={c.id}
               type="button"
               onClick={() => toggle(c.id)}
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide transition ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[12px] font-bold uppercase tracking-wide transition ${
                 sel.includes(c.id)
                   ? "border-ochre bg-ochre/25 text-foreground/85"
                   : "border-border text-muted-foreground hover:border-foreground/40"
@@ -698,7 +698,7 @@ function FileToCase({ items }: { items: ShelfItem[] }) {
           placeholder="new case…"
           className="min-w-0 flex-1 rounded-md border border-border bg-card px-2 py-1 font-display text-[12px] outline-none focus:border-ochre"
         />
-        <button type="button" onClick={addNew} disabled={!newName.trim()} className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground hover:border-foreground/40 disabled:opacity-40">
+        <button type="button" onClick={addNew} disabled={!newName.trim()} className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-[12px] uppercase text-muted-foreground hover:border-foreground/40 disabled:opacity-40">
           <Plus className="h-3 w-3" />
         </button>
       </div>
@@ -711,7 +711,7 @@ function FileToCase({ items }: { items: ShelfItem[] }) {
         File {items.length} law{items.length === 1 ? "" : "s"} {sel.length ? `→ ${sel.length} case${sel.length === 1 ? "" : "s"}` : "→ pick a case"}
       </button>
       {savedTo && (
-        <Link to="/cases/$id" params={{ id: savedTo }} className="mt-2 flex items-center justify-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta hover:underline">
+        <Link to="/cases/$id" params={{ id: savedTo }} className="mt-2 flex items-center justify-center gap-1 font-mono text-[12px] uppercase tracking-wide text-terracotta hover:underline">
           <Check className="h-3 w-3" /> Filed — open the case →
         </Link>
       )}

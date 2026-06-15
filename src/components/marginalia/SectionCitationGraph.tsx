@@ -122,7 +122,7 @@ export function SectionCitationGraph({
     <div className="rounded-2xl border bg-card paper-grain p-3">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="font-display text-sm font-semibold">Citation graph</div>
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: "var(--accent)" }} /> cites
           </span>
@@ -188,7 +188,7 @@ export function SectionCitationGraph({
           >
             <div className="font-display text-[13px] font-semibold leading-tight">{centerLabel}</div>
             {centerSub ? (
-              <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">{centerSub}</div>
+              <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">{centerSub}</div>
             ) : null}
           </div>
         </div>
@@ -213,10 +213,10 @@ export function SectionCitationGraph({
                 className="flex flex-col items-center justify-center rounded-full border-2 bg-background font-mono font-semibold leading-none text-foreground/80 transition-transform group-hover:scale-105"
                 style={{ width: `${d}vw`, maxWidth: 92, minWidth: 52, aspectRatio: "1", borderColor: m.accent }}
               >
-                <span className="text-[10px]" style={{ color: m.accent }}>{m.short}</span>
-                <span className="mt-0.5 text-[11px] tabular-nums">×{c.n.toLocaleString()}</span>
+                <span className="text-[12px]" style={{ color: m.accent }}>{m.short}</span>
+                <span className="mt-0.5 text-[12px] tabular-nums">×{c.n.toLocaleString()}</span>
               </div>
-              <div className={`pointer-events-none absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-background px-2 py-1 text-[10px] text-muted-foreground shadow-[var(--shadow-soft)] ${isPinned ? "block" : "hidden group-hover:block"}`}>
+              <div className={`pointer-events-none absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-background px-2 py-1 text-[12px] text-muted-foreground shadow-[var(--shadow-soft)] ${isPinned ? "block" : "hidden group-hover:block"}`}>
                 {sourceName(c.source)} cites this {c.n.toLocaleString()}×
                 {isPinned && <Pin className="ml-1 inline h-2.5 w-2.5 text-terracotta" />}
               </div>
@@ -235,8 +235,8 @@ export function SectionCitationGraph({
               className="flex w-[5.2rem] flex-col items-center rounded-lg border bg-background px-1.5 py-1 text-center shadow-[var(--shadow-soft)] transition-transform group-hover:scale-105"
               style={{ borderColor: ns.accent }}
             >
-              <span className="text-[9px] font-semibold" style={{ color: ns.accent }}>{ns.short}</span>
-              <span className="mt-0.5 line-clamp-2 text-[9.5px] leading-tight text-foreground/80">
+              <span className="text-[12px] font-semibold" style={{ color: ns.accent }}>{ns.short}</span>
+              <span className="mt-0.5 line-clamp-2 text-[12px] leading-tight text-foreground/80">
                 {t.sub || t.title}
               </span>
               {!t.href ? <ExternalLink className="mt-0.5 h-2.5 w-2.5 text-muted-foreground/60" /> : null}
@@ -268,9 +268,9 @@ export function SectionCitationGraph({
                 <div title={`${t.title} — not in our corpus; look it up`}>{inner}</div>
               )}
               {(hover === t.key || isPinned) && (
-                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 w-max max-w-[14rem] -translate-x-1/2 rounded-md border bg-background px-2 py-1 text-[10px] leading-snug text-muted-foreground shadow-[var(--shadow-soft)]">
+                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 w-max max-w-[14rem] -translate-x-1/2 rounded-md border bg-background px-2 py-1 text-[12px] leading-snug text-muted-foreground shadow-[var(--shadow-soft)]">
                   <div className="font-semibold text-foreground/80">{t.title}</div>
-                  {isCase && <div className="mt-0.5 text-[9px] uppercase tracking-wide text-accent">click → CourtListener</div>}
+                  {isCase && <div className="mt-0.5 text-[12px] uppercase tracking-wide text-accent">click → CourtListener</div>}
                 </div>
               )}
             </div>
@@ -278,7 +278,7 @@ export function SectionCitationGraph({
         })}
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 text-[11px] text-muted-foreground">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 text-[12px] text-muted-foreground">
         <span>
           Cites <span className="font-medium text-foreground/75">{tracesTotal.toLocaleString()}</span>
           {moreTraces > 0 ? <span> · showing {T.length}</span> : null}
