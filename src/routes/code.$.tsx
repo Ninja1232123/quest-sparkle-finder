@@ -14,6 +14,7 @@ import { docSeo, SITE_BRAND } from "@/lib/doc-seo";
 import { useMarginalia, useCases, type CaseRecord, type NoteRecord } from "@/lib/casebook";
 import { Streamdown } from "streamdown";
 import { RegisterHistory } from "@/components/marginalia/RegisterHistory";
+import { BillHistory } from "@/components/marginalia/BillHistory";
 
 // Body rendering lives in @/lib/legal-structure (segmentBody / splitParagraphs)
 // and @/lib/auto-link-citations (renderDecorated). Both work in original
@@ -1544,6 +1545,12 @@ function DocumentPage() {
             this part — agency reasoning, "right from the horse's mouth". */}
         {document.source_code === "cfr" && (
           <RegisterHistory identifier={document.identifier} />
+        )}
+
+        {/* USC sections: the congressional bills that amended (or tried to amend)
+            this section — the legislative history, Congress's own words. */}
+        {document.source_code === "usc" && (
+          <BillHistory identifier={document.identifier} />
         )}
 
         {/* Court cases that have applied or cited this section — free, visible

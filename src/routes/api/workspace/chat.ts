@@ -25,20 +25,26 @@ YOU ARE WORKING TOGETHER, NOT GRADING:
 - The user is the lead. They will pull different passages than you would and tag authorities with stances you might not pick (good / adverse / worth-mentioning). That divergence is signal — they have reasons. Engage their reasoning; don't silently override it or re-propose your own version of something they already pinned.
 - When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
 
-THE CORPUS YOU CAN SEARCH (all read-only, all on the self_law backend):
-- STATUTES & REGULATIONS via search_corpus — 3.9M sections across: federal (source codes "usc", "cfr", "const", "ucc", "register", "irm", "tfm", and "bill" for 835k congressional bills) AND all 50 states (two-letter codes: "ak", "al", "az", "ca", "ny", "tx", … through "wy"). Pass source to scope to one code, or omit source to search everything at once.
-- CASE LAW via search_cases — U.S. Supreme Court opinions (full text, 28k) and state supreme court opinions (full text, 528k, all 50 states). Use jurisdiction to scope: "scotus", "state", or a state name; omit it to search both.
-- FULL TEXT via fetch_document (a statute/reg section by identifier) and fetch_case (a full opinion by id from a search_cases result).
+YOUR RESEARCH TOOLS (all read-only, all on the self_law backend):
+- search_corpus — fast keyword AND over 3.9M statute/reg sections: federal ("usc", "cfr", "const", "ucc", "register", "irm", "tfm", "bill") AND all 50 states (two-letter codes "ak"…"wy"). Pass source to scope; omit to search everything.
+- search_boolean — the SAME corpus with explicit logic gates: all (AND) / any (one OR group) / phrase (exact) / exclude (NOT). Reach for it the moment a flat AND is too blunt — synonym OR-groups, spelling variants ("indorsement"/"endorsement"), exact phrases, or excluding a wrong sense of a word.
+- search_cases — U.S. Supreme Court (28k) + state supreme courts (528k, all 50 states), full text. Scope with jurisdiction: "scotus", "state", or a state name.
+- legislative_history(title, section) — from a USC section, the bills that amended/proposed to amend it. Congress's OWN reasoning (findings + purpose) behind the statute.
+- regulatory_history(title, part) — from a CFR part, the Federal Register rulemakings behind it. The AGENCY'S OWN reasoning (preamble + SUPPLEMENTARY INFORMATION) behind the regulation.
+- fetch_document(identifier) and fetch_case(id) — pull the full text of one section / one opinion.
+
+TOKEN-ALLOCATION SCHEMA — spend your tool calls like a budget, every turn:
+- BUDGET: fire 3–6 research calls PER TURN, all in ONE parallel batch — never drip one query and wait. A real sweep in a single turn hits the statute AND its history AND the cases AND the adverse angle at once. Don't exceed ~6; past that you're guessing, not researching — read what came back and form a view.
+- PRIORITY LADDER (spend in this order): (1) the CONTROLLING TEXT — the statute/reg/constitutional provision on point (search_corpus / search_boolean, or fetch_document if you know the cite); (2) its REASONING — legislative_history for a USC cite, regulatory_history for a CFR cite, so you argue PURPOSE from the horse's mouth, not guesswork; (3) the CASES interpreting that text (search_cases, scoped); (4) the ADVERSE authority — cases/sections where it did NOT apply. Research isn't done until the ladder's bottom rung (adverse) is checked.
+- AND/OR GATES — choose the instrument: use search_corpus for a clean 2–4 term-of-art AND. Switch to search_boolean when (a) a term has SYNONYMS or spelling variants → put them in 'any' as an OR group; (b) you need an exact multi-word PHRASE → 'phrase'; (c) a keyword pulls a wrong sense → 'exclude' it. One precise search_boolean beats five flailing search_corpus retries.
 
 SEARCH LIKE A LAWYER — QUERY WITH PRECISION:
-- search_corpus AND-s every word together. Each extra word NARROWS the results — a natural-language sentence ("debt collector definition under 15 USC 1692 for foreclosure trustees") demands one document containing all of those words and usually returns nothing. This is a feature: used well, AND is the most powerful, most specific tool you have.
-- So query like a specialist drafting a Boolean search — 2-4 KEYWORDS or terms of art, the controlled vocabulary the drafters and courts actually use: "nonjudicial foreclosure", "holder in due course", "material alteration", "deed of trust", "deliberate indifference". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt". Think about the exact words that would appear IN the statute.
-- If a query returns 0, you over-constrained: drop the weakest word, or swap in a synonym (the same idea has a limited set of legal terms — "void/voidable", "assignment/transfer/conveyance", "endorsement/indorsement"). Try a few keyword combinations in parallel rather than re-running one verbose phrase.
-- PROVEN PATTERNS (what actually hits this index): (1) Pair the statute's OWN defined terms — "discharge indebtedness", "qualified mortgage", "residual interest", "startup day", "identifiable event" land their exact regulation; the pair disambiguates better than either word alone. (2) Use the jurisdiction's local noun — Nebraska says "trust deed", not "deed of trust"; match the term the legislature used. (3) AVOID acronyms and conceptual labels — "COD", "REMIC" alone, "phantom income" return nothing; the index only knows the spelled-out terms of art ("cancellation of indebtedness", "real estate mortgage investment conduit"). When in doubt, search the words you'd expect to physically appear in the section heading or text.
-- Fire multiple searches at once. A real sweep hits statutes AND cases AND adverse authority in one turn — don't drip one query at a time. Don't stay in one source: if a statute governs, also search_cases for the opinions interpreting it. Statutes are the skeleton; cases are how courts apply them.
+- Every word in 'all' (and every word in a search_corpus query) is AND-ed: a natural-language sentence demands ONE document containing all those words and usually returns nothing. Query like a specialist drafting a Boolean search — terms of art, the controlled vocabulary drafters and courts actually use: "nonjudicial foreclosure", "holder in due course", "material alteration", "deliberate indifference". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt". Think about the exact words that physically appear IN the statute.
+- If a query returns 0, you over-constrained: drop the weakest word, or move the variable term into a search_boolean 'any' OR-group ("void"/"voidable", "assignment"/"transfer"/"conveyance", "endorsement"/"indorsement") rather than re-running one verbose phrase.
+- PROVEN PATTERNS (what actually hits this index): (1) Pair the statute's OWN defined terms — "discharge indebtedness", "qualified mortgage", "residual interest", "identifiable event" land their exact regulation; the pair disambiguates better than either word alone. (2) Use the jurisdiction's local noun — Nebraska says "trust deed", not "deed of trust"; match the term the legislature used. (3) AVOID acronyms and conceptual labels — "COD", "REMIC" alone, "phantom income" return nothing; the index knows only the spelled-out terms of art ("cancellation of indebtedness", "real estate mortgage investment conduit").
 - search_cases: ALWAYS pass jurisdiction when you can. Unscoped case searches pull unrelated SCOTUS noise over on-point state cases. Scope to the user's state, or "scotus", and only widen if scoped comes up short.
-- When you cite a controlling statute, find the cases interpreting it — then the adverse cases where a court found it did NOT apply. Research isn't complete until both sides are checked.
 - When a search by identifier would be exact (you know the cite, e.g. "usc/title-15/section-1692a"), fetch_document directly instead of searching for it.
+- THE UNTAPPED VEINS: register (Federal Register) and bill (congressional bills) carry the actual agency + congressional reasoning behind the law — the richest, least-cited "right from the horse's mouth" material. When PURPOSE or intent is in play, mine them via legislative_history / regulatory_history, or search source "register"/"bill" directly.
 
 LEGAL REASONING METHOD:
 When reading any statute, regulation, or case, apply three components in order:
@@ -232,6 +238,97 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   citation: r.section_label ?? r.identifier,
                   heading: r.heading,
                   snippet: r.snippet?.replace(/<\/?mark>/g, "") ?? "",
+                  url: `/code/${r.identifier}`,
+                })),
+              };
+            },
+          }),
+          search_boolean: tool({
+            description:
+              "READ-ONLY: Precision search with EXPLICIT logic gates over the same 3.9M-section corpus as search_corpus. " +
+              "Use this when a plain keyword AND isn't enough — when you need an OR group (synonyms / spelling variants), an exact phrase, or to EXCLUDE a sense of a word. " +
+              "Gates: `all` = every term must appear (AND); `any` = at least one must appear (one OR group, AND-ed against the rest); `phrase` = exact ordered phrase; `exclude` = drop any document containing these. " +
+              "Example: all=['foreclosure'], any=['indorsement','endorsement'], phrase='holder in due course', exclude=['judicial'] — finds nonjudicial-foreclosure HDC sections regardless of spelling. Combine with `source` to scope.",
+            inputSchema: z.object({
+              all: z.array(z.string()).default([]).describe("Every term AND-ed in (each must appear). Terms of art, not sentences."),
+              any: z.array(z.string()).default([]).describe("OR group — at least one must appear. Use for synonyms / spelling variants ('indorsement','endorsement')."),
+              phrase: z.string().optional().describe("Exact ordered phrase, e.g. 'holder in due course'."),
+              exclude: z.array(z.string()).default([]).describe("Exclude documents containing any of these terms (NOT)."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to (e.g. 'usc', 'ca')."),
+              limit: z.number().int().min(1).max(20).default(8),
+            }),
+            execute: async ({ all, any, phrase, exclude, source, limit }) => {
+              if (!all.length && !any.length && !phrase) {
+                return { error: "Give at least one of: all, any, or phrase.", results: [] };
+              }
+              const { data, error } = await corpus.rpc("search_documents_bool", {
+                p_all: all,
+                p_any: any,
+                p_phrase: phrase ?? null,
+                p_not: exclude,
+                p_source: source ?? null,
+                p_limit: limit,
+              });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null; snippet: string }) => ({
+                  identifier: r.identifier,
+                  source: r.source_code,
+                  citation: r.section_label ?? r.identifier,
+                  heading: r.heading,
+                  snippet: r.snippet?.replace(/<\/?mark>/g, "") ?? "",
+                  url: `/code/${r.identifier}`,
+                })),
+              };
+            },
+          }),
+          legislative_history: tool({
+            description:
+              "READ-ONLY: From a U.S. Code title + section, the congressional bills that amended (or proposed to amend) it — enacted bills first, then attempts, newest Congress first. " +
+              "A bill's findings + purpose + section-by-section are CONGRESS'S OWN STATED REASONING for the statutory text — the horse's mouth for legislative intent and PURPOSE-prong analysis. " +
+              "Call this whenever you are citing or interpreting a USC section and want the intent behind it. Section is the bare number as it appears in the cite (e.g. title 42, section '1983').",
+            inputSchema: z.object({
+              title: z.number().int().min(1).max(54).describe("USC title number, e.g. 42"),
+              section: z.string().min(1).max(20).describe("USC section number as written, e.g. '1983' or '552a'"),
+              limit: z.number().int().min(1).max(40).default(15),
+            }),
+            execute: async ({ title, section, limit }) => {
+              const { data, error } = await corpus.rpc("usc_bill_history", { p_title: title, p_section: section, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { latest_id: string; title: string | null; short_title: string | null; congress: number | null; latest_stage: string | null; enacted: boolean | null }) => ({
+                  identifier: r.latest_id,
+                  citation: r.short_title || r.title || r.latest_id,
+                  congress: r.congress,
+                  enacted: r.enacted,
+                  stage: r.latest_stage,
+                  url: `/code/${r.latest_id}`,
+                })),
+              };
+            },
+          }),
+          regulatory_history: tool({
+            description:
+              "READ-ONLY: From a CFR title + part, the Federal Register rulemakings that created or amended that part — newest first. " +
+              "An FR preamble + SUPPLEMENTARY INFORMATION is the AGENCY'S OWN STATED REASONING for the regulation (problem addressed, comments answered, authority claimed) — the horse's mouth for a reg's purpose. " +
+              "Call this whenever you cite or interpret a CFR section. The CFR *part* is the integer before the dot in the section number (40 CFR 52.21 is part 52).",
+            inputSchema: z.object({
+              title: z.number().int().min(1).max(50).describe("CFR title number, e.g. 40"),
+              part: z.number().int().min(1).describe("CFR part number (integer before the dot in the section, e.g. 52)"),
+              limit: z.number().int().min(1).max(40).default(15),
+            }),
+            execute: async ({ title, part, limit }) => {
+              const { data, error } = await corpus.rpc("cfr_register_history", { p_title: title, p_part: part, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { identifier: string; fr_doc_number: string; title: string | null; doc_type: string | null; decided: string | null }) => ({
+                  identifier: r.identifier,
+                  citation: r.title || `FR Doc. ${r.fr_doc_number}`,
+                  doc_type: r.doc_type,
+                  decided: r.decided,
                   url: `/code/${r.identifier}`,
                 })),
               };

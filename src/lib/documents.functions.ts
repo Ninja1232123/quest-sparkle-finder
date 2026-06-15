@@ -490,6 +490,36 @@ export const getRegisterHistory = createServerFn({ method: "GET" })
     return { rows: (rows ?? []) as RegisterHistoryRow[] };
   });
 
+export type BillHistoryRow = {
+  bill_key: string;
+  latest_id: string;
+  title: string | null;
+  short_title: string | null;
+  congress: number | null;
+  bill_type: string | null;
+  number: number | null;
+  latest_stage: string | null;
+  enacted: boolean | null;
+};
+
+export const getBillHistory = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ identifier: z.string().min(1).max(300) }))
+  .handler(async ({ data }): Promise<{ rows: BillHistoryRow[] }> => {
+    // USC identifiers look like /usc/title-42/section-6978 — title is title-<N>,
+    // and the section number (6978, 410jjj-4, 3331-3332) is what bill_meta.usc_refs
+    // keys off. Reverse it: the congressional bills that amended this section.
+    const m = data.identifier.match(/\/usc\/title-(\d+)\/section-([0-9A-Za-z][0-9A-Za-z-]*)/);
+    if (!m) return { rows: [] };
+    const supabaseAdmin = await getAdminClient();
+    const { data: rows, error } = await supabaseAdmin.rpc("usc_bill_history", {
+      p_title: Number(m[1]),
+      p_section: m[2],
+      p_limit: 40,
+    });
+    if (error) return { rows: [] };
+    return { rows: (rows ?? []) as BillHistoryRow[] };
+  });
+
 export const getDiffPair = createServerFn({ method: "GET" })
   .inputValidator(z.object({ a: z.string().min(1).max(300), b: z.string().min(1).max(300) }))
   .handler(async ({ data }): Promise<{ pair: DiffPair | null }> => {
