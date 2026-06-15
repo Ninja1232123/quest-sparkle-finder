@@ -26,17 +26,24 @@ YOU ARE WORKING TOGETHER, NOT GRADING:
 - When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
 
 YOUR RESEARCH TOOLS (all read-only, all on the self_law backend):
-- search_corpus — fast keyword AND over 3.9M statute/reg sections: federal ("usc", "cfr", "const", "ucc", "register", "irm", "tfm", "bill") AND all 50 states (two-letter codes "ak"…"wy"). Pass source to scope; omit to search everything.
-- search_boolean — the SAME corpus with explicit logic gates: all (AND) / any (one OR group) / phrase (exact) / exclude (NOT). Reach for it the moment a flat AND is too blunt — synonym OR-groups, spelling variants ("indorsement"/"endorsement"), exact phrases, or excluding a wrong sense of a word.
-- search_cases — U.S. Supreme Court (28k) + state supreme courts (528k, all 50 states), full text. Scope with jurisdiction: "scotus", "state", or a state name.
-- legislative_history(title, section) — from a USC section, the bills that amended/proposed to amend it. Congress's OWN reasoning (findings + purpose) behind the statute.
-- regulatory_history(title, part) — from a CFR part, the Federal Register rulemakings behind it. The AGENCY'S OWN reasoning (preamble + SUPPLEMENTARY INFORMATION) behind the regulation.
-- fetch_document(identifier) and fetch_case(id) — pull the full text of one section / one opinion.
+CHEAP — spend these freely, dozens of documents per turn:
+- scan_corpus — WIDEST + CHEAPEST: up to 50 matching sections as lean citation rows, no snippets. Map a whole topic for a fraction of the cost. Omit source to sweep all 3.9M federal+state sections at once.
+- citations(identifier, direction) — follow the citation graph one hop without reading any full text: 'out' = the authorities this section cites; 'in' = who cites it. This is how you go DEEP cheaply.
+- legislative_history(title, section) — from a USC section, the bills that amended it. Congress's OWN reasoning (findings + purpose) behind the statute.
+- regulatory_history(title, part) — from a CFR part, the Federal Register rulemakings behind it. The AGENCY'S OWN reasoning (preamble + SUPPLEMENTARY INFORMATION).
+MID — a snippet per row; use once you know what you're looking for:
+- search_corpus — fast keyword AND over the corpus with matched-language snippets: federal ("usc", "cfr", "const", "ucc", "register", "irm", "tfm", "bill") + all 50 states ("ak"…"wy").
+- search_boolean — same, with explicit logic gates: all (AND) / any (one OR group) / phrase (exact) / exclude (NOT).
+- search_cases — U.S. Supreme Court (28k) + state supreme courts (528k), full text. Scope with jurisdiction.
+EXPENSIVE — one document's full text; spend only on the cites you've already chosen:
+- fetch_document(identifier) and fetch_case(id).
 
-TOKEN-ALLOCATION SCHEMA — spend your tool calls like a budget, every turn:
-- BUDGET: fire 3–6 research calls PER TURN, all in ONE parallel batch — never drip one query and wait. A real sweep in a single turn hits the statute AND its history AND the cases AND the adverse angle at once. Don't exceed ~6; past that you're guessing, not researching — read what came back and form a view.
-- PRIORITY LADDER (spend in this order): (1) the CONTROLLING TEXT — the statute/reg/constitutional provision on point (search_corpus / search_boolean, or fetch_document if you know the cite); (2) its REASONING — legislative_history for a USC cite, regulatory_history for a CFR cite, so you argue PURPOSE from the horse's mouth, not guesswork; (3) the CASES interpreting that text (search_cases, scoped); (4) the ADVERSE authority — cases/sections where it did NOT apply. Research isn't done until the ladder's bottom rung (adverse) is checked.
-- AND/OR GATES — choose the instrument: use search_corpus for a clean 2–4 term-of-art AND. Switch to search_boolean when (a) a term has SYNONYMS or spelling variants → put them in 'any' as an OR group; (b) you need an exact multi-word PHRASE → 'phrase'; (c) a keyword pulls a wrong sense → 'exclude' it. One precise search_boolean beats five flailing search_corpus retries.
+TOKEN-ALLOCATION SCHEMA — go as wide and as deep as the question needs, by keeping every hop cheap:
+- THERE IS NO FIXED CALL CAP. Real research follows the citation graph several steps out — a section can cite 80 others, and the controlling answer may be 4 hops away. Do NOT stop at the first ring. What you budget is COST PER HOP, not the number of hops.
+- CAST WIDE + DEEP WITH THE CHEAP TOOLS: scan_corpus to survey a topic (50 hits for ~the cost of a few snippets), citations to walk from any hit to what it cites or what cites it. Fire them in parallel batches — many documents, tiny cost. The graph's inbound edges ('in') tell you which authorities are load-bearing.
+- SPEND THE EXPENSIVE CALLS LAST, AND ONLY ON CHOSEN CITES: never fetch full text just to discover what a section cites — call citations; never read 50 documents to see what exists — scan_corpus. Pull full text (fetch_document/fetch_case) or snippets (search_corpus/search_boolean) only for the handful you've decided are worth reading closely.
+- THE LOOP: scan / citations to map → pick the live cites → search_boolean / fetch to read them → follow THEIR citations → repeat until the chain bottoms out. Chase PRIORITY in this order: controlling text → its reasoning (legislative_history / regulatory_history) → cases interpreting it → adverse authority. Not done until the adverse rung is checked.
+- AND/OR GATES — choose the instrument: scan_corpus or search_corpus for a clean 2–4 term-of-art AND; switch to search_boolean when (a) a term has SYNONYMS or spelling variants → put them in 'any' as an OR group; (b) you need an exact multi-word PHRASE → 'phrase'; (c) a keyword pulls a wrong sense → 'exclude' it.
 
 SEARCH LIKE A LAWYER — QUERY WITH PRECISION:
 - Every word in 'all' (and every word in a search_corpus query) is AND-ed: a natural-language sentence demands ONE document containing all those words and usually returns nothing. Query like a specialist drafting a Boolean search — terms of art, the controlled vocabulary drafters and courts actually use: "nonjudicial foreclosure", "holder in due course", "material alteration", "deliberate indifference". A tax question is "gross income discharge indebtedness", not "when do I owe taxes on cancelled debt". Think about the exact words that physically appear IN the statute.
@@ -239,6 +246,50 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   heading: r.heading,
                   snippet: r.snippet?.replace(/<\/?mark>/g, "") ?? "",
                   url: `/code/${r.identifier}`,
+                })),
+              };
+            },
+          }),
+          scan_corpus: tool({
+            description:
+              "READ-ONLY: CHEAP WIDE SCAN — up to 50 matching sections as lean citation rows (NO snippets), a fraction of the token cost of search_corpus. " +
+              "Use it FIRST to map what exists on a topic (omit source to sweep all 3.9M federal+state sections at once), THEN spend snippets/full text only on the cites worth reading. Same AND-keyword style; auto-relaxes to OR if strict AND finds nothing.",
+            inputSchema: z.object({
+              q: z.string().min(2).describe("2-4 keywords / terms of art (AND-ed)."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to. Omit to scan everything."),
+              limit: z.number().int().min(1).max(50).default(25),
+            }),
+            execute: async ({ q, source, limit }) => {
+              const { data, error } = await corpus.rpc("scan_documents", { p_query: q, p_source: source ?? null, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
+                  id: r.identifier,
+                  cite: r.section_label || r.heading || r.identifier,
+                  source: r.source_code,
+                })),
+              };
+            },
+          }),
+          citations: tool({
+            description:
+              "READ-ONLY: Follow the CITATION GRAPH one hop, cheaply. Given a section's identifier, returns the authorities it cites (direction 'out') or the sections that cite it (direction 'in') as lean rows — WITHOUT reading any full text. " +
+              "A section can cite dozens of others; this is how you walk the graph several steps out and fetch full text only at the leaves. 'out' = what this section relies on; 'in' = who relies on this one (how load-bearing it is). Rows with a null id aren't in the corpus — search the cite text to chase them.",
+            inputSchema: z.object({
+              identifier: z.string().describe("A section identifier exactly as returned by another tool (e.g. '/usc/title-42/section-1983')."),
+              direction: z.enum(["out", "in"]).default("out").describe("'out' = authorities this cites; 'in' = sections that cite this."),
+              limit: z.number().int().min(1).max(80).default(40),
+            }),
+            execute: async ({ identifier, direction, limit }) => {
+              const { data, error } = await corpus.rpc("document_citations", { p_identifier: identifier, p_direction: direction, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { cite: string; identifier: string | null; target_type: string | null }) => ({
+                  cite: r.cite,
+                  id: r.identifier ?? null,
+                  type: r.target_type,
                 })),
               };
             },
