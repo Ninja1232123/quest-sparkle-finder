@@ -3451,7 +3451,7 @@ main {
     color: var(--codex-parchment);
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 600;
-    font-size: clamp(12px, 1.05vw, 15px);
+    font-size: clamp(15px, 1.25vw, 18px);
     letter-spacing: 0.4em;
     text-transform: uppercase;
     text-shadow: none;
@@ -3466,7 +3466,7 @@ main {
   .home-const-aside { padding-top: 140px; }
   .hca-label {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 400;
     letter-spacing: 0.28em;
     color: var(--codex-gold);
@@ -3538,7 +3538,7 @@ main {
   }
   .home-const-cartouche .hcc-kicker {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.28em;
     color: var(--codex-gold-3);
     text-transform: uppercase;
@@ -3558,7 +3558,7 @@ main {
   .home-const-cartouche .hcc-sub {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-size: 15.5px;
+    font-size: 18px;
     line-height: 1.65;
     color: #3a2f1a;
     max-width: 56ch;
@@ -3570,9 +3570,9 @@ main {
     color: var(--codex-ink);
     border: 1px solid rgba(10,8,16,0.45);
     border-radius: 0;
-    padding: 4px 10px;
+    padding: 5px 11px;
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 12px;
+    font-size: 14px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
   }
@@ -3589,7 +3589,7 @@ main {
     padding: 12px 24px;
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     margin-top: 22px;
@@ -3649,7 +3649,7 @@ main {
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3658,7 +3658,7 @@ main {
   .home-codebook-shelf .am-card .am-title {
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 19px;
     line-height: 1.2;
     letter-spacing: 0.02em;
     color: var(--codex-parchment);
@@ -3673,13 +3673,13 @@ main {
   .home-codebook-shelf .am-card .am-count {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--codex-slate-2);
   }
   .home-codebook-shelf .am-card .am-go {
     font-family: "Special Elite", "Courier New", monospace;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3688,7 +3688,7 @@ main {
   /* ── HERO SEARCH BLOCK — refine typography ─────────────────────────────── */
   .home-hero-eyebrow {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.32em;
     color: var(--codex-gold);
     text-transform: uppercase;
@@ -3696,7 +3696,7 @@ main {
   .home-hero-sub {
     font-family: "Playfair Display", "IM Fell English", serif;
     font-style: italic;
-    font-size: 19px;
+    font-size: 22px;
   }
 }
 
