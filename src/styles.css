@@ -3410,7 +3410,7 @@ main {
     display: block;
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: rgba(184,145,80,0.7);
@@ -3434,7 +3434,7 @@ main {
     content: "Bulletin";
     display: block;
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--codex-gold);
