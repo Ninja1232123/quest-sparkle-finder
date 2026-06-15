@@ -20,7 +20,7 @@ export const BUCKETS: {
   hint: string;
   accent: string;
   wash: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }[] = [
   {
     id: "supportive",
