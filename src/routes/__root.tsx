@@ -57,13 +57,15 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: appCss,
       },
-      // Engraved Legal Codex direction — Cinzel for titles, Playfair Display
-      // for italics/body emphasis, Special Elite for typewriter eyebrows.
+      // Engraved Legal Codex direction — Cinzel for titles, Special Elite for
+      // typewriter eyebrows. Body/reading text uses --font-read (Inter) for
+      // sharp legibility; Playfair Display was dropped (it read thin/choppy at
+      // body sizes and is no longer referenced).
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Special+Elite&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Special+Elite&display=swap",
       },
     ],
     scripts: [

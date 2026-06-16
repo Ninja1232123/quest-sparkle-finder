@@ -81,6 +81,11 @@
   --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  /* Body/reading tier. The old codex used Playfair Display + IM Fell English
+     for small text — high-contrast/rough display faces that read thin and
+     choppy below ~16px. This is the sharp, max-legibility face for that tier;
+     stylization (Cinzel/Special Elite) stays reserved for banners and titles. */
+  --font-read: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   /* True handwriting for marginalia notes. */
   --font-hand: "Architects Daughter", "Bradley Hand", "Segoe Print", cursive;
@@ -2576,7 +2581,7 @@ main {
   }
 
   .hca-body {
-    font-family: "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: clamp(14px, 1.1vw, 17px);
     line-height: 1.6;
@@ -2607,7 +2612,7 @@ main {
     box-shadow: 0 36px 80px -18px rgba(0,0,0,0.65);
   }
   .home-const-cartouche .hcc-wtp {
-    font-family: "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 48px;
     color: #0a1a47;
@@ -2630,7 +2635,7 @@ main {
     line-height: 1.1;
   }
   .home-const-cartouche .hcc-sub {
-    font-family: "IM Fell English", serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 17px;
     color: #4a3a22;
@@ -2685,7 +2690,7 @@ main {
     margin-bottom: 8px;
   }
   .home-hero-sub {
-    font-family: "IM Fell English", serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 20px;
     color: var(--ink-muted);
@@ -3430,7 +3435,7 @@ main {
   .hero-rail-r { padding-left: 18px;  border-left:  1px solid rgba(184,145,80,0.32); }
 
   .hero-quote {
-    font-family: "Playfair Display", "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read), var(--font-serif), serif;
     font-style: italic;
     font-weight: 800;
     font-size: clamp(22px, 1.75vw, 29px);
@@ -3457,7 +3462,7 @@ main {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid rgba(184,145,80,0.28);
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-size: clamp(21px, 1.4vw, 23px);
     line-height: 1.5;
@@ -3514,7 +3519,7 @@ main {
   .home-const-aside-r .hca-label { padding-right: 28px; }
 
   .hca-body {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     font-size: 21px;
     line-height: 1.55;
@@ -3564,7 +3569,7 @@ main {
 
   /* Inner cartouche text — keep on parchment ink */
   .home-const-cartouche .hcc-wtp {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-weight: 700;
     font-size: clamp(28px, 3.4vw, 44px);
@@ -3591,7 +3596,7 @@ main {
     display: inline-block;
   }
   .home-const-cartouche .hcc-sub {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     font-size: 18px;
     line-height: 1.65;
@@ -3706,7 +3711,7 @@ main {
     margin-top: 18px;
   }
   .home-codebook-shelf .am-card .am-count {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     font-size: 16px;
     color: var(--codex-slate-2);
@@ -3729,7 +3734,7 @@ main {
     text-transform: uppercase;
   }
   .home-hero-sub {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-size: 19px;
   }
@@ -3840,7 +3845,7 @@ main {
   }
   .desk-mini-sub,
   .desk-card-body {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     color: #3a2f1a;
   }
@@ -3871,7 +3876,7 @@ main {
     padding: 8px 4px;
   }
   .desk-rel-name {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
   }
 
@@ -3898,7 +3903,7 @@ main {
     letter-spacing: 0.02em;
   }
   .toc-grid .am-card .am-count {
-    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-family: var(--font-read), serif !important;
     font-style: italic;
     color: #6b5836 !important;
   }
@@ -3968,7 +3973,7 @@ main {
   }
   footer.mt-24 .font-mono { font-family: "Special Elite", "Courier New", monospace !important; }
   footer.mt-24 .font-serif {
-    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-family: var(--font-read), serif !important;
     font-style: italic;
   }
 }
