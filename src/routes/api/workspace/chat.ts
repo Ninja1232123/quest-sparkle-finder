@@ -142,6 +142,20 @@ async function buildFocusContext(
   return `\n\nCURRENTLY VIEWING (the user has this open in their reader right now — comment on THIS, flag the operative language and any exceptions, and don't make them paste it):\n${[court, citation, heading].filter(Boolean).join(" · ")}\n"""\n${trimmed}${bodyText.length > 9000 ? "\n…[truncated]" : ""}\n"""`;
 }
 
+// The user's live draft from the Doc Creator editor, rendered as a block so the
+// model can see what's actually on the page — what's written, what's stubbed, and
+// where it trails off — instead of being blind to the document it's helping build.
+function buildDraftContext(title: string | null, body: string | null): string {
+  const text = (body ?? "").trim();
+  if (!text) {
+    return `\n\nCURRENT DRAFT: empty. The user hasn't written anything in the Doc Creator yet.`;
+  }
+  const LIMIT = 8000;
+  const trimmed = text.length > LIMIT ? text.slice(-LIMIT) : text;
+  const head = text.length > LIMIT ? "…[earlier draft truncated]\n" : "";
+  return `\n\nCURRENT DRAFT (what the user has written so far in the Doc Creator — this is the live document on their screen; when they ask about "the draft", "my document", "this section", or "what I wrote", they mean THIS):\nTitle: ${title?.trim() || "Untitled draft"}\n"""\n${head}${trimmed}\n"""`;
+}
+
 async function authenticate(request: Request): Promise<{ userId: string; token: string } | Response> {
   const auth = request.headers.get("authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
@@ -180,7 +194,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         if (auth instanceof Response) return auth;
         const { userId, token } = auth;
 
-        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft" };
+        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft"; draftTitle?: string | null; draftText?: string | null };
         if (!Array.isArray(body.messages) || !body.threadId) {
           return new Response("messages and threadId required", { status: 400 });
         }
@@ -213,7 +227,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // Constrained drafting (#5) swaps the base prompt and drops the research
         // tools, so the board is the only source the model can draw from.
         const draftMode = body.mode === "draft";
-        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + focusContext;
+        // The model should always be able to see the user's live draft — to revise
+        // it, spot gaps before filing, or write the next section in context.
+        const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + draftContext + focusContext;
 
         const model = anthropic("claude-sonnet-4-6");
 

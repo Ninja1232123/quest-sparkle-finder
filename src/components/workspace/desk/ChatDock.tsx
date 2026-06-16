@@ -183,7 +183,7 @@ export function ChatDock({ threadId, transport, initialMessages, onProposeSearch
             await sendMessage({ text });
           }}
         >
-          <PromptInputTextarea placeholder="Ask, discuss, or describe the matter…" />
+          <PromptInputTextarea className="text-[#0c1b3d] caret-[#0c1b3d] placeholder:text-[#0c1b3d]/40" placeholder="Ask, discuss, or describe the matter…" />
           <PromptInputFooter className="justify-end">
             {isLoading && (
               <button type="button" onClick={() => stop()} className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] hover:bg-foreground/5" style={{ borderColor: "var(--rule-card)" }}>

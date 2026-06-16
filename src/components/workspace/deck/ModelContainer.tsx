@@ -102,7 +102,10 @@ export function ModelContainer({
           }}
         >
           <div className="rounded-lg" style={{ background: "#fff", boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}>
-            <PromptInputTextarea placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"} />
+            <PromptInputTextarea
+              className="min-h-12 text-[14px] leading-relaxed text-[#0c1b3d] caret-[#0c1b3d] placeholder:text-[#0c1b3d]/40"
+              placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"}
+            />
             <PromptInputFooter className="justify-end px-2 pb-1.5">
               {isLoading && (
                 <button

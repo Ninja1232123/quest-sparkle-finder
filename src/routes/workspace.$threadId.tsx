@@ -66,6 +66,9 @@ function WorkspaceThreadPage() {
   // The document the user currently has open in the reader. Held in a ref so the
   // chat transport can read the latest value at send time without rebuilding.
   const focusRef = useRef<{ ref: string } | null>(null);
+  // The user's live draft (title + body) from the Doc Creator editor, held in a
+  // ref so the model can see what's actually on the page at send time.
+  const draftRef = useRef<{ title: string; body: string } | null>(null);
 
   const transport = useMemo(
     () =>
@@ -73,10 +76,16 @@ function WorkspaceThreadPage() {
         api: "/api/workspace/chat",
         headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
         body: { threadId },
-        // Merge the focused-document ref into every send so the model reads what
-        // the user is reading. Must preserve the default body fields we override.
+        // Merge the focused-document ref and the live draft into every send so the
+        // model reads what the user is reading AND what they've written so far.
+        // Must preserve the default body fields we override.
         prepareSendMessagesRequest: ({ body, messages, id, trigger, messageId }) => ({
-          body: { ...body, id, messages, trigger, messageId, focusedRef: focusRef.current?.ref ?? null },
+          body: {
+            ...body, id, messages, trigger, messageId,
+            focusedRef: focusRef.current?.ref ?? null,
+            draftTitle: draftRef.current?.title ?? null,
+            draftText: draftRef.current?.body ?? null,
+          },
         }),
       }),
     [threadId, token],
@@ -91,6 +100,7 @@ function WorkspaceThreadPage() {
       threadId={threadId}
       transport={transport}
       focusRef={focusRef}
+      draftRef={draftRef}
       initialMessages={initialMessages}
       initialDraft={draft}
       saveDraft={saveDraft}
@@ -100,11 +110,12 @@ function WorkspaceThreadPage() {
 }
 
 function Desk({
-  threadId, transport, focusRef, initialMessages, initialDraft, saveDraft, seedPrompt,
+  threadId, transport, focusRef, draftRef, initialMessages, initialDraft, saveDraft, seedPrompt,
 }: {
   threadId: string;
   transport: DefaultChatTransport<UIMessage>;
   focusRef: React.MutableRefObject<{ ref: string } | null>;
+  draftRef: React.MutableRefObject<{ title: string; body: string } | null>;
   initialMessages: UIMessage[];
   initialDraft: { title: string; body: string };
   saveDraft: (args: { data: { threadId: string; title: string; bodyMd: string } }) => Promise<unknown>;
@@ -143,6 +154,8 @@ function Desk({
   const dirtyRef = useRef(false);
   const latestRef = useRef({ title, body });
   latestRef.current = { title, body };
+  // Keep the shared draft ref current so the chat transport sends the live draft.
+  draftRef.current = { title, body };
 
   // Case Board state
   const loadItems = useServerFn(listCaseItems);
