@@ -96,12 +96,18 @@ export function ModelContainer({
       }
       footer={
         <PromptInput
+          // The InputGroup primitive only auto-grows when a <textarea> is its
+          // DIRECT child; our white wrapper div hides it, so the group stays
+          // locked at h-9 and clips the typed text above the visible strip.
+          // Override the height/overflow for this wrapped layout so the box grows
+          // with the textarea and the input stays inside it.
+          className="[&_[data-slot=input-group]]:h-auto [&_[data-slot=input-group]]:items-stretch [&_[data-slot=input-group]]:overflow-visible [&_[data-slot=input-group]]:border-0 [&_[data-slot=input-group]]:p-0"
           onSubmit={async (msg) => {
             const text = msg.text?.trim();
             if (text) await send(text);
           }}
         >
-          <div className="rounded-lg" style={{ background: "#fff", boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}>
+          <div className="w-full rounded-lg" style={{ background: "#fff", boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}>
             <PromptInputTextarea
               className="min-h-12 text-[14px] leading-relaxed text-[#0c1b3d] caret-[#0c1b3d] placeholder:text-[#0c1b3d]/40"
               placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"}
