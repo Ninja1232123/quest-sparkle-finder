@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { SearchBar } from "./SearchBar";
 import { useAuth } from "@/hooks/use-auth";
-import { ChevronDown, LogOut, Sun, Moon, Sparkles, Menu, X, Scale } from "lucide-react";
+import { ChevronDown, LogOut, Sun, Moon, Sparkles, Menu, X, Scale, Wand2 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { NAV_GROUPS, TOOLS, type NavGroup } from "@/lib/codebooks";
 
@@ -572,7 +572,16 @@ export function SiteHeader() {
             <NavGroupTab key={group.key} group={group} />
           ))}
         </div>
-        <div className="shrink-0 border-l border-[rgba(200,162,75,0.25)] pl-2">
+        <div className="flex shrink-0 items-center gap-2 border-l border-[rgba(200,162,75,0.25)] pl-2">
+          <Link
+            to="/workspace"
+            className="am-workspace"
+            activeProps={{ "data-active": "true" } as never}
+            title="AI research desk — draft, cite-check, and export legal documents"
+          >
+            <Wand2 className="am-workspace-spark h-3.5 w-3.5" />
+            Workspace
+          </Link>
           <ToolsMenu signedIn={!!user} onSignOut={signOut} />
         </div>
       </nav>

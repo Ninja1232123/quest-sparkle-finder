@@ -2197,6 +2197,41 @@ main {
     transform: translateY(-1px);
     box-shadow: 0 8px 22px -8px rgba(200,162,75,0.65), 0 0 0 3px rgba(200,162,75,0.18);
   }
+  /* Workspace — the AI desk's own header entry. An outline-luxe brass pill
+     (glowing border + brass text over the navy header) so it reads as a premium
+     destination, distinct from the solid-brass "Go Pro" conversion button. */
+  .am-workspace {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: #f3e6c0;
+    background: linear-gradient(135deg, rgba(200,162,75,0.22), rgba(200,162,75,0.05));
+    border: 1.5px solid rgba(200,162,75,0.7);
+    box-shadow: 0 0 0 1px rgba(200,162,75,0.10), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 120ms ease, box-shadow 220ms ease, border-color 220ms ease, color 220ms ease, background 220ms ease;
+  }
+  .am-workspace:hover {
+    transform: translateY(-1px);
+    color: #fbf6e8;
+    border-color: #e7cd7e;
+    box-shadow: 0 10px 24px -10px rgba(200,162,75,0.7), 0 0 0 3px rgba(200,162,75,0.16);
+  }
+  .am-workspace[data-active="true"] {
+    background: rgba(200,162,75,0.26);
+    border-color: #e7cd7e;
+    color: #fbf6e8;
+  }
+  .am-workspace-spark {
+    color: #e7cd7e;
+    filter: drop-shadow(0 0 4px rgba(231,205,126,0.45));
+  }
   /* codebook strip — gold hairline above, "Library" label, tighter spacing */
   .am-codebooks {
     padding-top: 7px;
