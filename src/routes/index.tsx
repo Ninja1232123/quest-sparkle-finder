@@ -79,7 +79,7 @@ function Index() {
             </blockquote>
             {/* EDITABLE SLOT — left, below the quote. Change this text freely. */}
             <div className="hero-note">
-              <p>The Compare Tool let you view multiple sources side by side.</p>
+              <p>BEST SERVED ON A DESKTOP. MOBILE APP COMING SOON!</p>
             </div>
           </div>
 
@@ -132,7 +132,7 @@ function Index() {
               <div className="hcc-kicker">How this tool works</div>
               <h2>Search every U.S. law at once</h2>
               <div className="hcc-sub">
-                Marginalia indexes U.S. primary law — the Constitution, the U.S. Code, federal regulations, the Federal Register, bills, public laws, statutes, and presidential and agency documents — pulled straight from the official source. Search all of it by keyword or citation, browse any source by its own structure, set the same phrase against several sources at once, and read the real text instead of a summary.
+                Hey Thanks for checking us out! Best serveed on a PC or laptop right now. Mobile app coming soon! .
               </div>
               <div className="hcc-pills">
                 <span className="hcc-pill">Search every source</span>
