@@ -130,9 +130,9 @@ export function SourceReader({
         const mapped: CorpusHit[] = rows.map((r) => ({
           identifier: r.identifier ?? r.id ?? "",
           source: (r.source ?? "").toLowerCase(),
-          sectionLabel: r.citation ?? r.cite ?? r.section_label ?? null,
-          heading: r.heading ?? null,
-          parentLabel: r.parent_label ?? null,
+          sectionLabel: r.citation ?? r.cite ?? r.section_label ?? "",
+          heading: r.heading ?? "",
+          parentLabel: r.parent_label ?? "",
           snippet: r.snippet ?? "",
         })).filter((h) => h.identifier);
         setStatHits(mapped);
@@ -145,7 +145,7 @@ export function SourceReader({
           citation: r.citation ?? "",
           court: r.court ?? "",
           year: r.year ?? null,
-          url: r.url,
+          url: r.url ?? null,
         })).filter((c) => c.id);
         setCaseHits(mapped);
         setAiCase(!!d.fromAssistant);
