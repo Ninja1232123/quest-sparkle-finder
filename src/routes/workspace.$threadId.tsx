@@ -150,6 +150,18 @@ function Desk({
     focusRef.current = null;
   }, [focusRef]);
 
+  // When the assistant fetches a document via its tools, mirror that into the
+  // user's reader so they see exactly what the model is reading. No prompt to
+  // act — just shared focus.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const d = (e as CustomEvent<{ ref?: string }>).detail;
+      if (d?.ref) void handleOpenDoc(d.ref);
+    };
+    window.addEventListener("workspace:open-doc", onOpen);
+    return () => window.removeEventListener("workspace:open-doc", onOpen);
+  }, [handleOpenDoc]);
+
   const editorRef = useRef<EditorCanvasHandle | null>(null);
   const dirtyRef = useRef(false);
   const latestRef = useRef({ title, body });

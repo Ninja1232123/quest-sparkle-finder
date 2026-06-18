@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -40,6 +40,56 @@ export function ModelContainer({
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("research");
   const mark = (set: typeof setAccepted) => (id: string) => set((s) => new Set(s).add(id));
+
+  // ── Shared workspace UI: when the model finishes a tool call, light up the
+  // user's own surfaces (search panel, reader) so they see exactly what it saw.
+  // We track which tool-call IDs we've already broadcast so re-renders don't
+  // re-dispatch them.
+  const broadcast = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const m of messages) {
+      if (m.role !== "assistant") continue;
+      for (let i = 0; i < m.parts.length; i++) {
+        const p = m.parts[i] as { type?: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown };
+        if (!p.type?.startsWith("tool-")) continue;
+        if (p.state !== "output-available") continue;
+        const key = p.toolCallId ?? `${m.id}-${i}`;
+        if (broadcast.current.has(key)) continue;
+        broadcast.current.add(key);
+        const name = p.type.replace(/^tool-/, "");
+        const input = (p.input ?? {}) as Record<string, unknown>;
+        const output = (p.output ?? {}) as Record<string, unknown>;
+        if (name === "fetch_document" && typeof output.identifier === "string") {
+          window.dispatchEvent(new CustomEvent("workspace:open-doc", { detail: { ref: output.identifier } }));
+        } else if (name === "fetch_case" && typeof output.id === "string") {
+          window.dispatchEvent(new CustomEvent("workspace:open-doc", { detail: { ref: output.id } }));
+        } else if (
+          (name === "search_corpus" || name === "scan_corpus" || name === "search_boolean" ||
+           name === "precise_search" || name === "open_basin") &&
+          Array.isArray(output.results)
+        ) {
+          window.dispatchEvent(new CustomEvent("workspace:show-results", {
+            detail: {
+              kind: "statute",
+              query: typeof input.q === "string" ? input.q : null,
+              source: typeof input.source === "string" ? input.source : null,
+              rows: output.results,
+              fromAssistant: true,
+            },
+          }));
+        } else if (name === "search_cases" && Array.isArray(output.results)) {
+          window.dispatchEvent(new CustomEvent("workspace:show-results", {
+            detail: {
+              kind: "case",
+              query: typeof input.q === "string" ? input.q : null,
+              rows: output.results,
+              fromAssistant: true,
+            },
+          }));
+        }
+      }
+    }
+  }, [messages]);
 
   // Every send carries the current mode (or an override) so the server knows
   // whether to research-and-propose or draft strictly from the board.
