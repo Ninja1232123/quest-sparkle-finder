@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
+import { useRouter } from "@tanstack/react-router";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
@@ -8,7 +9,10 @@ import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/componen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { ProposalCard, type ProposalPayload } from "@/components/workspace/ProposalCard";
 import type { PinDraft } from "@/components/workspace/PinDialog";
-import { Square, FileSignature, CornerDownLeft } from "lucide-react";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { getJuriCredits } from "@/lib/juri.functions";
+import { CREDIT_PACKS, centsPerCredit, type CreditPack } from "@/lib/juri-credits";
+import { Square, FileSignature, CornerDownLeft, Coins, Check, X } from "lucide-react";
 import { Panel, Surface } from "./Panel";
 
 type Mode = "research" | "draft";
@@ -40,6 +44,19 @@ export function ModelContainer({
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("research");
   const mark = (set: typeof setAccepted) => (id: string) => set((s) => new Set(s).add(id));
+  const router = useRouter();
+
+  // ── Credits — same wallet as Juri. Refresh on mount and whenever a turn
+  // finishes (the server deducts after each streamText onFinish).
+  const [credits, setCredits] = useState<number | null>(null);
+  const [showBuy, setShowBuy] = useState(false);
+  const refreshCredits = () => { void getJuriCredits().then((r) => setCredits(r.credits)).catch(() => {}); };
+  useEffect(() => { refreshCredits(); }, []);
+  const prevStatus = useRef(status);
+  useEffect(() => {
+    if (prevStatus.current !== "ready" && status === "ready") refreshCredits();
+    prevStatus.current = status;
+  }, [status]);
 
   // ── Shared workspace UI: when the model finishes a tool call, light up the
   // user's own surfaces (search panel, reader) so they see exactly what it saw.
@@ -151,6 +168,7 @@ export function ModelContainer({
           >
             <FileSignature className="h-3 w-3" /> {mode === "draft" ? "Drafting" : "Draft"}
           </button>
+          <CreditsTopUp credits={credits} open={showBuy} onOpenChange={setShowBuy} returnPath={router.state.location.pathname} />
           {headerRight}
         </>
       }
@@ -298,7 +316,9 @@ export function ModelContainer({
               error.message.startsWith("OUT_OF_CREDITS:") ? (
                 <div className="mx-3 my-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-900">
                   {error.message.replace("OUT_OF_CREDITS: ", "")}{" "}
-                  <a href="/" className="font-semibold underline">Open Juri from any other page to buy a top-up pack</a>.
+                  <button type="button" onClick={() => setShowBuy(true)} className="font-semibold underline">
+                    Get more credits
+                  </button>.
                 </div>
               ) : (
                 <div className="mx-3 my-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">{error.message}</div>
@@ -309,6 +329,103 @@ export function ModelContainer({
         </Conversation>
       </Surface>
     </Panel>
+  );
+}
+
+// Credits pill + buy-pack popover, docked in the assistant header. Same wallet
+// as Juri (juri_credits) — the server gate/metering lives in api/workspace/chat.ts.
+function CreditsTopUp({
+  credits,
+  open,
+  onOpenChange,
+  returnPath,
+}: {
+  credits: number | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  returnPath: string;
+}) {
+  const [checkoutPack, setCheckoutPack] = useState<CreditPack | null>(null);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => onOpenChange(!open)}
+        title="Workspace credits — tap to top up"
+        className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] font-semibold"
+        style={{ borderColor: "rgba(200,162,75,0.4)", color: "#c8a24b", fontFamily: "var(--font-mono, 'Special Elite')" }}
+      >
+        <Coins className="h-3 w-3" /> {credits == null ? "…" : credits >= 9999 ? "∞" : credits}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => { onOpenChange(false); setCheckoutPack(null); }} />
+          <div
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-72 rounded-xl border p-3 shadow-lg"
+            style={{ borderColor: "var(--rule-card)", background: "var(--paper)" }}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ color: "var(--ink)", fontFamily: "var(--font-mono)" }}>
+                {checkoutPack ? `${checkoutPack.credits} credits` : "Top up credits"}
+              </span>
+              <button
+                type="button"
+                onClick={() => { onOpenChange(false); setCheckoutPack(null); }}
+                className="opacity-60 hover:opacity-100"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {checkoutPack ? (
+              <div>
+                <div className="mb-2 text-center text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
+                  ${(checkoutPack.priceCents / 100).toFixed(0)}
+                </div>
+                <StripeEmbeddedCheckout creditPackId={checkoutPack.lookupKey} returnPath={returnPath} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+                  Credits never expire and bill by what the assistant actually does — deeper research spends more.
+                </p>
+                {CREDIT_PACKS.map((pack) => (
+                  <button
+                    key={pack.lookupKey}
+                    type="button"
+                    onClick={() => setCheckoutPack(pack)}
+                    className="flex w-full items-center justify-between rounded-lg border px-2.5 py-2 text-left transition hover:-translate-y-px"
+                    style={{ borderColor: "var(--rule-card)", background: "color-mix(in oklab, var(--paper) 70%, transparent)" }}
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12px] font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>{pack.label}</span>
+                        {pack.badge && (
+                          <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ background: "rgba(200,162,75,0.18)", color: "#c8a24b" }}>
+                            {pack.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px]" style={{ color: "var(--ink-muted)" }}>
+                        {pack.credits.toLocaleString()} credits · {centsPerCredit(pack).toFixed(1)}¢ each
+                      </div>
+                    </div>
+                    <div className="text-[13px] font-bold" style={{ color: "var(--ink)" }}>
+                      ${(pack.priceCents / 100).toFixed(0)}
+                    </div>
+                  </button>
+                ))}
+                <div className="flex items-center justify-center gap-1 pt-0.5 text-[11px]" style={{ color: "var(--ink-muted)" }}>
+                  <Check className="h-3 w-3" /> Secure checkout by Stripe
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
