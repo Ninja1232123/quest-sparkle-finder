@@ -456,6 +456,10 @@ function Desk({
               onOpenResearch={() => setDocOpen(false)}
               onCiteCheck={handleCiteCheck}
               onOpenVersions={handleOpenVersions}
+              pendingEdits={pendingEdits}
+              onAcceptEdit={acceptEdit}
+              onRevertEdit={revertEdit}
+              onEditPendingMarkdown={updatePendingMarkdown}
             />
           </Panel>
         </div>
