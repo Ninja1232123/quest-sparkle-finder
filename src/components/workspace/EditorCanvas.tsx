@@ -1,10 +1,18 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef, useCallback } from "react";
-import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search, ScanText, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search, ScanText, History, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 
 export type EditorCanvasHandle = {
   insertAtCursor: (md: string) => void;
   focus: () => void;
   getBody: () => string;
+};
+
+export type PendingEdit = {
+  id: string;
+  kind: "insert" | "replace";
+  anchor: string | null;
+  markdown: string;
+  why: string;
 };
 
 type Props = {
@@ -19,11 +27,16 @@ type Props = {
   onOpenResearch: () => void;
   onCiteCheck: () => void;
   onOpenVersions: () => void;
+  pendingEdits?: PendingEdit[];
+  onAcceptEdit?: (edit: PendingEdit) => void;
+  onRevertEdit?: (id: string) => void;
+  onEditPendingMarkdown?: (id: string, markdown: string) => void;
 };
 
 export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function EditorCanvas(
   { initialTitle, initialBody, saveState, lastSavedAt, supportCount, questionCount,
-    onChangeTitle, onChangeBody, onOpenResearch, onCiteCheck, onOpenVersions },
+    onChangeTitle, onChangeBody, onOpenResearch, onCiteCheck, onOpenVersions,
+    pendingEdits, onAcceptEdit, onRevertEdit, onEditPendingMarkdown },
   ref,
 ) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
