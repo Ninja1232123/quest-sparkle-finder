@@ -253,6 +253,49 @@ function Desk({
     editorRef.current?.insertAtCursor(markdown);
   }, []);
 
+  // Pending AI-proposed draft edits — awaiting user Accept / Revert.
+  type PendingEdit = { id: string; kind: "insert" | "replace"; anchor: string | null; markdown: string; why: string };
+  const [pendingEdits, setPendingEdits] = useState<PendingEdit[]>([]);
+  useEffect(() => {
+    const onPropose = (e: Event) => {
+      const d = (e as CustomEvent<PendingEdit>).detail;
+      if (!d?.id || !d.markdown) return;
+      const kind: PendingEdit["kind"] = d.kind === "replace" ? "replace" : "insert";
+      setPendingEdits((cur) => (cur.some((p) => p.id === d.id) ? cur : [...cur, { ...d, kind }]));
+      setDocOpen(true);
+    };
+    window.addEventListener("workspace:propose-edit", onPropose);
+    return () => window.removeEventListener("workspace:propose-edit", onPropose);
+  }, []);
+
+  const acceptEdit = useCallback((edit: PendingEdit) => {
+    const current = editorRef.current?.getBody() ?? body;
+    let next = current;
+    if (edit.kind === "replace" && edit.anchor && current.includes(edit.anchor)) {
+      next = current.replace(edit.anchor, edit.markdown);
+    } else if (edit.kind === "insert" && edit.anchor && current.includes(edit.anchor)) {
+      const idx = current.indexOf(edit.anchor) + edit.anchor.length;
+      next = current.slice(0, idx) + "\n\n" + edit.markdown + current.slice(idx);
+    } else {
+      next = current + (current.trim() ? "\n\n" : "") + edit.markdown;
+    }
+    setBody(next);
+    // Force-sync the contenteditable so the user sees it land.
+    setTimeout(() => {
+      const root = document.querySelector("[contenteditable]") as HTMLDivElement | null;
+      if (root) root.innerText = next;
+    }, 0);
+    setPendingEdits((cur) => cur.filter((p) => p.id !== edit.id));
+  }, [body]);
+
+  const revertEdit = useCallback((id: string) => {
+    setPendingEdits((cur) => cur.filter((p) => p.id !== id));
+  }, []);
+
+  const updatePendingMarkdown = useCallback((id: string, markdown: string) => {
+    setPendingEdits((cur) => cur.map((p) => (p.id === id ? { ...p, markdown } : p)));
+  }, []);
+
   // Grab → file straight onto the issues board with the stance picked at the source.
   const handleQuickAddIssue = useCallback(async (d: PinDraft) => {
     await saveItem({ data: {
