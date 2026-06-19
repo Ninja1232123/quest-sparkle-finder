@@ -1,0 +1,1 @@
+ALTER TABLE public.workspace_threads ADD COLUMN IF NOT EXISTS scratchpad text NOT NULL DEFAULT '';
