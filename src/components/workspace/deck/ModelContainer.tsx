@@ -86,6 +86,16 @@ export function ModelContainer({
               fromAssistant: true,
             },
           }));
+        } else if (name === "propose_draft_edit" && typeof output === "object") {
+          window.dispatchEvent(new CustomEvent("workspace:propose-edit", {
+            detail: {
+              id: key,
+              kind: (output as { kind?: string }).kind,
+              anchor: (output as { anchor?: string }).anchor ?? null,
+              markdown: (output as { markdown?: string }).markdown ?? "",
+              why: (output as { why?: string }).why ?? "",
+            },
+          }));
         }
       }
     }
