@@ -248,7 +248,20 @@ export function ModelContainer({
                     if (part.type?.startsWith("tool-")) {
                       const tp = part as { type: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown; errorText?: string };
                       const toolName = tp.type.replace(/^tool-/, "");
-                      if (toolName.startsWith("propose_") && tp.output && typeof tp.output === "object") {
+                      // The draft-edit proposal is surfaced inline in the editor,
+                      // not as a chat card — leave a tight breadcrumb here.
+                      if (toolName === "propose_draft_edit" && tp.output && typeof tp.output === "object") {
+                        const o = tp.output as { kind?: string; why?: string };
+                        return (
+                          <div key={tp.toolCallId ?? i} className="my-1 rounded border px-2 py-1 text-[12px]" style={{ borderColor: "rgba(123,182,81,0.5)", background: "rgba(123,182,81,0.08)", color: "var(--ink)" }}>
+                            <span className="font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+                              Draft edit proposed →
+                            </span>{" "}
+                            <span style={{ color: "var(--ink-muted)" }}>{o.why || `${o.kind ?? "edit"} pending in your Doc Creator`}</span>
+                          </div>
+                        );
+                      }
+                      if (toolName.startsWith("propose_") && toolName !== "propose_draft_edit" && tp.output && typeof tp.output === "object") {
                         const id = tp.toolCallId ?? `${m.id}-${i}`;
                         return (
                           <ProposalCard
@@ -263,6 +276,8 @@ export function ModelContainer({
                           />
                         );
                       }
+                      // Hide scratchpad updates from the transcript — it's bookkeeping.
+                      if (toolName === "update_scratchpad") return null;
                       return (
                         <Tool key={tp.toolCallId ?? i} defaultOpen={false}>
                           <ToolHeader type={toolName as `tool-${string}`} state={(tp.state ?? "input-available") as "input-streaming" | "input-available" | "output-available" | "output-error"} />
