@@ -272,6 +272,71 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
 
       {/* Body */}
       <div className="relative flex-1 overflow-y-auto">
+        {pendingEdits && pendingEdits.length > 0 && (
+          <div className="mx-auto max-w-2xl space-y-2 px-8 pt-6">
+            {pendingEdits.map((edit) => (
+              <div
+                key={edit.id}
+                className="rounded-md border-l-4 p-3"
+                style={{
+                  borderLeftColor: "var(--brass, #c8a24b)",
+                  background: "color-mix(in oklab, var(--brass, #c8a24b) 8%, var(--paper))",
+                  border: "1px solid color-mix(in oklab, var(--brass, #c8a24b) 35%, transparent)",
+                  borderLeftWidth: "4px",
+                }}
+              >
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span
+                    className="text-[12px] tracking-[0.2em] uppercase"
+                    style={{ color: "var(--brass, #c8a24b)", fontFamily: "var(--font-mono)" }}
+                  >
+                    AI proposed · {edit.kind === "insert" ? (edit.anchor ? "insert here" : "append") : "replace"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onAcceptEdit?.(edit)}
+                      className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[12px] font-semibold transition-colors hover:bg-foreground/5"
+                      style={{ borderColor: "var(--brass, #c8a24b)", color: "var(--ink)" }}
+                      title="Apply this edit to your draft"
+                    >
+                      <Check className="h-3 w-3" /> Accept
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRevertEdit?.(edit.id)}
+                      className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[12px] transition-colors hover:bg-foreground/5"
+                      style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}
+                      title="Discard this proposal"
+                    >
+                      <X className="h-3 w-3" /> Revert
+                    </button>
+                  </div>
+                </div>
+                {edit.why && (
+                  <p className="mb-1.5 text-[12px]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                    {edit.why}
+                  </p>
+                )}
+                {edit.kind === "replace" && edit.anchor && (
+                  <div
+                    className="mb-1.5 rounded border-l-2 px-2 py-1 text-[12px] line-through"
+                    style={{ borderLeftColor: "#a8413a", color: "var(--ink-muted)", background: "rgba(168,65,58,0.05)", fontFamily: "var(--font-serif)" }}
+                  >
+                    {edit.anchor}
+                  </div>
+                )}
+                <textarea
+                  value={edit.markdown}
+                  onChange={(e) => onEditPendingMarkdown?.(edit.id, e.target.value)}
+                  rows={Math.min(12, Math.max(3, edit.markdown.split("\n").length + 1))}
+                  className="w-full resize-y rounded border bg-transparent px-2 py-1.5 text-[14px] leading-relaxed outline-none"
+                  style={{ borderColor: "var(--rule-card)", fontFamily: "var(--font-serif)", color: "var(--ink)" }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         <div
           ref={bodyRef}
           contentEditable
