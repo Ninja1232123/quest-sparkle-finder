@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -40,6 +40,66 @@ export function ModelContainer({
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("research");
   const mark = (set: typeof setAccepted) => (id: string) => set((s) => new Set(s).add(id));
+
+  // ── Shared workspace UI: when the model finishes a tool call, light up the
+  // user's own surfaces (search panel, reader) so they see exactly what it saw.
+  // We track which tool-call IDs we've already broadcast so re-renders don't
+  // re-dispatch them.
+  const broadcast = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const m of messages) {
+      if (m.role !== "assistant") continue;
+      for (let i = 0; i < m.parts.length; i++) {
+        const p = m.parts[i] as { type?: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown };
+        if (!p.type?.startsWith("tool-")) continue;
+        if (p.state !== "output-available") continue;
+        const key = p.toolCallId ?? `${m.id}-${i}`;
+        if (broadcast.current.has(key)) continue;
+        broadcast.current.add(key);
+        const name = p.type.replace(/^tool-/, "");
+        const input = (p.input ?? {}) as Record<string, unknown>;
+        const output = (p.output ?? {}) as Record<string, unknown>;
+        if (name === "fetch_document" && typeof output.identifier === "string") {
+          window.dispatchEvent(new CustomEvent("workspace:open-doc", { detail: { ref: output.identifier } }));
+        } else if (name === "fetch_case" && typeof output.id === "string") {
+          window.dispatchEvent(new CustomEvent("workspace:open-doc", { detail: { ref: output.id } }));
+        } else if (
+          (name === "search_corpus" || name === "scan_corpus" || name === "search_boolean" ||
+           name === "precise_search" || name === "open_basin") &&
+          Array.isArray(output.results)
+        ) {
+          window.dispatchEvent(new CustomEvent("workspace:show-results", {
+            detail: {
+              kind: "statute",
+              query: typeof input.q === "string" ? input.q : null,
+              source: typeof input.source === "string" ? input.source : null,
+              rows: output.results,
+              fromAssistant: true,
+            },
+          }));
+        } else if (name === "search_cases" && Array.isArray(output.results)) {
+          window.dispatchEvent(new CustomEvent("workspace:show-results", {
+            detail: {
+              kind: "case",
+              query: typeof input.q === "string" ? input.q : null,
+              rows: output.results,
+              fromAssistant: true,
+            },
+          }));
+        } else if (name === "propose_draft_edit" && typeof output === "object") {
+          window.dispatchEvent(new CustomEvent("workspace:propose-edit", {
+            detail: {
+              id: key,
+              kind: (output as { kind?: string }).kind,
+              anchor: (output as { anchor?: string }).anchor ?? null,
+              markdown: (output as { markdown?: string }).markdown ?? "",
+              why: (output as { why?: string }).why ?? "",
+            },
+          }));
+        }
+      }
+    }
+  }, [messages]);
 
   // Every send carries the current mode (or an override) so the server knows
   // whether to research-and-propose or draft strictly from the board.
@@ -188,7 +248,20 @@ export function ModelContainer({
                     if (part.type?.startsWith("tool-")) {
                       const tp = part as { type: string; toolCallId?: string; state?: string; input?: unknown; output?: unknown; errorText?: string };
                       const toolName = tp.type.replace(/^tool-/, "");
-                      if (toolName.startsWith("propose_") && tp.output && typeof tp.output === "object") {
+                      // The draft-edit proposal is surfaced inline in the editor,
+                      // not as a chat card — leave a tight breadcrumb here.
+                      if (toolName === "propose_draft_edit" && tp.output && typeof tp.output === "object") {
+                        const o = tp.output as { kind?: string; why?: string };
+                        return (
+                          <div key={tp.toolCallId ?? i} className="my-1 rounded border px-2 py-1 text-[12px]" style={{ borderColor: "rgba(123,182,81,0.5)", background: "rgba(123,182,81,0.08)", color: "var(--ink)" }}>
+                            <span className="font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+                              Draft edit proposed →
+                            </span>{" "}
+                            <span style={{ color: "var(--ink-muted)" }}>{o.why || `${o.kind ?? "edit"} pending in your Doc Creator`}</span>
+                          </div>
+                        );
+                      }
+                      if (toolName.startsWith("propose_") && toolName !== "propose_draft_edit" && tp.output && typeof tp.output === "object") {
                         const id = tp.toolCallId ?? `${m.id}-${i}`;
                         return (
                           <ProposalCard
@@ -203,6 +276,8 @@ export function ModelContainer({
                           />
                         );
                       }
+                      // Hide scratchpad updates from the transcript — it's bookkeeping.
+                      if (toolName === "update_scratchpad") return null;
                       return (
                         <Tool key={tp.toolCallId ?? i} defaultOpen={false}>
                           <ToolHeader type={toolName as `tool-${string}`} state={(tp.state ?? "input-available") as "input-streaming" | "input-available" | "output-available" | "output-error"} />

@@ -853,6 +853,7 @@ export type Database = {
           created_at: string
           id: string
           last_message_at: string
+          scratchpad: string
           summary: string | null
           title: string
           updated_at: string
@@ -862,6 +863,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          scratchpad?: string
           summary?: string | null
           title?: string
           updated_at?: string
@@ -871,6 +873,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          scratchpad?: string
           summary?: string | null
           title?: string
           updated_at?: string

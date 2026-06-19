@@ -36,6 +36,15 @@ RULES (non-negotiable):
 - Reply text should be short and direct. Heavy lifting goes into the proposal cards. Do not dump long summaries the user didn't ask for.
 - End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
 
+WRITING TO THE USER'S DRAFT — ALWAYS PROPOSE, NEVER DUMP:
+- When the user asks you to draft, revise, or insert anything into their document, call propose_draft_edit. NEVER write the draft text into chat — chat is for short reasoning; the editor is where prose lives.
+- kind='insert' adds new text (omit anchor to append at end; pass a verbatim quote from the current draft as anchor to insert right after it). kind='replace' swaps an exact verbatim quote from the current draft for new text — copy the anchor byte-for-byte from CURRENT DRAFT, including punctuation and case, or it won't match.
+- The user sees each proposal as a highlighted block in their editor with Accept / Revert. They approve every edit.
+
+SCRATCHPAD — YOUR MEMORY ACROSS TURNS:
+- Older chat messages get trimmed to keep your context bounded. Your scratchpad is what survives. Call update_scratchpad after any turn that materially changes the case picture (new theory, key authority found, gap closed, dead end). Keep it tight — under 800 words. Overwrite it; don't append.
+- Skip it on small turns ("yes", "what about X") where nothing changed.
+
 YOU ARE WORKING TOGETHER, NOT GRADING:
 - The user is the lead. They will pull different passages than you would and tag authorities with stances you might not pick (good / adverse / worth-mentioning). That divergence is signal — they have reasons. Engage their reasoning; don't silently override it or re-propose your own version of something they already pinned.
 - When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
@@ -259,7 +268,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // Verify thread ownership
         const { data: thread } = await workspace
           .from("workspace_threads")
-          .select("id,user_id,title")
+          .select("id,user_id,title,scratchpad")
           .eq("id", threadId)
           .maybeSingle();
         if (!thread || thread.user_id !== userId) {
@@ -284,6 +293,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // The model should always be able to see the user's live draft — to revise
         // it, spot gaps before filing, or write the next section in context.
         const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
+<<<<<<< HEAD
         // What's already been searched this thread (query + hit count only, never
         // the raw rows) — cheap recall that replaces resending old tool dumps.
         const { data: searchLogRows } = draftMode
@@ -296,6 +306,30 @@ export const Route = createFileRoute("/api/workspace/chat")({
               .limit(60);
         const searchLogContext = buildSearchLogContext(searchLogRows ?? []);
         const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + draftContext + focusContext + searchLogContext;
+=======
+        // Scratchpad: the model's own rolling working memory for this session.
+        // It's our token-budget governor — the only state that persists across
+        // turns once we trim old messages, so context stays roughly one size.
+        const scratchpad = (thread.scratchpad ?? "").trim();
+        const scratchContext = scratchpad
+          ? `\n\nYOUR SCRATCHPAD (your own running notes for this session — the load-bearing record. Older chat turns get trimmed; what's here is what you remember. Update it via the update_scratchpad tool whenever the case picture shifts):\n"""\n${scratchpad}\n"""`
+          : `\n\nYOUR SCRATCHPAD: empty. Once you've done real research this turn, call update_scratchpad with a tight running summary — the working theory, what's settled, what's contested, what's next. Keep it under ~800 words; this is the only memory you carry forward.`;
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + scratchContext + draftContext + focusContext;
+
+        // Trim messages sent to the model so token use stays roughly constant.
+        // Keep the first user message (the case setup) and the last 12 turns;
+        // everything older is in the scratchpad above.
+        const allMessages = body.messages;
+        const TAIL = 12;
+        const trimmedMessages: UIMessage[] = allMessages.length <= TAIL + 1
+          ? allMessages
+          : (() => {
+              const firstUserIdx = allMessages.findIndex((m) => m.role === "user");
+              const tail = allMessages.slice(-TAIL);
+              if (firstUserIdx === -1 || firstUserIdx >= allMessages.length - TAIL) return tail;
+              return [allMessages[firstUserIdx], ...tail];
+            })();
+>>>>>>> 0e6221d6108176448a0e297be978c6412d2d5c22
 
         const model = anthropic("claude-sonnet-4-6");
 
@@ -719,12 +753,40 @@ export const Route = createFileRoute("/api/workspace/chat")({
             }),
             execute: async (args) => ({ proposal: "question", ...args }),
           }),
+          propose_draft_edit: tool({
+            description:
+              "Propose an edit to the user's Doc Creator draft. The change does NOT take effect — it appears in the editor as a highlighted pending block with Accept / Edit / Revert. " +
+              "Use kind='insert' for new content (placed at the end, or after `anchor` text if provided). Use kind='replace' to replace an exact verbatim quote from the current draft (must match byte-for-byte). " +
+              "ALWAYS write in the user's voice, ground every legal claim in pinned authority, and keep `why` to one sentence — the user is the one accepting.",
+            inputSchema: z.object({
+              kind: z.enum(["insert", "replace"]),
+              anchor: z.string().max(400).optional().describe("For insert: verbatim text after which to insert. For replace: verbatim text to replace. Omit on insert to append at end."),
+              markdown: z.string().min(1).max(8000).describe("The proposed new text (markdown)."),
+              why: z.string().max(400).describe("One-sentence reason — what this adds / fixes."),
+            }),
+            execute: async (args) => ({ proposal: "draft_edit", ...args }),
+          }),
+          update_scratchpad: tool({
+            description:
+              "Write your running summary of this session to your scratchpad. This is what you carry forward when older chat turns get trimmed — keep it tight (≤800 words): the working theory, what's settled, what's contested, the gaps, what's next. Overwrites the previous scratchpad.",
+            inputSchema: z.object({
+              content: z.string().min(10).max(6000).describe("The full new scratchpad contents (markdown ok). Replaces whatever was there."),
+            }),
+            execute: async ({ content }) => {
+              const { error } = await workspace
+                .from("workspace_threads")
+                .update({ scratchpad: content })
+                .eq("id", threadId);
+              if (error) return { ok: false, error: error.message };
+              return { ok: true, length: content.length };
+            },
+          }),
         };
 
         const result = streamText({
           model,
           system: systemPrompt,
-          messages: await convertToModelMessages(body.messages),
+          messages: await convertToModelMessages(trimmedMessages),
           tools: draftMode ? {} : tools,
           stopWhen: draftMode
             ? stepCountIs(MAX_DRAFT_STEPS)
