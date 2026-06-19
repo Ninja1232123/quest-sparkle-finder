@@ -2,10 +2,25 @@
 // Auth: validates the bearer against the cloud Supabase project, then scopes
 // every read/write to that user via service-role with explicit WHERE filters.
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, tool, stepCountIs, type StopCondition, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { anthropic } from "@ai-sdk/anthropic";
+import { usageToCents, creditsForCost, WORKSPACE_MIN_CREDITS, WORKSPACE_MAX_CREDITS_PER_TURN } from "@/lib/juri-credits";
+
+// Per-turn budget: caps both the number of tool-calling rounds AND the cumulative
+// input tokens that turn can burn. A "round" resends the whole growing transcript
+// (system + history + every prior tool result) to the model, so without a token
+// ceiling a handful of wide parallel scans can compound into millions of input
+// tokens well before the step count looks alarming.
+const MAX_RESEARCH_STEPS = 14;
+const MAX_DRAFT_STEPS = 3;
+const MAX_TURN_INPUT_TOKENS = 400_000;
+
+const inputTokenBudgetExceeded: StopCondition<any> = ({ steps }) => {
+  const totalInput = steps.reduce((sum, s) => sum + (s.usage.inputTokens ?? 0), 0);
+  return totalInput >= MAX_TURN_INPUT_TOKENS;
+};
 
 const SYSTEM = `You are the Marginalia Workspace research assistant for pro se litigants.
 
@@ -37,9 +52,10 @@ READ-CLOSELY — only for the handful of cites you'll actually quote:
 - search_cases — U.S. Supreme Court (28k) + state supreme courts (528k). Scope with jurisdiction.
 - fetch_document(identifier) / fetch_case(id) — one document's full text, to lift an exact quote.
 
-HOW TO SPEND — maximum search, minimum cost:
-- GRAB, DON'T READ. The corpus is 4M+ statutes + agency records. You do NOT need to read what's inside them to know they exist — scan_corpus pulls the hit list (citation + identifier) by the hundred for almost nothing, and that list goes straight to the user's browser. Lead with a wide scan_corpus (limit 100-300); reason over the returned list of citations.
-- THERE IS NO FIXED CALL CAP. Budget COST PER HOP, not hop count. Fire several scans in parallel (different angles: the statute, the synonym, the adverse term), and follow citations several steps out — a section can cite 80 others and the answer may be hops away. Don't stop at the first ring.
+HOW TO SPEND — you have a hard budget of about 14 tool-calling rounds per turn, so spend them deliberately:
+- GRAB, DON'T READ. The corpus is 4M+ statutes + agency records. You do NOT need to read what's inside them to know they exist — scan_corpus pulls the hit list (citation + identifier) by the hundred for almost nothing, and that list goes straight to the user's browser. Lead with ONE wide scan_corpus (limit 100-300) per angle; reason over the returned list of citations before firing another.
+- BUDGET ROUNDS, NOT JUST RESULTS. Every round resends the entire growing transcript — including every prior tool result — back to the model. A handful of wide scans is cheap; a dozen wide scans in one turn is not, even though each individual call looked free. Pick 2-3 angles (the statute, the synonym, the adverse term) rather than sweeping every conceivable phrasing, and stop once you have enough to answer or propose.
+- CHECK "SEARCHES ALREADY TRIED THIS THREAD" (below, if present) before querying — it's a cheap log of every search this thread has run (query + hit count, not the results). Don't re-run a query that's already there; pick a different angle or move on.
 - SPEND THE EXPENSIVE CALLS LAST: pull snippets (search_corpus/search_boolean) or full text (fetch_*) only for the few cites you've already chosen from a scan and intend to quote. Never read 100 documents to see what exists — scan grabs that for free; never fetch a doc just to learn what it cites — call citations.
 - PRIORITY order for what to chase: controlling text → its reasoning (legislative_history/regulatory_history) → cases interpreting it → adverse authority. Not done until the adverse rung is checked.
 - BOOLEAN: scan_corpus takes inline ops (space=AND, OR, "phrase", -exclude) — e.g. 'deed of trust OR "trust deed" foreclosure -judicial'. Reach for search_boolean's explicit gates only when you also want snippets.
@@ -110,6 +126,17 @@ function buildBoardContext(rows: BoardRow[]): string {
   if (notes.length) lines.push(`NOTES (${notes.length}):`, ...notes.map((r) => `  • ${r.user_note ?? ""}`));
   lines.push(`Build on this. Fill gaps, find adverse authority for the supporting pins, and answer the open questions — don't repeat what's already here.`);
   return lines.join("\n");
+}
+
+// Cheap working memory of what's already been searched THIS thread — just the
+// tool, query, and hit count, never the raw results. Lets the model avoid
+// re-running the same search across turns without resending everything it
+// turned up last time.
+type SearchLogRow = { tool_name: string; query: string; result_count: number | null };
+function buildSearchLogContext(rows: SearchLogRow[]): string {
+  if (rows.length === 0) return "";
+  const lines = rows.map((r) => `  • ${r.tool_name}(${r.query}) → ${r.result_count ?? "?"} hits`);
+  return `\n\nSEARCHES ALREADY TRIED THIS THREAD (don't repeat these verbatim — vary the angle, or move on if a line of inquiry looks exhausted):\n${lines.join("\n")}`;
 }
 
 // Fetch the document the user is currently reading (statute by identifier, or an
@@ -186,6 +213,15 @@ function corpusClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+// Credits (juri_credits) live on the cloud project, same wallet Juri spends
+// from. Reads/deducts need service-role since the balance/RPC aren't scoped
+// to the request-bearer the way thread ownership is.
+function creditsClient() {
+  const url = process.env.SUPABASE_AUTH_URL!;
+  const key = process.env.SUPABASE_AUTH_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
 export const Route = createFileRoute("/api/workspace/chat")({
   server: {
     handlers: {
@@ -193,6 +229,24 @@ export const Route = createFileRoute("/api/workspace/chat")({
         const auth = await authenticate(request);
         if (auth instanceof Response) return auth;
         const { userId, token } = auth;
+
+        // Credit gate — same wallet as Juri, no Pro requirement, no free taste:
+        // a turn needs at least WORKSPACE_MIN_CREDITS to start. Plaintext body
+        // with a recognizable prefix so the client can special-case this error
+        // (the AI SDK transport throws new Error(await response.text())).
+        const credits = creditsClient();
+        const { data: creditRow } = await credits
+          .from("juri_credits")
+          .select("balance")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const balance = creditRow?.balance ?? 0;
+        if (balance < WORKSPACE_MIN_CREDITS) {
+          return new Response(
+            "OUT_OF_CREDITS: You're out of credits. Grab a top-up pack to keep using the workspace assistant.",
+            { status: 402 },
+          );
+        }
 
         const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft"; draftTitle?: string | null; draftText?: string | null };
         if (!Array.isArray(body.messages) || !body.threadId) {
@@ -230,9 +284,32 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // The model should always be able to see the user's live draft — to revise
         // it, spot gaps before filing, or write the next section in context.
         const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
-        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + draftContext + focusContext;
+        // What's already been searched this thread (query + hit count only, never
+        // the raw rows) — cheap recall that replaces resending old tool dumps.
+        const { data: searchLogRows } = draftMode
+          ? { data: [] as SearchLogRow[] }
+          : await workspace
+              .from("workspace_search_log")
+              .select("tool_name,query,result_count")
+              .eq("thread_id", threadId)
+              .order("created_at", { ascending: true })
+              .limit(60);
+        const searchLogContext = buildSearchLogContext(searchLogRows ?? []);
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + draftContext + focusContext + searchLogContext;
 
         const model = anthropic("claude-sonnet-4-6");
+
+        // Fire-and-forget log of a search-style tool call — tool + compact query +
+        // hit count only. Never await-blocks the tool's own response; failures are
+        // swallowed since this is best-effort working memory, not critical state.
+        function logSearch(toolName: string, query: string, resultCount: number) {
+          workspace
+            .from("workspace_search_log")
+            .insert({ thread_id: threadId, user_id: userId, tool_name: toolName, query, result_count: resultCount })
+            .then(({ error }: { error: unknown }) => {
+              if (error) console.error("[workspace/chat] search log insert failed:", error);
+            });
+        }
 
         const tools = {
           search_corpus: tool({
@@ -253,8 +330,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 p_limit: limit,
               });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("search_corpus", `q="${q}"${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null; snippet: string }) => ({
                   identifier: r.identifier,
                   source: r.source_code,
@@ -279,8 +358,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ q, source, limit }) => {
               const { data, error } = await corpus.rpc("scan_documents", { p_query: q, p_source: source ?? null, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("scan_corpus", `q="${q}"${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
                   id: r.identifier,
                   cite: r.section_label || r.heading || r.identifier,
@@ -325,6 +406,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ term, limit }) => {
               const { data, error } = await corpus.rpc("basin_list", { p_term: term ?? null, p_limit: limit });
               if (error) return { error: error.message, basins: [] };
+              logSearch("list_basins", term ? `term="${term}"` : "(largest)", data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 basins: (data ?? []).map((r: { id: number; label: string; doc_count: number }) => ({
@@ -345,6 +427,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ basin_id, source, limit }) => {
               const { data, error } = await corpus.rpc("basin_docs", { p_basin_id: basin_id, p_source: source ?? null, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              logSearch("open_basin", `id=${basin_id}${source ? ` source=${source}` : ""}`, data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
@@ -370,6 +453,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
               const { data, error } = await corpus.rpc("precise_match", { p_terms: terms, p_source: source ?? null, p_max: max });
               if (error) return { error: error.message, results: [] };
               const d = (data ?? {}) as { count?: number; broad?: boolean; results?: Array<{ id: string; cite: string; heading: string | null; source: string }> };
+              logSearch("precise_search", `terms=[${terms.join(",")}]${source ? ` source=${source}` : ""}`, d.count ?? 0);
               return { count: d.count ?? 0, broad: d.broad ?? false, results: d.results ?? [] };
             },
           }),
@@ -400,8 +484,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 p_limit: limit,
               });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("search_boolean", `all=[${all.join(",")}] any=[${any.join(",")}] phrase=${phrase ?? ""} exclude=[${exclude.join(",")}]${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null; snippet: string }) => ({
                   identifier: r.identifier,
                   source: r.source_code,
@@ -426,6 +512,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ title, section, limit }) => {
               const { data, error } = await corpus.rpc("usc_bill_history", { p_title: title, p_section: section, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              logSearch("legislative_history", `usc/${title}/${section}`, data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 results: (data ?? []).map((r: { latest_id: string; title: string | null; short_title: string | null; congress: number | null; latest_stage: string | null; enacted: boolean | null }) => ({
@@ -452,6 +539,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ title, part, limit }) => {
               const { data, error } = await corpus.rpc("cfr_register_history", { p_title: title, p_part: part, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              logSearch("regulatory_history", `cfr/${title}/${part}`, data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 results: (data ?? []).map((r: { identifier: string; fr_doc_number: string; title: string | null; doc_type: string | null; decided: string | null }) => ({
@@ -539,6 +627,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   });
                 }
               }
+              logSearch("search_cases", `q="${q}"${jurisdiction ? ` jurisdiction=${jurisdiction}` : ""}`, results.length);
               return { count: results.length, results };
             },
           }),
@@ -637,7 +726,21 @@ export const Route = createFileRoute("/api/workspace/chat")({
           system: systemPrompt,
           messages: await convertToModelMessages(body.messages),
           tools: draftMode ? {} : tools,
-          stopWhen: stepCountIs(draftMode ? 3 : 50),
+          stopWhen: draftMode
+            ? stepCountIs(MAX_DRAFT_STEPS)
+            : [stepCountIs(MAX_RESEARCH_STEPS), inputTokenBudgetExceeded],
+          onFinish: ({ totalUsage, steps }) => {
+            const cents = usageToCents({ input_tokens: totalUsage.inputTokens ?? 0, output_tokens: totalUsage.outputTokens ?? 0 });
+            const charge = creditsForCost(cents, WORKSPACE_MAX_CREDITS_PER_TURN);
+            console.log(
+              `[workspace/chat] thread=${threadId} steps=${steps.length} ` +
+                `inputTokens=${totalUsage.inputTokens ?? 0} outputTokens=${totalUsage.outputTokens ?? 0} ` +
+                `totalTokens=${totalUsage.totalTokens ?? 0} charge=${charge}credits`,
+            );
+            credits.rpc("deduct_juri_credits", { p_user_id: userId, p_amount: charge }).then(({ error }: { error: unknown }) => {
+              if (error) console.error("[workspace/chat] credit deduction failed:", error);
+            });
+          },
         });
 
         return result.toUIMessageStreamResponse({

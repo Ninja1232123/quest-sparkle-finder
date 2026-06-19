@@ -219,7 +219,16 @@ export function ModelContainer({
               </Message>
             ))}
             {status === "submitted" && <div className="px-4 py-2"><Shimmer>Thinking…</Shimmer></div>}
-            {error && <div className="mx-3 my-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">{error.message}</div>}
+            {error && (
+              error.message.startsWith("OUT_OF_CREDITS:") ? (
+                <div className="mx-3 my-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-900">
+                  {error.message.replace("OUT_OF_CREDITS: ", "")}{" "}
+                  <a href="/" className="font-semibold underline">Open Juri from any other page to buy a top-up pack</a>.
+                </div>
+              ) : (
+                <div className="mx-3 my-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">{error.message}</div>
+              )
+            )}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>

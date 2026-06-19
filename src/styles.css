@@ -286,7 +286,7 @@
        at the page bottom). `zoom` keeps fixed positioning correct. Its one
        quirk — it shrinks vh units — is handled by the .min-h-screen rule
        below. Tune one number: 0.7, 0.75, 0.8 … */
-    --site-zoom: 0.9;
+    --site-zoom: 0.85;
     zoom: var(--site-zoom);
   }
 
@@ -559,21 +559,21 @@
      Use as: <div class="accent-surface" style="--c: #1a4a2e"> */
   .accent-surface {
     background:
-      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 8%, transparent) 0%, transparent 55%),
+      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 85%, transparent) 5%, transparent 55%),
       var(--card);
-    border: 2px solid color-mix(in oklch, var(--c, var(--ink)) 36%, var(--rule-card));
+    border: 4px solid color-mix(in oklch, var(--c, var(--ink)) 44%, var(--rule-card));
     transition: transform 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
   }
   .accent-surface:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     border-color: var(--c, var(--ink));
-    box-shadow: 0 12px 20px -14px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
+    box-shadow: 0 14px 30px -14px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
   }
   .accent-surface-row {
     background:
       linear-gradient(to right, color-mix(in oklch, var(--c, var(--ink)) 7%, transparent) 0%, transparent 85%),
       var(--card);
-    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
+    border: 2px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
     transition: transform 160ms ease-out, border-color 160ms ease-out;
   }
   .accent-surface-row:hover {
@@ -693,7 +693,7 @@
     padding: 9px 18px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     border: 1.5px solid var(--ink);
     transition: opacity 150ms, transform 150ms;
   }
@@ -709,7 +709,7 @@
     padding: 9px 18px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     border: 1.5px solid var(--ink);
     transition: background 150ms, color 150ms;
   }
