@@ -596,3 +596,167 @@ const STARTERS = [
   { label: "What will the other side argue?", text: "What are the strongest arguments the opposing party will raise against my complaint? Include threshold defenses like standing, limitations, or Twombly/Iqbal plausibility." },
   { label: "What's missing before I can file?", text: "Look at the authorities and questions on my issues board. What's still missing before this complaint is ready to file?" },
 ] as const;
+
+// ── Activity strip ─────────────────────────────────────────────────────────
+// A thin, always-visible line telling the user what the assistant just did so
+// the model's context is never invisible. Click it to peek at the scratchpad.
+const TOOL_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  scan_corpus: { label: "Scanned corpus", Icon: Search },
+  search_corpus: { label: "Searched corpus", Icon: Search },
+  search_boolean: { label: "Boolean search", Icon: Search },
+  precise_search: { label: "Precision drill", Icon: Search },
+  search_cases: { label: "Searched cases", Icon: BookOpen },
+  fetch_document: { label: "Read statute", Icon: FileText },
+  fetch_case: { label: "Read case", Icon: BookOpen },
+  citations: { label: "Followed citations", Icon: Network },
+  list_basins: { label: "Listed basins", Icon: Network },
+  open_basin: { label: "Opened basin", Icon: Network },
+  legislative_history: { label: "Legislative history", Icon: HistoryIcon },
+  regulatory_history: { label: "Regulatory history", Icon: HistoryIcon },
+  propose_pin: { label: "Proposed pin", Icon: Pin },
+  propose_adverse: { label: "Flagged adverse", Icon: Pin },
+  propose_search: { label: "Suggested search", Icon: Sparkles },
+  propose_question: { label: "Logged question", Icon: Sparkles },
+  propose_draft_edit: { label: "Proposed draft edit", Icon: FileSignature },
+  update_scratchpad: { label: "Updated scratchpad", Icon: NotebookPen },
+};
+
+function ActivityStrip({
+  activity, loading, onOpenPad, padOpen, padWordCount,
+}: {
+  activity: { name: string; state: string; input: Record<string, unknown>; output: Record<string, unknown> } | null;
+  loading: boolean;
+  onOpenPad: () => void;
+  padOpen: boolean;
+  padWordCount: number;
+}) {
+  const meta = activity ? TOOL_LABELS[activity.name] ?? { label: activity.name, Icon: Sparkles } : null;
+  const Icon = meta?.Icon ?? Sparkles;
+  const detail = activity ? describeActivity(activity) : null;
+  const running = loading && activity?.state !== "output-available";
+
+  return (
+    <div
+      className="flex shrink-0 items-center gap-2 rounded-md border px-2 py-1 text-[12px]"
+      style={{
+        borderColor: "rgba(200,162,75,0.35)",
+        background: "color-mix(in oklab, var(--paper) 65%, transparent)",
+        fontFamily: "var(--font-mono, 'Special Elite')",
+      }}
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{
+          background: running ? "#c8a24b" : activity ? "#3f7d4e" : "var(--rule-card)",
+          boxShadow: running ? "0 0 6px #c8a24b" : "none",
+        }}
+      />
+      <Icon className="h-3 w-3 shrink-0" style={{ color: "var(--ink-muted)" }} />
+      <span className="truncate" style={{ color: "var(--ink)" }}>
+        {activity ? (
+          <>
+            <span className="font-semibold">{meta!.label}</span>
+            {detail && <span style={{ color: "var(--ink-muted)" }}>{" "}· {detail}</span>}
+          </>
+        ) : (
+          <span style={{ color: "var(--ink-muted)" }}>Idle — assistant hasn't run anything this session yet.</span>
+        )}
+      </span>
+      <button
+        type="button"
+        onClick={onOpenPad}
+        title="The model's rolling memory — read or edit what it's carrying forward."
+        className="ml-auto inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] transition-colors hover:bg-foreground/5"
+        style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}
+      >
+        <NotebookPen className="h-3 w-3" />
+        Scratchpad
+        {padWordCount > 0 && <span className="opacity-60">· {padWordCount}w</span>}
+        {padOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+    </div>
+  );
+}
+
+function describeActivity(a: { name: string; input: Record<string, unknown>; output: Record<string, unknown> }): string | null {
+  const q = typeof a.input.q === "string" ? a.input.q : null;
+  const id = typeof a.input.identifier === "string" ? a.input.identifier : typeof a.output.identifier === "string" ? a.output.identifier : null;
+  const terms = Array.isArray(a.input.terms) ? (a.input.terms as unknown[]).filter((t) => typeof t === "string").join(" + ") : null;
+  const count = typeof a.output.count === "number" ? a.output.count : Array.isArray(a.output.results) ? a.output.results.length : null;
+  if (q) return count != null ? `"${truncate(q, 40)}" → ${count}` : `"${truncate(q, 50)}"`;
+  if (terms) return count != null ? `${truncate(terms, 40)} → ${count}` : truncate(terms, 50);
+  if (id) return truncate(id, 50);
+  if (a.name === "update_scratchpad" && typeof a.input.content === "string") {
+    const len = (a.input.content as string).trim().split(/\s+/).length;
+    return `${len} words saved`;
+  }
+  return null;
+}
+
+function truncate(s: string, n: number): string {
+  return s.length <= n ? s : s.slice(0, n - 1) + "…";
+}
+
+// ── Scratchpad drawer ─────────────────────────────────────────────────────
+// The model's long-term memory across this session. Surfaced so the user can
+// read what the assistant is carrying forward and correct it if it's drifted.
+function ScratchpadDrawer({
+  value, saving, dirty, onChange, onSave, onClose,
+}: {
+  value: string;
+  saving: boolean;
+  dirty: boolean;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="shrink-0 rounded-md border p-2"
+      style={{ borderColor: "rgba(200,162,75,0.35)", background: "var(--paper)" }}
+    >
+      <div className="mb-1 flex items-center gap-2">
+        <NotebookPen className="h-3 w-3" style={{ color: "var(--brass, #c8a24b)" }} />
+        <span
+          className="text-[12px] font-semibold tracking-[0.18em] uppercase"
+          style={{ color: "var(--ink)", fontFamily: "var(--font-mono)" }}
+        >
+          Scratchpad
+        </span>
+        <span className="text-[11px]" style={{ color: "var(--ink-muted)" }}>
+          The model's rolling memory — survives when older chat gets trimmed.
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          {dirty && (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="rounded border px-2 py-0.5 text-[11px] font-semibold transition-colors hover:bg-foreground/5 disabled:opacity-50"
+              style={{ borderColor: "var(--brass, #c8a24b)", color: "var(--ink)" }}
+            >
+              {saving ? "Saving…" : "Save edits"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-5 w-5 place-items-center rounded hover:bg-foreground/5"
+            style={{ color: "var(--ink-muted)" }}
+            title="Close"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Empty. The assistant will write a running summary here after substantive research turns."
+        rows={Math.min(10, Math.max(4, value.split("\n").length))}
+        className="w-full resize-y rounded border bg-transparent px-2 py-1.5 text-[12px] leading-relaxed outline-none"
+        style={{ borderColor: "var(--rule-card)", color: "var(--ink)", fontFamily: "var(--font-serif)" }}
+      />
+    </div>
+  );
+}
