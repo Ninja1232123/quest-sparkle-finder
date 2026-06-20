@@ -293,8 +293,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // The model should always be able to see the user's live draft — to revise
         // it, spot gaps before filing, or write the next section in context.
         const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
-<<<<<<< HEAD
-        // What's already been searched this thread (query + hit count only, never
+// What's already been searched this thread (query + hit count only, never
         // the raw rows) — cheap recall that replaces resending old tool dumps.
         const { data: searchLogRows } = draftMode
           ? { data: [] as SearchLogRow[] }
@@ -305,8 +304,6 @@ export const Route = createFileRoute("/api/workspace/chat")({
               .order("created_at", { ascending: true })
               .limit(60);
         const searchLogContext = buildSearchLogContext(searchLogRows ?? []);
-        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + draftContext + focusContext + searchLogContext;
-=======
         // Scratchpad: the model's own rolling working memory for this session.
         // It's our token-budget governor — the only state that persists across
         // turns once we trim old messages, so context stays roughly one size.
@@ -314,7 +311,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         const scratchContext = scratchpad
           ? `\n\nYOUR SCRATCHPAD (your own running notes for this session — the load-bearing record. Older chat turns get trimmed; what's here is what you remember. Update it via the update_scratchpad tool whenever the case picture shifts):\n"""\n${scratchpad}\n"""`
           : `\n\nYOUR SCRATCHPAD: empty. Once you've done real research this turn, call update_scratchpad with a tight running summary — the working theory, what's settled, what's contested, what's next. Keep it under ~800 words; this is the only memory you carry forward.`;
-        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + scratchContext + draftContext + focusContext;
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + scratchContext + draftContext + focusContext + searchLogContext;
 
         // Trim messages sent to the model so token use stays roughly constant.
         // Keep the first user message (the case setup) and the last 12 turns;
@@ -329,7 +326,6 @@ export const Route = createFileRoute("/api/workspace/chat")({
               if (firstUserIdx === -1 || firstUserIdx >= allMessages.length - TAIL) return tail;
               return [allMessages[firstUserIdx], ...tail];
             })();
->>>>>>> 0e6221d6108176448a0e297be978c6412d2d5c22
 
         const model = anthropic("claude-sonnet-4-6");
 
