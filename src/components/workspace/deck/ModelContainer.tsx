@@ -269,8 +269,20 @@ export function ModelContainer({
         </PromptInput>
       }
     >
-      <Surface className="h-full">
-        <Conversation className="h-full">
+      <div className="flex h-full min-h-0 flex-col gap-2">
+        <ActivityStrip activity={lastActivity} loading={isLoading} onOpenPad={() => setPadOpen((v) => !v)} padOpen={padOpen} padWordCount={pad.trim() ? pad.trim().split(/\s+/).length : 0} />
+        {padOpen && (
+          <ScratchpadDrawer
+            value={pad}
+            saving={padSaving}
+            dirty={padDirty}
+            onChange={(v) => { setPad(v); setPadDirty(true); }}
+            onSave={savePadNow}
+            onClose={() => setPadOpen(false)}
+          />
+        )}
+        <Surface className="min-h-0 flex-1">
+          <Conversation className="h-full">
           <ConversationContent>
             {messages.length === 0 && (
               <div className="px-4 py-7">
@@ -388,8 +400,9 @@ export function ModelContainer({
             )}
           </ConversationContent>
           <ConversationScrollButton />
-        </Conversation>
-      </Surface>
+          </Conversation>
+        </Surface>
+      </div>
     </Panel>
   );
 }
