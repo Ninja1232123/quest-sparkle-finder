@@ -293,7 +293,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // The model should always be able to see the user's live draft — to revise
         // it, spot gaps before filing, or write the next section in context.
         const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
-// What's already been searched this thread (query + hit count only, never
+        // What's already been searched this thread (query + hit count only, never
         // the raw rows) — cheap recall that replaces resending old tool dumps.
         const { data: searchLogRows } = draftMode
           ? { data: [] as SearchLogRow[] }
