@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { DefaultChatTransport, UIMessage } from "ai";
 import { useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { getScratchpad, setScratchpad as saveScratchpad } from "@/lib/workspace.functions";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
@@ -12,7 +14,7 @@ import type { PinDraft } from "@/components/workspace/PinDialog";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { getJuriCredits } from "@/lib/juri.functions";
 import { CREDIT_PACKS, centsPerCredit, type CreditPack } from "@/lib/juri-credits";
-import { Square, FileSignature, CornerDownLeft, Coins, Check, X } from "lucide-react";
+import { Square, FileSignature, CornerDownLeft, Coins, Check, X, NotebookPen, ChevronDown, ChevronUp, Search, FileText, Pin, Network, History as HistoryIcon, Sparkles, BookOpen } from "lucide-react";
 import { Panel, Surface } from "./Panel";
 
 type Mode = "research" | "draft";
