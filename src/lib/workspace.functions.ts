@@ -163,6 +163,35 @@ export const getSessionDraft = createServerFn({ method: "GET" })
     return row;
   });
 
+// The model's rolling scratchpad — surfaced to the user so they can read and
+// edit what the assistant is carrying forward as long-term memory.
+export const getScratchpad = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ThreadIdInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("workspace_threads")
+      .select("scratchpad")
+      .eq("id", data.threadId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { scratchpad: (row as { scratchpad?: string | null } | null)?.scratchpad ?? "" };
+  });
+
+export const setScratchpad = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ threadId: z.string().uuid(), content: z.string().max(8000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("workspace_threads")
+      .update({ scratchpad: data.content })
+      .eq("id", data.threadId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const upsertSessionDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
