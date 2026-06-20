@@ -147,6 +147,66 @@ export function ModelContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
+  // ── Activity strip: the last tool the assistant ran this session. Keeps the
+  // user aware of what context the model is operating on without forcing them
+  // to crack open every collapsed tool card.
+  const lastActivity = useMemo(() => {
+    for (let mi = messages.length - 1; mi >= 0; mi--) {
+      const m = messages[mi];
+      if (m.role !== "assistant") continue;
+      for (let pi = m.parts.length - 1; pi >= 0; pi--) {
+        const p = m.parts[pi] as { type?: string; state?: string; input?: unknown; output?: unknown };
+        if (!p.type?.startsWith("tool-")) continue;
+        const name = p.type.replace(/^tool-/, "");
+        const input = (p.input ?? {}) as Record<string, unknown>;
+        const output = (p.output ?? {}) as Record<string, unknown>;
+        return { name, state: p.state ?? "input-available", input, output };
+      }
+    }
+    return null;
+  }, [messages]);
+
+  // ── Scratchpad surfacing: read the model's rolling memory, let the user edit
+  // or wipe it. Refetch on mount + every time a turn lands so they see what it
+  // wrote down. Saving is debounced via an explicit button to avoid stomping
+  // mid-turn writes from the model.
+  const loadPad = useServerFn(getScratchpad);
+  const savePad = useServerFn(saveScratchpad);
+  const [padOpen, setPadOpen] = useState(false);
+  const [pad, setPad] = useState<string>("");
+  const [padDirty, setPadDirty] = useState(false);
+  const [padSaving, setPadSaving] = useState(false);
+  const padFetched = useRef(false);
+  const refreshPad = () => {
+    void loadPad({ data: { threadId } })
+      .then((r) => {
+        const next = (r as { scratchpad?: string }).scratchpad ?? "";
+        // Don't clobber unsaved edits the user is typing.
+        if (!padDirty) setPad(next);
+      })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    if (padFetched.current) return;
+    padFetched.current = true;
+    refreshPad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId]);
+  useEffect(() => {
+    if (prevStatus.current !== "ready" && status === "ready") refreshPad();
+    // prevStatus is also updated in the credits effect above
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+  const savePadNow = async () => {
+    setPadSaving(true);
+    try {
+      await savePad({ data: { threadId, content: pad } });
+      setPadDirty(false);
+    } finally {
+      setPadSaving(false);
+    }
+  };
+
   return (
     <Panel
       label={mode === "draft" ? "Assistant · Drafting" : "Assistant"}
