@@ -275,8 +275,11 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01", "cv11", "kern", "calt";
+    font-weight: 450;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     /* Global zoom-out via CSS `zoom` (NOT transform). transform on <body>
        makes it the containing block for position:fixed, which detaches Juri
