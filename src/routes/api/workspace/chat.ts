@@ -304,10 +304,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
               .order("created_at", { ascending: true })
               .limit(60);
         const searchLogContext = buildSearchLogContext(searchLogRows ?? []);
-<<<<<<< HEAD
 
-=======
->>>>>>> f4f8c5cc093f289916a8091caf08700cac22bc8f
         // Scratchpad: the model's own rolling working memory for this session.
         // It's our token-budget governor — the only state that persists across
         // turns once we trim old messages, so context stays roughly one size.
