@@ -96,8 +96,11 @@
   --paper-deep: oklch(0.93 0.014 78);   /* aged page edge */
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
   --paper-tint: oklch(0.945 0.014 80);  /* between paper and paper-deep — sidebars / chip backgrounds */
-  --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
-  --ink-muted: oklch(0.30 0.015 75);    /* WCAG AA body muted on cream (~7:1) */
+  /* Crisper, denser type pass: deepen ink and muted tiers so every label,
+     caption, and helper line clears WCAG AAA on cream without redesigning
+     each component. */
+  --ink: oklch(0.14 0.008 70);          /* #131210 warm near-black, denser */
+  --ink-muted: oklch(0.26 0.015 75);    /* body muted, ~8.5:1 on cream */
   --rule-card: oklch(0.66 0.022 75);    /* visible edge for bright-white "ink-on-paper" cards */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
@@ -155,9 +158,9 @@
      Additive: nothing here redefines an existing var, so the live palette is
      unchanged. These feed the ported prototype component classes. ===== */
   /* Finer ink shades (current only had --ink-muted) */
-  --ink-2: oklch(0.260 0.010 70);   /* strong secondary */
-  --ink-3: oklch(0.340 0.014 75);   /* muted body */
-  --ink-4: oklch(0.40 0.015 75);    /* caption — clears 4.5:1 on cream */
+  --ink-2: oklch(0.220 0.010 70);   /* strong secondary */
+  --ink-3: oklch(0.300 0.014 75);   /* muted body — clears 7:1 */
+  --ink-4: oklch(0.36 0.015 75);    /* caption — clears ~5.5:1 on cream */
   --ink-card: var(--paper-soft);    /* alias used by prototype card classes */
   /* Accent variants */
   --terracotta-2: oklch(0.560 0.140 32);
@@ -204,8 +207,8 @@
   --paper-deep: oklch(0.14 0.006 70);
   --paper-soft: oklch(0.22 0.006 70);    /* #252320 card */
   --paper-tint: oklch(0.20 0.006 70);
-  --ink: oklch(0.90 0.014 80);           /* #E8E2D4 cream */
-  --ink-muted: oklch(0.72 0.013 75);     /* brighter muted text on warm charcoal */
+  --ink: oklch(0.94 0.014 80);           /* brighter cream — denser on charcoal */
+  --ink-muted: oklch(0.80 0.013 75);     /* lifted muted, clears ~7:1 */
   --rule-card: oklch(0.32 0.008 70);     /* lighter line for dark cards */
   --sage: oklch(0.66 0.08 165);
   --sage-deep: oklch(0.55 0.08 165);
@@ -253,9 +256,9 @@
 
   /* ===== v2 prototype tokens (dark). Only the absolute-valued vars need an
      override; --ink-card / --bg-* / --fg-* are var()-aliases that auto-flip. ===== */
-  --ink-2: oklch(0.82 0.014 80);
-  --ink-3: oklch(0.72 0.013 75);
-  --ink-4: oklch(0.58 0.012 75);
+  --ink-2: oklch(0.88 0.014 80);
+  --ink-3: oklch(0.80 0.013 75);
+  --ink-4: oklch(0.68 0.012 75);
   --terracotta-2: oklch(0.72 0.12 38);
   --ochre-wash: oklch(0.74 0.12 80 / 0.4);
   --border-strong: oklch(0.40 0.010 70);
@@ -272,8 +275,11 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01", "cv11", "kern", "calt";
+    font-weight: 450;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     /* Global zoom-out via CSS `zoom` (NOT transform). transform on <body>
        makes it the containing block for position:fixed, which detaches Juri
