@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Home } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,26 +36,31 @@ function WorkspaceLayout() {
       className="flex h-screen w-full overflow-hidden"
       style={{ height: "calc(100vh / var(--site-zoom))", background: "var(--paper, #f7f3ea)" }}
     >
+<<<<<<< HEAD
       <main className="min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full min-h-0 flex-col">
           {/* Top strip: a flush Home exit on the left, the not-legal-advice bar filling the rest. */}
           <div className="flex shrink-0 items-stretch">
+=======
+      <main className="flex-1 overflow-hidden">
+        <div className="flex h-full flex-col">
+          <div className="flex shrink-0 items-stretch" style={{ background: "var(--navy-deep, #0c1b3d)" }}>
+>>>>>>> f4f8c5cc093f289916a8091caf08700cac22bc8f
             <Link
               to="/"
-              title="Back to Marginalia home"
-              className="flex items-center gap-1.5 border-b border-r px-3 text-[12px] font-semibold uppercase tracking-[0.18em] transition-colors hover:bg-black/[0.04]"
+              aria-label="Back to home"
+              className="group flex shrink-0 items-center gap-2 px-4 text-[13px] font-bold uppercase tracking-[0.18em] transition-colors"
               style={{
-                borderColor: "rgba(180,60,40,0.3)",
-                background: "rgba(200,80,55,0.08)",
-                color: "rgba(80,30,20,0.95)",
+                background: "#c8a24b",
+                color: "#0c1b3d",
                 fontFamily: "var(--font-mono, 'Special Elite')",
+                boxShadow: "inset -1px 0 0 rgba(0,0,0,0.25)",
               }}
             >
-              <Home className="h-3.5 w-3.5" /> Home
+              <Home className="h-4 w-4" />
+              Home
             </Link>
-            <div className="flex-1">
-              <LegalDisclaimer variant="bar" />
-            </div>
+            <LegalDisclaimer variant="bar" className="flex-1 border-b-0" />
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
             <Outlet />

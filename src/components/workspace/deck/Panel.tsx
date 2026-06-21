@@ -54,7 +54,7 @@ export function Panel({
           style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
         />
         <span
-          className="text-[12px] font-semibold tracking-[0.28em] uppercase"
+          className="text-[13.5px] font-semibold tracking-[0.28em] uppercase"
           style={{ color: accent, fontFamily: "var(--font-mono, 'Special Elite')" }}
         >
           {label}
