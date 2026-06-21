@@ -55,7 +55,7 @@ export function RefinedIssues({
       footer={
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-[0.18em] uppercase"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold tracking-[0.18em] uppercase"
             style={{ background: "rgba(207,75,75,0.18)", color: "#ff9b9b", fontFamily: "var(--font-mono, 'Special Elite')" }}
           >
             Issues
@@ -63,7 +63,7 @@ export function RefinedIssues({
           <button
             type="button"
             onClick={onAddQuestion}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(200,162,75,0.15)]"
             style={{ color: "rgba(230,236,247,0.7)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}
           >
             <Plus className="h-3 w-3" /> Question
@@ -73,7 +73,7 @@ export function RefinedIssues({
             onClick={pressureTest}
             disabled={supportCount === 0}
             title={supportCount === 0 ? "Pin a supporting authority first" : "Have the assistant attack your supporting authorities"}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(207,75,75,0.18)] disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold tracking-wider uppercase transition-colors hover:bg-[rgba(207,75,75,0.18)] disabled:opacity-40"
             style={{ color: "#ff9b9b", boxShadow: "inset 0 0 0 1px rgba(207,75,75,0.4)" }}
           >
             <FlaskConical className="h-3 w-3" /> Pressure-test
@@ -103,14 +103,14 @@ export function RefinedIssues({
             <div key={b.key}>
               <div className="mb-1 flex items-center gap-1.5 px-0.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: b.color, boxShadow: `0 0 8px ${b.color}` }} />
-                <span className="text-[12px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
+                <span className="text-[13px] font-semibold tracking-[0.24em] uppercase" style={{ color: b.color, fontFamily: "var(--font-mono, 'Special Elite')" }}>
                   {b.label}
                 </span>
-                <span className="text-[12px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
+                <span className="text-[12.5px]" style={{ color: "rgba(230,236,247,0.4)" }}>{rows.length}</span>
               </div>
               {rows.length === 0 ? (
                 <div
-                  className="rounded-md px-2 py-2.5 text-center text-[14px]"
+                  className="rounded-md px-2 py-2.5 text-center text-[13px]"
                   style={{ background: b.tint, color: "rgba(230,236,247,0.45)", boxShadow: `inset 0 0 0 1px ${b.color}33` }}
                 >
                   Grab authority from the sources to file it here.
@@ -130,7 +130,7 @@ export function RefinedIssues({
           <div>
             <div className="mb-1 flex items-center gap-1.5 px-3">
               <HelpCircle className="h-3 w-3" style={{ color: "#9fb3d8" }} />
-              <span className="text-[15px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+              <span className="text-[13px] font-semibold tracking-[0.24em] uppercase" style={{ color: "#9fb3d8", fontFamily: "var(--font-mono, 'Special Elite')" }}>
                 Open questions
               </span>
             </div>
@@ -141,7 +141,7 @@ export function RefinedIssues({
                   className="group flex items-start gap-1.5 rounded-md px-2 py-1.5"
                   style={{ background: "rgba(159,179,216,0.10)", boxShadow: "inset 0 0 0 1px rgba(159,179,216,0.2)" }}
                 >
-                  <span className="flex-1 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
+                  <span className="flex-1 text-[13px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
                   <button type="button" onClick={() => onDelete(q)} className="opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100" aria-label="Delete">
                     <Trash2 className="h-3 w-3" style={{ color: "#ffb4b4" }} />
                   </button>
@@ -176,12 +176,12 @@ function IssueCard({
     >
       <div className="flex items-start gap-1.5">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[12px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
+          <div className="truncate text-[13px] font-semibold" style={{ color: "#eef3fb", fontFamily: "var(--font-serif, 'Cinzel')" }}>
             {cite}
           </div>
-          {item.heading && <div className="truncate text-[14px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
+          {item.heading && <div className="truncate text-[12.5px]" style={{ color: "rgba(230,236,247,0.55)" }}>{item.heading}</div>}
           {item.quote && (
-            <p className="mt-0.5 line-clamp-2 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
+            <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug" style={{ color: "rgba(230,236,247,0.65)" }}>
               “{item.quote}”{item.pin_cite ? ` ${item.pin_cite}` : ""}
             </p>
           )}

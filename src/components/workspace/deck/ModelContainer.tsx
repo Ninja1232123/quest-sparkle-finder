@@ -236,36 +236,31 @@ export function ModelContainer({
       }
       footer={
         <PromptInput
-          // The InputGroup primitive only auto-grows when a <textarea> is its
-          // DIRECT child; our white wrapper div hides it, so the group stays
-          // locked at h-9 and clips the typed text above the visible strip.
-          // Override the height/overflow for this wrapped layout so the box grows
-          // with the textarea and the input stays inside it.
-          className="[&_[data-slot=input-group]]:h-auto [&_[data-slot=input-group]]:items-stretch [&_[data-slot=input-group]]:overflow-visible [&_[data-slot=input-group]]:border-0 [&_[data-slot=input-group]]:p-0"
+          className="overflow-hidden rounded-lg [&>[data-slot=input-group]]:!rounded-lg [&>[data-slot=input-group]]:!border-0 [&>[data-slot=input-group]]:!bg-white"
+          style={{ boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}
           onSubmit={async (msg) => {
             const text = msg.text?.trim();
             if (text) await send(text);
           }}
         >
-          <div className="w-full rounded-lg" style={{ background: "#fff", boxShadow: `inset 0 0 0 1.5px ${mode === "draft" ? "rgba(123,182,81,0.55)" : "rgba(200,162,75,0.4)"}` }}>
-            <PromptInputTextarea
-              className="min-h-12 text-[14px] leading-relaxed text-[#0c1b3d] caret-[#0c1b3d] placeholder:text-[#0c1b3d]/40"
-              placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"}
-            />
-            <PromptInputFooter className="justify-end px-2 pb-1.5">
-              {isLoading && (
-                <button
-                  type="button"
-                  onClick={() => stop()}
-                  className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] hover:bg-foreground/5"
-                  style={{ borderColor: "var(--rule-card)" }}
-                >
-                  <Square className="h-3 w-3 fill-current" /> Stop
-                </button>
-              )}
-              <PromptInputSubmit status={status} disabled={isLoading} />
-            </PromptInputFooter>
-          </div>
+          <PromptInputTextarea
+            className="min-h-[46px] bg-transparent text-[14px] leading-relaxed placeholder:text-[rgba(12,27,61,0.45)]"
+            style={{ color: "var(--ink, #0c1b3d)" }}
+            placeholder={mode === "draft" ? "Tell me what section to draft — I'll build it only from your pins…" : "Ask the assistant — it proposes, you decide…"}
+          />
+          <PromptInputFooter className="justify-end px-2 pb-1.5">
+            {isLoading && (
+              <button
+                type="button"
+                onClick={() => stop()}
+                className="mr-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[13px] hover:bg-foreground/5"
+                style={{ borderColor: "var(--rule-card)", color: "var(--ink, #0c1b3d)" }}
+              >
+                <Square className="h-3.5 w-3.5 fill-current" /> Stop
+              </button>
+            )}
+            <PromptInputSubmit status={status} disabled={isLoading} />
+          </PromptInputFooter>
         </PromptInput>
       }
     >
@@ -289,10 +284,10 @@ export function ModelContainer({
                 <div className="mb-1 text-[12px] tracking-[0.3em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   Research assistant
                 </div>
-                <p className="mb-1 text-[15px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
+                <p className="mb-1 text-[17px] font-semibold leading-snug" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
                   It proposes.<br />You decide.
                 </p>
-                <p className="mb-4 text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+                <p className="mb-4 text-[13px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                   Ask it to find authority, flag what cuts against you, or pull the case that controls. Nothing touches your draft without a tap.
                 </p>
                 <IntakeForm disabled={isLoading} onSubmit={(text) => void send(text, "research")} />
@@ -306,7 +301,7 @@ export function ModelContainer({
                       type="button"
                       disabled={isLoading}
                       onClick={() => void send(p.text, "research")}
-                      className="w-full rounded-lg border px-3 py-2 text-left text-[12px] font-medium transition-all hover:-translate-y-px hover:shadow-sm disabled:opacity-50"
+                      className="w-full rounded-lg border px-3 py-2 text-left text-[14px] font-medium transition-all hover:-translate-y-px hover:shadow-sm disabled:opacity-50"
                       style={{ borderColor: "var(--rule-card)", background: "var(--paper)", color: "var(--ink)", fontFamily: "var(--font-serif)" }}
                     >
                       {p.label}
@@ -531,7 +526,7 @@ function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text
     );
   };
 
-  const field = "w-full rounded-md px-2 py-1.5 text-[12px] outline-none";
+  const field = "w-full rounded-md px-2 py-1.5 text-[14px] outline-none";
   const fieldStyle = { background: "var(--paper)", color: "var(--ink)", boxShadow: "inset 0 0 0 1px var(--rule-card)" } as const;
   const labelCls = "mb-0.5 block text-[12px] font-semibold tracking-[0.12em] uppercase";
   const labelStyle = { color: "var(--ink-muted)", fontFamily: "var(--font-mono)" } as const;
@@ -539,14 +534,14 @@ function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text
   return (
     <div className="mb-4 rounded-xl border p-3" style={{ borderColor: "var(--rule-card)", background: "color-mix(in oklab, var(--paper) 70%, transparent)" }}>
       <button type="button" onClick={() => setOpen((v) => !v)} className="mb-1 flex w-full items-center justify-between text-left">
-        <span className="text-[12px] font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
+        <span className="text-[14px] font-semibold" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
           Start with the basics →
         </span>
         <span className="text-[12px]" style={{ color: "var(--ink-muted)" }}>{open ? "hide" : "show"}</span>
       </button>
       {open && (
         <div className="space-y-2">
-          <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+          <p className="text-[13px] leading-relaxed" style={{ color: "var(--ink-muted)" }}>
             Five quick fields and I'll run a real opening sweep — no back-and-forth. Only the one-sentence summary is required.
           </p>
           <div>
@@ -580,7 +575,7 @@ function IntakeForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (text
             type="button"
             onClick={submit}
             disabled={!ready || disabled}
-            className="w-full rounded-lg py-2 text-[12px] font-bold tracking-wide transition-transform hover:-translate-y-px disabled:opacity-50"
+            className="w-full rounded-lg py-2 text-[14px] font-bold tracking-wide transition-transform hover:-translate-y-px disabled:opacity-50"
             style={{ background: "var(--ink)", color: "var(--paper)", fontFamily: "var(--font-serif)" }}
           >
             Run my opening sweep →

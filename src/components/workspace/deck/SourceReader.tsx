@@ -198,7 +198,7 @@ export function SourceReader({
       </form>
 
       {err && (
-        <div className="mx-2.5 mb-2 rounded-md px-2 py-1 text-[12px]" style={{ background: "rgba(207,75,75,0.15)", color: "#ffd9d9" }}>
+        <div className="mx-2.5 mb-2 rounded-md px-2 py-1 text-[13px]" style={{ background: "rgba(207,75,75,0.15)", color: "#ffd9d9" }}>
           {err}
         </div>
       )}
@@ -236,22 +236,11 @@ export function SourceReader({
 function Pane({ title, accent, children, assistantTag }: { title: string; accent: string; children: React.ReactNode; assistantTag?: boolean }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-col">
-      <div className="mb-1 flex items-center justify-between px-1">
-        <span
-          className="text-[12px] font-semibold tracking-[0.26em] uppercase"
-          style={{ color: accent, fontFamily: "var(--font-mono, 'Special Elite')" }}
-        >
-          {title}
-        </span>
-        {assistantTag && (
-          <span
-            className="rounded px-1.5 py-0.5 text-[12px] font-semibold tracking-wider uppercase"
-            style={{ background: "rgba(123,182,81,0.22)", color: "#cfe3bf", fontFamily: "var(--font-mono, 'Special Elite')" }}
-            title="The assistant searched this for you — these are the rows it just looked at"
-          >
-            ↑ from assistant
-          </span>
-        )}
+      <div
+        className="mb-1 px-1 text-[12.5px] font-semibold tracking-[0.26em] uppercase"
+        style={{ color: accent, fontFamily: "var(--font-mono, 'Special Elite')" }}
+      >
+        {title}
       </div>
       <Surface className="flex-1 p-1.5">{children}</Surface>
     </div>
@@ -279,10 +268,10 @@ function ResultList({
     );
   }
   if (empty) {
-    return <div className="px-2 py-6 text-center text-[12px]" style={{ color: "rgba(12,27,61,0.5)" }}>No hits. Try fewer words.</div>;
+    return <div className="px-2 py-6 text-center text-[13px]" style={{ color: "rgba(12,27,61,0.5)" }}>No hits. Try fewer words.</div>;
   }
   if (!children || (Array.isArray(children) && children.length === 0)) {
-    return <div className="px-2 py-6 text-center text-[12px]" style={{ color: "rgba(12,27,61,0.45)" }}>{placeholder}</div>;
+    return <div className="px-2 py-6 text-center text-[13px]" style={{ color: "rgba(12,27,61,0.45)" }}>{placeholder}</div>;
   }
   return <div className="space-y-1.5">{children}</div>;
 }
@@ -334,7 +323,7 @@ function Row({
   onDraft: () => void;
 }) {
   return (
-    <div className="group rounded-md p-2 transition-colors hover:bg-[rgba(200,162,75,0.08)]" style={{ boxShadow: "inset 0 0 0 1px rgba(12,27,61,0.08)" }}>
+    <div className="group rounded-md p-2 transition-colors hover:bg-[rgba(200,162,75,0.08)]" style={{ background: "rgba(12,27,61,0.015)", boxShadow: "inset 0 0 0 1px rgba(12,27,61,0.16)" }}>
       <div className="mb-0.5 flex items-center gap-1.5">
         <span
           className="rounded px-1 py-0.5 text-[12px] font-semibold tracking-wider"
@@ -342,20 +331,20 @@ function Row({
         >
           {chip}
         </span>
-        {sub && <span className="truncate text-[12px]" style={{ color: "rgba(12,27,61,0.6)" }}>{sub}</span>}
+        {sub && <span className="truncate text-[13.5px]" style={{ color: "rgba(12,27,61,0.6)" }}>{sub}</span>}
       </div>
       <button
         type="button"
         onClick={onOpen}
         title="Open in reader — the assistant reads it with you"
-        className="block w-full text-left text-[12px] font-medium leading-snug hover:underline"
+        className="block w-full text-left text-[14px] font-medium leading-snug hover:underline"
         style={{ color: "var(--ink)", fontFamily: "var(--font-serif, 'Cinzel')" }}
       >
         {title}
       </button>
-      {body ? <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug" style={{ color: "rgba(12,27,61,0.65)" }}>{body}</p> : null}
+      {body ? <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug" style={{ color: "rgba(12,27,61,0.65)" }}>{body}</p> : null}
       <div className="mt-1.5 flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
-        <span className="mr-0.5 text-[12px] tracking-widest" style={{ color: "rgba(12,27,61,0.4)" }}>GRAB →</span>
+        <span className="mr-0.5 text-[11.5px] tracking-widest" style={{ color: "rgba(12,27,61,0.4)" }}>GRAB →</span>
         {STANCES.map((s) => (
           <button
             key={s.stance ?? "n"}
@@ -370,7 +359,7 @@ function Row({
           type="button"
           title="Open in reader"
           onClick={onOpen}
-          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[12px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
+          className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[12.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
           style={{ color: "rgba(12,27,61,0.7)" }}
         >
           <BookOpen className="h-3 w-3" /> READ
@@ -379,7 +368,7 @@ function Row({
           type="button"
           title="Insert into draft"
           onClick={onDraft}
-          className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[12px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
+          className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[12.5px] font-semibold tracking-wider transition-colors hover:bg-[rgba(12,27,61,0.08)]"
           style={{ color: "rgba(12,27,61,0.7)" }}
         >
           <FileText className="h-3 w-3" /> DRAFT
@@ -403,7 +392,7 @@ function SelectorRow({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 text-[12px] tracking-[0.18em] uppercase" style={{ color: "rgba(230,236,247,0.7)", fontFamily: "var(--font-mono, 'Special Elite')" }}>
+      <span className="w-16 shrink-0 text-[12.5px] tracking-[0.18em] uppercase" style={{ color: "rgba(230,236,247,0.7)", fontFamily: "var(--font-mono, 'Special Elite')" }}>
         {label}
       </span>
       <div className="flex rounded-md p-0.5" style={{ background: "rgba(0,0,0,0.25)", boxShadow: "inset 0 0 0 1px rgba(200,162,75,0.25)" }}>
@@ -412,7 +401,7 @@ function SelectorRow({
             key={s}
             type="button"
             onClick={() => onScope(s)}
-            className="rounded px-2 py-0.5 text-[12px] font-semibold tracking-wider uppercase transition-colors"
+            className="rounded px-2 py-0.5 text-[13px] font-semibold tracking-wider uppercase transition-colors"
             style={{
               fontFamily: "var(--font-mono, 'Special Elite')",
               background: scope === s ? "#c8a24b" : "transparent",
@@ -433,7 +422,7 @@ function Toggle({ active, color, onClick, children }: { active: boolean; color: 
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md px-2 py-1 text-[12px] font-semibold tracking-wider uppercase transition-colors"
+      className="rounded-md px-2 py-1 text-[13px] font-semibold tracking-wider uppercase transition-colors"
       style={{
         fontFamily: "var(--font-mono, 'Special Elite')",
         background: active ? color : "transparent",
