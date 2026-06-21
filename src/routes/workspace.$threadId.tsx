@@ -13,13 +13,16 @@ import { EditorCanvas, type EditorCanvasHandle } from "@/components/workspace/Ed
 import { type CaseItem } from "@/components/workspace/CaseBoard";
 import { PinDialog, type PinDraft } from "@/components/workspace/PinDialog";
 import { CiteCheckSheet, type CiteCheckResult } from "@/components/workspace/CiteCheckSheet";
-import { Panel } from "@/components/workspace/deck/Panel";
+import { Panel, NAVY_DEEP, BRASS } from "@/components/workspace/deck/Panel";
 import { SourceReader } from "@/components/workspace/deck/SourceReader";
 import { RefinedIssues } from "@/components/workspace/deck/RefinedIssues";
 import { ModelContainer } from "@/components/workspace/deck/ModelContainer";
 import { DocViewer } from "@/components/workspace/deck/DocViewer";
 import { SessionMenu } from "@/components/workspace/deck/SessionMenu";
-import { X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { X, BookOpen, ListChecks, MessageSquare } from "lucide-react";
+
+type MobileTab = "sources" | "board" | "assistant";
 
 export const Route = createFileRoute("/workspace/$threadId")({
   component: WorkspaceThreadPage,
@@ -127,6 +130,11 @@ function Desk({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [docOpen, setDocOpen] = useState(false);
 
+  // Below the desktop breakpoint the three columns collapse into one full-screen
+  // pane switched by a bottom tab bar — there's no room to show them side by side.
+  const isMobile = useIsMobile();
+  const [mobileTab, setMobileTab] = useState<MobileTab>("assistant");
+
   // Shared document focus — the reader the user opens over the Sources column.
   const getDoc = useServerFn(getCorpusDocument);
   const [focusDoc, setFocusDoc] = useState<CorpusDoc | null>(null);
@@ -135,6 +143,7 @@ function Desk({
   const handleOpenDoc = useCallback(async (ref: string) => {
     setFocusOpen(true);
     setFocusLoading(true);
+    setMobileTab("sources"); // jump to the reader so the open doc is actually visible
     focusRef.current = { ref }; // model picks this up on the next message
     try {
       setFocusDoc((await getDoc({ data: { ref } })) as CorpusDoc);
@@ -250,6 +259,7 @@ function Desk({
 
   const handleAddToDraft = useCallback((markdown: string) => {
     setDocOpen(true);
+    setMobileTab("board");
     editorRef.current?.insertAtCursor(markdown);
   }, []);
 
@@ -263,6 +273,7 @@ function Desk({
       const kind: PendingEdit["kind"] = d.kind === "replace" ? "replace" : "insert";
       setPendingEdits((cur) => (cur.some((p) => p.id === d.id) ? cur : [...cur, { ...d, kind }]));
       setDocOpen(true);
+      setMobileTab("board");
     };
     window.addEventListener("workspace:propose-edit", onPropose);
     return () => window.removeEventListener("workspace:propose-edit", onPropose);
@@ -393,92 +404,89 @@ function Desk({
     setVersionsOpen(false);
   }, [body, snap, threadId, title]);
 
-  return (
-    <div
-      className="flex h-full min-h-0 w-full gap-3 p-3"
-      style={{
-        background: "var(--navy-deep, #0c1b3d)",
-        backgroundImage: "radial-gradient(1200px 600px at 25% -15%, rgba(200,162,75,0.07), transparent)",
-      }}
-    >
-      {/* Sources — split statute / case law, with the reader overlaying it when a doc is open */}
-      <div className="relative flex min-w-0 flex-[1.7]">
-        <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} onOpenDoc={handleOpenDoc} />
-        {focusOpen && (
-          <div className="absolute inset-0 flex">
-            <DocViewer doc={focusDoc} loading={focusLoading} onClose={handleCloseDoc} />
-          </div>
-        )}
-      </div>
-
-      {/* Refined issues, with the Doc Creator overlaying this column when open */}
-      <div className="relative flex min-w-0 flex-[1.4]">
-        <RefinedIssues
-          items={caseItems}
-          docOpen={docOpen}
-          onToggleDoc={() => setDocOpen((v) => !v)}
-          onInsert={handleInsertItem}
-          onDelete={handleDeleteItem}
-          onAddQuestion={handleAddQuestionPrompt}
-        />
-        {/* Always mounted (keeps autosave + editor ref); revealed over the column when open. */}
-        <div
-          className={`absolute inset-0 flex ${docOpen ? "" : "pointer-events-none opacity-0"}`}
-          style={{ transition: "opacity 140ms ease" }}
-        >
-          <Panel
-            label="Doc Creator"
-            accent="#7bb651"
-            className="w-full"
-            bodyClassName="flex bg-white"
-            headerRight={
-              <button
-                type="button"
-                onClick={() => setDocOpen(false)}
-                className="grid h-6 w-6 place-items-center rounded hover:bg-white/10"
-                style={{ color: "#cfe3bf" }}
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            }
-          >
-            <EditorCanvas
-              ref={editorRef}
-              initialTitle={initialDraft.title}
-              initialBody={initialDraft.body}
-              saveState={saveState}
-              lastSavedAt={savedAt}
-              supportCount={caseItems.filter((i) => i.kind === "authority" && i.stance !== "adverse").length}
-              questionCount={caseItems.filter((i) => i.kind === "question").length}
-              onChangeTitle={setTitle}
-              onChangeBody={setBody}
-              onOpenResearch={() => setDocOpen(false)}
-              onCiteCheck={handleCiteCheck}
-              onOpenVersions={handleOpenVersions}
-              pendingEdits={pendingEdits}
-              onAcceptEdit={acceptEdit}
-              onRevertEdit={revertEdit}
-              onEditPendingMarkdown={updatePendingMarkdown}
-            />
-          </Panel>
+  // Sources — split statute / case law, with the reader overlaying it when a doc is open.
+  const sourcesColumn = (
+    <>
+      <SourceReader onAddIssue={handleQuickAddIssue} onAddToDraft={handleAddToDraft} onOpenDoc={handleOpenDoc} />
+      {focusOpen && (
+        <div className="absolute inset-0 flex">
+          <DocViewer doc={focusDoc} loading={focusLoading} onClose={handleCloseDoc} />
         </div>
-      </div>
+      )}
+    </>
+  );
 
-      {/* Assistant */}
-      <div className="flex min-w-0 flex-1">
-        <ModelContainer
-          threadId={threadId}
-          transport={transport}
-          initialMessages={initialMessages}
-          seedPrompt={seedPrompt}
-          onPin={handleOpenPin}
-          onAddQuestion={handleAddQuestion}
-          onAddToDraft={handleAddToDraft}
-          headerRight={<SessionMenu currentId={threadId} />}
-        />
+  // Refined issues, with the Doc Creator overlaying this column when open.
+  const boardColumn = (
+    <>
+      <RefinedIssues
+        items={caseItems}
+        docOpen={docOpen}
+        onToggleDoc={() => setDocOpen((v) => !v)}
+        onInsert={handleInsertItem}
+        onDelete={handleDeleteItem}
+        onAddQuestion={handleAddQuestionPrompt}
+      />
+      {/* Always mounted (keeps autosave + editor ref); revealed over the column when open. */}
+      <div
+        className={`absolute inset-0 flex ${docOpen ? "" : "pointer-events-none opacity-0"}`}
+        style={{ transition: "opacity 140ms ease" }}
+      >
+        <Panel
+          label="Doc Creator"
+          accent="#7bb651"
+          className="w-full"
+          bodyClassName="flex bg-white"
+          headerRight={
+            <button
+              type="button"
+              onClick={() => setDocOpen(false)}
+              className="grid h-6 w-6 place-items-center rounded hover:bg-white/10"
+              style={{ color: "#cfe3bf" }}
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          }
+        >
+          <EditorCanvas
+            ref={editorRef}
+            initialTitle={initialDraft.title}
+            initialBody={initialDraft.body}
+            saveState={saveState}
+            lastSavedAt={savedAt}
+            supportCount={caseItems.filter((i) => i.kind === "authority" && i.stance !== "adverse").length}
+            questionCount={caseItems.filter((i) => i.kind === "question").length}
+            onChangeTitle={setTitle}
+            onChangeBody={setBody}
+            onOpenResearch={() => setDocOpen(false)}
+            onCiteCheck={handleCiteCheck}
+            onOpenVersions={handleOpenVersions}
+            pendingEdits={pendingEdits}
+            onAcceptEdit={acceptEdit}
+            onRevertEdit={revertEdit}
+            onEditPendingMarkdown={updatePendingMarkdown}
+          />
+        </Panel>
       </div>
+    </>
+  );
 
+  const assistantColumn = (
+    <ModelContainer
+      threadId={threadId}
+      transport={transport}
+      initialMessages={initialMessages}
+      seedPrompt={seedPrompt}
+      onPin={handleOpenPin}
+      onAddQuestion={handleAddQuestion}
+      onAddToDraft={handleAddToDraft}
+      headerRight={<SessionMenu currentId={threadId} />}
+    />
+  );
+
+  const modals = (
+    <>
       <PinDialog
         open={pinDraft !== null}
         draft={pinDraft}
@@ -507,6 +515,104 @@ function Desk({
           onRestore={handleRestoreVersion}
         />
       )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div
+        className="flex h-full min-h-0 w-full flex-col"
+        style={{
+          background: "var(--navy-deep, #0c1b3d)",
+          backgroundImage: "radial-gradient(1200px 600px at 25% -15%, rgba(200,162,75,0.07), transparent)",
+        }}
+      >
+        <div className="relative min-h-0 flex-1">
+          <div className={`absolute inset-0 flex p-2 ${mobileTab === "sources" ? "" : "invisible pointer-events-none"}`}>
+            {sourcesColumn}
+          </div>
+          <div className={`absolute inset-0 flex p-2 ${mobileTab === "board" ? "" : "invisible pointer-events-none"}`}>
+            {boardColumn}
+          </div>
+          <div className={`absolute inset-0 flex p-2 ${mobileTab === "assistant" ? "" : "invisible pointer-events-none"}`}>
+            {assistantColumn}
+          </div>
+        </div>
+        <MobileTabBar
+          tab={mobileTab}
+          onChange={setMobileTab}
+          boardCount={caseItems.length}
+        />
+        {modals}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex h-full min-h-0 w-full gap-3 p-3"
+      style={{
+        background: "var(--navy-deep, #0c1b3d)",
+        backgroundImage: "radial-gradient(1200px 600px at 25% -15%, rgba(200,162,75,0.07), transparent)",
+      }}
+    >
+      <div className="relative flex min-w-0 flex-[1.7]">{sourcesColumn}</div>
+      <div className="relative flex min-w-0 flex-[1.4]">{boardColumn}</div>
+      <div className="flex min-w-0 flex-1">{assistantColumn}</div>
+      {modals}
+    </div>
+  );
+}
+
+function MobileTabBar({
+  tab,
+  onChange,
+  boardCount,
+}: {
+  tab: MobileTab;
+  onChange: (t: MobileTab) => void;
+  boardCount: number;
+}) {
+  const items: { key: MobileTab; label: string; icon: typeof BookOpen; count?: number }[] = [
+    { key: "sources", label: "Sources", icon: BookOpen },
+    { key: "board", label: "Board", icon: ListChecks, count: boardCount },
+    { key: "assistant", label: "Assistant", icon: MessageSquare },
+  ];
+  return (
+    <div
+      className="flex shrink-0"
+      style={{
+        background: NAVY_DEEP,
+        borderTop: `1px solid ${BRASS}4a`,
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      {items.map(({ key, label, icon: Icon, count }) => {
+        const active = tab === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className="relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold tracking-[0.12em] uppercase transition-colors"
+            style={{
+              color: active ? "#c8a24b" : "rgba(230,236,247,0.55)",
+              fontFamily: "var(--font-mono, 'Special Elite')",
+            }}
+          >
+            <Icon className="h-5 w-5" />
+            {label}
+            {!!count && (
+              <span
+                className="absolute right-[18%] top-1 grid h-4 min-w-4 place-items-center rounded-full px-0.5 text-[10px] font-bold"
+                style={{ background: "#cf4b4b", color: "#fff" }}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

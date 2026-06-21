@@ -142,7 +142,7 @@ export function RefinedIssues({
                   style={{ background: "rgba(159,179,216,0.10)", boxShadow: "inset 0 0 0 1px rgba(159,179,216,0.2)" }}
                 >
                   <span className="flex-1 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
-                  <button type="button" onClick={() => onDelete(q)} className="opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100" aria-label="Delete">
+                  <button type="button" onClick={() => onDelete(q)} className="opacity-50 transition-opacity group-hover:opacity-100" aria-label="Delete">
                     <Trash2 className="h-3 w-3" style={{ color: "#ffb4b4" }} />
                   </button>
                 </li>
@@ -186,7 +186,7 @@ function IssueCard({
             </p>
           )}
         </div>
-        <div className="flex shrink-0 flex-col items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 flex-col items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
           <button type="button" title="Insert into draft" onClick={() => onInsert(item)} className="hover:scale-110">
             <CornerDownLeft className="h-3.5 w-3.5" style={{ color: "#c8a24b" }} />
           </button>

@@ -203,8 +203,8 @@ export function SourceReader({
         </div>
       )}
 
-      {/* Split screen */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 px-2.5 pb-2.5">
+      {/* Split screen — stacks on narrow viewports, side by side from sm up */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto px-2.5 pb-2.5 sm:grid-cols-2 sm:overflow-hidden">
         <Pane title="Statutes" accent="#c8a24b" assistantTag={aiStatute}>
           <ResultList
             loading={loading}

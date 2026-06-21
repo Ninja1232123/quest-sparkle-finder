@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { PenLine, X } from "lucide-react";
 
 /**
@@ -12,12 +13,15 @@ import { PenLine, X } from "lucide-react";
  */
 export function MobileExperienceNotice() {
   const [dismissed, setDismissed] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (window.localStorage.getItem("mobile-notice-dismissed") === "1") setDismissed(true);
   }, []);
 
-  if (dismissed) return null;
+  // The margin-note rail this notice advertises doesn't exist in /workspace —
+  // that route has its own dedicated mobile layout (tab-switched panels).
+  if (dismissed || pathname.startsWith("/workspace")) return null;
 
   return (
     <div className="lg:hidden relative flex items-start gap-2.5 border-b border-sage/30 bg-sage/10 px-4 py-2.5 text-[13px] leading-snug text-foreground/80">

@@ -36,8 +36,8 @@ function WorkspaceLayout() {
       className="flex h-screen w-full overflow-hidden"
       style={{ height: "calc(100vh / var(--site-zoom))", background: "var(--paper, #f7f3ea)" }}
     >
-      <main className="flex-1 overflow-hidden">
-        <div className="flex h-full flex-col">
+      <main className="min-h-0 flex-1 overflow-hidden">
+        <div className="flex h-full min-h-0 flex-col">
           {/* Top strip: a flush Home exit on the left, the not-legal-advice bar filling the rest. */}
           <div className="flex shrink-0 items-stretch">
             <Link
@@ -57,7 +57,7 @@ function WorkspaceLayout() {
               <LegalDisclaimer variant="bar" />
             </div>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
             <Outlet />
           </div>
         </div>
