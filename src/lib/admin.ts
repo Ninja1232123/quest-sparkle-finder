@@ -1,12 +1,15 @@
-// Admin allow-list (env-driven). Admins are treated as full Pro — see
-// use-subscription.tsx, which ORs isAdmin into isPro so every Pro gate
-// (search quota, compare, etc.) unlocks for them.
+// Admin allow-list — SERVER-ONLY data source.
 //
-// VITE_ADMIN_EMAILS is a comma-separated list, matched case-insensitively
-// against the signed-in user's email. It's client-inlined like the other
-// VITE_ vars, but that's harmless: it only flips the soft, client-side
-// Pro/quota gates — there's no server-side privilege behind it to leak.
-const RAW = import.meta.env.VITE_ADMIN_EMAILS ?? "";
+// Reads `process.env.ADMIN_EMAILS` (comma-separated, case-insensitive). This is
+// deliberately NOT a `VITE_`-prefixed var so the list is never inlined into the
+// client bundle — exposing it there hands an attacker a curated phishing list
+// of every account with elevated privilege.
+//
+// On the client, `process.env.ADMIN_EMAILS` is undefined and `isAdminEmail`
+// always returns false. Client code that needs "is current user admin?" should
+// call the `getIsAdmin` server function instead of importing this helper.
+const RAW =
+  (typeof process !== "undefined" ? process.env?.ADMIN_EMAILS : undefined) ?? "";
 
 const ADMIN_EMAILS = new Set(
   RAW.split(",")

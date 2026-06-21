@@ -119,7 +119,7 @@ function CasesIndex() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-display text-lg font-semibold leading-tight">{c.name}</div>
-                    <div className="mt-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <div className="mt-0.5 font-mono text-[12px] uppercase tracking-wide text-muted-foreground">
                       {c.items.length} note{c.items.length === 1 ? "" : "s"} · {cites} citation{cites === 1 ? "" : "s"}
                       {touched ? <> · updated {new Date(touched).toLocaleDateString()}</> : null}
                     </div>

@@ -145,8 +145,25 @@ export function usageToCents(u: {
   return dollars * 100;
 }
 
+/** Credits to charge for an answer: ceil(cost / credit) clamped to a ceiling. */
+export function creditsForCost(cents: number, maxCredits: number): number {
+  const raw = Math.max(1, Math.ceil(cents / CREDIT_COST_CENTS));
+  return Math.min(raw, maxCredits);
+}
+
 /** Credits to charge for an answer: ceil(cost / credit) clamped to the mode ceiling. */
 export function costToCredits(cents: number, mode: JuriMode): number {
-  const raw = Math.max(1, Math.ceil(cents / CREDIT_COST_CENTS));
-  return Math.min(raw, JURI_MODES[mode].maxCredits);
+  return creditsForCost(cents, JURI_MODES[mode].maxCredits);
 }
+
+// ===========================================================================
+// WORKSPACE — shares the same wallet as Juri (juri_credits), metered the same
+// way (cost-proportional, not flat-per-turn). No Pro gate: any signed-in user
+// with a balance can use /workspace. minCredits=1 is a hard wall (no free
+// taste) — a brand-new account has 0 credits until they buy a pack.
+// maxCredits is a RUNAWAY BACKSTOP like JURI_MODES, set above the realistic
+// worst case (the round/token caps in chat.ts already prevent true runaways)
+// so a normal turn is never artificially under-billed.
+// ===========================================================================
+export const WORKSPACE_MIN_CREDITS = 1;
+export const WORKSPACE_MAX_CREDITS_PER_TURN = 50;

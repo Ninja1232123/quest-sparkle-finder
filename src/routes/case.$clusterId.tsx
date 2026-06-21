@@ -119,7 +119,7 @@ function CaseReaderPage() {
               </span>
             )}
             {outcome && (
-              <span className="rounded-full bg-ochre/15 px-2 py-0.5 text-[11px] font-medium text-ochre">
+              <span className="rounded-full bg-ochre/15 px-2 py-0.5 text-[12px] font-medium text-ochre">
                 {outcome}
               </span>
             )}

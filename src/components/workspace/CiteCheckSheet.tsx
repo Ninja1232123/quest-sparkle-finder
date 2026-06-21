@@ -23,7 +23,7 @@ export function CiteCheckSheet({ open, loading, results, error, onClose, onPin }
     <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l shadow-2xl" style={{ background: "var(--paper)", borderColor: "var(--brass, #c8a24b)" }}>
       <div className="flex shrink-0 items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--rule-card)" }}>
         <div>
-          <div className="text-[10px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Cite check</div>
+          <div className="text-[12px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Cite check</div>
           <div className="text-sm" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>Citations in your draft</div>
         </div>
         <button type="button" onClick={onClose} className="rounded p-1 hover:bg-foreground/5"><X className="h-4 w-4" /></button>
@@ -44,14 +44,14 @@ export function CiteCheckSheet({ open, loading, results, error, onClose, onPin }
                     <a href={`/code/${r.identifier}`} target="_blank" rel="noreferrer" className="block text-sm font-semibold hover:underline" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
                       {r.citation}
                     </a>
-                    <div className="font-mono text-[10px]" style={{ color: "var(--ink-muted)" }}>as written: "{r.raw}"</div>
-                    <div className="mt-0.5 text-[11px]" style={{ color: r.resolves ? "var(--ink-muted)" : "#a8413a" }}>
+                    <div className="font-mono text-[12px]" style={{ color: "var(--ink-muted)" }}>as written: "{r.raw}"</div>
+                    <div className="mt-0.5 text-[12px]" style={{ color: r.resolves ? "var(--ink-muted)" : "#a8413a" }}>
                       {r.resolves
                         ? r.pinned ? "Resolves · pinned to your case" : "Resolves · not on your board"
                         : "Does not resolve in the corpus — verify the citation"}
                     </div>
                     {r.resolves && !r.pinned && (
-                      <button type="button" onClick={() => onPin(r)} className="mt-1.5 rounded px-2 py-0.5 text-[10px] hover:bg-foreground/5" style={{ color: "var(--ink)", border: "1px solid var(--rule-card)" }}>
+                      <button type="button" onClick={() => onPin(r)} className="mt-1.5 rounded px-2 py-0.5 text-[12px] hover:bg-foreground/5" style={{ color: "var(--ink)", border: "1px solid var(--rule-card)" }}>
                         Pin to case
                       </button>
                     )}

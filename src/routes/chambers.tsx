@@ -23,7 +23,7 @@ export const Route = createFileRoute("/chambers")({
 function StatRow({ label, value, mono = true }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-background/10 py-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-background/40">{label}</span>
+      <span className="font-mono text-[12px] uppercase tracking-[0.2em] text-background/40">{label}</span>
       <span className={`text-right text-sm text-background/85 ${mono ? "font-mono" : ""}`}>{value}</span>
     </div>
   );
@@ -34,7 +34,7 @@ function PhysicsBar({ label, value, low = 0, high = 2 }: { label: string; value:
   const ours = Math.max(0, Math.min(100, ((1 - low) / (high - low)) * 100));
   return (
     <div>
-      <div className="flex items-baseline justify-between text-[10px] font-mono uppercase tracking-wider text-background/40">
+      <div className="flex items-baseline justify-between text-[12px] font-mono uppercase tracking-wider text-background/40">
         <span>{label}</span>
         <span className="text-background/70">{value.toFixed(2)}×</span>
       </div>
@@ -65,12 +65,12 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
   return (
     <div className="rounded-2xl border border-background/15 bg-background/[0.03] p-6 paper-grain">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-background/40">
+        <div className="font-mono text-[12px] uppercase tracking-[0.25em] text-background/40">
           observation #{String(index).padStart(3, "0")} · {BRANCH_TYPE_LABEL[branch.branchType].toLowerCase()}
         </div>
         <button
           onClick={copy}
-          className="flex items-center gap-1 rounded-full border border-background/15 px-2 py-0.5 font-mono text-[10px] text-background/60 hover:border-background/40 hover:text-background"
+          className="flex items-center gap-1 rounded-full border border-background/15 px-2 py-0.5 font-mono text-[12px] text-background/60 hover:border-background/40 hover:text-background"
         >
           {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
           {branch.branchId}
@@ -86,7 +86,7 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div>
-          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.25em] text-background/40">
+          <div className="mb-3 font-mono text-[12px] uppercase tracking-[0.25em] text-background/40">
             census
           </div>
           <StatRow label="age" value={`${branch.ageBillionYears.toFixed(1)} Gyr`} />
@@ -99,7 +99,7 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
           <StatRow label="tech level" value={branch.technologyLevel} mono={false} />
         </div>
         <div>
-          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.25em] text-background/40">
+          <div className="mb-3 font-mono text-[12px] uppercase tracking-[0.25em] text-background/40">
             physics — relative to ours
           </div>
           <div className="space-y-3">
@@ -110,7 +110,7 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
           </div>
 
           <div className="mt-6">
-            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.25em] text-background/40">
+            <div className="mb-3 font-mono text-[12px] uppercase tracking-[0.25em] text-background/40">
               status
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -123,13 +123,13 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
           </div>
 
           <div className="mt-6">
-            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-background/40">
+            <div className="mb-2 font-mono text-[12px] uppercase tracking-[0.25em] text-background/40">
               ultimate fate
             </div>
             <div className="font-display text-base font-semibold text-background">{branch.fate}</div>
             <div className="text-xs text-background/60">{branch.fateDescription}</div>
             {branch.timeRemaining > 0 && (
-              <div className="mt-1 font-mono text-[10px] text-background/40">
+              <div className="mt-1 font-mono text-[12px] text-background/40">
                 in ~{formatBig(branch.timeRemaining)} years
               </div>
             )}
@@ -143,7 +143,7 @@ function BranchCard({ branch, index }: { branch: Branch; index: number }) {
 function Tag({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
     <span
-      className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
+      className={`rounded-full border px-2 py-0.5 font-mono text-[12px] uppercase tracking-wider ${
         ok
           ? "border-[var(--ochre)]/40 bg-[var(--ochre)]/10 text-[var(--ochre)]"
           : "border-background/15 text-background/30 line-through"
@@ -175,7 +175,7 @@ function ChambersPage() {
   return (
     <div className="min-h-screen bg-[var(--ink)] text-background">
       <section className="mx-auto max-w-4xl px-6 pt-16 pb-24">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-background/40">
+        <div className="font-mono text-[12px] uppercase tracking-[0.3em] text-background/40">
           ⬆ ⬆ ⬇ ⬇ ⬅ ➡ ⬅ ➡ B A
         </div>
         <h1 className="mt-6 font-display text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl">
@@ -184,7 +184,7 @@ function ChambersPage() {
         <p className="mt-6 max-w-xl font-display text-lg italic leading-relaxed text-background/70 md:text-xl">
           Every choice creates a new branch. Every quantum event splits reality. This is your window into the infinite.
         </p>
-        <p className="mt-3 max-w-xl font-mono text-[10px] uppercase tracking-wider text-background/30">
+        <p className="mt-3 max-w-xl font-mono text-[12px] uppercase tracking-wider text-background/30">
           none of this is real. none of this is advice. all of it is a coping mechanism.
         </p>
 
@@ -216,7 +216,7 @@ function ChambersPage() {
 
         {history.length > 0 && (
           <div className="mt-12">
-            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-background/40">
+            <div className="font-mono text-[12px] uppercase tracking-[0.3em] text-background/40">
               recent observations
             </div>
             <ul className="mt-3 space-y-1">
@@ -226,13 +226,13 @@ function ChambersPage() {
                     onClick={() => setBranch(b)}
                     className="group flex w-full items-baseline gap-3 rounded-md px-2 py-1.5 text-left hover:bg-background/[0.04]"
                   >
-                    <span className="font-mono text-[10px] text-background/40 group-hover:text-background/70">
+                    <span className="font-mono text-[12px] text-background/40 group-hover:text-background/70">
                       {b.branchId}
                     </span>
                     <span className="truncate text-sm text-background/75 group-hover:text-background">
                       {b.divergencePoint}
                     </span>
-                    <span className="ml-auto shrink-0 font-mono text-[10px] text-background/30">
+                    <span className="ml-auto shrink-0 font-mono text-[12px] text-background/30">
                       {BRANCH_TYPE_LABEL[b.branchType].toLowerCase()}
                     </span>
                   </button>

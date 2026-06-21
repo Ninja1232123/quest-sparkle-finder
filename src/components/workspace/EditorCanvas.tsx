@@ -1,10 +1,18 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef, useCallback } from "react";
-import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search, ScanText, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Bold, Italic, Heading2, Quote, List, Link as LinkIcon, Sparkles, Search, ScanText, History, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 
 export type EditorCanvasHandle = {
   insertAtCursor: (md: string) => void;
   focus: () => void;
   getBody: () => string;
+};
+
+export type PendingEdit = {
+  id: string;
+  kind: "insert" | "replace";
+  anchor: string | null;
+  markdown: string;
+  why: string;
 };
 
 type Props = {
@@ -19,11 +27,16 @@ type Props = {
   onOpenResearch: () => void;
   onCiteCheck: () => void;
   onOpenVersions: () => void;
+  pendingEdits?: PendingEdit[];
+  onAcceptEdit?: (edit: PendingEdit) => void;
+  onRevertEdit?: (id: string) => void;
+  onEditPendingMarkdown?: (id: string, markdown: string) => void;
 };
 
 export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function EditorCanvas(
   { initialTitle, initialBody, saveState, lastSavedAt, supportCount, questionCount,
-    onChangeTitle, onChangeBody, onOpenResearch, onCiteCheck, onOpenVersions },
+    onChangeTitle, onChangeBody, onOpenResearch, onCiteCheck, onOpenVersions,
+    pendingEdits, onAcceptEdit, onRevertEdit, onEditPendingMarkdown },
   ref,
 ) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -163,7 +176,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
 
         {/* Save status */}
         <div
-          className="hidden shrink-0 items-center gap-2 text-[10px] tracking-[0.18em] uppercase lg:flex"
+          className="hidden shrink-0 items-center gap-2 text-[12px] tracking-[0.18em] uppercase lg:flex"
           style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}
         >
           <span>{wordCount} words</span>
@@ -195,7 +208,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
         <button
           type="button"
           onClick={() => setHeaderOpen((o) => !o)}
-          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] transition-colors hover:bg-foreground/6"
+          className="ml-auto inline-flex items-center gap-1 rounded px-2 py-0.5 text-[12px] transition-colors hover:bg-foreground/6"
           style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}
         >
           {headerOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -210,7 +223,7 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
           style={{ borderColor: "var(--rule-card)", background: "color-mix(in oklab, var(--paper) 85%, var(--paper-tint))" }}
         >
           <div className="mx-auto max-w-2xl space-y-3">
-            <div className="text-[10px] tracking-[0.25em] uppercase mb-3" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+            <div className="text-[12px] tracking-[0.25em] uppercase mb-3" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
               Filing information
             </div>
             {/* Court + Case No. */}
@@ -246,11 +259,11 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
             </div>
             {/* Visual v. divider */}
             {(plaintiff || defendant) && (
-              <div className="text-center text-[11px] font-semibold tracking-widest py-0.5" style={{ color: "var(--ink-muted)" }}>
+              <div className="text-center text-[12px] font-semibold tracking-widest py-0.5" style={{ color: "var(--ink-muted)" }}>
                 — v. —
               </div>
             )}
-            <p className="text-[10px]" style={{ color: "var(--ink-muted)" }}>
+            <p className="text-[12px]" style={{ color: "var(--ink-muted)" }}>
               Header is for your reference — it doesn't affect the draft body. Use the Document Builder to generate a court-formatted PDF.
             </p>
           </div>
@@ -259,6 +272,71 @@ export const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(function Edito
 
       {/* Body */}
       <div className="relative flex-1 overflow-y-auto">
+        {pendingEdits && pendingEdits.length > 0 && (
+          <div className="mx-auto max-w-2xl space-y-2 px-8 pt-6">
+            {pendingEdits.map((edit) => (
+              <div
+                key={edit.id}
+                className="rounded-md border-l-4 p-3"
+                style={{
+                  borderLeftColor: "var(--brass, #c8a24b)",
+                  background: "color-mix(in oklab, var(--brass, #c8a24b) 8%, var(--paper))",
+                  border: "1px solid color-mix(in oklab, var(--brass, #c8a24b) 35%, transparent)",
+                  borderLeftWidth: "4px",
+                }}
+              >
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span
+                    className="text-[12px] tracking-[0.2em] uppercase"
+                    style={{ color: "var(--brass, #c8a24b)", fontFamily: "var(--font-mono)" }}
+                  >
+                    AI proposed · {edit.kind === "insert" ? (edit.anchor ? "insert here" : "append") : "replace"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onAcceptEdit?.(edit)}
+                      className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[12px] font-semibold transition-colors hover:bg-foreground/5"
+                      style={{ borderColor: "var(--brass, #c8a24b)", color: "var(--ink)" }}
+                      title="Apply this edit to your draft"
+                    >
+                      <Check className="h-3 w-3" /> Accept
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRevertEdit?.(edit.id)}
+                      className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[12px] transition-colors hover:bg-foreground/5"
+                      style={{ borderColor: "var(--rule-card)", color: "var(--ink-muted)" }}
+                      title="Discard this proposal"
+                    >
+                      <X className="h-3 w-3" /> Revert
+                    </button>
+                  </div>
+                </div>
+                {edit.why && (
+                  <p className="mb-1.5 text-[12px]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                    {edit.why}
+                  </p>
+                )}
+                {edit.kind === "replace" && edit.anchor && (
+                  <div
+                    className="mb-1.5 rounded border-l-2 px-2 py-1 text-[12px] line-through"
+                    style={{ borderLeftColor: "#a8413a", color: "var(--ink-muted)", background: "rgba(168,65,58,0.05)", fontFamily: "var(--font-serif)" }}
+                  >
+                    {edit.anchor}
+                  </div>
+                )}
+                <textarea
+                  value={edit.markdown}
+                  onChange={(e) => onEditPendingMarkdown?.(edit.id, e.target.value)}
+                  rows={Math.min(12, Math.max(3, edit.markdown.split("\n").length + 1))}
+                  className="w-full resize-y rounded border bg-transparent px-2 py-1.5 text-[14px] leading-relaxed outline-none"
+                  style={{ borderColor: "var(--rule-card)", fontFamily: "var(--font-serif)", color: "var(--ink)" }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         <div
           ref={bodyRef}
           contentEditable
@@ -331,7 +409,7 @@ function ToolBtn({ children, onClick, title, accent }: {
       type="button"
       title={title}
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition-all hover:-translate-y-px hover:shadow-sm"
+      className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-all hover:-translate-y-px hover:shadow-sm"
       style={{
         borderColor: accent ? "var(--brass, #c8a24b)" : "var(--rule-card)",
         color: "var(--ink)",
@@ -351,7 +429,7 @@ function Pip({ on, label, warn }: { on: boolean; label: string; warn?: boolean }
         className="h-1.5 w-1.5 rounded-full transition-colors"
         style={{ background: on && !warn ? "#3f7d4e" : warn ? "#a8413a" : "var(--rule-card)" }}
       />
-      <span className="text-[10px] tracking-[0.12em]" style={{ color, fontFamily: "var(--font-mono)" }}>
+      <span className="text-[12px] tracking-[0.12em]" style={{ color, fontFamily: "var(--font-mono)" }}>
         {label}
       </span>
     </div>
@@ -367,7 +445,7 @@ function Field({ label, value, onChange, placeholder, compact }: {
 }) {
   return (
     <div className={compact ? "w-44" : ""}>
-      <div className="mb-1 text-[9px] font-medium tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+      <div className="mb-1 text-[12px] font-medium tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
         {label}
       </div>
       <input

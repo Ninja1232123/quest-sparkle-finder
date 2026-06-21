@@ -481,13 +481,14 @@ export const getRegisterHistory = createServerFn({ method: "GET" })
     const m = data.identifier.match(/\/cfr\/t(\d+)\/s\D*(\d+)/);
     if (!m) return { rows: [] };
     const supabaseAdmin = await getAdminClient();
-    const { data: rows, error } = await supabaseAdmin.rpc("cfr_register_history", {
-      p_title: Number(m[1]),
-      p_part: Number(m[2]),
-      p_limit: 40,
-    });
+    const { data: rows, error } = await (supabaseAdmin.rpc as unknown as (
+      fn: string, args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>)(
+      "cfr_register_history",
+      { p_title: Number(m[1]), p_part: Number(m[2]), p_limit: 40 },
+    );
     if (error) return { rows: [] };
-    return { rows: (rows ?? []) as RegisterHistoryRow[] };
+    return { rows: (rows ?? []) as unknown as RegisterHistoryRow[] };
   });
 
 export type BillHistoryRow = {
@@ -511,13 +512,14 @@ export const getBillHistory = createServerFn({ method: "GET" })
     const m = data.identifier.match(/\/usc\/title-(\d+)\/section-([0-9A-Za-z][0-9A-Za-z-]*)/);
     if (!m) return { rows: [] };
     const supabaseAdmin = await getAdminClient();
-    const { data: rows, error } = await supabaseAdmin.rpc("usc_bill_history", {
-      p_title: Number(m[1]),
-      p_section: m[2],
-      p_limit: 40,
-    });
+    const { data: rows, error } = await (supabaseAdmin.rpc as unknown as (
+      fn: string, args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>)(
+      "usc_bill_history",
+      { p_title: Number(m[1]), p_section: m[2], p_limit: 40 },
+    );
     if (error) return { rows: [] };
-    return { rows: (rows ?? []) as BillHistoryRow[] };
+    return { rows: (rows ?? []) as unknown as BillHistoryRow[] };
   });
 
 export const getDiffPair = createServerFn({ method: "GET" })

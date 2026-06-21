@@ -62,7 +62,7 @@ export function SendToWorkspaceButton({
         onClick={go}
         disabled={loading}
         title="Open in AI Workspace"
-        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors hover:bg-foreground/5 disabled:opacity-50 ${className}`}
+        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] font-medium transition-colors hover:bg-foreground/5 disabled:opacity-50 ${className}`}
         style={{ borderColor: "rgba(0,0,0,0.15)" }}
       >
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}

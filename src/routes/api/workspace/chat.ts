@@ -2,10 +2,25 @@
 // Auth: validates the bearer against the cloud Supabase project, then scopes
 // every read/write to that user via service-role with explicit WHERE filters.
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, tool, stepCountIs, type StopCondition, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { anthropic } from "@ai-sdk/anthropic";
+import { usageToCents, creditsForCost, WORKSPACE_MIN_CREDITS, WORKSPACE_MAX_CREDITS_PER_TURN } from "@/lib/juri-credits";
+
+// Per-turn budget: caps both the number of tool-calling rounds AND the cumulative
+// input tokens that turn can burn. A "round" resends the whole growing transcript
+// (system + history + every prior tool result) to the model, so without a token
+// ceiling a handful of wide parallel scans can compound into millions of input
+// tokens well before the step count looks alarming.
+const MAX_RESEARCH_STEPS = 14;
+const MAX_DRAFT_STEPS = 3;
+const MAX_TURN_INPUT_TOKENS = 400_000;
+
+const inputTokenBudgetExceeded: StopCondition<any> = ({ steps }) => {
+  const totalInput = steps.reduce((sum, s) => sum + (s.usage.inputTokens ?? 0), 0);
+  return totalInput >= MAX_TURN_INPUT_TOKENS;
+};
 
 const SYSTEM = `You are the Marginalia Workspace research assistant for pro se litigants.
 
@@ -21,6 +36,15 @@ RULES (non-negotiable):
 - Reply text should be short and direct. Heavy lifting goes into the proposal cards. Do not dump long summaries the user didn't ask for.
 - End substantive legal answers with: "_This is general legal information, not legal advice. Consult a licensed attorney for your specific situation._"
 
+WRITING TO THE USER'S DRAFT — ALWAYS PROPOSE, NEVER DUMP:
+- When the user asks you to draft, revise, or insert anything into their document, call propose_draft_edit. NEVER write the draft text into chat — chat is for short reasoning; the editor is where prose lives.
+- kind='insert' adds new text (omit anchor to append at end; pass a verbatim quote from the current draft as anchor to insert right after it). kind='replace' swaps an exact verbatim quote from the current draft for new text — copy the anchor byte-for-byte from CURRENT DRAFT, including punctuation and case, or it won't match.
+- The user sees each proposal as a highlighted block in their editor with Accept / Revert. They approve every edit.
+
+SCRATCHPAD — YOUR MEMORY ACROSS TURNS:
+- Older chat messages get trimmed to keep your context bounded. Your scratchpad is what survives. Call update_scratchpad after any turn that materially changes the case picture (new theory, key authority found, gap closed, dead end). Keep it tight — under 800 words. Overwrite it; don't append.
+- Skip it on small turns ("yes", "what about X") where nothing changed.
+
 YOU ARE WORKING TOGETHER, NOT GRADING:
 - The user is the lead. They will pull different passages than you would and tag authorities with stances you might not pick (good / adverse / worth-mentioning). That divergence is signal — they have reasons. Engage their reasoning; don't silently override it or re-propose your own version of something they already pinned.
 - When a pin's stance surprises you, ask about it or build on their read rather than correcting it. When they're looking at a specific document (see CURRENTLY VIEWING below), meet them there — comment on the clause in front of them, flag the operative language and the exceptions, before pulling them elsewhere.
@@ -29,15 +53,18 @@ YOUR RESEARCH TOOLS (all read-only, all on the self_law backend):
 PRIMARY — grab a LOT, cheaply, and show it to the user:
 - scan_corpus — your workhorse. Pulls up to 300 matching sections as lean citation rows (no bodies) from the 4M-section corpus, ranked. It grabs the HITS, it doesn't read them — so set a high limit and pull the whole field. Boolean ops inline in q: space=AND, OR, "phrase", -exclude. The full list is ALSO rendered to the user in their browser as a clickable list — a wide scan hands them the whole landscape, not just you. Omit source to sweep everything; scope to a source/state to focus.
 - citations(identifier, direction) — follow the citation graph one hop without reading any text: 'out' = what this cites; 'in' = who cites it (load-bearing). Go DEEP cheaply.
+- list_basins(term) / open_basin(id) — precomputed AND-combinations of legal trigger words (e.g. 'debt & collector & instrument|note') with their matching sections already cached. list_basins(word) shows the angles that include a word; open_basin pulls that whole field instantly (a keyed read, not a live scan). Skim the labels for a combination you wouldn't have queried.
+- precise_search(terms[]) — the PRECISION DRILL. To pin the single on-point section, AND several DIVERSE terms that co-occur in it but never sit adjacent (foreclosure + election + remedies + extinguish + collection → one Treasury reg). Too broad → it returns only a count (add a term); empty → drop one; surgical → the exact cites. Probing is near-free, so deepen freely and pull only when it's down to a handful.
 - legislative_history(title, section) / regulatory_history(title, part) — the bills behind a USC section / the Federal Register rulemakings behind a CFR part: Congress's & the agency's OWN reasoning.
 READ-CLOSELY — only for the handful of cites you'll actually quote:
 - search_corpus / search_boolean — same matches WITH snippets (search_boolean adds explicit gates: all/any/phrase/exclude). Use to read the matched language once you've picked cites from a scan.
 - search_cases — U.S. Supreme Court (28k) + state supreme courts (528k). Scope with jurisdiction.
 - fetch_document(identifier) / fetch_case(id) — one document's full text, to lift an exact quote.
 
-HOW TO SPEND — maximum search, minimum cost:
-- GRAB, DON'T READ. The corpus is 4M+ statutes + agency records. You do NOT need to read what's inside them to know they exist — scan_corpus pulls the hit list (citation + identifier) by the hundred for almost nothing, and that list goes straight to the user's browser. Lead with a wide scan_corpus (limit 100-300); reason over the returned list of citations.
-- THERE IS NO FIXED CALL CAP. Budget COST PER HOP, not hop count. Fire several scans in parallel (different angles: the statute, the synonym, the adverse term), and follow citations several steps out — a section can cite 80 others and the answer may be hops away. Don't stop at the first ring.
+HOW TO SPEND — you have a hard budget of about 14 tool-calling rounds per turn, so spend them deliberately:
+- GRAB, DON'T READ. The corpus is 4M+ statutes + agency records. You do NOT need to read what's inside them to know they exist — scan_corpus pulls the hit list (citation + identifier) by the hundred for almost nothing, and that list goes straight to the user's browser. Lead with ONE wide scan_corpus (limit 100-300) per angle; reason over the returned list of citations before firing another.
+- BUDGET ROUNDS, NOT JUST RESULTS. Every round resends the entire growing transcript — including every prior tool result — back to the model. A handful of wide scans is cheap; a dozen wide scans in one turn is not, even though each individual call looked free. Pick 2-3 angles (the statute, the synonym, the adverse term) rather than sweeping every conceivable phrasing, and stop once you have enough to answer or propose.
+- CHECK "SEARCHES ALREADY TRIED THIS THREAD" (below, if present) before querying — it's a cheap log of every search this thread has run (query + hit count, not the results). Don't re-run a query that's already there; pick a different angle or move on.
 - SPEND THE EXPENSIVE CALLS LAST: pull snippets (search_corpus/search_boolean) or full text (fetch_*) only for the few cites you've already chosen from a scan and intend to quote. Never read 100 documents to see what exists — scan grabs that for free; never fetch a doc just to learn what it cites — call citations.
 - PRIORITY order for what to chase: controlling text → its reasoning (legislative_history/regulatory_history) → cases interpreting it → adverse authority. Not done until the adverse rung is checked.
 - BOOLEAN: scan_corpus takes inline ops (space=AND, OR, "phrase", -exclude) — e.g. 'deed of trust OR "trust deed" foreclosure -judicial'. Reach for search_boolean's explicit gates only when you also want snippets.
@@ -110,6 +137,17 @@ function buildBoardContext(rows: BoardRow[]): string {
   return lines.join("\n");
 }
 
+// Cheap working memory of what's already been searched THIS thread — just the
+// tool, query, and hit count, never the raw results. Lets the model avoid
+// re-running the same search across turns without resending everything it
+// turned up last time.
+type SearchLogRow = { tool_name: string; query: string; result_count: number | null };
+function buildSearchLogContext(rows: SearchLogRow[]): string {
+  if (rows.length === 0) return "";
+  const lines = rows.map((r) => `  • ${r.tool_name}(${r.query}) → ${r.result_count ?? "?"} hits`);
+  return `\n\nSEARCHES ALREADY TRIED THIS THREAD (don't repeat these verbatim — vary the angle, or move on if a line of inquiry looks exhausted):\n${lines.join("\n")}`;
+}
+
 // Fetch the document the user is currently reading (statute by identifier, or an
 // opinion by a search id) and render it as a focus block for the system prompt.
 async function buildFocusContext(
@@ -138,6 +176,20 @@ async function buildFocusContext(
   }
   const trimmed = bodyText.slice(0, 9000);
   return `\n\nCURRENTLY VIEWING (the user has this open in their reader right now — comment on THIS, flag the operative language and any exceptions, and don't make them paste it):\n${[court, citation, heading].filter(Boolean).join(" · ")}\n"""\n${trimmed}${bodyText.length > 9000 ? "\n…[truncated]" : ""}\n"""`;
+}
+
+// The user's live draft from the Doc Creator editor, rendered as a block so the
+// model can see what's actually on the page — what's written, what's stubbed, and
+// where it trails off — instead of being blind to the document it's helping build.
+function buildDraftContext(title: string | null, body: string | null): string {
+  const text = (body ?? "").trim();
+  if (!text) {
+    return `\n\nCURRENT DRAFT: empty. The user hasn't written anything in the Doc Creator yet.`;
+  }
+  const LIMIT = 8000;
+  const trimmed = text.length > LIMIT ? text.slice(-LIMIT) : text;
+  const head = text.length > LIMIT ? "…[earlier draft truncated]\n" : "";
+  return `\n\nCURRENT DRAFT (what the user has written so far in the Doc Creator — this is the live document on their screen; when they ask about "the draft", "my document", "this section", or "what I wrote", they mean THIS):\nTitle: ${title?.trim() || "Untitled draft"}\n"""\n${head}${trimmed}\n"""`;
 }
 
 async function authenticate(request: Request): Promise<{ userId: string; token: string } | Response> {
@@ -170,6 +222,15 @@ function corpusClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+// Credits (juri_credits) live on the cloud project, same wallet Juri spends
+// from. Reads/deducts need service-role since the balance/RPC aren't scoped
+// to the request-bearer the way thread ownership is.
+function creditsClient() {
+  const url = process.env.SUPABASE_AUTH_URL!;
+  const key = process.env.SUPABASE_AUTH_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
 export const Route = createFileRoute("/api/workspace/chat")({
   server: {
     handlers: {
@@ -178,7 +239,25 @@ export const Route = createFileRoute("/api/workspace/chat")({
         if (auth instanceof Response) return auth;
         const { userId, token } = auth;
 
-        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft" };
+        // Credit gate — same wallet as Juri, no Pro requirement, no free taste:
+        // a turn needs at least WORKSPACE_MIN_CREDITS to start. Plaintext body
+        // with a recognizable prefix so the client can special-case this error
+        // (the AI SDK transport throws new Error(await response.text())).
+        const credits = creditsClient();
+        const { data: creditRow } = await credits
+          .from("juri_credits")
+          .select("balance")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const balance = creditRow?.balance ?? 0;
+        if (balance < WORKSPACE_MIN_CREDITS) {
+          return new Response(
+            "OUT_OF_CREDITS: You're out of credits. Grab a top-up pack to keep using the workspace assistant.",
+            { status: 402 },
+          );
+        }
+
+        const body = (await request.json()) as { messages?: UIMessage[]; threadId?: string; focusedRef?: string | null; mode?: "research" | "draft"; draftTitle?: string | null; draftText?: string | null };
         if (!Array.isArray(body.messages) || !body.threadId) {
           return new Response("messages and threadId required", { status: 400 });
         }
@@ -189,7 +268,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // Verify thread ownership
         const { data: thread } = await workspace
           .from("workspace_threads")
-          .select("id,user_id,title")
+          .select("id,user_id,title,scratchpad")
           .eq("id", threadId)
           .maybeSingle();
         if (!thread || thread.user_id !== userId) {
@@ -211,9 +290,56 @@ export const Route = createFileRoute("/api/workspace/chat")({
         // Constrained drafting (#5) swaps the base prompt and drops the research
         // tools, so the board is the only source the model can draw from.
         const draftMode = body.mode === "draft";
-        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + focusContext;
+        // The model should always be able to see the user's live draft — to revise
+        // it, spot gaps before filing, or write the next section in context.
+        const draftContext = buildDraftContext(body.draftTitle ?? null, body.draftText ?? null);
+        // What's already been searched this thread (query + hit count only, never
+        // the raw rows) — cheap recall that replaces resending old tool dumps.
+        const { data: searchLogRows } = draftMode
+          ? { data: [] as SearchLogRow[] }
+          : await workspace
+              .from("workspace_search_log")
+              .select("tool_name,query,result_count")
+              .eq("thread_id", threadId)
+              .order("created_at", { ascending: true })
+              .limit(60);
+        const searchLogContext = buildSearchLogContext(searchLogRows ?? []);
+        // Scratchpad: the model's own rolling working memory for this session.
+        // It's our token-budget governor — the only state that persists across
+        // turns once we trim old messages, so context stays roughly one size.
+        const scratchpad = (thread.scratchpad ?? "").trim();
+        const scratchContext = scratchpad
+          ? `\n\nYOUR SCRATCHPAD (your own running notes for this session — the load-bearing record. Older chat turns get trimmed; what's here is what you remember. Update it via the update_scratchpad tool whenever the case picture shifts):\n"""\n${scratchpad}\n"""`
+          : `\n\nYOUR SCRATCHPAD: empty. Once you've done real research this turn, call update_scratchpad with a tight running summary — the working theory, what's settled, what's contested, what's next. Keep it under ~800 words; this is the only memory you carry forward.`;
+        const systemPrompt = (draftMode ? DRAFT_SYSTEM : SYSTEM) + buildBoardContext(boardRows ?? []) + scratchContext + draftContext + focusContext + searchLogContext;
+
+        // Trim messages sent to the model so token use stays roughly constant.
+        // Keep the first user message (the case setup) and the last 12 turns;
+        // everything older is in the scratchpad above.
+        const allMessages = body.messages;
+        const TAIL = 12;
+        const trimmedMessages: UIMessage[] = allMessages.length <= TAIL + 1
+          ? allMessages
+          : (() => {
+              const firstUserIdx = allMessages.findIndex((m) => m.role === "user");
+              const tail = allMessages.slice(-TAIL);
+              if (firstUserIdx === -1 || firstUserIdx >= allMessages.length - TAIL) return tail;
+              return [allMessages[firstUserIdx], ...tail];
+            })();
 
         const model = anthropic("claude-sonnet-4-6");
+
+        // Fire-and-forget log of a search-style tool call — tool + compact query +
+        // hit count only. Never await-blocks the tool's own response; failures are
+        // swallowed since this is best-effort working memory, not critical state.
+        function logSearch(toolName: string, query: string, resultCount: number) {
+          workspace
+            .from("workspace_search_log")
+            .insert({ thread_id: threadId, user_id: userId, tool_name: toolName, query, result_count: resultCount })
+            .then(({ error }: { error: unknown }) => {
+              if (error) console.error("[workspace/chat] search log insert failed:", error);
+            });
+        }
 
         const tools = {
           search_corpus: tool({
@@ -234,8 +360,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 p_limit: limit,
               });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("search_corpus", `q="${q}"${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null; snippet: string }) => ({
                   identifier: r.identifier,
                   source: r.source_code,
@@ -260,8 +388,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ q, source, limit }) => {
               const { data, error } = await corpus.rpc("scan_documents", { p_query: q, p_source: source ?? null, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("scan_corpus", `q="${q}"${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
                   id: r.identifier,
                   cite: r.section_label || r.heading || r.identifier,
@@ -293,6 +423,70 @@ export const Route = createFileRoute("/api/workspace/chat")({
               };
             },
           }),
+          list_basins: tool({
+            description:
+              "READ-ONLY: PRECOMPUTED BASINS — cached boolean trigger-expressions, mined offline. Each basin is an AND of legal trigger words " +
+              "(e.g. 'debt & collector & instrument|note', 'taxation & void & discharge & fraud') whose matching sections were computed ahead of time. " +
+              "Pass ONE trigger word to find the basins that include it (most-matched first); omit to list the largest basins. " +
+              "Use this to AIM: when the matter maps onto common trigger combinations, find the basin then open_basin to pull its whole field instantly — no live sweep of 3.4M. Different basins surface different fields; scan the labels for an angle you hadn't queried.",
+            inputSchema: z.object({
+              term: z.string().min(2).optional().describe("A single trigger word to find basins containing it, e.g. 'discharge'. Omit to list the largest basins."),
+              limit: z.number().int().min(1).max(200).default(60),
+            }),
+            execute: async ({ term, limit }) => {
+              const { data, error } = await corpus.rpc("basin_list", { p_term: term ?? null, p_limit: limit });
+              if (error) return { error: error.message, basins: [] };
+              logSearch("list_basins", term ? `term="${term}"` : "(largest)", data?.length ?? 0);
+              return {
+                count: data?.length ?? 0,
+                basins: (data ?? []).map((r: { id: number; label: string; doc_count: number }) => ({
+                  id: r.id, label: r.label, docs: r.doc_count,
+                })),
+              };
+            },
+          }),
+          open_basin: tool({
+            description:
+              "READ-ONLY: Open a precomputed basin by id (from list_basins) — returns its cached section hits as lean citation rows (no bodies). " +
+              "This is a KEYED READ of a precomputed set, not a live scan, so it's near-free and instant. The whole field is also rendered to the user's browser as a clickable list. Scope with a source code to focus the cached set.",
+            inputSchema: z.object({
+              basin_id: z.number().int().describe("A basin id from list_basins."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope the cached set."),
+              limit: z.number().int().min(1).max(500).default(200),
+            }),
+            execute: async ({ basin_id, source, limit }) => {
+              const { data, error } = await corpus.rpc("basin_docs", { p_basin_id: basin_id, p_source: source ?? null, p_limit: limit });
+              if (error) return { error: error.message, results: [] };
+              logSearch("open_basin", `id=${basin_id}${source ? ` source=${source}` : ""}`, data?.length ?? 0);
+              return {
+                count: data?.length ?? 0,
+                results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null }) => ({
+                  id: r.identifier,
+                  cite: r.section_label || r.heading || r.identifier,
+                  heading: r.section_label && r.heading && r.heading !== r.section_label ? r.heading : null,
+                  source: r.source_code,
+                })),
+              };
+            },
+          }),
+          precise_search: tool({
+            description:
+              "READ-ONLY: PRECISION DRILL — pin the ONE on-point section by AND-ing several DIVERSE terms that never sit next to each other but all live in that document " +
+              "(e.g. ['foreclosure','election','remedies','extinguish','collection'] → a single Treasury reg). Which terms fit varies per matter — pick the ones that describe THIS case. " +
+              "CHEAP TO PROBE: if the combo is still too broad it returns ONLY a count (broad:true) and transfers NO rows — so add another distinguishing term and call again; if it returns 0, drop the term that doesn't belong; when it narrows to <= max hits you get those exact citations. This is how you cut wasteful searches: deepen for almost nothing, pull only when surgical.",
+            inputSchema: z.object({
+              terms: z.array(z.string().min(2)).min(2).max(10).describe("Diverse case-relevant terms to AND — words that co-occur in the target document though not adjacent. Add more to narrow, remove to broaden."),
+              source: z.string().regex(/^[a-z][a-z0-9-]{1,40}$/).optional().describe("Optional source code to scope to."),
+              max: z.number().int().min(1).max(100).default(12).describe("Return rows only at/below this many hits; above it you get just the count (broad:true)."),
+            }),
+            execute: async ({ terms, source, max }) => {
+              const { data, error } = await corpus.rpc("precise_match", { p_terms: terms, p_source: source ?? null, p_max: max });
+              if (error) return { error: error.message, results: [] };
+              const d = (data ?? {}) as { count?: number; broad?: boolean; results?: Array<{ id: string; cite: string; heading: string | null; source: string }> };
+              logSearch("precise_search", `terms=[${terms.join(",")}]${source ? ` source=${source}` : ""}`, d.count ?? 0);
+              return { count: d.count ?? 0, broad: d.broad ?? false, results: d.results ?? [] };
+            },
+          }),
           search_boolean: tool({
             description:
               "READ-ONLY: Precision search with EXPLICIT logic gates over the same 3.9M-section corpus as search_corpus. " +
@@ -320,8 +514,10 @@ export const Route = createFileRoute("/api/workspace/chat")({
                 p_limit: limit,
               });
               if (error) return { error: error.message, results: [] };
+              const count = data?.length ?? 0;
+              logSearch("search_boolean", `all=[${all.join(",")}] any=[${any.join(",")}] phrase=${phrase ?? ""} exclude=[${exclude.join(",")}]${source ? ` source=${source}` : ""}`, count);
               return {
-                count: data?.length ?? 0,
+                count,
                 results: (data ?? []).map((r: { identifier: string; source_code: string; section_label: string | null; heading: string | null; snippet: string }) => ({
                   identifier: r.identifier,
                   source: r.source_code,
@@ -346,6 +542,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ title, section, limit }) => {
               const { data, error } = await corpus.rpc("usc_bill_history", { p_title: title, p_section: section, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              logSearch("legislative_history", `usc/${title}/${section}`, data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 results: (data ?? []).map((r: { latest_id: string; title: string | null; short_title: string | null; congress: number | null; latest_stage: string | null; enacted: boolean | null }) => ({
@@ -372,6 +569,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
             execute: async ({ title, part, limit }) => {
               const { data, error } = await corpus.rpc("cfr_register_history", { p_title: title, p_part: part, p_limit: limit });
               if (error) return { error: error.message, results: [] };
+              logSearch("regulatory_history", `cfr/${title}/${part}`, data?.length ?? 0);
               return {
                 count: data?.length ?? 0,
                 results: (data ?? []).map((r: { identifier: string; fr_doc_number: string; title: string | null; doc_type: string | null; decided: string | null }) => ({
@@ -459,6 +657,7 @@ export const Route = createFileRoute("/api/workspace/chat")({
                   });
                 }
               }
+              logSearch("search_cases", `q="${q}"${jurisdiction ? ` jurisdiction=${jurisdiction}` : ""}`, results.length);
               return { count: results.length, results };
             },
           }),
@@ -550,14 +749,56 @@ export const Route = createFileRoute("/api/workspace/chat")({
             }),
             execute: async (args) => ({ proposal: "question", ...args }),
           }),
+          propose_draft_edit: tool({
+            description:
+              "Propose an edit to the user's Doc Creator draft. The change does NOT take effect — it appears in the editor as a highlighted pending block with Accept / Edit / Revert. " +
+              "Use kind='insert' for new content (placed at the end, or after `anchor` text if provided). Use kind='replace' to replace an exact verbatim quote from the current draft (must match byte-for-byte). " +
+              "ALWAYS write in the user's voice, ground every legal claim in pinned authority, and keep `why` to one sentence — the user is the one accepting.",
+            inputSchema: z.object({
+              kind: z.enum(["insert", "replace"]),
+              anchor: z.string().max(400).optional().describe("For insert: verbatim text after which to insert. For replace: verbatim text to replace. Omit on insert to append at end."),
+              markdown: z.string().min(1).max(8000).describe("The proposed new text (markdown)."),
+              why: z.string().max(400).describe("One-sentence reason — what this adds / fixes."),
+            }),
+            execute: async (args) => ({ proposal: "draft_edit", ...args }),
+          }),
+          update_scratchpad: tool({
+            description:
+              "Write your running summary of this session to your scratchpad. This is what you carry forward when older chat turns get trimmed — keep it tight (≤800 words): the working theory, what's settled, what's contested, the gaps, what's next. Overwrites the previous scratchpad.",
+            inputSchema: z.object({
+              content: z.string().min(10).max(6000).describe("The full new scratchpad contents (markdown ok). Replaces whatever was there."),
+            }),
+            execute: async ({ content }) => {
+              const { error } = await workspace
+                .from("workspace_threads")
+                .update({ scratchpad: content })
+                .eq("id", threadId);
+              if (error) return { ok: false, error: error.message };
+              return { ok: true, length: content.length };
+            },
+          }),
         };
 
         const result = streamText({
           model,
           system: systemPrompt,
-          messages: await convertToModelMessages(body.messages),
+          messages: await convertToModelMessages(trimmedMessages),
           tools: draftMode ? {} : tools,
-          stopWhen: stepCountIs(draftMode ? 3 : 50),
+          stopWhen: draftMode
+            ? stepCountIs(MAX_DRAFT_STEPS)
+            : [stepCountIs(MAX_RESEARCH_STEPS), inputTokenBudgetExceeded],
+          onFinish: ({ totalUsage, steps }) => {
+            const cents = usageToCents({ input_tokens: totalUsage.inputTokens ?? 0, output_tokens: totalUsage.outputTokens ?? 0 });
+            const charge = creditsForCost(cents, WORKSPACE_MAX_CREDITS_PER_TURN);
+            console.log(
+              `[workspace/chat] thread=${threadId} steps=${steps.length} ` +
+                `inputTokens=${totalUsage.inputTokens ?? 0} outputTokens=${totalUsage.outputTokens ?? 0} ` +
+                `totalTokens=${totalUsage.totalTokens ?? 0} charge=${charge}credits`,
+            );
+            credits.rpc("deduct_juri_credits", { p_user_id: userId, p_amount: charge }).then(({ error }: { error: unknown }) => {
+              if (error) console.error("[workspace/chat] credit deduction failed:", error);
+            });
+          },
         });
 
         return result.toUIMessageStreamResponse({

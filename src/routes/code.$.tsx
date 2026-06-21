@@ -55,7 +55,7 @@ function DefinitionsPanel({ text }: { text: string }) {
       >
         <div className="flex items-center gap-2">
           <span className="citation-tag text-muted-foreground">Definitions in this section</span>
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[12px] font-medium text-muted-foreground">
             {defs.size}
           </span>
         </div>
@@ -136,7 +136,7 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
               type="button"
               onClick={() => untag(id)}
               title="Remove from this case"
-              className="inline-flex items-center gap-1 rounded-full border border-ochre/55 bg-ochre/20 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-foreground/80 hover:bg-ochre/30"
+              className="inline-flex items-center gap-1 rounded-full border border-ochre/55 bg-ochre/20 px-2 py-0.5 font-mono text-[12px] font-bold uppercase tracking-wide text-foreground/80 hover:bg-ochre/30"
             >
               <Scale className="h-3 w-3" /> {byId(id)?.name ?? "case"} <X className="h-2.5 w-2.5 opacity-60" />
             </button>
@@ -160,7 +160,7 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
 
       {menu && (
         <div className="absolute inset-x-2 top-[3.2rem] z-10 overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="px-3 pb-1 pt-2 font-mono text-[9px] uppercase tracking-[0.09em] text-muted-foreground">File under a case</div>
+          <div className="px-3 pb-1 pt-2 font-mono text-[12px] uppercase tracking-[0.09em] text-muted-foreground">File under a case</div>
           <div className="max-h-44 overflow-y-auto">
             {cases.map((c) => (
               <button
@@ -172,11 +172,11 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
               >
                 <Scale className="h-3.5 w-3.5 text-ochre" />
                 <span className="font-display text-[13px] text-foreground">{c.name}</span>
-                <span className="ml-auto font-mono text-[9px] uppercase text-muted-foreground">{c.items.length} notes</span>
+                <span className="ml-auto font-mono text-[12px] uppercase text-muted-foreground">{c.items.length} notes</span>
               </button>
             ))}
             {cases.length === 0 && (
-              <div className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground">No cases yet — name one below.</div>
+              <div className="px-3 py-1.5 font-mono text-[12px] text-muted-foreground">No cases yet — name one below.</div>
             )}
           </div>
           <div className="flex items-center gap-1.5 border-t border-border/60 px-2 py-2">
@@ -187,7 +187,7 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
               placeholder="new case name…"
               className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 font-display text-[13px] outline-none focus:border-ochre"
             />
-            <button type="button" onClick={createAndTag} className="shrink-0 rounded-md bg-foreground px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-background hover:opacity-90">
+            <button type="button" onClick={createAndTag} className="shrink-0 rounded-md bg-foreground px-2.5 py-1 font-mono text-[12px] uppercase tracking-wide text-background hover:opacity-90">
               + Case
             </button>
           </div>
@@ -195,12 +195,12 @@ function MarginComposer({ initial, initialCases, cases, onSave, onCreateCase, on
       )}
 
       <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">@ files a case · ⏎ saves</span>
+        <span className="font-mono text-[12px] uppercase tracking-wide text-muted-foreground">@ files a case · ⏎ saves</span>
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={onCancel} className="rounded-full px-2 py-0.5 font-display text-[11px] font-semibold text-foreground/45 hover:text-foreground">
+          <button type="button" onClick={onCancel} className="rounded-full px-2 py-0.5 font-display text-[12px] font-semibold text-foreground/45 hover:text-foreground">
             Cancel
           </button>
-          <button type="button" onClick={() => onSave(draft, selected)} className="rounded-full bg-foreground px-2.5 py-0.5 font-display text-[11px] font-semibold text-background hover:opacity-90">
+          <button type="button" onClick={() => onSave(draft, selected)} className="rounded-full bg-foreground px-2.5 py-0.5 font-display text-[12px] font-semibold text-background hover:opacity-90">
             Save
           </button>
         </div>
@@ -225,7 +225,7 @@ function MarginNote({ text, noteCases, onEdit, onDelete, tone = "ochre" }: { tex
               key={c.id}
               to="/cases/$id"
               params={{ id: c.id }}
-              className={`inline-flex items-center gap-1 rounded-full border ${accent.tagBorder} ${accent.tagBg} px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide text-foreground/75`}
+              className={`inline-flex items-center gap-1 rounded-full border ${accent.tagBorder} ${accent.tagBg} px-1.5 py-0.5 font-mono text-[12px] font-bold uppercase tracking-wide text-foreground/75`}
             >
               <Scale className="h-2.5 w-2.5" /> {c.name}
             </Link>
@@ -242,12 +242,12 @@ function MarginNote({ text, noteCases, onEdit, onDelete, tone = "ochre" }: { tex
       </button>
       <div className="mt-1.5 flex items-center gap-3">
         {noteCases.length > 0 && (
-          <span className="font-mono text-[9px] uppercase tracking-wide text-terracotta/80">filed · citation attached</span>
+          <span className="font-mono text-[12px] uppercase tracking-wide text-terracotta/80">filed · citation attached</span>
         )}
         {/* Touch has no hover: keep edit/delete visible below lg, hover-reveal on desktop. */}
         <div className="ml-auto flex gap-3 transition lg:opacity-0 lg:group-hover/note:opacity-100">
-          <button type="button" onClick={onEdit} className="font-mono text-[10px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
-          <button type="button" onClick={onDelete} className="font-mono text-[10px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
+          <button type="button" onClick={onEdit} className="font-mono text-[12px] uppercase tracking-wider text-foreground/40 hover:text-foreground">edit</button>
+          <button type="button" onClick={onDelete} className="font-mono text-[12px] uppercase tracking-wider text-destructive/70 hover:text-destructive">delete</button>
         </div>
       </div>
     </div>
@@ -553,7 +553,7 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
       >
         <div className="flex items-center gap-2">
           <span className="citation-tag text-muted-foreground">{seg.heading}</span>
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{paras.length}</span>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[12px] font-medium text-muted-foreground">{paras.length}</span>
         </div>
         <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -561,7 +561,7 @@ function NotePanel({ body, seg, citations, markRe, spans }: {
         <div className="space-y-2 border-t border-border/40 px-4 pb-4 pt-3 text-[0.95em] text-foreground/70">
           {paras.map((p, i) => (
             <div key={i} className={LEVEL_INDENT[p.level]}>
-              {p.label && <span className="mr-1.5 font-mono text-[11px] text-foreground/40">{p.label}</span>}
+              {p.label && <span className="mr-1.5 font-mono text-[12px] text-foreground/40">{p.label}</span>}
               {renderDecorated(body, p.start, p.end, citations, markRe)}
             </div>
           ))}
@@ -607,7 +607,7 @@ function IrmSection({ num, title, indent, count, open, onToggle, headId, childre
         </span>
         <span className="flex shrink-0 items-center gap-2 pt-0.5">
           {count > 0 && (
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{count}</span>
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[12px] font-medium text-muted-foreground">{count}</span>
           )}
           <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground/60 transition-transform ${open ? "rotate-180" : ""}`} />
         </span>
@@ -701,11 +701,11 @@ function LegalBody({ body, segments, opParas, citations, q, identifier, docMeta 
             {mg.count === 0 ? "marginalia · jot a note · type @ to file it under a case" : "your marginalia"}
           </span>
           {cb.hydrated && caseList.length > 0 ? (
-            <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
+            <Link to="/cases" className="inline-flex shrink-0 items-center gap-1 font-mono text-[12px] uppercase tracking-wide text-terracotta/80 hover:text-terracotta">
               <Scale className="h-3 w-3" /> {caseList.length} case{caseList.length === 1 ? "" : "s"}
             </Link>
           ) : (
-            <span className="shrink-0 font-mono text-[10px] text-foreground/40">
+            <span className="shrink-0 font-mono text-[12px] text-foreground/40">
               {mg.count === 0 ? "saved on this device" : `${mg.count} ${mg.count === 1 ? "note" : "notes"}`}
             </span>
           )}
@@ -1065,7 +1065,7 @@ function DocOutline({ body, opParas }: { body: string; opParas: LegalPara[] }) {
                 key={p.idx}
                 href={`#para-${p.idx}`}
                 onClick={() => setOpen(false)}
-                className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[11px] leading-snug transition-colors ${
+                className={`flex items-start gap-1.5 rounded-md px-2 py-1 text-[12px] leading-snug transition-colors ${
                   isActive
                     ? "bg-foreground/10 text-foreground"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -1426,7 +1426,7 @@ function DocumentPage() {
               >
                 <Minus className="h-3.5 w-3.5" />
               </button>
-              <span className="px-1 text-[10px] font-medium text-muted-foreground">Aa</span>
+              <span className="px-1 text-[12px] font-medium text-muted-foreground">Aa</span>
               <button
                 type="button"
                 onClick={() => setFontSize((s) => Math.min(4, s + 1))}
@@ -1492,7 +1492,7 @@ function DocumentPage() {
             {document.word_count ? <span>{document.word_count.toLocaleString()} words</span> : null}
             {readingMin ? <><span className="text-foreground/30">·</span><span>~{readingMin} min read</span></> : null}
             <span className="text-foreground/30">·</span>
-            <code className="font-mono text-[11px]">{document.identifier}</code>
+            <code className="font-mono text-[12px]">{document.identifier}</code>
             <span className="text-foreground/30">·</span>
             <SendToWorkspaceButton
               variant="compact"
@@ -1502,7 +1502,7 @@ function DocumentPage() {
               excerpt={body.slice(0, 600)}
             />
           </div>
-          <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground/80">
+          <p className="mt-3 flex items-start gap-1.5 text-[12px] leading-relaxed text-muted-foreground/80">
             <Scale className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50" />
             A research copy — for the controlling text, always check the official
             state or federal source. Not legal advice.

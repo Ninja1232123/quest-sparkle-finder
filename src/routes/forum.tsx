@@ -121,7 +121,7 @@ function ForumPage() {
         <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pt-6">
           <span className="-mb-px inline-flex items-center gap-2 border-b-2 border-foreground px-1 pb-3 font-display text-sm font-semibold text-foreground">
             <Users className="h-3.5 w-3.5" /> The Floor
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[12px] font-medium text-muted-foreground">
               {data.posts.length}
             </span>
           </span>
@@ -130,7 +130,7 @@ function ForumPage() {
             title="A daily, citation-grounded brief — coming soon"
           >
             <Bot className="h-3.5 w-3.5" /> The Brief
-            <span className="rounded-full border border-border/70 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+            <span className="rounded-full border border-border/70 px-1.5 py-0.5 text-[12px] uppercase tracking-wider text-muted-foreground/70">
               soon
             </span>
           </span>
@@ -164,7 +164,7 @@ function ForumPage() {
               key={k}
               onClick={() => setFilter(k)}
               className={
-                "rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition " +
+                "rounded-full border px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider transition " +
                 (filter === k
                   ? "border-foreground bg-foreground text-background"
                   : "border-border/70 text-foreground/55 hover:border-foreground/40 hover:text-foreground")
@@ -173,7 +173,7 @@ function ForumPage() {
               {k === "all" ? "all" : k}
             </button>
           ))}
-          <span className="ml-1 self-center text-[11px] text-muted-foreground/70">
+          <span className="ml-1 self-center text-[12px] text-muted-foreground/70">
             Reading is open to everyone, always.
           </span>
         </div>
@@ -245,12 +245,12 @@ function PostCard({
       <div className="flex items-start justify-between gap-2">
         <div className="citation-tag flex flex-wrap items-center gap-1.5 text-muted-foreground">
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${kindPillClass(post.kind ?? "discussion")}`}
+            className={`rounded-full border px-2 py-0.5 text-[12px] uppercase tracking-wider ${kindPillClass(post.kind ?? "discussion")}`}
           >
             {KIND_META[(post.kind as PostKind)]?.tag ?? post.kind}
           </span>
           {post.pinned && (
-            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[12px] uppercase tracking-wider text-accent">
               pinned
             </span>
           )}
@@ -302,7 +302,7 @@ function PostCard({
             </span>
           </Link>
           {post.citations.length > 1 && (
-            <span className="shrink-0 text-[10px] text-muted-foreground">+{post.citations.length - 1}</span>
+            <span className="shrink-0 text-[12px] text-muted-foreground">+{post.citations.length - 1}</span>
           )}
         </div>
       )}
@@ -396,7 +396,7 @@ function Composer({ onDone }: { onDone: () => void }) {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-foreground/55">{KIND_META[kind].hint}</p>
+          <p className="mt-2 text-[12px] text-foreground/55">{KIND_META[kind].hint}</p>
         </div>
         <div>
           <label htmlFor="forum-title" className="citation-tag text-muted-foreground">title</label>
@@ -419,7 +419,7 @@ function Composer({ onDone }: { onDone: () => void }) {
             onChange={(e) => setBody(e.target.value)}
             maxLength={8000}
           />
-          <div className="mt-1 text-right text-[11px] text-muted-foreground">
+          <div className="mt-1 text-right text-[12px] text-muted-foreground">
             {body.length} / 8000
           </div>
         </div>
@@ -504,7 +504,7 @@ function Composer({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      <p className="mt-6 border-t border-border/60 pt-4 text-[11px] leading-relaxed text-foreground/55">
+      <p className="mt-6 border-t border-border/60 pt-4 text-[12px] leading-relaxed text-foreground/55">
         Heads up: anything posted, replied to, or summarized here is research and
         opinion, not legal advice. Validate any interpretation with a licensed attorney
         in your jurisdiction before you act on it.

@@ -3,20 +3,8 @@
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
 
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
-/* Americana / patriotic display faces — scoped to .merica on /const, and global for home hero. */
-@import url("https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Rye&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap");
-
-/* Architects Daughter (SIL OFL) — self-hosted from public/fonts. Powers the
-   reader's handwritten marginalia (--font-hand). Intentionally not in the
-   Google import above so the "hand" works even if that request is blocked. */
-@font-face {
-  font-family: "Architects Daughter";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/ArchitectsDaughter-Regular.ttf") format("truetype");
-}
+/* Web fonts are loaded via <link> in src/routes/__root.tsx (Tailwind v4 Lightning CSS
+   cannot resolve remote @import URLs). */
 
 /*
  * Design system definition.
@@ -88,7 +76,14 @@
   --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  /* Body/reading tier. The old codex used Playfair Display + IM Fell English
+     for small text — high-contrast/rough display faces that read thin and
+     choppy below ~16px. Source Serif 4 is a sturdy, crisp text serif for that
+     tier (kept upright, no italics, at a decently high weight); stylization
+     (Cinzel/Special Elite) stays reserved for banners and titles. */
+  --font-read: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* True handwriting for marginalia notes. */
   --font-hand: "Architects Daughter", "Bradley Hand", "Segoe Print", cursive;
 }
 
@@ -101,8 +96,11 @@
   --paper-deep: oklch(0.93 0.014 78);   /* aged page edge */
   --paper-soft: oklch(0.974 0.012 85);  /* #FCF8F0 card surface */
   --paper-tint: oklch(0.945 0.014 80);  /* between paper and paper-deep — sidebars / chip backgrounds */
-  --ink: oklch(0.18 0.008 70);          /* #1A1814 warm near-black */
-  --ink-muted: oklch(0.30 0.015 75);    /* WCAG AA body muted on cream (~7:1) */
+  /* Crisper, denser type pass: deepen ink and muted tiers so every label,
+     caption, and helper line clears WCAG AAA on cream without redesigning
+     each component. */
+  --ink: oklch(0.14 0.008 70);          /* #131210 warm near-black, denser */
+  --ink-muted: oklch(0.26 0.015 75);    /* body muted, ~8.5:1 on cream */
   --rule-card: oklch(0.66 0.022 75);    /* visible edge for bright-white "ink-on-paper" cards */
   --sage: oklch(0.55 0.07 165);         /* desaturated reading-room green */
   --sage-deep: oklch(0.42 0.08 165);
@@ -160,9 +158,9 @@
      Additive: nothing here redefines an existing var, so the live palette is
      unchanged. These feed the ported prototype component classes. ===== */
   /* Finer ink shades (current only had --ink-muted) */
-  --ink-2: oklch(0.260 0.010 70);   /* strong secondary */
-  --ink-3: oklch(0.340 0.014 75);   /* muted body */
-  --ink-4: oklch(0.40 0.015 75);    /* caption — clears 4.5:1 on cream */
+  --ink-2: oklch(0.220 0.010 70);   /* strong secondary */
+  --ink-3: oklch(0.300 0.014 75);   /* muted body — clears 7:1 */
+  --ink-4: oklch(0.36 0.015 75);    /* caption — clears ~5.5:1 on cream */
   --ink-card: var(--paper-soft);    /* alias used by prototype card classes */
   /* Accent variants */
   --terracotta-2: oklch(0.560 0.140 32);
@@ -209,8 +207,8 @@
   --paper-deep: oklch(0.14 0.006 70);
   --paper-soft: oklch(0.22 0.006 70);    /* #252320 card */
   --paper-tint: oklch(0.20 0.006 70);
-  --ink: oklch(0.90 0.014 80);           /* #E8E2D4 cream */
-  --ink-muted: oklch(0.72 0.013 75);     /* brighter muted text on warm charcoal */
+  --ink: oklch(0.94 0.014 80);           /* brighter cream — denser on charcoal */
+  --ink-muted: oklch(0.80 0.013 75);     /* lifted muted, clears ~7:1 */
   --rule-card: oklch(0.32 0.008 70);     /* lighter line for dark cards */
   --sage: oklch(0.66 0.08 165);
   --sage-deep: oklch(0.55 0.08 165);
@@ -258,9 +256,9 @@
 
   /* ===== v2 prototype tokens (dark). Only the absolute-valued vars need an
      override; --ink-card / --bg-* / --fg-* are var()-aliases that auto-flip. ===== */
-  --ink-2: oklch(0.82 0.014 80);
-  --ink-3: oklch(0.72 0.013 75);
-  --ink-4: oklch(0.58 0.012 75);
+  --ink-2: oklch(0.88 0.014 80);
+  --ink-3: oklch(0.80 0.013 75);
+  --ink-4: oklch(0.68 0.012 75);
   --terracotta-2: oklch(0.72 0.12 38);
   --ochre-wash: oklch(0.74 0.12 80 / 0.4);
   --border-strong: oklch(0.40 0.010 70);
@@ -277,8 +275,11 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01", "cv11", "kern", "calt";
+    font-weight: 450;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     /* Global zoom-out via CSS `zoom` (NOT transform). transform on <body>
        makes it the containing block for position:fixed, which detaches Juri
@@ -286,7 +287,7 @@
        at the page bottom). `zoom` keeps fixed positioning correct. Its one
        quirk — it shrinks vh units — is handled by the .min-h-screen rule
        below. Tune one number: 0.7, 0.75, 0.8 … */
-    --site-zoom: 0.9;
+    --site-zoom: 0.85;
     zoom: var(--site-zoom);
   }
 
@@ -559,21 +560,21 @@
      Use as: <div class="accent-surface" style="--c: #1a4a2e"> */
   .accent-surface {
     background:
-      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 8%, transparent) 0%, transparent 55%),
+      linear-gradient(135deg, color-mix(in oklch, var(--c, var(--ink)) 85%, transparent) 5%, transparent 55%),
       var(--card);
-    border: 2px solid color-mix(in oklch, var(--c, var(--ink)) 36%, var(--rule-card));
+    border: 4px solid color-mix(in oklch, var(--c, var(--ink)) 44%, var(--rule-card));
     transition: transform 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
   }
   .accent-surface:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     border-color: var(--c, var(--ink));
-    box-shadow: 0 12px 20px -14px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
+    box-shadow: 0 14px 30px -14px color-mix(in oklch, var(--c, var(--ink)) 40%, transparent);
   }
   .accent-surface-row {
     background:
       linear-gradient(to right, color-mix(in oklch, var(--c, var(--ink)) 7%, transparent) 0%, transparent 85%),
       var(--card);
-    border: 1.5px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
+    border: 2px solid color-mix(in oklch, var(--c, var(--ink)) 28%, var(--rule-card));
     transition: transform 160ms ease-out, border-color 160ms ease-out;
   }
   .accent-surface-row:hover {
@@ -693,7 +694,7 @@
     padding: 9px 18px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     border: 1.5px solid var(--ink);
     transition: opacity 150ms, transform 150ms;
   }
@@ -709,7 +710,7 @@
     padding: 9px 18px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     border: 1.5px solid var(--ink);
     transition: background 150ms, color 150ms;
   }
@@ -1563,7 +1564,7 @@ main {
   }
   .live-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
     background: color-mix(in oklch, var(--green) 12%, transparent);
     color: var(--green);
@@ -1581,7 +1582,7 @@ main {
   }
   .eyebrow {
     font-family: var(--font-mono);
-    font-size: 11px; font-weight: 600;
+    font-size: 12px; font-weight: 600;
     letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--ink-3);
   }
@@ -1695,7 +1696,7 @@ main {
     font-family: var(--font-display); font-weight: 800; font-size: 56px;
     letter-spacing: -0.03em; color: var(--ink); line-height: 1;
   }
-  .pro-panel-v2 .price .per { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-2); text-transform: uppercase; }
+  .pro-panel-v2 .price .per { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--ink-2); text-transform: uppercase; }
   .pro-panel-v2 .price .note { font-family: var(--font-serif); font-style: italic; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
   .pro-panel-v2 .price .go { margin-top: 14px; }
 
@@ -1710,7 +1711,7 @@ main {
   .cs-row { display: flex; align-items: center; gap: 8px; }
   .cs-icon { width: 16px; height: 16px; color: var(--ink-3); }
   .cs-status {
-    font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
     letter-spacing: 0.1em; text-transform: uppercase;
     border-radius: 999px; padding: 2px 9px;
     border: 1px solid; margin-left: auto;
@@ -1771,7 +1772,7 @@ main {
   }
   .merica .starband {
     background: var(--m-navy); color: var(--m-gold-lite); text-align: center;
-    font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.34em;
+    font-family: var(--m-mono); font-size: 12px; letter-spacing: 0.34em;
     text-transform: uppercase; padding: 7px 12px; border-bottom: 2px solid var(--m-gold);
   }
 
@@ -1911,9 +1912,9 @@ main {
   .merica .m-card h3 { font-family: var(--m-serif); font-size: 20px; font-weight: 600; color: var(--m-ink); margin: 3px 0 0; line-height: 1.15; }
   .merica .m-card .gist { font-size: 13px; color: var(--m-ink-2); margin-top: 6px; line-height: 1.35; }
   .merica .m-card .meta { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
-  .merica .m-card .secs { font-family: var(--m-mono); font-size: 11px; color: var(--m-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .merica .m-card .secs { font-family: var(--m-mono); font-size: 12px; color: var(--m-dim); text-transform: uppercase; letter-spacing: 0.08em; }
   .merica .m-card .go { font-family: var(--m-serif); font-style: italic; font-size: 14px; color: var(--m-navy); }
-  .merica .m-card .badge { display: inline-flex; align-items: center; gap: 5px; background: var(--m-navy); color: var(--m-gold-lite); font-family: var(--m-mono); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+  .merica .m-card .badge { display: inline-flex; align-items: center; gap: 5px; background: var(--m-navy); color: var(--m-gold-lite); font-family: var(--m-mono); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
   .merica .m-card.gold .badge { background: var(--m-gold); color: var(--m-navy); }
 
   /* amendment chips (revealed under a grouping card) */
@@ -1987,7 +1988,7 @@ main {
   }
   .am-card .am-count {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     color: var(--ink-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -2029,7 +2030,7 @@ main {
   .am-card .am-crumb {
     margin-top: 3px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.3;
     letter-spacing: 0.04em;
     color: var(--ink-muted);
@@ -2048,7 +2049,7 @@ main {
     border-radius: 4px;
     padding: 2px 8px;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -2203,6 +2204,41 @@ main {
     transform: translateY(-1px);
     box-shadow: 0 8px 22px -8px rgba(200,162,75,0.65), 0 0 0 3px rgba(200,162,75,0.18);
   }
+  /* Workspace — the AI desk's own header entry. An outline-luxe brass pill
+     (glowing border + brass text over the navy header) so it reads as a premium
+     destination, distinct from the solid-brass "Go Pro" conversion button. */
+  .am-workspace {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: #f3e6c0;
+    background: linear-gradient(135deg, rgba(200,162,75,0.22), rgba(200,162,75,0.05));
+    border: 1.5px solid rgba(200,162,75,0.7);
+    box-shadow: 0 0 0 1px rgba(200,162,75,0.10), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 120ms ease, box-shadow 220ms ease, border-color 220ms ease, color 220ms ease, background 220ms ease;
+  }
+  .am-workspace:hover {
+    transform: translateY(-1px);
+    color: #fbf6e8;
+    border-color: #e7cd7e;
+    box-shadow: 0 10px 24px -10px rgba(200,162,75,0.7), 0 0 0 3px rgba(200,162,75,0.16);
+  }
+  .am-workspace[data-active="true"] {
+    background: rgba(200,162,75,0.26);
+    border-color: #e7cd7e;
+    color: #fbf6e8;
+  }
+  .am-workspace-spark {
+    color: #e7cd7e;
+    filter: drop-shadow(0 0 4px rgba(231,205,126,0.45));
+  }
   /* codebook strip — gold hairline above, "Library" label, tighter spacing */
   .am-codebooks {
     padding-top: 7px;
@@ -2318,7 +2354,7 @@ main {
     margin-top: 11px;
     font-family: var(--font-mono);
     font-style: normal;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #c8a24b;
@@ -2390,7 +2426,7 @@ main {
     display: inline-flex; align-items: center;
     background: #0a1a47; color: #fbf6e8;
     border: 1.5px solid #c8a24b; border-radius: 999px;
-    padding: 4px 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 4px 12px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
   }
   .const-hero-card .chc-pill.red { background: #b22234; }
   .const-hero-card .chc-cta {
@@ -2432,7 +2468,7 @@ main {
   .home-codebook-shelf .am-card .am-num {
     font-family: var(--font-mono);
     font-style: normal;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.13em;
     text-transform: uppercase;
@@ -2547,7 +2583,7 @@ main {
   }
 
   .hca-body {
-    font-family: "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: clamp(14px, 1.1vw, 17px);
     line-height: 1.6;
@@ -2578,7 +2614,7 @@ main {
     box-shadow: 0 36px 80px -18px rgba(0,0,0,0.65);
   }
   .home-const-cartouche .hcc-wtp {
-    font-family: "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 48px;
     color: #0a1a47;
@@ -2601,7 +2637,7 @@ main {
     line-height: 1.1;
   }
   .home-const-cartouche .hcc-sub {
-    font-family: "IM Fell English", serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 17px;
     color: #4a3a22;
@@ -2656,7 +2692,7 @@ main {
     margin-bottom: 8px;
   }
   .home-hero-sub {
-    font-family: "IM Fell English", serif;
+    font-family: var(--font-read);
     font-style: italic;
     font-size: 20px;
     color: var(--ink-muted);
@@ -3401,7 +3437,7 @@ main {
   .hero-rail-r { padding-left: 18px;  border-left:  1px solid rgba(184,145,80,0.32); }
 
   .hero-quote {
-    font-family: "Playfair Display", "IM Fell English", var(--font-serif), serif;
+    font-family: var(--font-read), var(--font-serif), serif;
     font-style: italic;
     font-weight: 800;
     font-size: clamp(22px, 1.75vw, 29px);
@@ -3416,7 +3452,7 @@ main {
     display: block;
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: rgba(184,145,80,0.7);
@@ -3428,7 +3464,7 @@ main {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid rgba(184,145,80,0.28);
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-size: clamp(21px, 1.4vw, 23px);
     line-height: 1.5;
@@ -3485,7 +3521,7 @@ main {
   .home-const-aside-r .hca-label { padding-right: 28px; }
 
   .hca-body {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     font-size: 21px;
     line-height: 1.55;
@@ -3535,7 +3571,7 @@ main {
 
   /* Inner cartouche text — keep on parchment ink */
   .home-const-cartouche .hcc-wtp {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-weight: 700;
     font-size: clamp(28px, 3.4vw, 44px);
@@ -3562,9 +3598,9 @@ main {
     display: inline-block;
   }
   .home-const-cartouche .hcc-sub {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
-    font-size: 15.5px;
+    font-size: 18px;
     line-height: 1.65;
     color: #3a2f1a;
     max-width: 56ch;
@@ -3576,7 +3612,7 @@ main {
     color: var(--codex-ink);
     border: 1px solid rgba(10,8,16,0.45);
     border-radius: 0;
-    padding: 4px 10px;
+    padding: 5px 11px;
     font-family: "Special Elite", "Courier New", monospace;
     font-size: 14px;
     letter-spacing: 0.2em;
@@ -3595,7 +3631,7 @@ main {
     padding: 12px 24px;
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     margin-top: 22px;
@@ -3655,7 +3691,7 @@ main {
     font-family: "Special Elite", "Courier New", monospace;
     font-style: normal;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3664,7 +3700,7 @@ main {
   .home-codebook-shelf .am-card .am-title {
     font-family: "Cinzel", "IM Fell English SC", serif;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 19px;
     line-height: 1.2;
     letter-spacing: 0.02em;
     color: var(--codex-parchment);
@@ -3677,15 +3713,15 @@ main {
     margin-top: 18px;
   }
   .home-codebook-shelf .am-card .am-count {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--codex-slate-2);
   }
   .home-codebook-shelf .am-card .am-go {
     font-family: "Special Elite", "Courier New", monospace;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--codex-gold);
@@ -3694,13 +3730,13 @@ main {
   /* ── HERO SEARCH BLOCK — refine typography ─────────────────────────────── */
   .home-hero-eyebrow {
     font-family: "Special Elite", "Courier New", monospace;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0.32em;
     color: var(--codex-gold);
     text-transform: uppercase;
   }
   .home-hero-sub {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: normal;
     font-size: 19px;
   }
@@ -3786,7 +3822,7 @@ main {
     color: var(--codex-ink);
     letter-spacing: 0.02em;
   }
-  .subvol-eyebrow { font-size: 10.5px !important; }
+  .subvol-eyebrow { font-size: 12px !important; }
   .subvol-browse {
     font-family: "Special Elite", "Courier New", monospace;
     font-size: 14px;
@@ -3811,7 +3847,7 @@ main {
   }
   .desk-mini-sub,
   .desk-card-body {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
     color: #3a2f1a;
   }
@@ -3842,7 +3878,7 @@ main {
     padding: 8px 4px;
   }
   .desk-rel-name {
-    font-family: "Playfair Display", "IM Fell English", serif;
+    font-family: var(--font-read), serif;
     font-style: italic;
   }
 
@@ -3869,7 +3905,7 @@ main {
     letter-spacing: 0.02em;
   }
   .toc-grid .am-card .am-count {
-    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-family: var(--font-read), serif !important;
     font-style: italic;
     color: #6b5836 !important;
   }
@@ -3939,7 +3975,7 @@ main {
   }
   footer.mt-24 .font-mono { font-family: "Special Elite", "Courier New", monospace !important; }
   footer.mt-24 .font-serif {
-    font-family: "Playfair Display", "IM Fell English", serif !important;
+    font-family: var(--font-read), serif !important;
     font-style: italic;
   }
 }

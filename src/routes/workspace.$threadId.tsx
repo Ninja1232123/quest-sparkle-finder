@@ -66,6 +66,9 @@ function WorkspaceThreadPage() {
   // The document the user currently has open in the reader. Held in a ref so the
   // chat transport can read the latest value at send time without rebuilding.
   const focusRef = useRef<{ ref: string } | null>(null);
+  // The user's live draft (title + body) from the Doc Creator editor, held in a
+  // ref so the model can see what's actually on the page at send time.
+  const draftRef = useRef<{ title: string; body: string } | null>(null);
 
   const transport = useMemo(
     () =>
@@ -73,10 +76,16 @@ function WorkspaceThreadPage() {
         api: "/api/workspace/chat",
         headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
         body: { threadId },
-        // Merge the focused-document ref into every send so the model reads what
-        // the user is reading. Must preserve the default body fields we override.
+        // Merge the focused-document ref and the live draft into every send so the
+        // model reads what the user is reading AND what they've written so far.
+        // Must preserve the default body fields we override.
         prepareSendMessagesRequest: ({ body, messages, id, trigger, messageId }) => ({
-          body: { ...body, id, messages, trigger, messageId, focusedRef: focusRef.current?.ref ?? null },
+          body: {
+            ...body, id, messages, trigger, messageId,
+            focusedRef: focusRef.current?.ref ?? null,
+            draftTitle: draftRef.current?.title ?? null,
+            draftText: draftRef.current?.body ?? null,
+          },
         }),
       }),
     [threadId, token],
@@ -91,6 +100,7 @@ function WorkspaceThreadPage() {
       threadId={threadId}
       transport={transport}
       focusRef={focusRef}
+      draftRef={draftRef}
       initialMessages={initialMessages}
       initialDraft={draft}
       saveDraft={saveDraft}
@@ -100,11 +110,12 @@ function WorkspaceThreadPage() {
 }
 
 function Desk({
-  threadId, transport, focusRef, initialMessages, initialDraft, saveDraft, seedPrompt,
+  threadId, transport, focusRef, draftRef, initialMessages, initialDraft, saveDraft, seedPrompt,
 }: {
   threadId: string;
   transport: DefaultChatTransport<UIMessage>;
   focusRef: React.MutableRefObject<{ ref: string } | null>;
+  draftRef: React.MutableRefObject<{ title: string; body: string } | null>;
   initialMessages: UIMessage[];
   initialDraft: { title: string; body: string };
   saveDraft: (args: { data: { threadId: string; title: string; bodyMd: string } }) => Promise<unknown>;
@@ -139,10 +150,24 @@ function Desk({
     focusRef.current = null;
   }, [focusRef]);
 
+  // When the assistant fetches a document via its tools, mirror that into the
+  // user's reader so they see exactly what the model is reading. No prompt to
+  // act — just shared focus.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const d = (e as CustomEvent<{ ref?: string }>).detail;
+      if (d?.ref) void handleOpenDoc(d.ref);
+    };
+    window.addEventListener("workspace:open-doc", onOpen);
+    return () => window.removeEventListener("workspace:open-doc", onOpen);
+  }, [handleOpenDoc]);
+
   const editorRef = useRef<EditorCanvasHandle | null>(null);
   const dirtyRef = useRef(false);
   const latestRef = useRef({ title, body });
   latestRef.current = { title, body };
+  // Keep the shared draft ref current so the chat transport sends the live draft.
+  draftRef.current = { title, body };
 
   // Case Board state
   const loadItems = useServerFn(listCaseItems);
@@ -226,6 +251,49 @@ function Desk({
   const handleAddToDraft = useCallback((markdown: string) => {
     setDocOpen(true);
     editorRef.current?.insertAtCursor(markdown);
+  }, []);
+
+  // Pending AI-proposed draft edits — awaiting user Accept / Revert.
+  type PendingEdit = { id: string; kind: "insert" | "replace"; anchor: string | null; markdown: string; why: string };
+  const [pendingEdits, setPendingEdits] = useState<PendingEdit[]>([]);
+  useEffect(() => {
+    const onPropose = (e: Event) => {
+      const d = (e as CustomEvent<PendingEdit>).detail;
+      if (!d?.id || !d.markdown) return;
+      const kind: PendingEdit["kind"] = d.kind === "replace" ? "replace" : "insert";
+      setPendingEdits((cur) => (cur.some((p) => p.id === d.id) ? cur : [...cur, { ...d, kind }]));
+      setDocOpen(true);
+    };
+    window.addEventListener("workspace:propose-edit", onPropose);
+    return () => window.removeEventListener("workspace:propose-edit", onPropose);
+  }, []);
+
+  const acceptEdit = useCallback((edit: PendingEdit) => {
+    const current = editorRef.current?.getBody() ?? body;
+    let next = current;
+    if (edit.kind === "replace" && edit.anchor && current.includes(edit.anchor)) {
+      next = current.replace(edit.anchor, edit.markdown);
+    } else if (edit.kind === "insert" && edit.anchor && current.includes(edit.anchor)) {
+      const idx = current.indexOf(edit.anchor) + edit.anchor.length;
+      next = current.slice(0, idx) + "\n\n" + edit.markdown + current.slice(idx);
+    } else {
+      next = current + (current.trim() ? "\n\n" : "") + edit.markdown;
+    }
+    setBody(next);
+    // Force-sync the contenteditable so the user sees it land.
+    setTimeout(() => {
+      const root = document.querySelector("[contenteditable]") as HTMLDivElement | null;
+      if (root) root.innerText = next;
+    }, 0);
+    setPendingEdits((cur) => cur.filter((p) => p.id !== edit.id));
+  }, [body]);
+
+  const revertEdit = useCallback((id: string) => {
+    setPendingEdits((cur) => cur.filter((p) => p.id !== id));
+  }, []);
+
+  const updatePendingMarkdown = useCallback((id: string, markdown: string) => {
+    setPendingEdits((cur) => cur.map((p) => (p.id === id ? { ...p, markdown } : p)));
   }, []);
 
   // Grab → file straight onto the issues board with the stance picked at the source.
@@ -388,6 +456,10 @@ function Desk({
               onOpenResearch={() => setDocOpen(false)}
               onCiteCheck={handleCiteCheck}
               onOpenVersions={handleOpenVersions}
+              pendingEdits={pendingEdits}
+              onAcceptEdit={acceptEdit}
+              onRevertEdit={revertEdit}
+              onEditPendingMarkdown={updatePendingMarkdown}
             />
           </Panel>
         </div>
@@ -452,7 +524,7 @@ function VersionsModal({
       <div className="relative z-10 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border shadow-2xl" style={{ background: "var(--paper)", borderColor: "var(--brass, #c8a24b)" }}>
         <div className="flex shrink-0 items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--rule-card)" }}>
           <div>
-            <div className="text-[10px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Versions</div>
+            <div className="text-[12px] tracking-[0.25em] uppercase" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Versions</div>
             <div className="text-sm" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>Saved snapshots of this draft</div>
           </div>
           <button type="button" onClick={onClose} className="rounded px-2 py-1 text-xs hover:bg-foreground/5">Close</button>
@@ -469,13 +541,13 @@ function VersionsModal({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="truncate text-sm" style={{ fontFamily: "var(--font-serif)" }}>{v.title || "Untitled"}</div>
-                      <div className="text-[10px]" style={{ color: "var(--ink-muted)" }}>{new Date(v.created_at).toLocaleString()} · {v.body_md.length} chars</div>
+                      <div className="text-[12px]" style={{ color: "var(--ink-muted)" }}>{new Date(v.created_at).toLocaleString()} · {v.body_md.length} chars</div>
                     </div>
-                    <button type="button" onClick={() => onRestore(v)} className="rounded px-2 py-1 text-[11px] font-medium text-white" style={{ background: "var(--ink)" }}>
+                    <button type="button" onClick={() => onRestore(v)} className="rounded px-2 py-1 text-[12px] font-medium text-white" style={{ background: "var(--ink)" }}>
                       Restore
                     </button>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-[11px]" style={{ color: "var(--ink-muted)" }}>{v.body_md.slice(0, 200)}{v.body_md.length > 200 ? "…" : ""}</p>
+                  <p className="mt-1 line-clamp-2 text-[12px]" style={{ color: "var(--ink-muted)" }}>{v.body_md.slice(0, 200)}{v.body_md.length > 200 ? "…" : ""}</p>
                 </li>
               ))}
             </ul>

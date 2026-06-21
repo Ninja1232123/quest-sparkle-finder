@@ -62,6 +62,9 @@ export function SourceReader({
   const [caseHits, setCaseHits] = useState<CaseHit[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Which side last got "from assistant" results — drives the chip on the pane.
+  const [aiStatute, setAiStatute] = useState(false);
+  const [aiCase, setAiCase] = useState(false);
 
   const run = useServerFn(searchCorpus);
   const runCases = useServerFn(searchCases);
@@ -110,6 +113,47 @@ export function SourceReader({
     return () => window.removeEventListener("workspace:run-search", onRun);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submit]);
+
+  // Live shared state: the assistant's tool results stream straight into the
+  // user's search panel so they see exactly what the model is reading. No new
+  // round-trip — we use the rows the model already fetched.
+  useEffect(() => {
+    const onResults = (e: Event) => {
+      const d = (e as CustomEvent<{ kind: "statute" | "case"; query: string | null; source?: string | null; rows: unknown[]; fromAssistant?: boolean }>).detail;
+      if (d.query) setQ(d.query);
+      setErr(null);
+      if (d.kind === "statute") {
+        const rows = d.rows as Array<{
+          identifier?: string; id?: string; source?: string; citation?: string; cite?: string;
+          heading?: string | null; snippet?: string; section_label?: string | null; parent_label?: string | null; url?: string;
+        }>;
+        const mapped: CorpusHit[] = rows.map((r) => ({
+          identifier: r.identifier ?? r.id ?? "",
+          source: (r.source ?? "").toLowerCase(),
+          sectionLabel: r.citation ?? r.cite ?? r.section_label ?? "",
+          heading: r.heading ?? "",
+          parentLabel: r.parent_label ?? "",
+          snippet: r.snippet ?? "",
+        })).filter((h) => h.identifier);
+        setStatHits(mapped);
+        setAiStatute(!!d.fromAssistant);
+      } else if (d.kind === "case") {
+        const rows = d.rows as Array<{ id?: string; title?: string; citation?: string; court?: string; year?: number | null; url?: string }>;
+        const mapped: CaseHit[] = rows.map((r) => ({
+          id: r.id ?? "",
+          title: r.title ?? "",
+          citation: r.citation ?? "",
+          court: r.court ?? "",
+          year: r.year ?? null,
+          url: r.url ?? null,
+        })).filter((c) => c.id);
+        setCaseHits(mapped);
+        setAiCase(!!d.fromAssistant);
+      }
+    };
+    window.addEventListener("workspace:show-results", onResults);
+    return () => window.removeEventListener("workspace:show-results", onResults);
+  }, []);
 
   return (
     <Panel
@@ -161,7 +205,7 @@ export function SourceReader({
 
       {/* Split screen */}
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 px-2.5 pb-2.5">
-        <Pane title="Statutes" accent="#c8a24b">
+        <Pane title="Statutes" accent="#c8a24b" assistantTag={aiStatute}>
           <ResultList
             loading={loading}
             empty={statHits !== null && statHits.length === 0}
@@ -172,7 +216,7 @@ export function SourceReader({
             ))}
           </ResultList>
         </Pane>
-        <Pane title="Case law" accent="#7aa2d8">
+        <Pane title="Case law" accent="#7aa2d8" assistantTag={aiCase}>
           <ResultList
             loading={loading}
             empty={caseHits !== null && caseHits.length === 0}
@@ -189,7 +233,7 @@ export function SourceReader({
 }
 
 // ── Layout bits ─────────────────────────────────────────────────────────────
-function Pane({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
+function Pane({ title, accent, children, assistantTag }: { title: string; accent: string; children: React.ReactNode; assistantTag?: boolean }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-col">
       <div

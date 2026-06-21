@@ -145,7 +145,7 @@ export function CitationMap({ topic, onSelect, activeId }: Props) {
               </text>
               {isFocused && (
                 <foreignObject x={-110} y={42} width={220} height={80}>
-                  <div className="rounded-lg border bg-background/95 px-3 py-2 text-center text-[11px] leading-snug text-foreground shadow-[var(--shadow-soft)] backdrop-blur">
+                  <div className="rounded-lg border bg-background/95 px-3 py-2 text-center text-[12px] leading-snug text-foreground shadow-[var(--shadow-soft)] backdrop-blur">
                     <div className="font-display text-xs font-semibold">{c.title}</div>
                     <div className="mt-0.5 text-muted-foreground">{c.plain}</div>
                   </div>

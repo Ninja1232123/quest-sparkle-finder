@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 // the user's session — not the local read-only backend.
 import { supabaseAuth as supabase } from "@/integrations/supabase/auth-client";
 import { getStripeEnvironment } from "@/lib/stripe";
-import { isAdminEmail } from "@/lib/admin";
+import { getIsAdmin } from "@/lib/admin.functions";
 import { useAuth } from "@/hooks/use-auth";
 
 type Sub = {
@@ -17,25 +17,31 @@ type Sub = {
 export function useSubscription() {
   const { user, loading: authLoading } = useAuth();
   const [sub, setSub] = useState<Sub | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     if (!user) {
       setSub(null);
+      setIsAdmin(false);
       setLoading(false);
       return;
     }
     setLoading(true);
     const env = getStripeEnvironment();
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("status, price_id, current_period_end, cancel_at_period_end, stripe_customer_id")
-      .eq("user_id", user.id)
-      .eq("environment", env)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [{ data }, adminRes] = await Promise.all([
+      supabase
+        .from("subscriptions")
+        .select("status, price_id, current_period_end, cancel_at_period_end, stripe_customer_id")
+        .eq("user_id", user.id)
+        .eq("environment", env)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      getIsAdmin().catch(() => ({ isAdmin: false })),
+    ]);
     setSub((data as Sub | null) ?? null);
+    setIsAdmin(!!adminRes?.isAdmin);
     setLoading(false);
   }, [user?.id]);
 
@@ -62,9 +68,6 @@ export function useSubscription() {
     (["active", "trialing", "past_due"].includes(sub.status) && (!periodEndMs || periodEndMs > now)) ||
     (sub.status === "canceled" && periodEndMs !== null && periodEndMs > now)
   );
-
-  // Admins (VITE_ADMIN_EMAILS) get full Pro access without a Stripe row.
-  const isAdmin = isAdminEmail(user?.email);
 
   return { sub, isActive, isAdmin, isPro: isActive || isAdmin, loading: loading || authLoading, refetch };
 }

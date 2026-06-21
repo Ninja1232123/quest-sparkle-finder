@@ -90,7 +90,7 @@ function OutcomesHub() {
                   <ChevronRight className="h-4 w-4 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5" />
                 </div>
                 {meta?.blurb && <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">{meta.blurb}</p>}
-                <div className="mt-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <div className="mt-2 font-mono text-[12px] uppercase tracking-wide text-muted-foreground">
                   {fmt(f.total_cases)} cases
                   {f.plaintiff_win_pct != null && (
                     <> · {f.plaintiff_win_pct}% plaintiff win (of merits judgments)</>

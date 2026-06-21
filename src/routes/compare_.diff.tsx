@@ -51,7 +51,7 @@ function SectionTag({ d, sign, tone }: { d: DiffDocMeta; sign: string; tone: "de
       }`}
     >
       <span
-        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
           tone === "del" ? "bg-terracotta/15 text-terracotta" : "bg-sage/20 text-sage-deep"
         }`}
       >

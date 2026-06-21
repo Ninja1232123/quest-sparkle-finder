@@ -52,7 +52,7 @@ export function ExpandedContainer({ def, state, onClose, onSearch, onPullSnippet
           <div className="text-[14px] font-semibold leading-tight" style={{ fontFamily: "var(--font-serif)", color: "var(--ink)" }}>
             {def.label}
           </div>
-          <div className="text-[9px] uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+          <div className="text-[12px] uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
             Select any sentence to pull it into a compile bucket
           </div>
         </div>
@@ -95,7 +95,7 @@ export function ExpandedContainer({ def, state, onClose, onSearch, onPullSnippet
                 className="rounded-md border bg-card p-3"
                 style={{ borderColor: "var(--rule-card)" }}
               >
-                <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
+                <div className="mb-1 flex items-center gap-2 text-[12px] uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>
                   <span className="rounded px-1.5 py-0.5" style={{ background: "color-mix(in oklab, var(--brass) 18%, transparent)" }}>{h.source}</span>
                   {h.sectionLabel && <span>{h.sectionLabel}</span>}
                   {h.parentLabel && <span className="truncate opacity-60">· {h.parentLabel}</span>}
@@ -128,13 +128,13 @@ export function ExpandedContainer({ def, state, onClose, onSearch, onPullSnippet
             &ldquo;{selection.text}&rdquo;
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Pull to →</span>
+            <span className="text-[12px] uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)", fontFamily: "var(--font-mono)" }}>Pull to →</span>
             {BUCKETS.map((b) => (
               <button
                 key={b.id}
                 type="button"
                 onClick={() => send(b.id)}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition-transform hover:-translate-y-px"
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium transition-transform hover:-translate-y-px"
                 style={{ borderColor: b.accent, color: "var(--ink)", background: b.wash }}
               >
                 <b.icon className="h-3 w-3" style={{ color: b.accent }} />
@@ -144,7 +144,7 @@ export function ExpandedContainer({ def, state, onClose, onSearch, onPullSnippet
             <button
               type="button"
               onClick={() => { setSelection(null); window.getSelection()?.removeAllRanges(); }}
-              className="ml-auto text-[10px] underline decoration-dotted underline-offset-2"
+              className="ml-auto text-[12px] underline decoration-dotted underline-offset-2"
               style={{ color: "var(--ink-muted)" }}
             >
               clear

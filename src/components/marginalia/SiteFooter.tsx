@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         {/* motto band */}
         <div className="text-center">
-          <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#c8a24b]">
+          <div className="font-mono text-[12px] uppercase tracking-[0.3em] text-[#c8a24b]">
             ★ &nbsp; the supreme law of the land &nbsp; ★
           </div>
           <div

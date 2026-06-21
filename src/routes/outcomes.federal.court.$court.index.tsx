@@ -65,17 +65,17 @@ function CourtPage() {
             <Link to={ct.slug as never} className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/50">
               <div className="min-w-0 flex-1">
                 <div className="truncate font-display text-[15px] font-semibold leading-tight">{ct.nos_label}</div>
-                <div className="mt-0.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <div className="mt-0.5 font-mono text-[12px] uppercase tracking-wide text-muted-foreground">
                   {fmt(ct.total_cases)} cases · {fmt(ct.merits_cases)} decided
                 </div>
               </div>
               {ct.plaintiff_win_pct != null ? (
                 <div className="shrink-0 text-right">
                   <div className="font-display text-lg font-semibold tabular-nums text-terracotta">{ct.plaintiff_win_pct}%</div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">plaintiff win</div>
+                  <div className="text-[12px] uppercase tracking-wide text-muted-foreground">plaintiff win</div>
                 </div>
               ) : (
-                <div className="shrink-0 text-[11px] text-muted-foreground">small sample</div>
+                <div className="shrink-0 text-[12px] text-muted-foreground">small sample</div>
               )}
               <ChevronRight className="h-4 w-4 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5" />
             </Link>

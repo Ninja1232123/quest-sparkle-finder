@@ -203,7 +203,7 @@ function PlannedShape({ codebook }: { codebook: Codebook }) {
               <h3 className="mt-2 font-display text-base font-semibold">{ex.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-foreground/60">{ex.pitch}</p>
               {ex.urlHint && (
-                <code className="mt-3 inline-block rounded bg-muted/60 px-2 py-1 font-mono text-[11px] text-foreground/65">
+                <code className="mt-3 inline-block rounded bg-muted/60 px-2 py-1 font-mono text-[12px] text-foreground/65">
                   {ex.urlHint}
                 </code>
               )}
