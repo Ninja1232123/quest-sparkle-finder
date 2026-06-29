@@ -132,7 +132,7 @@ function Index() {
               <div className="hcc-kicker">How this tool works</div>
               <h2>Search every U.S. law at once</h2>
               <div className="hcc-sub">
-                Hey Thanks for checking us out! Best serveed on a PC or laptop right now. Mobile app coming soon! .
+                Pro Tip! If you decide to use Juri to help you search our database,  be concise in your explanation and offer strong Keywords!
               </div>
               <div className="hcc-pills">
                 <span className="hcc-pill">Search every source</span>
