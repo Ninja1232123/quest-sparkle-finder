@@ -36,16 +36,10 @@ function WorkspaceLayout() {
       className="flex h-screen w-full overflow-hidden"
       style={{ height: "calc(100vh / var(--site-zoom))", background: "var(--paper, #f7f3ea)" }}
     >
-<<<<<<< HEAD
       <main className="min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full min-h-0 flex-col">
           {/* Top strip: a flush Home exit on the left, the not-legal-advice bar filling the rest. */}
-          <div className="flex shrink-0 items-stretch">
-=======
-      <main className="flex-1 overflow-hidden">
-        <div className="flex h-full flex-col">
           <div className="flex shrink-0 items-stretch" style={{ background: "var(--navy-deep, #0c1b3d)" }}>
->>>>>>> f4f8c5cc093f289916a8091caf08700cac22bc8f
             <Link
               to="/"
               aria-label="Back to home"

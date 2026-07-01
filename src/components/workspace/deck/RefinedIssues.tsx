@@ -141,13 +141,8 @@ export function RefinedIssues({
                   className="group flex items-start gap-1.5 rounded-md px-2 py-1.5"
                   style={{ background: "rgba(159,179,216,0.10)", boxShadow: "inset 0 0 0 1px rgba(159,179,216,0.2)" }}
                 >
-<<<<<<< HEAD
-                  <span className="flex-1 text-[14px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
-                  <button type="button" onClick={() => onDelete(q)} className="opacity-50 transition-opacity group-hover:opacity-100" aria-label="Delete">
-=======
                   <span className="flex-1 text-[13px] leading-snug" style={{ color: "rgba(230,236,247,0.85)" }}>{q.user_note}</span>
                   <button type="button" onClick={() => onDelete(q)} className="opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100" aria-label="Delete">
->>>>>>> f4f8c5cc093f289916a8091caf08700cac22bc8f
                     <Trash2 className="h-3 w-3" style={{ color: "#ffb4b4" }} />
                   </button>
                 </li>
